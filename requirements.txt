@@ -1,0 +1,9 @@
+streamlit>=1.32.0
+anthropic>=0.25.0
+reportlab>=4.0.0
+pillow>=10.0.0
+psycopg2-binary>=2.9.0
+SQLAlchemy>=2.0.0
+plotly>=5.18.0
+st-cookies-manager>=0.1.5
+svglib>=1.5.1
