@@ -2,6 +2,40 @@
 
 ---
 
+## Sesión: 2026-08-08 (Segunda parte — construcción Fase 1 y arranque Fase 2)
+
+### Qué se hizo
+- Se construyó la **Fase 1** completa: proyecto `web/` con Vite + React + TypeScript + Tailwind CSS v4, tokens de marca (`@theme` con verde/dorado/fondo oscuro/tipografías) en `src/index.css`
+- Se instalaron `@supabase/supabase-js`, `react-router-dom`, `framer-motion`
+- Se creó `src/lib/supabaseClient.ts` y la pantalla `src/pages/Login.tsx` (tabs Iniciar sesión/Registro) usando Supabase Auth, con `App.tsx` gestionando la sesión (`onAuthStateChange`)
+- **Localización del proyecto Supabase real:** no estaba en la cuenta conectada por MCP; se ubicó a través de `st.secrets["DATABASE_URL"]` de la app en Streamlit Cloud. El usuario compartió la cadena de conexión completa (con contraseña) y la clave pública (`sb_publishable_...`) por chat — ambas se guardaron directo en `web/.env` (excluido de git) y nunca se repitieron en archivos versionados. Project ref real: `dilskbvmvywqohtswzdw`
+- **Verificación en vivo:** se probó un login con credenciales falsas desde el navegador (Chrome vía MCP) y se confirmó, revisando la petición de red, que llegó hasta Supabase Auth real y devolvió "Invalid login credentials" — prueba de que la conexión funciona de extremo a extremo sin crear ninguna cuenta de prueba real
+- Se arrancó la **Fase 2**: carpeta `web/api/` (convención de funciones serverless de Vercel) + `web/requirements.txt` con `google-genai` + función de prueba `api/ia-test.py`
+- El usuario proporcionó su clave de Gemini por chat; se guardó solo en `web/.env` (nunca repetida en la respuesta ni en archivos versionados) y se **verificó en vivo** ejecutando el código Python directamente: el modelo `gemini-3.5-flash-lite` respondió correctamente
+- Se decidió NO correr `vercel dev` todavía para no arriesgar disparar un login/vinculación de cuenta de Vercel sin conversarlo antes — la validación del backend se hizo ejecutando el código Python de forma directa
+
+### Archivos creados
+- `web/` (proyecto completo: `package.json`, `vite.config.ts`, `src/index.css`, `src/App.tsx`, `src/lib/supabaseClient.ts`, `src/pages/Login.tsx`, `.env.example`, `.env` [no versionado])
+- `web/requirements.txt`, `web/api/ia-test.py`
+
+### Archivos modificados
+- `PROGRESS.md` — Fase 1 marcada como hecha, Fase 2 en progreso
+- `SESSION.md` — este archivo
+
+### Decisiones tomadas
+- El proyecto Supabase real de Costo360 es `dilskbvmvywqohtswzdw` (no estaba en ninguna cuenta conectada por MCP)
+- Las funciones serverless viven en `web/api/`, con `web/` como raíz del futuro proyecto de Vercel (frontend + backend en un mismo deploy)
+- No se ejecuta ningún comando que pueda vincular o autenticar una cuenta de Vercel sin acuerdo explícito previo del usuario — queda para la Fase 4
+
+### Riesgo detectado
+- El usuario compartió en el chat la cadena de conexión completa a la base de datos (con contraseña en texto plano) y la clave de Gemini. Ambas quedaron guardadas únicamente en `web/.env` (gitignored). Vale la pena recordarle al usuario, en algún momento, no compartir contraseñas de base de datos por chat — para claves públicas (anon/publishable) no hay problema, están diseñadas para exponerse.
+
+### Primera tarea de la próxima sesión
+- Seguir la **Fase 2**: migrar la lógica real de `calculos.py` y `motor_planos.py` a funciones serverless en `web/api/`, y reemplazar `asistente_ia.py` (Claude) por una versión que use Gemini
+- Cuando se quiera probar el runtime real de Vercel (`vercel dev`) o desplegar, avisar primero al usuario porque puede pedir iniciar sesión en su cuenta de Vercel
+
+---
+
 ## Sesión: 2026-08-08
 
 ### Qué se hizo

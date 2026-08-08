@@ -4,7 +4,7 @@
 
 ## ✅ Hecho
 
-- App funcional desplegada en Streamlit Cloud
+- App funcional desplegada en Streamlit Cloud (legado, sigue en producción)
 - Rediseño visual completo (tema oscuro, glassmorphism, colores de marca)
 - Corrección de bug de navegación (`radio_ui`)
 - Landing page con logo real (9 secciones)
@@ -18,25 +18,27 @@
 - **Git local inicializado** en `C:\Costo360` (2026-08-08) — sin repositorio remoto
 - **Comando `/cierre` creado** — actualiza harness y memoria al final de cada sesión (2026-08-08)
 - `CONTEXTO_COSTO360.md` actualizado con la arquitectura nueva completa (2026-08-08)
+- **Fase 1 completada (2026-08-08):** proyecto `web/` creado (Vite + React + TypeScript + Tailwind CSS con tokens de marca), cliente de Supabase conectado al proyecto real (`dilskbvmvywqohtswzdw`), pantalla de Login/Registro con Supabase Auth construida y **verificada en vivo** contra la base de datos real (intento de login llegó al servidor y devolvió el error esperado)
+- **Fase 2 iniciada (2026-08-08):** carpeta `web/api/` creada para funciones serverless Python; función de prueba `api/ia-test.py` con el SDK `google-genai`; **clave de Gemini verificada funcionando en vivo** (modelo `gemini-3.5-flash-lite` respondió correctamente a una llamada de prueba)
 
 ---
 
 ## 🔄 En progreso
 
-- Ninguna decisión pendiente de arquitectura — lista para empezar Fase 1 de construcción
-- **Pendiente del usuario:** crear su propia API key de Gemini en Google AI Studio (su plan Google AI Pro no la incluye)
+- **Fase 2:** falta migrar la lógica real (`calculos.py`, `motor_planos.py`, `asistente_ia.py`) a funciones serverless — hasta ahora solo existe una función de prueba que confirma que la conexión a Gemini funciona
+- Aún no se probó el runtime real de Vercel en local (`vercel dev`) — se evitó a propósito porque puede pedir iniciar sesión en la cuenta de Vercel del usuario o crear un proyecto en la nube; la función de prueba se verificó ejecutando el código Python directamente
 
 ---
 
 ## 📋 Siguiente
 
 ### PROYECTO MAYOR — Migración arquitectural (arquitectura aprobada 2026-08-08, plan de 6 fases)
-1. **Fase 1:** Frontend React + Tailwind local, conectado al Supabase actual, login migrado a Supabase Auth
-2. **Fase 2:** Backend — migrar `calculos.py`, `motor_planos.py`, `asistente_ia.py` (Claude → Gemini 3.5 Flash-Lite) a funciones serverless Python en `/api`
-3. **Fase 3:** Reconstrucción de los 11 módulos como componentes React (React Aria + shadcn/ui + Kibo UI + Preline + Framer Motion), con identidad de marca
-4. **Fase 4:** Deploy en Vercel (plan gratuito), sin GitHub, vía Vercel CLI
-5. **Fase 5:** App Android nativa con React Native + Expo
-6. **Fase 6:** Corte de Streamlit Cloud — la app en Streamlit sigue siendo la única versión en uso real hasta completar esta fase
+1. ✅ **Fase 1:** Frontend React + Tailwind local, conectado al Supabase actual, login migrado a Supabase Auth
+2. 🔄 **Fase 2 (en curso):** Backend — migrar `calculos.py`, `motor_planos.py`, `asistente_ia.py` (Claude → Gemini 3.5 Flash-Lite) a funciones serverless Python en `/api`
+3. ⬜ **Fase 3:** Reconstrucción de los 11 módulos como componentes React (React Aria + shadcn/ui + Kibo UI + Preline + Framer Motion), con identidad de marca
+4. ⬜ **Fase 4:** Deploy en Vercel (plan gratuito), sin GitHub, vía Vercel CLI — primer momento en que se necesitará iniciar sesión en una cuenta de Vercel
+5. ⬜ **Fase 5:** App Android nativa con React Native + Expo
+6. ⬜ **Fase 6:** Corte de Streamlit Cloud — la app en Streamlit sigue siendo la única versión en uso real hasta completar esta fase
 
 ### PENDIENTE — Bugs de producción en la versión Streamlit (legado, plan ya listo, no se ha tocado)
 - CTA del hero — `index.html` cambiar `href="#"` → URL real

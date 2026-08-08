@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-green: #1f6f54;
+  --color-brand-gold: #c9a45c;
+  --color-brand-bg: #0f1a14;
+  --color-brand-surface: #162019;
+  --color-brand-text: #e8f0eb;
+
+  --font-body: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-heading: "Playfair Display", serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-brand-bg);
+  color: var(--color-brand-text);
+  font-family: var(--font-body);
+}
