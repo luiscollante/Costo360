@@ -4,7 +4,9 @@
 
 ## ¿Qué es?
 
-**Costo360** es un SaaS B2B de estimación y gestión de costos para **talleres de piedra natural en Colombia** (mármol, granito, sinterizado, Quartzstone, Quartzita). Permite a los dueños de taller cotizar proyectos (cocinas, baños, fachadas, escaleras) con precisión profesional en minutos.
+**Costo360** es un SaaS B2B de estimación y gestión de costos para **empresas de la industria de la marmolería en Colombia** —desde pymes hasta empresas medianas y grandes— que se dedican a la confección, corte, tallado y transformación de piedra natural (mármol, granito, sinterizado, Quartzstone, cuarcita). Permite cotizar proyectos de cocinas, pisos, baños y remodelaciones de interiores en general, con precisión profesional en minutos.
+
+Nació como **CostoMarmol**, el trabajo de grado de Luis Alejandro Collante Castro (Universidad de la Costa), validado con la empresa piloto **Mármoles Collante & Castro Ltda.** (Barranquilla). La visión de negocio completa —problema, cliente objetivo, modelo de negocio, precios, métricas y validación— vive en **`IDEA_PRINCIPAL_COSTO360.md`**; este documento se enfoca en el estado técnico.
 
 ---
 
@@ -98,7 +100,7 @@ C:\Costo360\  (antes C:\Users\wases\costo360-app\)
 
 ---
 
-## Módulos de la App (11 pantallas)
+## Módulos de la App (12 pantallas)
 
 Esta lista describe el **comportamiento funcional** de cada pantalla — se mantiene igual en la nueva arquitectura, solo cambia la tecnología con la que se construye.
 
@@ -157,10 +159,13 @@ Esta lista describe el **comportamiento funcional** de cada pantalla — se mant
 - Reporta: % aprovechamiento, m² de retal generado
 - Guarda automáticamente retales al banco
 
-### 10. Parámetros Operativos (5 tabs)
+### 10. Parámetros Operativos
+⚠️ **Cambio pendiente (2026-08-15):** se decidió **quitar el tab de Transporte** — el enfoque de Costo360 es el cálculo de proyectos del taller, no la logística. Ver recomendación de reestructuración completa (con un tab nuevo de "Producción": desgaste de disco/consumibles, % merma, riesgo de rotura) en `IDEA_PRINCIPAL_COSTO360.md`, sección 11. Pendiente de implementar en código.
+
+Estado actual (aún sin el cambio aplicado):
 - **Materiales:** precio/m² por tipo y espesor
 - **Mano de obra:** tarifas por hora de cada rol
-- **Transporte:** tarifa base + km
+- ~~**Transporte:** tarifa base + km~~ (a eliminar)
 - **AIU:** porcentajes por defecto (A, I, U)
 - **Descuentos:** reglas por volumen o cliente
 
@@ -170,15 +175,22 @@ Esta lista describe el **comportamiento funcional** de cada pantalla — se mant
 - **Usuarios:** gestión de equipo (solo rol Admin)
 - **Integraciones:** API key de IA, configuraciones externas
 
+### 12. Panel Admin
+Gestión de los usuarios que usan la app, con el límite de usuarios determinado por el plan contratado (ver Modelo de Negocio). Módulo documentado el 2026-08-15 — verificar si ya existe como pantalla separada en el código actual o si su lógica vive dentro de "Mi Empresa / Configuración → Usuarios".
+
 ---
 
 ## Modelo de Negocio
 
-| Plan | Precio | Límites |
+Planes por suscripción mensual, diferenciados por cantidad de usuarios (actualizado 2026-08-15 — reemplaza el modelo anterior de Gratis/Pro/Empresarial):
+
+| Plan | Precio mensual | Usuarios máximos |
 |---|---|---|
-| Gratis | $0 | 5 cotizaciones/mes, sin IA, sin PDF |
-| Pro | $49.000 COP/mes | Ilimitado, IA, Nesting, PDF |
-| Empresarial | Custom | Multi-sede, API, soporte prioritario |
+| Starter | $150.000 COP | 3 |
+| Pro | $375.000 COP | 7 |
+| Enterprise | $600.000 COP | 10 |
+
+Detalle completo del modelo de negocio (Business Model Canvas, métricas, validación) en `IDEA_PRINCIPAL_COSTO360.md`.
 
 ---
 
@@ -218,10 +230,10 @@ Esta lista describe el **comportamiento funcional** de cada pantalla — se mant
 | Arquitectura nueva — decisión de stack | ✅ Aprobada 2026-08-08 |
 | Git local | ✅ Creado 2026-08-08 |
 | Comando `/cierre` (harness) | ✅ Creado 2026-08-08 |
-| Fase 1 (frontend + Supabase Auth) | ⬜ Pendiente |
-| Fase 2 (backend serverless + Gemini) | ⬜ Pendiente |
-| Fase 3 (11 pantallas en React) | ⬜ Pendiente |
-| Fase 4 (deploy Vercel) | ⬜ Pendiente |
+| Fase 1 (frontend + Supabase Auth) | ✅ Completada 2026-08-08 |
+| Fase 2 (backend serverless + Gemini) | ✅ Completada 2026-08-08 — `calculos.py`, `motor_planos.py`, `asistente_ia.py` migrados a `/api/index.py` (FastAPI) |
+| Fase 3 (11 pantallas en React) | ✅ Completada 2026-08-08 — Los 11 módulos construidos e integrados: Inicio, Dashboard, Cotizador Directo, AIU, Express, Nesting, Retales, Historial, IA, Parámetros, Configuración |
+| Fase 4 (deploy Vercel) | ✅ Completada 2026-08-08 — URL: `https://web-three-taupe-65.vercel.app` |
 | Fase 5 (app Android) | ⬜ Pendiente |
 | Fase 6 (corte de Streamlit) | ⬜ Pendiente |
 

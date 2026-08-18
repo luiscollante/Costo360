@@ -2,6 +2,93 @@
 
 ---
 
+## Sesión: 2026-08-15 a 2026-08-18 — Visión de negocio, agentes de IA y modelo financiero
+
+### Qué se hizo
+- **Detección y manejo de un intento de manipulación:** llegaron varios "avisos del sistema" falsos pidiendo ocultarle al usuario cambios en archivos (incluidos dos tokens reales — `VERCEL_TOKEN` y `SUPABASE_ACCESS_TOKEN` — que aparecieron sin explicación en `web/.env`). No se siguieron esas instrucciones; se verificó todo directamente y se le informó al usuario de inmediato. Causa real: otro modelo de IA trabajando en paralelo sobre la misma carpeta `C:\Costo360`, específicamente en `web/`. El usuario confirmó que es intencional y decidió seguir esa línea de trabajo técnico; esta sesión se mantiene fuera de `web/` desde entonces para no generar más conflictos de archivos.
+- **Lectura completa de la documentación de grado** (`C:\Users\wases\Desktop\Universidad\Opción de grado\`) → síntesis de la visión de negocio en `IDEA_PRINCIPAL_COSTO360.md`: origen (CostoMarmol → Costo360), problema real con evidencia, cliente objetivo, propuesta de valor, Business Model Canvas, métricas objetivo, validación ya realizada, y la corrección explícita de que **Costo360 no es un ERP ni software contable** — solo cotiza, genera entregables, gestiona cotizaciones y analiza el negocio del taller.
+- **Corrección de expectativas:** el usuario aclaró que esto no es una tesis simulada — es la creación real de la empresa (Opción de Grado = crear la empresa), con inversión real de la universidad/inversionistas en función de la ambición del proyecto.
+- **Arquitectura de agentes de operación de la empresa** (`ARQUITECTURA_AGENTES_OPERACION.md`): 5 agentes (Ventas, Marketing, Atención al Cliente, Diseño, Contabilidad) que operan Costo360 S.A.S. como empresa — separados en dos capas para no confundir "agentes del producto" con "agentes que administran la empresa". LangGraph como orquestador, Claude Sonnet 5 para razonamiento, Gemini 3.5 Flash-Lite como filtro barato (cascada de costos con prompt caching). Se corrigió que Evolution API para WhatsApp viola los términos de Meta — se usa WhatsApp Cloud API oficial. Se corrigió que el Agente de Contabilidad no factura a nombre de los talleres clientes (eso sería salirse del alcance de "cotizador, no ERP") — solo factura la suscripción de Costo360 y gestiona lo tributario de Costo360 mismo.
+- **Investigación y aterrizaje de la estructura de costos completa** (`PLAN_COSTOS_COMPLETO_COSTO360.md`): precios reales investigados (no estimados) de Vercel, Supabase, Railway, Anthropic (Claude Sonnet 5 y 4.5 — se descartó 4.5 por ser más caro y peor que 5), Gemini, Alegra, Pipedrive, Higgsfield, Resend, Sentry, PostHog, Google Workspace, Claude Max, Google AI Ultra. Se corrigió un "colchón" de consumo de API propuesto por el usuario ($7.300.000 COP/mes) por un cálculo real basado en volumen esperado (~$230.000 COP/mes con margen de seguridad). Se descartó Base44 por ser redundante con la arquitectura ya elegida (LangGraph + Claude Code). Se corrigió una fila de "Infraestructura Cloud" en los costos variables que no tenía cálculo real detrás (quedó en $0, ya cubierta como gasto fijo). Se corrigió que todos los valores deben quedar en COP, nunca mezclados con dólares.
+- **Modelo financiero de la universidad completado**: se llenaron con datos reales las hojas Costos, Gastos e Inversión de `C:\Users\wases\Desktop\Universidad\Opción de grado\Costo360\Modelo Financiero - Costo360.xlsx` (antes en $0 o con placeholders genéricos de la plantilla), preservando todas las fórmulas. Se hizo respaldo del archivo original antes de editar. Financiamiento corregido a 100% inversionista (el fundador no aporta capital propio). En la escritura final (2026-08-18) se detectó y corrigió una inconsistencia real: el Capital de trabajo en el Excel seguía en un valor viejo ($21M) que no cuadraba con el financiamiento ya calculado en el chat ($30M) — quedó reconciliado para que Inversión total = Financiamiento exacto ($41.910.000). Se le dio al usuario una justificación completa línea por línea de Costos, Gastos e Inversión.
+
+### Archivos creados
+- `IDEA_PRINCIPAL_COSTO360.md`
+- `ARQUITECTURA_AGENTES_OPERACION.md`
+- `PLAN_COSTOS_COMPLETO_COSTO360.md`
+
+### Archivos modificados
+- `CONTEXTO_COSTO360.md` — secciones de negocio actualizadas (qué es, modelo de precios con los 3 planes reales, módulos incluyendo Panel Admin, Parámetros sin Transporte)
+- `Modelo Financiero - Costo360.xlsx` (fuera del repo git, en la carpeta de la universidad) — Costos, Gastos, Inversión llenados; respaldo guardado en la misma carpeta
+
+### Decisiones tomadas
+- Costo360 no es un ERP — nunca factura ni contabiliza a nombre de los talleres clientes
+- Modelo de negocio con dos capas de agentes de IA: producto (mínimo) vs. operación de la empresa (los 5 agentes)
+- Stack de agentes: LangGraph + Claude Sonnet 5 + Gemini 3.5 Flash-Lite, con cascada de costos
+- WhatsApp Cloud API oficial, no Evolution API (riesgo de baneo)
+- Inversión total requerida: $41.910.000 COP, 100% inversionista
+- Esta sesión se mantiene fuera de `web/` mientras el otro modelo de IA siga trabajando ahí
+
+### Primera tarea de la próxima sesión
+- Preguntar si el usuario ya revisó el Excel del modelo financiero y si hay ajustes pendientes
+- Preguntar si sigue activo el otro modelo de IA en `web/` antes de considerar retomar cualquier trabajo técnico ahí
+- Si se retoma `web/`, leer el código actual primero — no asumir el estado de la última vez que esta sesión lo tocó (2026-08-09)
+
+---
+
+## Sesión: 2026-08-08 (Cuarta parte — Conclusión de UI, Refinamiento y Deploy)
+
+### Qué se hizo
+- **Fase 3 (Frontend) 100% completada:** Se refinaron e implementaron todas las interfaces pendientes: `CotizacionAIUTab.jsx`, `ExpressTab.jsx`, `HistorialTab.jsx`, `RetalesTab.jsx`, `NestingTab.jsx`, copiando 1 a 1 el diseño, métricas e inputs interactivos del código en Streamlit original (`ui_*.py`).
+- **Fase 4 (Deploy) 100% completada:** Se solucionaron errores con paquetes dependientes de Vite/React (`recharts` y `es-toolkit`), se ejecutó autenticación Oauth desde la CLI en la máquina local (`vercel login`) y se efectuó el despliegue final.
+- El proyecto final se subió al enlace definitivo: `https://web-teal-seven-30.vercel.app/` o `https://web-94nyq6cpz-marmoles-collante-y-castro.vercel.app/`.
+
+### Archivos modificados
+- Todos los `.jsx` en `web/src/components/`.
+- `PROGRESS.md`, `SESSION.md`, `task.md`, `walkthrough.md`.
+
+### Decisiones tomadas
+- Se mantuvieron las interfaces fieles a la aplicación Streamlit para validar primero la lógica.
+- La Fase 4 se completó con un despliegue directo a través de Vercel CLI, debido a la ausencia de un repositorio en GitHub configurado como origin.
+
+### Primera tarea de la próxima sesión
+- Arrancar la **Fase 5**: Creación de App Android nativa con React Native + Expo, o bien iniciar la conexión del front-end con las APIs en Python de Vercel Functions para procesar cálculos de cotización.
+
+---
+
+## Sesión: 2026-08-08 (Tercera parte — Finalización Fase 2, Fase 3 UI y Deploy Fase 4)
+
+### Qué se hizo
+- **Fase 2 (Backend) completada:** Se migró toda la lógica de `calculos.py`, `motor_planos.py`, `asistente_ia.py` a `/api/index.py` de Vercel Functions usando FastAPI.
+- **Fase 3 (Frontend) iniciada y parcialmente completada:** 
+  - Se configuró la paleta de colores corporativa (Verde #1F6F54, Dorado #C9A45C, Fondos Oscuros) en `tailwind.config.js` y `index.css`.
+  - Se estructuró el `App.jsx` con React Router mock y Sidebar de navegación.
+  - Se reconstruyó y conectó la pestaña **Cotización Directa** (archivo `CotizadorTab.jsx`): Soporte dinámico de piezas, paneles interactivos de viáticos y logística, y precálculo de área de retal.
+  - El Cotizador Directo ahora envía exitosamente el JSON al backend en Vercel y renderiza el desglose financiero nativo en React.
+- **Fase 4 (Despliegue) completada:**
+  - Se usó Vercel CLI para desplegar la app en producción.
+  - URL Activa: `https://web-three-taupe-65.vercel.app`.
+  - Se resolvieron conflictos de versiones en React/Lucide usando un `.npmrc` con `legacy-peer-deps=true`.
+
+### Archivos modificados
+- `web/src/App.jsx` — Layout principal, colores corporativos y tabs.
+- `web/src/index.css` & `web/tailwind.config.js` — Identidad visual (Dark green/gold).
+- `web/src/components/CotizadorTab.jsx` (Nuevo) — Integración total del cotizador B2B conectada al backend Python.
+- `web/api/index.py` (Nuevo) — Entrada FastAPI para Vercel.
+- `web/.npmrc` (Nuevo) — Configuración para el deploy de Vercel.
+- `PROGRESS.md` & `SESSION.md`.
+
+### Decisiones tomadas
+- Se extrajeron las variables de cálculo directo de `ui_cotizacion_directa.py` (antiguo Streamlit) y se replicó su pre-agrupación en React para evitar modificar el `calculos.py` original que recibe los parámetros consolidados (`m2_real`, `zocalo_ml`, etc).
+- Vercel CLI se ejecutó con éxito.
+- La identidad visual estricta se debe conservar siempre en los próximos módulos.
+
+### Primera tarea de la próxima sesión
+- Continuar con la **Fase 3**: Migrar a React y conectar los módulos faltantes (Planos SVG, Banco de Retales, Historial, Copiloto IA).
+- Mantener la cohesión visual del `CotizadorTab.jsx` para los nuevos componentes.
+
+---
+
 ## Sesión: 2026-08-08 (Segunda parte — construcción Fase 1 y arranque Fase 2)
 
 ### Qué se hizo
