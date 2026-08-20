@@ -21,13 +21,17 @@
 - **Visión de negocio consolidada (2026-08-15):** lectura completa de la documentación de grado (Opción de Grado, CUC) → `IDEA_PRINCIPAL_COSTO360.md` — origen CostoMarmol→Costo360, problema, cliente objetivo, propuesta de valor, Business Model Canvas, métricas, validación, y la corrección de que Costo360 no es un ERP/software contable.
 - **Arquitectura de agentes de operación definida (2026-08-15 a 18):** `ARQUITECTURA_AGENTES_OPERACION.md` — 5 agentes (Ventas, Marketing, Atención, Diseño, Contabilidad) que operan Costo360 S.A.S. como empresa, con LangGraph + Claude Sonnet 5 + Gemini 3.5 Flash-Lite (cascada de costos con caché), separados en dos capas (producto vs. operación de la empresa) para no salirse del alcance de "cotizador, no ERP".
 - **Estructura de costos completa investigada y definida (2026-08-16 a 18):** `PLAN_COSTOS_COMPLETO_COSTO360.md` — costos variables, infraestructura del producto y de los agentes, monitoreo (Sentry/PostHog), herramientas del fundador (Claude Max, Google AI Ultra), operación general, y costos legales de arranque. Incluye precios reales investigados (no estimados) de Vercel, Supabase, Railway, Anthropic, Gemini, Alegra, Pipedrive, Higgsfield, Resend, Sentry, Google Workspace, Claude Max, Google AI Ultra.
-- **Modelo financiero de la universidad completado (2026-08-16 a 18):** `C:\Users\wases\Desktop\Universidad\Opción de grado\Costo360\Modelo Financiero - Costo360.xlsx` — hojas Costos, Gastos e Inversión llenadas con datos reales y justificados (antes en $0 o con placeholders genéricos). Inversión total requerida: $41.910.000 COP, 100% financiado por inversionista (el fundador no aporta capital propio). Respaldo del archivo original guardado en la misma carpeta.
+- **Modelo financiero de la universidad completado y afinado (2026-08-16 a 19):** `C:\Users\wases\Desktop\Universidad\Opción de grado\Costo360\Modelo Financiero - Costo360.xlsx` — hojas Costos, Gastos e Inversión llenadas con datos reales y justificados (antes en $0 o con placeholders genéricos). Respaldo del archivo original guardado en la misma carpeta.
+- **Límites de usuario por plan actualizados (2026-08-18):** Starter 1 usuario único, Pro hasta 5, Enterprise hasta 10 — actualizado en `CONTEXTO_COSTO360.md` e `IDEA_PRINCIPAL_COSTO360.md`. Aclarado que la unidad de venta sigue siendo la suscripción por taller, no el usuario individual.
+- **Fusión con la investigación propia del usuario (2026-08-18/19):** se combinó `web/Costo360 - Modelo Financiero e Infraestructura de Costos.xlsx` (simulación de tokens por agente mucho más rigurosa, stack de infraestructura más completo) con `PLAN_COSTOS_COMPLETO_COSTO360.md`. Se detectó y explicó un doble conteo en la hoja "Resumen Ejecutivo" del archivo del usuario. Se resolvieron 7 conflictos de cifras con decisión explícita del usuario en cada uno.
+- **Equipo físico presupuestado (2026-08-19):** investigación de 12 portátiles potentes (32-64GB RAM) con precios y enlaces reales; elegido ASUS ROG Zephyrus G14 (2026) AMD Ryzen AI 9 370HX + RTX 5080 + 64GB — confirmado que se vende en Colombia (Falabella), precio estimado pendiente de verificación exacta de esa variante. Se agregó equipo de continuidad operativa (monitor, UPS, router de respaldo, celular de prueba, SSD externo) y una reserva discrecional ("Otro"). Se corrigió "Desarrollo de tecnología/app" de una cifra sin sustento ($4M) a un cálculo real basado en consumo extra de API durante la fase de pruebas ($5M).
+- **Inversión total final: $73.150.000 COP, 100% financiada por inversionista** (el fundador no aporta capital propio).
 
 ---
 
 ## 🔄 En progreso
 
-- Modelo financiero listo para presentar — pendiente que el usuario lo revise en Excel y confirme que no falta nada antes de la entrega/sustentación.
+- Modelo financiero completo y afinado — pendiente que el usuario verifique el precio real de la variante de 64GB del ASUS ROG Zephyrus G14 en Falabella Colombia antes de comprarlo (el número en Inversión es un estimado, todo lo demás está confirmado o justificado).
 - Estado real de `web/` (la otra IA) sin verificar por esta sesión — si se retoma el trabajo técnico, primero hay que leer el código actual, no asumir el de la última vez que esta sesión lo tocó (2026-08-09).
 
 ---
@@ -35,8 +39,9 @@
 ## 📋 Siguiente
 
 ### Modelo financiero / negocio
-- Revisar con el usuario si la proyección de Ingresos (crecimiento a 171 clientes en el Año 1) sigue pareciendo realista o se ajusta — quedó señalado varias veces, nunca resuelto.
-- Si se solicita, seguir afinando cifras del modelo financiero antes de la entrega a la universidad.
+- Verificar precio real del ASUS ROG Zephyrus G14 (64GB, AMD, RTX 5080) en Falabella Colombia antes de la compra.
+- El usuario decidió explícitamente NO revisar la proyección de Ingresos (171 clientes en el Año 1) por ahora — se mantiene tal como está en el Excel, decisión tomada el 2026-08-18.
+- El modelo financiero está listo para entrega/sustentación salvo la verificación del punto anterior.
 
 ### Migración técnica (pausada mientras el otro modelo trabaja en `web/`)
 1. ✅ **Fase 1:** Frontend + Supabase Auth (construido por esta sesión)
@@ -55,4 +60,4 @@
 
 ---
 
-*Última actualización: 2026-08-18*
+*Última actualización: 2026-08-19*

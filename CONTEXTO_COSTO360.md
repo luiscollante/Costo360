@@ -176,19 +176,21 @@ Estado actual (aún sin el cambio aplicado):
 - **Integraciones:** API key de IA, configuraciones externas
 
 ### 12. Panel Admin
-Gestión de los usuarios que usan la app, con el límite de usuarios determinado por el plan contratado (ver Modelo de Negocio). Módulo documentado el 2026-08-15 — verificar si ya existe como pantalla separada en el código actual o si su lógica vive dentro de "Mi Empresa / Configuración → Usuarios".
+Gestión de los usuarios que usan la app, con el límite de usuarios determinado por el plan contratado (ver Modelo de Negocio). La validación del límite es lógica simple del producto (comparar cantidad de usuarios activos contra el máximo del plan) — no requiere un agente de IA. Módulo documentado el 2026-08-15 — verificar si ya existe como pantalla separada en el código actual o si su lógica vive dentro de "Mi Empresa / Configuración → Usuarios".
 
 ---
 
 ## Modelo de Negocio
 
-Planes por suscripción mensual, diferenciados por cantidad de usuarios (actualizado 2026-08-15 — reemplaza el modelo anterior de Gratis/Pro/Empresarial):
+Planes por suscripción mensual, diferenciados por cantidad de usuarios (actualizado 2026-08-18 — límites de usuario ajustados):
 
 | Plan | Precio mensual | Usuarios máximos |
 |---|---|---|
-| Starter | $150.000 COP | 3 |
-| Pro | $375.000 COP | 7 |
-| Enterprise | $600.000 COP | 10 |
+| Starter | $150.000 COP | 1 (único usuario) |
+| Pro | $375.000 COP | Hasta 5 |
+| Enterprise | $600.000 COP | Hasta 10 |
+
+La unidad que se vende y se factura es la **suscripción por taller**, no el usuario individual — el límite de usuarios es una característica del plan, no una unidad de venta aparte. Por eso la "Cantidad vendida por mes" en el modelo financiero (Excel) sigue representando número de talleres/clientes, sin cambios en su definición.
 
 Detalle completo del modelo de negocio (Business Model Canvas, métricas, validación) en `IDEA_PRINCIPAL_COSTO360.md`.
 

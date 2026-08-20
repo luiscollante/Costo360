@@ -2,6 +2,36 @@
 
 ---
 
+## Sesión: 2026-08-18 a 2026-08-19 — Afinamiento final del modelo financiero
+
+### Qué se hizo
+- **Límites de usuario por plan actualizados:** Starter 1 usuario único, Pro hasta 5, Enterprise hasta 10 (antes 3/7/10). Se aclaró que la unidad de venta en el Excel sigue siendo la suscripción por taller, no el usuario individual — el control del límite es lógica simple del producto (Panel Admin), no tarea de un agente de IA.
+- **Verificación de un cambio manual del usuario:** el usuario editó directamente en Excel el % de crecimiento anual de precio y cantidad en la hoja Ingresos (precio Año 5: 3,5%→3,6%; cantidad Año 2-5: 35/45/55/65%→40/48/60/68%). Se confirmó que ya quedó guardado correctamente, sin necesidad de acción adicional.
+- **Fusión con investigación propia del usuario:** el usuario aportó `web/Costo360 - Modelo Financiero e Infraestructura de Costos.xlsx`, con una simulación de consumo de tokens mucho más rigurosa (por request/agente real) y un stack de infraestructura más completo que el propio. Se reconciliaron ambas fuentes, resolviendo 7 puntos con el usuario: Claude Max y Google AI Ultra se presupuestan al plan completo (no al plan económico que traía su archivo); sin GitHub; Plan Enterprise se mantiene en $600.000 (no $850.000); se mantiene la proyección de 171 clientes ya cargada (no la de 100 clientes, más conservadora, de su archivo); Alegra y Pipedrive se mantuvieron en los planes ya elegidos por decisión propia; Google Workspace se mantiene en 1 cuenta. Se detectó y explicó al usuario un doble conteo real en la hoja "Resumen Ejecutivo" del archivo del usuario (no fue una confusión de USD/COP, se demostró con la aritmética exacta).
+- Se adoptaron piezas nuevas y valiosas del archivo del usuario: simulación de tokens por 6 agentes ($663.117 COP/mes con colchón del 50%), Railway más realista ($187.719, cubre Docker+WeasyPrint+agentes — ambos gratis, el costo es el servidor), cuentas de desarrollador Apple/Google Play ($32.319/mes) y Tavily/Serper para prospección web ($78.216/mes).
+- **Investigación de 12 portátiles potentes** (32-64GB RAM) con precios reales y enlaces, separados en Top 3 recomendado vs. el resto, con precios en COP. Se descartaron Razer y Framework por no tener garantía oficial en Colombia (el usuario pidió explícitamente "garantías para los inversionistas").
+- El usuario pidió específicamente un ASUS con AMD + 64GB + GPU de última generación — se identificó el **ASUS ROG Zephyrus G14 (2026), AMD Ryzen AI 9 370HX, RTX 5080, 64GB**, y se confirmó que se vende oficialmente en Colombia (Falabella, vendedor Atmósfera Tecnológica) — precio de la variante exacta de 64GB quedó como estimado, pendiente de verificación directa por el usuario.
+- Se llenó "Equipos y maquinaria" (laptop + monitor + UPS + router de respaldo + celular de prueba + SSD externo, todo con justificación de continuidad operativa, no por lujo) y "Otro" (reserva discrecional de $3.000.000, la "carta de navidad" del usuario, separada de los Imprevistos).
+- Se corrigió "Desarrollo de tecnología/app": el usuario preguntó por qué $4.000.000 y no otra cifra — se reconoció honestamente que era una cifra sin cálculo real detrás, y se reemplazó por una justificación concreta (consumo extra de API durante ~3 meses de pruebas/depuración activa, ~2,5x el consumo operativo estable), ajustada a $5.000.000.
+- **Inversión total final: $73.150.000 COP, 100% financiada por inversionista.**
+
+### Archivos modificados
+- `PLAN_COSTOS_COMPLETO_COSTO360.md` — actualizado varias veces con cada corrección/fusión
+- `CONTEXTO_COSTO360.md`, `IDEA_PRINCIPAL_COSTO360.md` — límites de usuario por plan actualizados
+- `Modelo Financiero - Costo360.xlsx` (fuera del repo git, carpeta de la universidad) — hojas Gastos e Inversión reescritas varias veces con los números finales; Costos sin cambios desde el 18 de agosto
+
+### Decisiones tomadas
+- Ver la lista de 7 puntos resueltos arriba (Claude Max/Google AI Ultra plan completo, sin GitHub, Enterprise $600.000, Ingresos sin cambios, etc.)
+- ASUS ROG Zephyrus G14 (2026) AMD+RTX5080+64GB como portátil de desarrollo
+- Estructura final de Inversión: Desarrollo tecnología $5.000.000, Equipos y maquinaria $21.400.000, RNBD $400.000, Capital de trabajo $33.000.000, Registro legal $1.200.000, Marketing lanzamiento $2.500.000, Otro $3.000.000, Imprevistos $6.650.000 → Total $73.150.000, 100% inversionista
+
+### Primera tarea de la próxima sesión
+- Preguntar si el usuario ya verificó el precio real del ASUS ROG Zephyrus G14 (64GB) en Falabella y si hay que ajustar la cifra en Inversión
+- Preguntar si sigue activa la otra IA en `web/` antes de considerar retomar cualquier trabajo técnico ahí
+- Confirmar si el modelo financiero ya está listo para entrega/sustentación o si falta algo más
+
+---
+
 ## Sesión: 2026-08-15 a 2026-08-18 — Visión de negocio, agentes de IA y modelo financiero
 
 ### Qué se hizo
