@@ -115,12 +115,12 @@ Esta lista reemplaza/actualiza la de `CONTEXTO_COSTO360.md`, que documentaba 11 
 
 **Versión de marzo 2026 (estudio de viabilidad financiera, pitch a inversores):** plan único de **$150.000 COP/mes**, ancorado al costo de una sola placa mal cortada (ROI inmediato). Break-even proyectado con 30 clientes activos; a 100 clientes, margen neto proyectado >60%.
 
-**Versión actual (ajustada 2026-08-18) — planes por número de usuarios:**
+**Versión actual (ajustada 2026-08-21) — planes por número de usuarios:**
 
 | Plan | Precio mensual | Usuarios máximos |
 |---|---|---|
 | Starter | $150.000 COP | 1 (único usuario) |
-| Pro | $375.000 COP | Hasta 5 |
+| Pro | $375.000 COP | 1 (único usuario) |
 | Enterprise | $600.000 COP | Hasta 10 |
 
 **Aclaración de unidad de venta:** lo que se vende y se factura es la suscripción por taller, no el usuario individual — el límite de usuarios es una característica del plan (para diferenciar tamaño de taller), no una unidad de venta aparte. El control de ese límite es lógica simple del producto (Panel Admin: comparar usuarios activos contra el máximo del plan), no algo que requiera un agente de IA — aunque sí es una buena señal comercial para que el Agente de Ventas/Atención sugiera una subida de plan cuando un taller llega al tope.

@@ -176,18 +176,18 @@ Estado actual (aún sin el cambio aplicado):
 - **Integraciones:** API key de IA, configuraciones externas
 
 ### 12. Panel Admin
-Gestión de los usuarios que usan la app, con el límite de usuarios determinado por el plan contratado (ver Modelo de Negocio). La validación del límite es lógica simple del producto (comparar cantidad de usuarios activos contra el máximo del plan) — no requiere un agente de IA. Módulo documentado el 2026-08-15 — verificar si ya existe como pantalla separada en el código actual o si su lógica vive dentro de "Mi Empresa / Configuración → Usuarios".
+Gestión de los usuarios que usan la app, con el límite de usuarios determinado por el plan contratado (ver Modelo de Negocio). Solo aplica de verdad en el plan Enterprise (10 usuarios) — Starter y Pro tienen un único usuario. Flujo completo de creación de cuentas, invitaciones y restablecimiento de contraseña definido el 2026-08-21 en "Sistema de Usuarios y Multi-tenancy" más abajo. Módulo documentado el 2026-08-15 — verificar si ya existe como pantalla separada en el código actual o si su lógica vive dentro de "Mi Empresa / Configuración → Usuarios".
 
 ---
 
 ## Modelo de Negocio
 
-Planes por suscripción mensual, diferenciados por cantidad de usuarios (actualizado 2026-08-18 — límites de usuario ajustados):
+Planes por suscripción mensual, diferenciados por cantidad de usuarios (actualizado 2026-08-21 — Pro pasa de "hasta 5" a 1 único usuario):
 
 | Plan | Precio mensual | Usuarios máximos |
 |---|---|---|
 | Starter | $150.000 COP | 1 (único usuario) |
-| Pro | $375.000 COP | Hasta 5 |
+| Pro | $375.000 COP | 1 (único usuario) |
 | Enterprise | $600.000 COP | Hasta 10 |
 
 La unidad que se vende y se factura es la **suscripción por taller**, no el usuario individual — el límite de usuarios es una característica del plan, no una unidad de venta aparte. Por eso la "Cantidad vendida por mes" en el modelo financiero (Excel) sigue representando número de talleres/clientes, sin cambios en su definición.
@@ -198,10 +198,28 @@ Detalle completo del modelo de negocio (Business Model Canvas, métricas, valida
 
 ## Sistema de Usuarios y Multi-tenancy
 
-- **Roles:** Admin / Operario
+- **Roles:** Admin / Operario (solo aplica en Enterprise — Starter y Pro tienen un único usuario, sin necesidad de roles)
 - **Aislamiento de datos:** Row Level Security en Supabase — cada taller solo ve sus propios datos
 - **Config por usuario:** claves de config con sufijo `_{user_id}` en la DB (legado; con Supabase Auth pasa a basarse en `auth.uid()`)
 - El Admin puede crear/invitar operarios al mismo taller
+
+### Identidad y login (definido 2026-08-21)
+
+**Principio base:** el correo electrónico es siempre el identificador de login (vía Google OAuth o correo+contraseña) — nunca el "nombre de usuario". El nombre de usuario es un campo de perfil separado, puramente visual (aparece en el panel y en los PDFs generados), editable en cualquier momento sin afectar cómo la persona inicia sesión. Esto se apoya directamente en las capacidades nativas de Supabase Auth, sin lógica adicional que construir a mano.
+
+**Starter y Pro (1 usuario):**
+- La cuenta se crea automáticamente con el correo usado en la compra.
+- Si el registro fue con Google (OAuth): la cuenta queda ligada solo a Google — **sin contraseña de Costo360 aparte** (más simple y más seguro; decisión confirmada por el usuario). El usuario puede cambiar su nombre visible cuando quiera.
+- Si el registro fue escribiendo el correo manualmente: el usuario elige su propio nombre visible y contraseña al momento de registrarse (flujo estándar de correo+contraseña de Supabase Auth).
+- Al ser un único usuario por cuenta, no hay distinción de roles — la misma persona administra su cuenta.
+
+**Enterprise (10 usuarios):**
+- Se crean automáticamente las 10 cuentas al momento de la compra. Quien compra queda con **rol Admin**.
+- Cada uno de los 10 usuarios recibe un **correo de invitación con un enlace** (flujo nativo `inviteUserByEmail` de Supabase Auth) — ahí elige su propia contraseña. **Nunca se envía una contraseña por correo en texto plano** — es una práctica insegura que se descartó explícitamente a favor del enlace de invitación/restablecimiento, que da la misma experiencia (un botón, llega un correo) sin ese riesgo.
+- **Panel de Gestión de Usuarios**, visible únicamente para el rol Admin, permite:
+  - Enviar un enlace de restablecimiento de contraseña a cualquiera de los 10 usuarios (`resetPasswordForEmail` de Supabase Auth) — el usuario recibe el enlace y elige una contraseña nueva él mismo.
+  - Cambiar el nombre visible / nombre completo de cualquier usuario.
+- Cualquier usuario, sin importar el rol, puede cambiar su propio nombre visible y contraseña las veces que quiera desde su propia cuenta.
 
 ---
 
