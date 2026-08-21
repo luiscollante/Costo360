@@ -187,8 +187,11 @@ Esta es la capa donde sí tiene sentido "casi 100% sin intervención humana". Co
 | Atención al Cliente / Soporte | Resuelve preguntas frecuentes de talleres que ya son clientes de Costo360 (uso de la plataforma, dudas de facturación de su suscripción) | Soporte **del producto y de la suscripción**, nunca contabilidad del taller |
 | Diseño | Apoyo en piezas de marketing y contenido visual de la marca Costo360 | Nuevo — no estaba en la investigación original, agregado porque el usuario lo pidió explícitamente |
 | Contabilidad y Finanzas **de Costo360 S.A.S.** | Factura la suscripción mensual de los talleres clientes (planes Starter/Pro/Enterprise), concilia esos cobros, calcula y paga los impuestos de Costo360 bajo el RST | **Acotado exclusivamente a la contabilidad de Costo360 como empresa** — nunca a la contabilidad de los talleres clientes (esa es la corrección de la sección 4.1) |
+| Legal y Cumplimiento (agregado 2026-08-20) | Contratos (términos de servicio, acuerdos con talleres), cumplimiento regulatorio de Costo360 S.A.S. (Habeas Data/RNBD, protección de datos de prospectos) | Primer filtro y generador de documentos estándar — no reemplaza asesoría legal humana en decisiones societarias mayores |
 
 Esta separación resuelve, de paso, el riesgo de credibilidad ante inversionistas señalado en el análisis anterior: un agente que factura y concilia solo las suscripciones SaaS recurrentes de Costo360 (transacción simple, estandarizada, propia) es mucho más defendible que uno que emite facturas tributarias a nombre de terceros (los talleres) sin supervisión humana.
+
+**Infraestructura validada (2026-08-20):** los 6 agentes corren como servicios independientes dentro de Railway (plataforma administrada), no como VPS individuales autoadministrados — detalle completo y comparación de costos en `ARQUITECTURA_AGENTES_OPERACION.md`, sección 1.1.
 
 ---
 

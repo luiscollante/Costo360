@@ -42,7 +42,8 @@
 | Ítem | Para qué sirve | Costo mensual |
 |---|---|---|
 | Railway (Docker + WeasyPrint + los agentes) | Servidor donde corren los contenedores de los agentes y el motor de PDF. Docker y WeasyPrint son gratis (código abierto) — este es el costo del servidor que los ejecuta, no una licencia. | $187.719 |
-| Claude Sonnet 5 + Gemini (consumo real de los 6 agentes) | Simulación real por request/token (no estimado a ojo): Ventas, Producto/Nesting, Contabilidad, Soporte, Marketing y el Orquestador — con colchón de seguridad del 50% | $663.117 |
+| Claude Sonnet 5 + Gemini (consumo simulado de 5 funciones) | Simulación real por request/token (no estimado a ojo) que aportó el usuario: Ventas, Contabilidad, Soporte, Marketing y una función de orquestación/producto — con colchón de seguridad del 50%. ⚠️ Esta simulación se hizo antes de fijar la lista oficial de 6 agentes (Atención, Ventas, Marketing, Diseño, Contabilidad, Legal) — cubre bien Ventas/Contabilidad/Atención/Marketing, pero no coincide exactamente con Diseño. Pendiente de una simulación dedicada más adelante. | $663.117 |
+| Claude Sonnet 5 + Gemini (consumo estimado — Agente 6: Legal y Cumplimiento) | Agregado el 2026-08-20 al confirmarse el sexto agente. **Estimado por comparación** con el agente de similar volumen/complejidad (Contabilidad: bajo volumen, tareas complejas por request) — no es una simulación por request propia todavía, a diferencia de los otros 5. Ajustar cuando se construya el agente y Langfuse dé datos reales. | $67.000 |
 | Langfuse | Monitorea gasto y fallos de cada agente | $0 (autoalojado) |
 | WhatsApp Cloud API (oficial, Meta) | Canal del Agente de Ventas | $0 (dentro del límite gratuito de 1.000 conversaciones/mes) |
 | Alegra (plan Pro) | El Agente de Contabilidad lo usa para facturar y declarar impuestos de Costo360 — el plan Pro cubre hasta $180M COP/mes en ingresos, muy por encima de lo que factura Costo360 en el Año 1 | $99.900 |
@@ -91,22 +92,22 @@
 | Registro RNBD y cumplimiento Habeas Data | Obligación legal por manejar nombres y cuentas de prospectos | $400.000 |
 | Desarrollo de tecnología/app | Consumo extra de API durante la fase activa de pruebas y depuración (~3 meses antes del lanzamiento comercial, ~2,5x el consumo operativo estable de $663.117/mes por la repetición constante de pruebas) — no cubre las herramientas en sí (Claude Max/Google AI Ultra ya son gasto mensual recurrente), sino el consumo extra de tokens mientras se construye | $5.000.000 |
 | Marketing de lanzamiento | Impulso inicial de pauta + branding | $2.500.000 |
-| Equipos y maquinaria | Ver desglose en la tabla de abajo — portátil + continuidad operativa | $21.400.000 |
+| Equipos y maquinaria | Ver desglose en la tabla de abajo — portátil + continuidad operativa | $18.400.000 |
 | Otro (reserva discrecional) | "Carta de navidad" — fondo aparte de los Imprevistos, para lo puntual que surja en el año y no encaje en ninguna categoría fija | $3.000.000 |
 | Capital de trabajo inicial | ~4 meses de Gastos operativos, ya a escala completa desde el día 1 | $33.000.000 |
-| Imprevistos (10% de las líneas anteriores) | Contingencia estándar | $6.650.000 |
+| Imprevistos (10% de las líneas anteriores) | Contingencia estándar | $6.350.000 |
 
 ### Desglose de "Equipos y maquinaria"
 
 | Equipo | Por qué | Costo |
 |---|---|---|
-| ASUS ROG Zephyrus G14 (2026) — AMD Ryzen AI 9 370HX, RTX 5080, 64GB RAM | Portátil de desarrollo — confirmado que se vende oficialmente en Colombia (Falabella, vendedor Atmósfera Tecnológica); precio de la variante exacta de 64GB **estimado, pendiente de verificar** en [falabella.com.co](https://www.falabella.com.co/falabella-co/shop/asus-rog-zephyrus-g14) antes de comprar | $17.000.000 (estimado) |
+| ASUS ROG Zephyrus G14 (2026) — AMD Ryzen AI 9 370HX, RTX 5080, **32GB RAM** | Portátil de desarrollo — precio real verificado en [Falabella Colombia](https://www.falabella.com.co/falabella-co/shop/asus-rog-zephyrus-g14) ($13.299.000 con 22% descuento, 2TB SSD), con garantía oficial. Redondeado a $14.000.000 por decisión del usuario (deja un pequeño colchón sobre el precio real, útil si el descuento actual no sigue vigente al momento de comprar). La variante de 64GB no está disponible en ninguna tienda colombiana con garantía oficial (la RAM viene soldada de fábrica) — se optó por 32GB, más que suficiente para desarrollo local ya que los agentes en producción corren en la nube (Railway), no en el portátil | $14.000.000 (redondeado) |
 | Monitor externo | Productividad — dashboard, Langfuse, Sentry en pantalla aparte | $1.500.000 |
 | UPS / regulador de voltaje | Continuidad operativa ante cortes de luz | $500.000 |
 | Router/módem de respaldo (4G/5G) | Continuidad ante caídas del internet principal | $400.000 |
 | Celular de prueba gama media | QA real de la app Android/iOS (Fase 5) y de los flujos de WhatsApp Business | $1.500.000 |
 | Disco SSD externo | Respaldo físico adicional a la nube | $500.000 |
-| **Total Equipos y maquinaria** | | **$21.400.000** |
+| **Total Equipos y maquinaria** | | **$18.400.000** |
 
 ---
 
@@ -114,12 +115,12 @@
 
 | Concepto | Monto mensual |
 |---|---|
-| Software y herramientas tecnológicas (B + C + D + E) | $3.039.446 |
-| Gastos operativos totales (todas las categorías, con 10% de contingencia) | $8.249.391 |
-| **Gastos Año 1** (fijo los 12 meses, operación completa desde enero 2027) | **$98.992.692** |
-| **Inversión total requerida** (categoría G) | **$73.150.000** |
+| Software y herramientas tecnológicas (B + C + D + E) | $3.106.446 |
+| Gastos operativos totales (todas las categorías, con 10% de contingencia) | $8.323.091 |
+| **Gastos Año 1** (fijo los 12 meses, operación completa desde enero 2027) | **$99.877.092** |
+| **Inversión total requerida** (categoría G) | **$69.850.000** |
 
-**Financiamiento: 100% inversionista — $73.150.000 COP.** El fundador no pone capital propio; el propósito del modelo financiero es justamente conseguir que la inversión cubra la totalidad del arranque.
+**Financiamiento: 100% inversionista — $69.850.000 COP.** El fundador no pone capital propio; el propósito del modelo financiero es justamente conseguir que la inversión cubra la totalidad del arranque.
 
 ---
 
@@ -145,6 +146,11 @@
 
 - **2026-08-18 (cuarta parte):** se ajustó "Desarrollo de tecnología/app" de $4.000.000 (cifra sin cálculo real detrás) a $5.000.000, justificado como el consumo extra de API durante ~3 meses de pruebas/depuración activa antes del lanzamiento, no como una contingencia genérica. Inversión total: $73.150.000.
 
+- **2026-08-19:** se verificó el precio real del ASUS ROG Zephyrus G14 en Falabella Colombia — la variante de 64GB no existe con garantía oficial en el país (RAM soldada de fábrica). Se optó por la variante de 32GB, con precio real confirmado ($13.299.000, redondeado a $13.300.000) — más que suficiente para desarrollo local, ya que los agentes en producción corren en la nube. Inversión total baja a $69.080.000.
+- **2026-08-20:** por decisión del usuario, el precio del portátil se redondeó de $13.300.000 a $14.000.000 (colchón sobre el precio real, por si el descuento vigente en Falabella cambia). Inversión total: $69.850.000.
+- **2026-08-20 (segunda parte):** se validó la infraestructura de los 6 agentes (Railway con un servicio por agente, no VPS individuales por agente — ver `ARQUITECTURA_AGENTES_OPERACION.md` sección 1.1) y se confirmó el sexto agente, **Legal y Cumplimiento**. Se agregó su consumo estimado de API ($67.000 COP/mes — estimado por comparación, no simulado por request como los otros 5, pendiente de refinar cuando se construya). Gastos Año 1 sube a $99.877.092. La Inversión no cambia (este es un gasto recurrente, no de Inversión).
+
 ## Pendiente
 
-Falta que el usuario verifique el precio real de la variante de 64GB del ASUS ROG Zephyrus G14 en Falabella Colombia antes de la compra — el número en Inversión sigue siendo un estimado.
+- Refinar el consumo estimado del Agente Legal con una simulación real por request cuando se construya (hoy es una comparación, no una medición).
+- La simulación de tokens de los otros 5 agentes ($663.117/mes) se hizo con una lista de funciones ligeramente distinta a los 6 agentes oficiales actuales (incluía "Producto/Nesting" y "Orquestador", que no son agentes de la Capa B) — cubre razonablemente Ventas/Contabilidad/Atención/Marketing, pero convendría una simulación dedicada para Diseño en algún momento.
