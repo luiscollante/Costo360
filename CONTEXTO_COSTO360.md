@@ -207,6 +207,12 @@ Detalle completo del modelo de negocio (Business Model Canvas, métricas, valida
 
 **Principio base:** el correo electrónico es siempre el identificador de login (vía Google OAuth o correo+contraseña) — nunca el "nombre de usuario". El nombre de usuario es un campo de perfil separado, puramente visual (aparece en el panel y en los PDFs generados), editable en cualquier momento sin afectar cómo la persona inicia sesión. Esto se apoya directamente en las capacidades nativas de Supabase Auth, sin lógica adicional que construir a mano.
 
+**Recuperación de contraseña — autoservicio para todos, sin importar el plan (definido 2026-08-21):** cualquier usuario, en Starter, Pro o cualquiera de los 10 de Enterprise, puede recuperar el acceso a su cuenta por sí mismo, sin depender del Admin ni de soporte:
+- Si su cuenta está ligada a **Google**: no hay contraseña de Costo360 que recuperar — vuelve a entrar con el botón de Google y listo (la recuperación, en ese caso, la maneja Google, no Costo360).
+- Si su cuenta usa **correo + contraseña**: pone "olvidé mi contraseña", y le llega un enlace **al mismo correo con el que ya está registrado** (no a un correo de respaldo aparte — se mantiene simple, es el flujo estándar `resetPasswordForEmail` de Supabase Auth). Con ese enlace, elige una contraseña nueva él mismo.
+
+Esto es el mismo mecanismo que ya usa el Admin de Enterprise para restablecerle la contraseña a otro usuario (sección de abajo) — la diferencia es que aquí lo dispara el propio usuario sobre su propia cuenta, no un Admin sobre la de otro.
+
 **Starter y Pro (1 usuario):**
 - La cuenta se crea automáticamente con el correo usado en la compra.
 - Si el registro fue con Google (OAuth): la cuenta queda ligada solo a Google — **sin contraseña de Costo360 aparte** (más simple y más seguro; decisión confirmada por el usuario). El usuario puede cambiar su nombre visible cuando quiera.
