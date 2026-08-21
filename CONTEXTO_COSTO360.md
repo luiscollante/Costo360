@@ -198,7 +198,7 @@ Detalle completo del modelo de negocio (Business Model Canvas, métricas, valida
 
 ## Sistema de Usuarios y Multi-tenancy
 
-- **Roles:** Admin / Operario (solo aplica en Enterprise — Starter y Pro tienen un único usuario, sin necesidad de roles)
+- **Roles:** Admin / Operario, a nivel de permisos (solo aplica en Enterprise — Starter y Pro tienen un único usuario, sin necesidad de roles). **Un único Admin por cuenta Enterprise, fijo** — es quien compró la suscripción; ese rol no se puede reasignar ni duplicar a otros usuarios. Ver "cargo decorativo" más abajo para la personalización de equipo (Gerente/Supervisor/Asesor), que es un campo aparte y no cambia los permisos.
 - **Aislamiento de datos:** Row Level Security en Supabase — cada taller solo ve sus propios datos
 - **Config por usuario:** claves de config con sufijo `_{user_id}` en la DB (legado; con Supabase Auth pasa a basarse en `auth.uid()`)
 - El Admin puede crear/invitar operarios al mismo taller
@@ -214,12 +214,16 @@ Detalle completo del modelo de negocio (Business Model Canvas, métricas, valida
 - Al ser un único usuario por cuenta, no hay distinción de roles — la misma persona administra su cuenta.
 
 **Enterprise (10 usuarios):**
-- Se crean automáticamente las 10 cuentas al momento de la compra. Quien compra queda con **rol Admin**.
+- Se crean automáticamente las 10 cuentas al momento de la compra. Quien compra queda con **rol Admin — único e intransferible dentro de la cuenta** (no se puede asignar el rol Admin a ninguno de los otros 9, ni duplicarlo).
 - Cada uno de los 10 usuarios recibe un **correo de invitación con un enlace** (flujo nativo `inviteUserByEmail` de Supabase Auth) — ahí elige su propia contraseña. **Nunca se envía una contraseña por correo en texto plano** — es una práctica insegura que se descartó explícitamente a favor del enlace de invitación/restablecimiento, que da la misma experiencia (un botón, llega un correo) sin ese riesgo.
+- **Cargo decorativo (definido 2026-08-21):** el Admin puede asignarle a cada uno de los 9 usuarios restantes una etiqueta de cargo — Gerente, Supervisor, Asesor, o "Otro" (texto libre). **Es puramente visual/organizativo, no toca permisos** — todos los 9 siguen teniendo exactamente los mismos permisos de rol Operario que ya tenían, sin importar el cargo que se les asigne. Se guarda como un campo de perfil separado, igual que el nombre visible.
 - **Panel de Gestión de Usuarios**, visible únicamente para el rol Admin, permite:
   - Enviar un enlace de restablecimiento de contraseña a cualquiera de los 10 usuarios (`resetPasswordForEmail` de Supabase Auth) — el usuario recibe el enlace y elige una contraseña nueva él mismo.
   - Cambiar el nombre visible / nombre completo de cualquier usuario.
-- Cualquier usuario, sin importar el rol, puede cambiar su propio nombre visible y contraseña las veces que quiera desde su propia cuenta.
+  - Asignar o cambiar el cargo decorativo de cualquiera de los 9 usuarios (no aplica al propio Admin).
+- Cualquier usuario, sin importar el rol o cargo, puede cambiar su propio nombre visible y contraseña las veces que quiera desde su propia cuenta.
+
+**Nota a considerar más adelante (no bloquea nada hoy):** al ser el rol Admin único e intransferible, no hay definido todavía un plan de "sucesión" si esa persona deja de estar disponible (renuncia, pierde acceso a su correo, etc.). No es urgente resolverlo ahora, pero conviene tenerlo presente antes del lanzamiento — probablemente resuelto vía soporte de Costo360 verificando identidad, no algo que los propios usuarios puedan autogestionar.
 
 ---
 
