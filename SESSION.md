@@ -2,6 +2,43 @@
 
 ---
 
+## Sesión: 2026-08-19 a 2026-08-21 — Sexto agente, auditoría de infraestructura y rediseño del sistema de usuarios
+
+### Qué se hizo
+- **Verificación real del portátil:** se confirmó en Falabella Colombia que el ASUS ROG Zephyrus G14 (AMD Ryzen AI 9 370HX, RTX 5080) no tiene variante de 64GB con garantía oficial (RAM soldada de fábrica) — se optó por 32GB, precio real $13.299.000, redondeado a $14.000.000 por decisión del usuario. Inversión total del modelo financiero quedó en $69.850.000 COP.
+- **Validación de infraestructura de los agentes:** el usuario planteó, tras investigar por su cuenta, alquilar un VPS KVM independiente por agente (Hostinger). Se investigó y se descartó: un VPS es infraestructura cruda que habría convertido al usuario (no desarrollador) en sysadmin de 6 servidores — Railway (con cada agente como servicio dentro de un mismo proyecto) da el mismo aislamiento sin ese trabajo, y sale más barato.
+- **Sexto agente agregado:** Legal y Cumplimiento (contratos, Habeas Data/RNBD), tras confirmación explícita del usuario. Con un límite de alcance importante que el propio usuario cuestionó ("¿esto no es ilegal?"): el agente solo redacta documentos propios de Costo360, nunca da asesoría legal a los talleres clientes, y todo pasa por revisión de un abogado humano — mismo patrón que ya tiene Contabilidad con el contador.
+- **Auditoría técnica del mecanismo de mensajería entre agentes:** el usuario identificó 3 riesgos reales de usar una tabla compartida como cola de mensajes (polling constante, race conditions, sin reintento) y propuso `LISTEN/NOTIFY` como solución. Se auditó con un subagente revisor independiente (aplicando el espíritu de la Fase 2 de `GOAL_LOOP.md`, sin forzar el ciclo completo de 4 fases por ser un cambio pequeño): LISTEN/NOTIFY solo resuelve 1 de los 3 problemas, y además choca con que Railway escala a cero y con el pooler transaccional de Supabase. Veredicto: mantener `FOR UPDATE SKIP LOCKED` + estado/reintentos; aplazar LISTEN/NOTIFY; Redis como plan B sin precio inventado.
+- **Incidente de proceso:** el usuario pidió revertir un cambio hecho sin su aprobación explícita ("yo no te pedí que modificaras nada del código"). Se ejecutó `git restore` de inmediato — pero como los cambios previos de esa sesión (validación de Railway + sexto agente) tampoco se habían comiteado todavía, el revert los borró también sin querer. Se detectó, se avisó al usuario con transparencia, y se reconstruyó todo junto una vez aprobado. **Lección aplicada:** comitear con más frecuencia durante la sesión, no dejar cambios grandes sin guardar por mucho tiempo.
+- **Rediseño completo del sistema de usuarios y planes:** Starter y Pro bajan a 1 usuario cada uno (Pro ya no es "hasta 5"); Enterprise se mantiene en 10. Se definió el flujo completo de creación de cuentas con la asesoría pedida explícitamente por el usuario ("estoy algo confundido"):
+  - Login siempre por correo (Google OAuth o correo+contraseña) — el "nombre de usuario" es solo un campo visual separado, nunca el identificador de login (2 preguntas de clarificación resueltas con las opciones más simples/seguras).
+  - Se detectó y corrigió un riesgo de seguridad real: el plan original del usuario era enviar contraseñas genéricas por correo — se reemplazó por enlaces de invitación/restablecimiento nativos de Supabase Auth (misma experiencia, sin el riesgo de contraseñas en texto plano).
+  - Admin de Enterprise único e intransferible (no se puede duplicar el rol); cargos decorativos (Gerente/Supervisor/Asesor/Otro) para los otros 9 usuarios, sin que cambien los permisos reales.
+  - Recuperación de contraseña en autoservicio para cualquier usuario en cualquier plan, sin depender del Admin — confirmado que el enlace llega al mismo correo de la cuenta, no a uno de respaldo aparte.
+
+### Archivos modificados
+- `ARQUITECTURA_AGENTES_OPERACION.md` — reconstruido completo tras el incidente del revert: 6 agentes, validación de Railway (sección 1.1), mensajería auditada (sección 1.2), Redis como plan B (sección 1.3)
+- `IDEA_PRINCIPAL_COSTO360.md` — sexto agente, límites de plan actualizados
+- `PLAN_COSTOS_COMPLETO_COSTO360.md` — costo estimado del Agente Legal, precio final del portátil
+- `CONTEXTO_COSTO360.md` — sistema de usuarios y planes reescrito por completo (identidad, login, creación de cuentas, roles, recuperación de contraseña)
+- `Modelo Financiero - Costo360.xlsx` (fuera del repo git) — Equipos y maquinaria e Inversión actualizados con el precio real del portátil
+
+### Decisiones tomadas
+- Railway (servicios por agente) en vez de VPS individuales — ver `ARQUITECTURA_AGENTES_OPERACION.md` sección 1.1
+- Mecanismo de mensajería: SKIP LOCKED + estado/reintentos ahora, LISTEN/NOTIFY aplazado, Redis como plan B
+- Sexto agente (Legal) aprobado, con límite de alcance explícito por riesgo de ejercicio ilegal de la abogacía
+- Starter y Pro: 1 usuario. Enterprise: 10, con un único Admin intransferible y cargos decorativos
+- Nunca enviar contraseñas por correo — siempre enlaces de invitación/restablecimiento
+- Portátil final: ASUS ROG Zephyrus G14, 32GB (no 64GB — no existe con garantía oficial en Colombia), $14.000.000 COP
+- Inversión total final: $69.850.000 COP, 100% inversionista
+
+### Primera tarea de la próxima sesión
+- Preguntar si el usuario sigue con algo más del sistema de usuarios/cuentas, o si pasamos a otra parte del proyecto
+- Recordar las dos notas abiertas no bloqueantes: plan de sucesión del Admin de Enterprise, y confirmación con abogado real del alcance del Agente Legal
+- Preguntar si sigue activa la otra IA en `web/` antes de considerar retomar cualquier trabajo técnico ahí
+
+---
+
 ## Sesión: 2026-08-18 a 2026-08-19 — Afinamiento final del modelo financiero
 
 ### Qué se hizo
