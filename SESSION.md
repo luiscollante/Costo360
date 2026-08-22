@@ -2,6 +2,30 @@
 
 ---
 
+## Sesión: 2026-08-21 (segunda continuación) — Ajuste de Equipos y auditoría legal exhaustiva
+
+### Qué se hizo
+- El usuario, saturado de información, pidió un resumen concreto de en qué se iba cada peso de la Inversión — se le dio un desglose directo sin rodeos, categoría por categoría.
+- **Revisión de "Otros equipos":** al preguntársele si los precios eran coherentes, se encontró que 3 de 5 ítems estaban bien ubicados en su rango real (monitor, UPS, router), pero 2 (celular y SSD) habían quedado en el extremo mínimo del rango investigado la sesión anterior — se subieron a un punto medio con colchón real (celular $1.500.000→$1.800.000, SSD $500.000→$600.000).
+- **Auditoría legal exhaustiva de "Registro legal y constitución"** — el usuario pidió investigar a fondo y "armar un ciclo" (mismo criterio de auditoría con subagente usado para la evaluación de GCP, dado que `GOAL_LOOP.md` sigue sin adaptarse a este proyecto). Hallazgo importante: la constitución pura de la SAS cuesta menos de lo presupuestado (~$330.000-$650.000), pero **faltaba un gasto real nunca contemplado — registrar la marca "Costo360" ante la SIC** (~$1.432.000) antes de lanzar públicamente, porque Colombia es un sistema "primero en registrar, primero en derecho" (riesgo real de que un tercero registre el nombre primero). Se confirmó que las patentes NO aplican al software en Colombia (Decisión Andina 486) — la protección correcta es el derecho de autor, automático y gratuito. También se encontró que el paquete legal de datos ($1.000.000) solo cubría la política de tratamiento de datos, sin incluir Términos y Condiciones ni el contrato de suscripción SaaS — se amplió a $1.800.000 con tarifas reales de firmas boutique para startups en Colombia. Se documentó, sin sumarlo al Excel (es gasto personal, no de la empresa), que el fundador debe afiliarse a seguridad social como independiente (~$508.000 COP/mes).
+
+### Archivos modificados
+- `Modelo Financiero - Costo360.xlsx` (fuera del repo git) — hoja Inversión: Equipos y maquinaria, Registro legal y constitución, y el paquete legal de datos
+- `PLAN_COSTOS_COMPLETO_COSTO360.md` — actualizado con la auditoría legal completa y el ajuste de equipos, historial de decisiones ampliado
+
+### Decisiones tomadas
+- Registro legal y constitución: $1.200.000 → $2.000.000 (constitución real + registro de marca SIC)
+- Paquete legal de datos: $1.000.000 → $1.800.000 (política de datos + T&C + contrato de suscripción)
+- Equipos y maquinaria: $17.200.000 → $17.600.000 (celular y SSD con colchón real)
+- **Inversión total FINAL de la sesión: $71.390.000 COP, 100% inversionista**
+
+### Primera tarea de la próxima sesión
+- Recordar al usuario que el registro de marca ante la SIC es un trámite real que debe ejecutar cuando llegue el momento (no algo automático, aunque ya esté presupuestado)
+- Seguir recordando las notas abiertas no bloqueantes: plan de sucesión del Admin de Enterprise, confirmación con abogado real del alcance del Agente Legal, y la afiliación a seguridad social del fundador
+- Preguntar si sigue activa la otra IA en `web/` antes de considerar retomar cualquier trabajo técnico ahí
+
+---
+
 ## Sesión: 2026-08-21 (continuación) — Auditoría final del modelo financiero: Inversión completa e Ingresos reemplazados
 
 ### Qué se hizo
