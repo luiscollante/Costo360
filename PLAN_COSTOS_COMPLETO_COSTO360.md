@@ -89,25 +89,25 @@
 | Ítem | Para qué sirve | Costo |
 |---|---|---|
 | Constitución S.A.S. + RUT + RST | Formalizar legalmente la empresa | $1.200.000 |
-| Registro RNBD y cumplimiento Habeas Data | Obligación legal por manejar nombres y cuentas de prospectos | $400.000 |
-| Desarrollo de tecnología/app | Consumo extra de API durante la fase activa de pruebas y depuración (~3 meses antes del lanzamiento comercial, ~2,5x el consumo operativo estable de $663.117/mes por la repetición constante de pruebas) — no cubre las herramientas en sí (Claude Max/Google AI Ultra ya son gasto mensual recurrente), sino el consumo extra de tokens mientras se construye | $5.000.000 |
-| Marketing de lanzamiento | Impulso inicial de pauta + branding | $2.500.000 |
-| Equipos y maquinaria | Ver desglose en la tabla de abajo — portátil + continuidad operativa | $18.400.000 |
+| Registro RNBD y cumplimiento Habeas Data | **Corregido 2026-08-21:** el registro en el RNBD es en realidad **gratuito**, y Costo360 no está legalmente obligado a registrarse en el Año 1 (el umbral son 100.000 UVT en activos totales ≈ $5.237.400.000 COP con la UVT 2026, muy por encima de la escala real). El monto se redirige a algo real: la redacción de la política de tratamiento de datos por un abogado (buena práctica, no obligación legal), usando tarifas de referencia de abogados en Colombia 2026 | $1.000.000 |
+| Desarrollo de tecnología/app | Consumo extra de API durante la fase activa de pruebas y depuración (~3 meses antes del lanzamiento comercial, ~2,5x el consumo operativo estable de $663.117/mes por la repetición constante de pruebas) — no cubre las herramientas en sí (Claude Max/Google AI Ultra ya son gasto mensual recurrente), sino el consumo extra de tokens mientras se construye. **Nota de honestidad:** el multiplicador 2,5x es una suposición propia razonable, no un dato de mercado investigado — no existe "precio de mercado" para consumo interno de API | $5.000.000 |
+| Marketing de lanzamiento | Impulso inicial de pauta + branding — anclado a precios reales de agencias en Colombia 2026 (paquete de arranque "todo incluido": $950.000-$1.300.000/mes; equivale a ~2 meses de ese paquete antes de que arranque el presupuesto mensual regular de $500.000) | $2.500.000 |
+| Equipos y maquinaria | Ver desglose en la tabla de abajo — portátil + continuidad operativa | $17.200.000 |
 | Otro (reserva discrecional) | "Carta de navidad" — fondo aparte de los Imprevistos, para lo puntual que surja en el año y no encaje en ninguna categoría fija | $3.000.000 |
-| Capital de trabajo inicial | ~4 meses de Gastos operativos, ya a escala completa desde el día 1 | $33.000.000 |
-| Imprevistos (10% de las líneas anteriores) | Contingencia estándar | $6.350.000 |
+| Capital de trabajo inicial | **Verificado 2026-08-21 contra los datos reales del propio proyecto:** con la proyección de Ingresos ya cargada, el ingreso mensual supera el gasto fijo desde febrero — casi de inmediato. Los "~4 meses" no vienen de una necesidad estricta de esa proyección, sino que son un colchón de seguridad *adicional*, justificado precisamente porque esa proyección de ingresos (171 clientes en el Año 1) se señaló como agresiva/optimista varias veces | $33.000.000 |
+| Imprevistos (10% de las líneas anteriores) | Contingencia estándar — 10% es el límite superior del rango que sugiere la propia plantilla de la universidad (5-10%), no un número inventado | $6.290.000 |
 
-### Desglose de "Equipos y maquinaria"
+### Desglose de "Equipos y maquinaria" (precios corregidos 2026-08-21 con cotizaciones reales de Falabella/Homecenter/Alkosto)
 
 | Equipo | Por qué | Costo |
 |---|---|---|
-| ASUS ROG Zephyrus G14 (2026) — AMD Ryzen AI 9 370HX, RTX 5080, **32GB RAM** | Portátil de desarrollo — precio real verificado en [Falabella Colombia](https://www.falabella.com.co/falabella-co/shop/asus-rog-zephyrus-g14) ($13.299.000 con 22% descuento, 2TB SSD), con garantía oficial. Redondeado a $14.000.000 por decisión del usuario (deja un pequeño colchón sobre el precio real, útil si el descuento actual no sigue vigente al momento de comprar). La variante de 64GB no está disponible en ninguna tienda colombiana con garantía oficial (la RAM viene soldada de fábrica) — se optó por 32GB, más que suficiente para desarrollo local ya que los agentes en producción corren en la nube (Railway), no en el portátil | $14.000.000 (redondeado) |
-| Monitor externo | Productividad — dashboard, Langfuse, Sentry en pantalla aparte | $1.500.000 |
-| UPS / regulador de voltaje | Continuidad operativa ante cortes de luz | $500.000 |
-| Router/módem de respaldo (4G/5G) | Continuidad ante caídas del internet principal | $400.000 |
-| Celular de prueba gama media | QA real de la app Android/iOS (Fase 5) y de los flujos de WhatsApp Business | $1.500.000 |
-| Disco SSD externo | Respaldo físico adicional a la nube | $500.000 |
-| **Total Equipos y maquinaria** | | **$18.400.000** |
+| ASUS ROG Zephyrus G14 (2026) — AMD Ryzen AI 9 370HX, RTX 5080, **32GB RAM** | Portátil de desarrollo — precio real verificado en [Falabella Colombia](https://www.falabella.com.co/falabella-co/shop/asus-rog-zephyrus-g14) ($13.299.000 con 22% descuento, 2TB SSD), con garantía oficial. Redondeado a $14.000.000 por decisión del usuario. La variante de 64GB no está disponible en ninguna tienda colombiana con garantía oficial (la RAM viene soldada de fábrica) — se optó por 32GB, más que suficiente para desarrollo local ya que los agentes en producción corren en la nube (Railway), no en el portátil | $14.000.000 (redondeado) |
+| Monitor externo | Productividad — dashboard, Langfuse, Sentry en pantalla aparte. Corregido de $1.500.000 (sin investigar) a un monitor 24" estándar real | $600.000 |
+| UPS / regulador de voltaje | Continuidad operativa ante cortes de luz. Corregido con precios reales de mercado (rango real $218.000-$320.000) | $300.000 |
+| Router/módem de respaldo (4G/5G) | Continuidad ante caídas del internet principal. Corregido con precios reales (MiFi/router 4G real: $208.900-$354.900) | $300.000 |
+| Celular de prueba gama media | QA real de la app Android/iOS (Fase 5) y de los flujos de WhatsApp Business. Ya estaba dentro del rango real ($1.399.000-$2.200.000) — sin cambio | $1.500.000 |
+| Disco SSD externo | Respaldo físico adicional a la nube. Ya estaba dentro del rango real ($504.990-$1.000.000) — sin cambio | $500.000 |
+| **Total Equipos y maquinaria** | | **$17.200.000** |
 
 ---
 
@@ -118,9 +118,9 @@
 | Software y herramientas tecnológicas (B + C + D + E) | $3.106.446 |
 | Gastos operativos totales (todas las categorías, con 10% de contingencia) | $8.323.091 |
 | **Gastos Año 1** (fijo los 12 meses, operación completa desde enero 2027) | **$99.877.092** |
-| **Inversión total requerida** (categoría G) | **$69.850.000** |
+| **Inversión total requerida** (categoría G) | **$69.190.000** |
 
-**Financiamiento: 100% inversionista — $69.850.000 COP.** El fundador no pone capital propio; el propósito del modelo financiero es justamente conseguir que la inversión cubra la totalidad del arranque.
+**Financiamiento: 100% inversionista — $69.190.000 COP.** El fundador no pone capital propio; el propósito del modelo financiero es justamente conseguir que la inversión cubra la totalidad del arranque.
 
 ---
 
@@ -150,7 +150,11 @@
 - **2026-08-20:** por decisión del usuario, el precio del portátil se redondeó de $13.300.000 a $14.000.000 (colchón sobre el precio real, por si el descuento vigente en Falabella cambia). Inversión total: $69.850.000.
 - **2026-08-20 (segunda parte):** se validó la infraestructura de los 6 agentes (Railway con un servicio por agente, no VPS individuales por agente — ver `ARQUITECTURA_AGENTES_OPERACION.md` sección 1.1) y se confirmó el sexto agente, **Legal y Cumplimiento**. Se agregó su consumo estimado de API ($67.000 COP/mes — estimado por comparación, no simulado por request como los otros 5, pendiente de refinar cuando se construya). Gastos Año 1 sube a $99.877.092. La Inversión no cambia (este es un gasto recurrente, no de Inversión).
 
+- **2026-08-21 (auditoría de los 7 conceptos de Inversión):** se auditó honestamente qué estaba validado y qué no. Hallazgos: RNBD es gratuito y no obligatorio a esta escala (redirigido a redacción real de política de datos, $400.000→$1.000.000); 3 de 5 accesorios de Equipos estaban sobrestimados sin cotizar (Equipos $18.400.000→$17.200.000); Capital de trabajo verificado contra el breakeven real de la propia proyección de Ingresos (el ingreso cubre el gasto desde febrero — el colchón de 4 meses es de seguridad, no de necesidad estricta); Registro legal y Marketing de lanzamiento reforzados con tarifas/precios reales de mercado 2026, sin cambio de monto. Inversión total: $69.190.000.
+- **2026-08-21 (propuesta de migración a GCP evaluada y descartada):** ver detalle completo en `ARQUITECTURA_AGENTES_OPERACION.md` sección 1.4 — no afecta las cifras de este documento, se mantiene la arquitectura Railway+Supabase.
+
 ## Pendiente
 
 - Refinar el consumo estimado del Agente Legal con una simulación real por request cuando se construya (hoy es una comparación, no una medición).
 - La simulación de tokens de los otros 5 agentes ($663.117/mes) se hizo con una lista de funciones ligeramente distinta a los 6 agentes oficiales actuales (incluía "Producto/Nesting" y "Orquestador", que no son agentes de la Capa B) — cubre razonablemente Ventas/Contabilidad/Atención/Marketing, pero convendría una simulación dedicada para Diseño en algún momento.
+- **Auditoría de la proyección de Ingresos (Cantidad vendida por mes) en curso — ver análisis en la conversación del 2026-08-21.** No se ha modificado el Excel para esta sección, solo se presentó el análisis.
