@@ -79,6 +79,22 @@ Detalles de implementación a tener en cuenta cuando se construya: un índice pa
 
 Si el volumen de eventos entre agentes crece mucho más de lo esperado, se podría migrar a una cola dedicada tipo Redis. El costo exacto de un Redis gestionado en Railway **no está verificado todavía** — se investiga con precio real cuando/si esto se vuelva necesario, no antes.
 
+### 1.4 Propuesta evaluada y descartada: migración completa a Google Cloud Platform (2026-08-21)
+
+El usuario trajo una propuesta (originada en otra conversación con IA) de migrar toda la infraestructura de los agentes — Railway → **Cloud Run**, Supabase → **Cloud SQL**, APIs directas de Anthropic/Google → **Vertex AI**, mensajería en Postgres → **Pub/Sub**, más una cuenta de servicio con **Delegación de Autoridad de Dominio** sobre Google Workspace. Se auditó con investigación real de precios (no genérica) antes de decidir. Se descartó por completo — decisión firme, no solo "por ahora" en varios de los puntos.
+
+**Hallazgo estructural principal:** el producto de Costo360 (`web/`) ya vive en Supabase y no está en el alcance de esta migración. Mover solo los agentes a Cloud SQL no elimina la factura de Supabase — **la suma encima**, exactamente lo contrario de "evitar pagar dos bases de datos" que motivó compartir Supabase desde el principio (sección 1).
+
+**Hallazgo de costo principal:** Cloud Run se presentó como "serverless barato corriendo 24/7", pero técnicamente eso requiere el modo de facturación "CPU siempre asignada", que se cobra como una VM pequeña encendida todo el tiempo — no como serverless. Con precios reales investigados, la migración completa saldría entre **1,5x y 2,6x más cara** que la arquitectura actual (~$977.000-$1.044.000 COP/mes hoy vs. ~$1.490.000-$2.532.000 COP/mes con GCP completo).
+
+**Otros hallazgos:**
+- Vertex AI no reduce el costo de Claude/Gemini frente a llamar directo a sus APIs (mismo precio), y además **no soporta la Batch API de Claude** (descuento del 50% que sí existe llamando directo) — pasar por Vertex sería perder una opción de ahorro real sin ganar nada a cambio.
+- El argumento de "egress fees ocultos" está muy exagerado para el volumen real de Costo360 (mensajes de pocos KB, no video/datasets grandes) — el costo real sería de centavos de dólar al mes.
+- La "latencia casi cero por estar en la misma red" es cierta pero irrelevante — la demora real de estos agentes es la espera de la respuesta del modelo de IA (segundos), no la conexión a la base de datos (milisegundos).
+- La Delegación de Autoridad de Dominio es una función real de Google Workspace, pero con un **riesgo de seguridad documentado por firmas de seguridad independientes** (Unit 42 de Palo Alto, Hunters Security — hallazgo "DeleFriend"): si la credencial de esa única cuenta de servicio se filtra, un atacante obtiene acceso a Gmail/Drive/Calendar de **todo el dominio**, no de un solo agente. Riesgo desproporcionado para una startup sin equipo de seguridad dedicado.
+
+**Decisión:** se mantiene Railway + Supabase compartido + APIs directas de Anthropic/Google, sin cambios. Se reconsideraría únicamente si en el futuro el producto también migrara a GCP (lo cual cambiaría el cálculo de Cloud SQL de "costo aditivo" a "base compartida") — condición que no existe hoy ni está planeada.
+
 ---
 
 ## 2. Cómo se controla el costo por interacción (lo que pediste explícitamente)
