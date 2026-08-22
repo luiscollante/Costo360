@@ -2,6 +2,32 @@
 
 ---
 
+## Sesión: 2026-08-21 (continuación) — Auditoría final del modelo financiero: Inversión completa e Ingresos reemplazados
+
+### Qué se hizo
+- **Se completó la auditoría de los 7 conceptos de Inversión** que había quedado pendiente de la sesión anterior (nunca se había confirmado escribirla en Excel). Se escribió: RNBD corregido de "registro" ($400.000, en realidad gratuito y no obligatorio a esta escala — investigado el umbral real de 100.000 UVT) a redacción real de política de datos ($1.000.000); Equipos y maquinaria corregido con precios reales de mercado (monitor, UPS, router — 3 de 5 accesorios estaban sobrestimados sin cotizar): $18.400.000 → $17.200.000. Inversión total: $69.850.000 → $69.190.000.
+- **Se evaluó y descartó una propuesta de migración completa a Google Cloud Platform** (Cloud Run, Cloud SQL, Vertex AI, Pub/Sub, Delegación de Autoridad de Dominio de Workspace) que el usuario trajo de otra conversación con IA. Se aplicó el mismo criterio de auditoría independiente usado antes (dado que `GOAL_LOOP.md` sigue sin adaptarse a este proyecto): se despachó un agente de investigación con precios reales de 2026. Hallazgo estructural detectado primero por razonamiento propio (sin necesitar investigar): el producto de Costo360 ya vive en Supabase y no está en el alcance de la migración, así que Cloud SQL sería una segunda factura, no un reemplazo. La investigación confirmó y amplió: Cloud Run "24/7 barato" en realidad se factura como una VM encendida todo el tiempo; costo total real 1,5x-2,6x más caro que hoy; Vertex AI no ahorra nada y pierde acceso a la Batch API de Claude; la Delegación de Dominio tiene un riesgo de seguridad documentado por firmas independientes (hallazgo "DeleFriend"). Decisión del usuario: mantener la arquitectura actual sin cambios.
+- **Se auditó y reemplazó la proyección de Ingresos (Cantidad vendida por mes)** — el hallazgo más importante de la sesión. La curva original (171 clientes en el Año 1) implicaba capturar el 85% de los ~200 talleres identificados en el estudio de marzo (limitado a Barranquilla/Costa Atlántica). El usuario argumentó que Costo360 va a nivel nacional (con inversión real de respaldo) y que el "mundo laboral cambió por la IA" — se investigó ambos puntos con rigor: (a) el mercado nacional real, usando el código oficial CIIU 2396 ("Corte, tallado y acabado de la piedra") — 218 empresas formales, estimado 450-650 contando la informalidad típica del sector (58-75% en Colombia) — el argumento de alcance nacional SÍ tenía mérito real y se incorporó; (b) la tendencia de adopción tecnológica general por IA se reconoció como parcialmente cierta pero no se dejó que anulara la investigación primaria propia de Costo360 (entrevistas reales con marmoleros que sí mostraron resistencia a lo digital). El usuario confirmó explícitamente: alcance nacional para 2027, LatAm después del año 5. Se construyó y escribió en el Excel una curva en forma de "S" (no lineal) que llega a 108 clientes en diciembre — equivalente al hito "Fase 3: Escala Regional" que el propio estudio de marzo ya contemplaba a más largo plazo, comprimido al Año 1 por la inversión real.
+
+### Archivos modificados
+- `Modelo Financiero - Costo360.xlsx` (fuera del repo git) — hoja Inversión (7 conceptos corregidos) y hoja Ingresos (curva de clientes completamente reemplazada, filas 18-20)
+- `ARQUITECTURA_AGENTES_OPERACION.md` — nueva sección 1.4 con la evaluación de GCP
+- `PLAN_COSTOS_COMPLETO_COSTO360.md` — actualizado con todas las correcciones de Inversión e Ingresos, historial de decisiones ampliado
+
+### Decisiones tomadas
+- Inversión total final: $69.190.000 COP, 100% inversionista
+- Arquitectura de agentes se mantiene en Railway + Supabase + APIs directas (no GCP)
+- Ingresos Año 1 final: $174.900.000 (108 clientes, curva en S, alcance nacional 2027)
+- Resultado financiero final: Margen Bruto ~96,7% (sin cambio) · Margen EBITDA ~40% (antes ~74,7%) · Margen Neto ~32% (antes ~59,6%)
+- Punto de equilibrio mensual: mayo (antes: febrero) — el colchón de 4 meses de Capital de trabajo pasó de ser "seguridad extra" a ser prácticamente necesario
+
+### Primera tarea de la próxima sesión
+- Sugerir al usuario que revise el Estado de Resultados completo en Excel (recalculado automáticamente por las fórmulas) ahora que el margen bajó significativamente — confirmar que sigue conforme con el modelo antes de darlo por cerrado para la entrega/sustentación
+- Recordar las dos notas abiertas no bloqueantes: plan de sucesión del Admin de Enterprise, y confirmación con abogado real del alcance del Agente Legal
+- Preguntar si sigue activa la otra IA en `web/` antes de considerar retomar cualquier trabajo técnico ahí
+
+---
+
 ## Sesión: 2026-08-19 a 2026-08-21 — Sexto agente, auditoría de infraestructura y rediseño del sistema de usuarios
 
 ### Qué se hizo
