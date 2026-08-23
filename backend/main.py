@@ -23,7 +23,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 from backend.middleware.rate_limiter import limiter
-from backend.routers import auth, calculos, cotizacion, parametros, config, dashboard, retales, admin, nesting, materiales, finanzas, inventario
+from backend.routers import auth, calculos, cotizacion, parametros, config, dashboard, retales, admin, nesting, materiales, finanzas, inventario, agente
 from backend.db.client import get_engine
 
 
@@ -315,6 +315,7 @@ app.include_router(nesting.router)
 app.include_router(materiales.router)
 app.include_router(finanzas.router)
 app.include_router(inventario.router)
+app.include_router(agente.router)
 
 
 @app.get("/")

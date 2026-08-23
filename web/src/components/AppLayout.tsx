@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, Sun, Moon } from 'lucide-react'
 import Sidebar from './Sidebar'
+import AgenteChat from './AgenteChat'
 import { useTheme } from '../hooks/useTheme'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -113,6 +114,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </motion.div>
         </AnimatePresence>
       </main>
+
+      <AgenteChat />
     </div>
   )
 }
