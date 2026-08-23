@@ -1,0 +1,293 @@
+{
+  "CATEGORIAS_MATERIAL": [
+    "Mármol",
+    "Granito",
+    "Sinterizado",
+    "Quarztone",
+    "Quarzita"
+  ],
+  "PROPIEDADES_MATERIAL": {
+    "Mármol": {
+      "densidad_kg_m3": 2700,
+      "grosor_std_m": 0.02,
+      "merma_base": 0.08,
+      "dureza_mohs": 3.5,
+      "peso_max_penalizacion_kg": 300
+    },
+    "Granito": {
+      "densidad_kg_m3": 2750,
+      "grosor_std_m": 0.02,
+      "merma_base": 0.06,
+      "dureza_mohs": 6.5,
+      "peso_max_penalizacion_kg": 300
+    },
+    "Sinterizado": {
+      "densidad_kg_m3": 2400,
+      "grosor_std_m": 0.012,
+      "merma_base": 0.15,
+      "dureza_mohs": 7.5,
+      "peso_max_penalizacion_kg": 200
+    },
+    "Quarztone": {
+      "densidad_kg_m3": 2300,
+      "grosor_std_m": 0.02,
+      "merma_base": 0.07,
+      "dureza_mohs": 6.0,
+      "peso_max_penalizacion_kg": 300
+    },
+    "Quarzita": {
+      "densidad_kg_m3": 2650,
+      "grosor_std_m": 0.02,
+      "merma_base": 0.1,
+      "dureza_mohs": 7.0,
+      "peso_max_penalizacion_kg": 300
+    }
+  },
+  "TARIFAS": {
+    "Mármol": [
+      {
+        "nombre_interno": "Mano obra borde",
+        "inductor": "por_ml",
+        "valor": 60000,
+        "etiqueta_pdf": "c2_mano_obra"
+      },
+      {
+        "nombre_interno": "Mano obra área",
+        "inductor": "por_m2",
+        "valor": 35000,
+        "etiqueta_pdf": "c2_mano_obra"
+      },
+      {
+        "nombre_interno": "Instalación zócalo",
+        "inductor": "por_ml_zocalo",
+        "valor": 12000,
+        "etiqueta_pdf": "c3_zocalos"
+      },
+      {
+        "nombre_interno": "Desgaste disco",
+        "inductor": "por_m2",
+        "valor": 2200,
+        "etiqueta_pdf": "c4_insumos"
+      },
+      {
+        "nombre_interno": "Uso máquina cortadora",
+        "inductor": "por_dia",
+        "valor": 20000,
+        "etiqueta_pdf": "c4_insumos"
+      },
+      {
+        "nombre_interno": "Consumibles",
+        "inductor": "por_m2",
+        "valor": 8500,
+        "etiqueta_pdf": "c4_insumos"
+      },
+      {
+        "nombre_interno": "Riesgo rotura",
+        "inductor": "porcentaje_material",
+        "valor": 0.02,
+        "etiqueta_pdf": "c4_insumos"
+      }
+    ],
+    "Granito": [
+      {
+        "nombre_interno": "Mano obra borde",
+        "inductor": "por_ml",
+        "valor": 55000,
+        "etiqueta_pdf": "c2_mano_obra"
+      },
+      {
+        "nombre_interno": "Mano obra área",
+        "inductor": "por_m2",
+        "valor": 32000,
+        "etiqueta_pdf": "c2_mano_obra"
+      },
+      {
+        "nombre_interno": "Instalación zócalo",
+        "inductor": "por_ml_zocalo",
+        "valor": 14000,
+        "etiqueta_pdf": "c3_zocalos"
+      },
+      {
+        "nombre_interno": "Desgaste disco",
+        "inductor": "por_m2",
+        "valor": 6000,
+        "etiqueta_pdf": "c4_insumos"
+      },
+      {
+        "nombre_interno": "Uso máquina cortadora",
+        "inductor": "por_dia",
+        "valor": 25000,
+        "etiqueta_pdf": "c4_insumos"
+      },
+      {
+        "nombre_interno": "Consumibles",
+        "inductor": "por_m2",
+        "valor": 10000,
+        "etiqueta_pdf": "c4_insumos"
+      },
+      {
+        "nombre_interno": "Riesgo rotura",
+        "inductor": "porcentaje_material",
+        "valor": 0.01,
+        "etiqueta_pdf": "c4_insumos"
+      }
+    ],
+    "Sinterizado": [
+      {
+        "nombre_interno": "Mano obra borde",
+        "inductor": "por_ml",
+        "valor": 85000,
+        "etiqueta_pdf": "c2_mano_obra"
+      },
+      {
+        "nombre_interno": "Mano obra área",
+        "inductor": "por_m2",
+        "valor": 52000,
+        "etiqueta_pdf": "c2_mano_obra"
+      },
+      {
+        "nombre_interno": "Instalación zócalo",
+        "inductor": "por_ml_zocalo",
+        "valor": 20000,
+        "etiqueta_pdf": "c3_zocalos"
+      },
+      {
+        "nombre_interno": "Desgaste disco",
+        "inductor": "por_m2",
+        "valor": 18000,
+        "etiqueta_pdf": "c4_insumos"
+      },
+      {
+        "nombre_interno": "Uso máquina cortadora",
+        "inductor": "por_dia",
+        "valor": 32000,
+        "etiqueta_pdf": "c4_insumos"
+      },
+      {
+        "nombre_interno": "Consumibles",
+        "inductor": "por_m2",
+        "valor": 25000,
+        "etiqueta_pdf": "c4_insumos"
+      },
+      {
+        "nombre_interno": "Riesgo rotura",
+        "inductor": "porcentaje_material",
+        "valor": 0.08,
+        "etiqueta_pdf": "c4_insumos"
+      }
+    ],
+    "Quarztone": [
+      {
+        "nombre_interno": "Mano obra borde",
+        "inductor": "por_ml",
+        "valor": 65000,
+        "etiqueta_pdf": "c2_mano_obra"
+      },
+      {
+        "nombre_interno": "Mano obra área",
+        "inductor": "por_m2",
+        "valor": 38000,
+        "etiqueta_pdf": "c2_mano_obra"
+      },
+      {
+        "nombre_interno": "Instalación zócalo",
+        "inductor": "por_ml_zocalo",
+        "valor": 16000,
+        "etiqueta_pdf": "c3_zocalos"
+      },
+      {
+        "nombre_interno": "Desgaste disco",
+        "inductor": "por_m2",
+        "valor": 5200,
+        "etiqueta_pdf": "c4_insumos"
+      },
+      {
+        "nombre_interno": "Uso máquina cortadora",
+        "inductor": "por_dia",
+        "valor": 27000,
+        "etiqueta_pdf": "c4_insumos"
+      },
+      {
+        "nombre_interno": "Consumibles",
+        "inductor": "por_m2",
+        "valor": 9000,
+        "etiqueta_pdf": "c4_insumos"
+      },
+      {
+        "nombre_interno": "Riesgo rotura",
+        "inductor": "porcentaje_material",
+        "valor": 0.01,
+        "etiqueta_pdf": "c4_insumos"
+      }
+    ],
+    "Quarzita": [
+      {
+        "nombre_interno": "Mano obra borde",
+        "inductor": "por_ml",
+        "valor": 70000,
+        "etiqueta_pdf": "c2_mano_obra"
+      },
+      {
+        "nombre_interno": "Mano obra área",
+        "inductor": "por_m2",
+        "valor": 42000,
+        "etiqueta_pdf": "c2_mano_obra"
+      },
+      {
+        "nombre_interno": "Instalación zócalo",
+        "inductor": "por_ml_zocalo",
+        "valor": 15000,
+        "etiqueta_pdf": "c3_zocalos"
+      },
+      {
+        "nombre_interno": "Desgaste disco",
+        "inductor": "por_m2",
+        "valor": 8000,
+        "etiqueta_pdf": "c4_insumos"
+      },
+      {
+        "nombre_interno": "Uso máquina cortadora",
+        "inductor": "por_dia",
+        "valor": 28000,
+        "etiqueta_pdf": "c4_insumos"
+      },
+      {
+        "nombre_interno": "Consumibles",
+        "inductor": "por_m2",
+        "valor": 15000,
+        "etiqueta_pdf": "c4_insumos"
+      },
+      {
+        "nombre_interno": "Riesgo rotura",
+        "inductor": "porcentaje_material",
+        "valor": 0.05,
+        "etiqueta_pdf": "c4_insumos"
+      }
+    ]
+  },
+  "LOGISTICA": {
+    "precio_gasolina": 16000,
+    "flete_externo": 165000
+  },
+  "VIATICOS": {
+    "pueblo": {
+      "hospedaje": 60000,
+      "almuerzo": 25000,
+      "alimentacion": 65000,
+      "transporte_local": 20000
+    },
+    "ciudad": {
+      "hospedaje": 90000,
+      "almuerzo": 28000,
+      "alimentacion": 68000,
+      "transporte_local": 20000
+    }
+  },
+  "ETAPAS_OBRA": {
+    "Casa terminada (limpia)": "terminada",
+    "En acabados": "acabados",
+    "En estructura": "estructura",
+    "Proyecto comercial": "comercial"
+  },
+  "ADICIONALES_FRECUENTES": []
+}
