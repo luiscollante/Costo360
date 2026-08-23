@@ -146,6 +146,9 @@ def guardar_cotizacion(
 @router.get("/historial")
 def historial_cotizaciones(
     busqueda: str = "",
+    estado: str = "",
+    fecha_desde: str = "",
+    fecha_hasta: str = "",
     conn=Depends(db_conn),
     usuario=Depends(get_current_user),
 ):
@@ -155,29 +158,34 @@ def historial_cotizaciones(
 
     cols = "id,numero,fecha,cliente,material,tipo,ml,precio,margen,estado"
 
+    condiciones = []
+    params: list = []
+
     if rol == "Operario":
-        if busqueda:
-            cur.execute(
-                f"SELECT {cols} FROM cotizaciones "
-                "WHERE usuario_id=%s AND (cliente ILIKE %s OR numero ILIKE %s OR material ILIKE %s) "
-                "ORDER BY id DESC LIMIT 200",
-                (uid, f"%{busqueda}%", f"%{busqueda}%", f"%{busqueda}%"),
-            )
-        else:
-            cur.execute(
-                f"SELECT {cols} FROM cotizaciones WHERE usuario_id=%s ORDER BY id DESC LIMIT 200",
-                (uid,),
-            )
-    else:
-        if busqueda:
-            cur.execute(
-                f"SELECT {cols} FROM cotizaciones "
-                "WHERE cliente ILIKE %s OR numero ILIKE %s OR material ILIKE %s "
-                "ORDER BY id DESC LIMIT 200",
-                (f"%{busqueda}%",) * 3,
-            )
-        else:
-            cur.execute(f"SELECT {cols} FROM cotizaciones ORDER BY id DESC LIMIT 200")
+        condiciones.append("usuario_id = %s")
+        params.append(uid)
+
+    if busqueda:
+        condiciones.append("(cliente ILIKE %s OR numero ILIKE %s OR material ILIKE %s)")
+        params += [f"%{busqueda}%", f"%{busqueda}%", f"%{busqueda}%"]
+
+    if estado:
+        condiciones.append("estado = %s")
+        params.append(estado)
+
+    if fecha_desde:
+        condiciones.append("fecha::date >= %s")
+        params.append(fecha_desde)
+
+    if fecha_hasta:
+        condiciones.append("fecha::date <= %s")
+        params.append(fecha_hasta)
+
+    where_sql = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
+    cur.execute(
+        f"SELECT {cols} FROM cotizaciones {where_sql} ORDER BY id DESC LIMIT 200",
+        params,
+    )
 
     rows = cur.fetchall()
     cur.close()

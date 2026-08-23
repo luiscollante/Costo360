@@ -13,6 +13,7 @@ import {
   getCotizacionDatos,
   eliminarCotizacion,
   type CotizacionResumen,
+  type HistorialFiltros,
 } from '@/api/cotizacion'
 import { formatCOP, formatNum } from '@/lib/utils'
 
@@ -372,15 +373,35 @@ function HistorialRow({ row, index }: { row: CotizacionResumen; index: number })
 export default function HistorialPage() {
   const [busqueda, setBusqueda] = useState('')
   const [query, setQuery] = useState('')
+  const [estado, setEstado] = useState('')
+  const [fechaDesde, setFechaDesde] = useState('')
+  const [fechaHasta, setFechaHasta] = useState('')
+
+  const filtros: HistorialFiltros = {
+    busqueda: query,
+    estado,
+    fecha_desde: fechaDesde,
+    fecha_hasta: fechaHasta,
+  }
 
   const { data = [], isPending, isError } = useQuery({
-    queryKey: ['historial', query],
-    queryFn: () => listarCotizaciones(query),
+    queryKey: ['historial', query, estado, fechaDesde, fechaHasta],
+    queryFn: () => listarCotizaciones(filtros),
   })
+
+  const hayFiltrosActivos = !!(query || estado || fechaDesde || fechaHasta)
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
     setQuery(busqueda.trim())
+  }
+
+  function limpiarFiltros() {
+    setBusqueda('')
+    setQuery('')
+    setEstado('')
+    setFechaDesde('')
+    setFechaHasta('')
   }
 
   return (
@@ -396,9 +417,9 @@ export default function HistorialPage() {
           <p className="text-sm text-brand-muted mt-1">Registro completo de proyectos cotizados</p>
         </div>
 
-        {/* Search */}
-        <form onSubmit={handleSearch} className="flex gap-3 mb-6">
-          <div className="relative flex-1">
+        {/* Search + filtros */}
+        <form onSubmit={handleSearch} className="flex flex-wrap gap-3 mb-6">
+          <div className="relative flex-1 min-w-[220px]">
             <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-muted/40 text-sm">⌕</span>
             <input
               value={busqueda}
@@ -407,18 +428,43 @@ export default function HistorialPage() {
               className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-brand-surface border border-brand-border text-sm text-brand-text placeholder:text-brand-muted/40 focus:outline-none focus:border-brand-primary/50 transition-colors"
             />
           </div>
+
+          <select
+            value={estado}
+            onChange={e => setEstado(e.target.value)}
+            className="px-3 py-2.5 rounded-lg bg-brand-surface border border-brand-border text-sm text-brand-text focus:outline-none focus:border-brand-primary/50 transition-colors"
+          >
+            <option value="">Todos los estados</option>
+            {ESTADOS.map(e => <option key={e} value={e}>{e}</option>)}
+          </select>
+
+          <input
+            type="date"
+            value={fechaDesde}
+            onChange={e => setFechaDesde(e.target.value)}
+            title="Desde"
+            className="px-3 py-2.5 rounded-lg bg-brand-surface border border-brand-border text-sm text-brand-text focus:outline-none focus:border-brand-primary/50 transition-colors"
+          />
+          <input
+            type="date"
+            value={fechaHasta}
+            onChange={e => setFechaHasta(e.target.value)}
+            title="Hasta"
+            className="px-3 py-2.5 rounded-lg bg-brand-surface border border-brand-border text-sm text-brand-text focus:outline-none focus:border-brand-primary/50 transition-colors"
+          />
+
           <button
             type="submit"
             className="px-5 py-2.5 rounded-lg bg-brand-primary text-white text-sm font-semibold hover:bg-brand-primary/90 transition-colors"
           >
             Buscar
           </button>
-          {query && (
+          {hayFiltrosActivos && (
             <button
               type="button"
-              onClick={() => { setBusqueda(''); setQuery('') }}
-              aria-label="Limpiar búsqueda"
-              title="Limpiar búsqueda"
+              onClick={limpiarFiltros}
+              aria-label="Limpiar filtros"
+              title="Limpiar filtros"
               className="px-3 py-2.5 rounded-lg border border-brand-border text-sm text-brand-muted hover:text-brand-text transition-colors"
             >
               ✕
@@ -444,7 +490,7 @@ export default function HistorialPage() {
           <div className="glass rounded-xl border border-brand-border p-16 text-center shadow-md transition-shadow hover:shadow-lg">
             <div className="text-4xl mb-4 opacity-30">☰</div>
             <p className="text-brand-muted text-sm">
-              {query ? 'Sin resultados para esa búsqueda.' : 'Aún no hay cotizaciones guardadas.'}
+              {hayFiltrosActivos ? 'Sin resultados para esos filtros.' : 'Aún no hay cotizaciones guardadas.'}
             </p>
           </div>
         ) : (

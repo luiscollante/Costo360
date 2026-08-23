@@ -1,12 +1,23 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from backend.db.client import db_conn
 from backend.middleware.auth import get_current_user
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
+_GRANULARIDADES = {
+    # trunc: función de truncado de fecha · formato: máscara TO_CHAR · ventana: intervalo hacia atrás
+    "diaria":  {"trunc": "day",   "formato": "YYYY-MM-DD", "ventana": "30 days"},
+    "semanal": {"trunc": "week",  "formato": "YYYY-\"S\"IW", "ventana": "12 weeks"},
+    "mensual": {"trunc": "month", "formato": "YYYY-MM",    "ventana": "6 months"},
+}
+
 
 @router.get("/resumen")
-def dashboard_resumen(conn=Depends(db_conn), usuario=Depends(get_current_user)):
+def dashboard_resumen(
+    granularidad: str = Query(default="mensual"),
+    conn=Depends(db_conn),
+    usuario=Depends(get_current_user),
+):
     """
     Métricas del mes actual + historial 6 meses + top materiales + últimas 5 cotizaciones.
     Operario ve solo sus datos; Admin/Gerente ven todo.
@@ -62,22 +73,23 @@ def dashboard_resumen(conn=Depends(db_conn), usuario=Depends(get_current_user)):
     )
     por_estado = {r[0]: r[1] for r in rows_estado}
 
-    # ── Historial mensual 6 meses ─────────────────────────────────────────────
+    # ── Historial por periodo (día/semana/mes, según granularidad) ────────────
+    gran = _GRANULARIDADES.get(granularidad, _GRANULARIDADES["mensual"])
     rows_hist = _qa(
-        f"""SELECT TO_CHAR(fecha::date, 'YYYY-MM') AS mes,
+        f"""SELECT TO_CHAR(DATE_TRUNC('{gran["trunc"]}', fecha::date), '{gran["formato"]}') AS periodo,
                COUNT(*) AS cotizaciones,
                COALESCE(SUM(CASE WHEN estado='Aprobada' THEN precio ELSE 0 END), 0) AS facturado,
                COALESCE(AVG(margen), 0) AS margen_prom
         FROM cotizaciones
-        WHERE fecha::date >= (CURRENT_DATE - INTERVAL '6 months')
+        WHERE fecha::date >= (CURRENT_DATE - INTERVAL '{gran["ventana"]}')
         {uid_filter}
-        GROUP BY mes
-        ORDER BY mes""",
+        GROUP BY periodo
+        ORDER BY periodo""",
         uid_param,
     )
     historial = [
         {
-            "mes": r[0],
+            "periodo": r[0],
             "cotizaciones": r[1],
             "facturado": float(r[2]),
             "margen_prom": round(float(r[3]), 1),
@@ -126,7 +138,8 @@ def dashboard_resumen(conn=Depends(db_conn), usuario=Depends(get_current_user)):
         "facturacion_mes":   float(fact_mes),
         "margen_promedio":   round(float(margen_mes), 1),
         "por_estado":        por_estado,
-        "historial_mensual": historial,
+        "granularidad":      granularidad if granularidad in _GRANULARIDADES else "mensual",
+        "historial":         historial,
         "top_materiales":    top_materiales,
         "ultimas":           ultimas,
     }

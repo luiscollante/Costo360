@@ -1,9 +1,10 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@/store/auth'
 import AppLayout from '@/components/AppLayout'
-import { getDashboardResumen, type DashboardResumen } from '@/api/dashboard'
+import { getDashboardResumen, type DashboardResumen, type Granularidad } from '@/api/dashboard'
 import { formatCOP, formatNum } from '@/lib/utils'
 import { useCountUp } from '@/hooks/useCountUp'
 import {
@@ -41,6 +42,22 @@ function mesCorto(mes: string): string {
   const m = parseInt(mes.split('-')[1], 10) - 1
   return MESES_ES[m] ?? mes
 }
+function formatPeriodo(periodo: string, gran: Granularidad): string {
+  if (gran === 'mensual') return mesCorto(periodo)
+  if (gran === 'semanal') {
+    const semana = periodo.split('-S')[1]
+    return semana ? `Sem ${semana}` : periodo
+  }
+  // diaria: "2026-08-23" -> "23 Ago"
+  const [, mesNum, dia] = periodo.split('-')
+  const m = parseInt(mesNum, 10) - 1
+  return `${parseInt(dia, 10)} ${MESES_ES[m] ?? ''}`
+}
+const GRANULARIDADES: { value: Granularidad; label: string }[] = [
+  { value: 'diaria',  label: 'Días' },
+  { value: 'semanal', label: 'Semanas' },
+  { value: 'mensual', label: 'Meses' },
+]
 function formatMillones(n: number): string {
   if (n >= 1_000_000) return `$${formatNum(n / 1_000_000, 1)}M`
   if (n >= 1_000)     return `$${formatNum(n / 1_000, 0)}K`
@@ -84,10 +101,11 @@ function Skeleton({ className }: { className?: string }) {
 export default function DashboardPage() {
   const navigate  = useNavigate()
   const usuario   = useAuthStore((s) => s.usuario)
+  const [granularidad, setGranularidad] = useState<Granularidad>('mensual')
 
   const { data, isPending } = useQuery<DashboardResumen>({
-    queryKey: ['dashboard'],
-    queryFn: getDashboardResumen,
+    queryKey: ['dashboard', granularidad],
+    queryFn: () => getDashboardResumen(granularidad),
     staleTime: 1000 * 60 * 2,
   })
 
@@ -100,8 +118,8 @@ export default function DashboardPage() {
 
   // Datos analíticos
   const totalEstados   = ESTADO_BARS.reduce((s, e) => s + (data?.por_estado?.[e.key] ?? 0), 0)
-  const historialChart = (data?.historial_mensual ?? []).map((m) => ({
-    mes:          mesCorto(m.mes),
+  const historialChart = (data?.historial ?? []).map((m) => ({
+    mes:          formatPeriodo(m.periodo, granularidad),
     facturado:    m.facturado,
     cotizaciones: m.cotizaciones,
   }))
@@ -300,17 +318,36 @@ export default function DashboardPage() {
       {!isPending && historialChart.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-5 mb-7">
           <div className="glass rounded-xl border border-brand-border shadow-md p-5 transition-shadow hover:shadow-lg">
-            <div className="flex items-start justify-between mb-5">
+            <div className="flex items-start justify-between mb-5 flex-wrap gap-3">
               <div>
                 <p className="text-[9px] font-semibold text-brand-muted/50 uppercase tracking-widest">
                   Facturación aprobada
                 </p>
-                <p className="text-[10px] text-brand-muted/30 font-mono mt-0.5">Últimos 6 meses · solo cotizaciones Aprobadas</p>
+                <p className="text-[10px] text-brand-muted/30 font-mono mt-0.5">
+                  {granularidad === 'diaria' ? 'Últimos 30 días' : granularidad === 'semanal' ? 'Últimas 12 semanas' : 'Últimos 6 meses'} · solo cotizaciones Aprobadas
+                </p>
               </div>
-              <span className="flex items-center gap-1.5 text-[10px] text-brand-gold/70 font-mono">
-                <span className="w-3 h-0.5 bg-brand-gold rounded inline-block" />
-                Facturado
-              </span>
+              <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-brand-surface/50 border border-brand-border/60">
+                  {GRANULARIDADES.map((g) => (
+                    <button
+                      key={g.value}
+                      onClick={() => setGranularidad(g.value)}
+                      className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors cursor-pointer ${
+                        granularidad === g.value
+                          ? 'bg-brand-primary/20 text-brand-primary'
+                          : 'text-brand-muted/60 hover:text-brand-text'
+                      }`}
+                    >
+                      {g.label}
+                    </button>
+                  ))}
+                </div>
+                <span className="hidden sm:flex items-center gap-1.5 text-[10px] text-brand-gold/70 font-mono">
+                  <span className="w-3 h-0.5 bg-brand-gold rounded inline-block" />
+                  Facturado
+                </span>
+              </div>
             </div>
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart

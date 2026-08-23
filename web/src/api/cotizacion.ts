@@ -40,10 +40,20 @@ export interface CotizacionResumen {
   estado: string
 }
 
-export async function listarCotizaciones(busqueda = ''): Promise<CotizacionResumen[]> {
-  const { data } = await api.get<CotizacionResumen[]>('/api/cotizacion/historial', {
-    params: busqueda ? { busqueda } : {},
-  })
+export interface HistorialFiltros {
+  busqueda?: string
+  estado?: string
+  fecha_desde?: string
+  fecha_hasta?: string
+}
+
+export async function listarCotizaciones(filtros: HistorialFiltros = {}): Promise<CotizacionResumen[]> {
+  const params: Record<string, string> = {}
+  if (filtros.busqueda)    params.busqueda = filtros.busqueda
+  if (filtros.estado)      params.estado = filtros.estado
+  if (filtros.fecha_desde) params.fecha_desde = filtros.fecha_desde
+  if (filtros.fecha_hasta) params.fecha_hasta = filtros.fecha_hasta
+  const { data } = await api.get<CotizacionResumen[]>('/api/cotizacion/historial', { params })
   return data
 }
 
