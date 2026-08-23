@@ -23,7 +23,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 from backend.middleware.rate_limiter import limiter
-from backend.routers import auth, calculos, cotizacion, parametros, config, dashboard, retales, admin, nesting, materiales, finanzas
+from backend.routers import auth, calculos, cotizacion, parametros, config, dashboard, retales, admin, nesting, materiales, finanzas, inventario
 from backend.db.client import get_engine
 
 
@@ -122,6 +122,25 @@ CREATE TABLE IF NOT EXISTS inventario_retales (
     precio_mercado_m2   NUMERIC NOT NULL DEFAULT 0,
     usuario_id          INTEGER REFERENCES usuarios(id) ON DELETE SET NULL
 );
+
+CREATE TABLE IF NOT EXISTS inventario_laminas (
+    id                  SERIAL PRIMARY KEY,
+    material_categoria  TEXT    NOT NULL,
+    referencia          TEXT    NOT NULL DEFAULT '',
+    cantidad_laminas    INTEGER NOT NULL DEFAULT 0,
+    ancho_cm            NUMERIC,
+    alto_cm             NUMERIC,
+    espesor_cm          NUMERIC,
+    costo_unitario      NUMERIC NOT NULL DEFAULT 0,
+    stock_minimo        INTEGER NOT NULL DEFAULT 0,
+    proveedor           TEXT    NOT NULL DEFAULT '',
+    ubicacion           TEXT    NOT NULL DEFAULT '',
+    notas               TEXT    NOT NULL DEFAULT '',
+    activo              BOOLEAN NOT NULL DEFAULT TRUE,
+    usuario_id          INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+    actualizado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_inventario_laminas_cat ON inventario_laminas(material_categoria);
 
 CREATE TABLE IF NOT EXISTS catalogo_materiales (
     id              SERIAL PRIMARY KEY,
@@ -295,6 +314,7 @@ app.include_router(admin.router)
 app.include_router(nesting.router)
 app.include_router(materiales.router)
 app.include_router(finanzas.router)
+app.include_router(inventario.router)
 
 
 @app.get("/")

@@ -8,6 +8,7 @@ import {
   ClipboardList,
   Layers,
   Grid3X3,
+  Boxes,
   SlidersHorizontal,
   Settings2,
   ShieldCheck,
@@ -38,8 +39,9 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: 'Taller',
     items: [
-      { to: '/retales', label: 'Retales', Icon: Layers   },
-      { to: '/nesting', label: 'Nesting', Icon: Grid3X3  },
+      { to: '/inventario', label: 'Inventario', Icon: Boxes    },
+      { to: '/retales',    label: 'Retales',    Icon: Layers   },
+      { to: '/nesting',    label: 'Nesting',     Icon: Grid3X3  },
     ],
   },
   {

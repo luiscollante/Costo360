@@ -7,6 +7,7 @@ import DashboardPage from '@/pages/DashboardPage'
 import CotizacionPage from '@/pages/CotizacionPage'
 import HistorialPage from '@/pages/HistorialPage'
 import RetalesPage from '@/pages/RetalesPage'
+import InventarioPage from '@/pages/InventarioPage'
 import ConfigPage from '@/pages/ConfigPage'
 import PrivateRoute from '@/components/PrivateRoute'
 import AdminRoute from '@/components/AdminRoute'
@@ -63,6 +64,7 @@ export default function App() {
             <Route path="/cotizacion-aiu" element={<Private><CotizacionAIUPage /></Private>} />
             <Route path="/historial" element={<Private><HistorialPage /></Private>} />
             <Route path="/retales" element={<Private><RetalesPage /></Private>} />
+            <Route path="/inventario" element={<Private><InventarioPage /></Private>} />
             <Route path="/nesting" element={<Private><NestingPage /></Private>} />
             <Route path="/parametros" element={<Private><ParametrosPage /></Private>} />
             <Route path="/configuracion" element={<Private><ConfigPage /></Private>} />
