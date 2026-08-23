@@ -1,0 +1,511 @@
+# asistente_ia.py — Sistema de Cotización v2
+# Costo360 — Sistema de Cotización de Mármoles Collante & Castro
+
+import json
+import re
+import anthropic
+import os
+from parametros import TARIFAS, LOGISTICA, VIATICOS, AIU_DEFAULTS, CATEGORIAS_MATERIAL
+
+
+# ── Serializador de tarifas para RAG dinámico ─────────────────────────────────
+# Convierte la estructura de tarifas (lista de recetas v4 o dict plano legacy)
+# a texto legible para el LLM, sin importar el formato en que estén guardadas.
+def _tarifas_a_texto(tarifas: dict) -> str:
+    """Convierte tarifas (receta o dict plano) a texto descriptivo para el system prompt."""
+    if not tarifas:
+        return "Tarifas no especificadas"
+    lineas = []
+    for mat, entry in tarifas.items():
+        if isinstance(entry, list):   # formato receta v4
+            partes = []
+            for r in entry:
+                val = r.get("valor", 0)
+                ind = r.get("inductor", "")
+                nom = r.get("nombre_interno", "")
+                unidad = {
+                    "por_ml":              "/ml",
+                    "por_m2":              "/m²",
+                    "por_dia":             "/día",
+                    "por_ml_zocalo":       "/ml zócalo",
+                    "porcentaje_material": "% del material",
+                }.get(ind, "")
+                if ind == "porcentaje_material":
+                    partes.append(f"{nom}: {val*100:.1f}{unidad}")
+                else:
+                    partes.append(f"{nom}: ${int(val):,}{unidad}".replace(",", "."))
+            lineas.append(f"- {mat}: " + " | ".join(partes))
+        elif isinstance(entry, dict):  # formato plano legacy
+            lineas.append(
+                f"- {mat}: MO/ml ${int(entry.get('prod_ml',0)):,}"
+                f" | zócalo ${int(entry.get('zocalo',0)):,}/ml"
+                f" | disco ${int(entry.get('disco',0)):,}/m²"
+                f" | máquina ${int(entry.get('maquina',0)):,}/día"
+                f" | consumibles ${int(entry.get('consumibles',0)):,}/m²"
+                f" | riesgo {entry.get('riesgo_rotura',0)*100:.1f}% material".replace(",", ".")
+            )
+    return "\n".join(lineas) if lineas else "Tarifas no especificadas"
+
+
+# ── System prompt principal ────────────────────────────────────────────────────
+SYSTEM_PROMPT = """Eres el asistente experto en costos y cotización de Costo360, sistema de cotización de Mármoles Collante & Castro Ltda de presupuestos y control de costos para talleres de piedra y mármol.
+Ayudas a marmoleros y talleres a calcular el costo real de sus proyectos.
+
+DATOS DEL MERCADO (Feb 2026, Colombia):
+- Gasolina: $15.800/galón
+- Flete externo: Costo estimado según rango de kilómetros (promedio $45.000 - $80.000).
+- Externo/Tercero: flete fijo $165.000 | Peaje: $19.500 | Flete agente: $85.000
+- Viáticos pueblo: $145.000/noche/persona | Ciudad: $178.000/noche/persona
+
+[Las tarifas de mano de obra se inyectan dinámicamente por petición — ver TARIFAS DE TRABAJO ACTUALES DEL TALLER al final del prompt]
+
+ESTRUCTURA AIU (norma colombiana):
+- A = 2%, I = 2%, U = 5-8% (todos sobre Costo Directo)
+- IVA 19% SOLO sobre Utilidad (U), no sobre el total
+- Para obra pública: AIU combinado 10-15%
+
+MÁRGENES: Saludable 30-45% sobre precio venta | Mínimo 20% | Riesgo: <20%
+
+REGLAS DE COMUNICACIÓN:
+- Español colombiano claro, sin tecnicismos innecesarios
+- Formato de moneda: $1.000.000 (puntos para miles)
+- Cuando el usuario describe un proyecto, extrae los datos y guíalo a la calculadora
+- Si el usuario no sabe un valor, sugiere el más común del mercado colombiano
+- Sé directo: si está subcotizando, dilo claramente
+- Respuestas máximo 4 párrafos — conciso y útil
+"""
+
+# ── Prompt especial para interpretación de proyectos en lenguaje natural ───────
+SYSTEM_INTERPRET = """Eres un extractor de datos para una calculadora de costos de mármoles.
+El usuario describe un proyecto en lenguaje natural. Extrae los datos y devuelve un JSON.
+
+REGLAS ESTRICTAS:
+1. Devuelve SOLO el JSON, sin texto antes ni después
+2. Si el usuario menciona dimensiones como "4mt de largo por 90cm de ancho", calcula m² = 4 * 0.9 = 3.6
+3. Si menciona "media placa" con área dada, usa esa área
+4. Si el usuario dice "el proveedor trajo el material" o "agente externo", agente_externo = true
+5. Si un dato no se menciona, usa null
+6. precio_m2 es el valor por m² que el proveedor le cobró al usuario
+7. area_placa_comprada es el área total de material que compró (ej: "media placa de 2.5 m²" → 2.5)
+
+JSON a retornar:
+{
+  "categoria": "Mármol|Granito|Sinterizado|Quarztone|Quarzita|null",
+  "referencia": "nombre del material o null",
+  "precio_m2": numero_o_null,
+  "area_placa_comprada": numero_o_null,
+  "m2_usados": numero_o_null,
+  "m2_proyecto": numero_o_null,
+  "tipo_proyecto": "Mesón|Cocina|Baño|Piso|Escalera|Fachada|Otro|null",
+  "agente_externo_taller": true_o_false,
+  "km": numero_o_null,
+  "peajes": numero_o_null,
+  "foraneo": false,
+  "noches": 0,
+  "dias_obra": numero_o_null,
+  "personas": numero_o_null,
+  "datos_faltantes": ["lista de campos que el usuario no mencionó y son necesarios"]
+}
+"""
+
+
+def get_client():
+    try:
+        api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+        if not api_key:
+            return None
+        return anthropic.Anthropic(api_key=api_key)
+    except Exception:
+        return None
+
+
+def ia_disponible() -> bool:
+    try:
+        key = os.environ.get("ANTHROPIC_API_KEY", "")
+        return bool(key and key.startswith("sk-ant-"))
+    except Exception:
+        return False
+
+
+def chat_con_ia(historial: list, mensaje_usuario: str,
+                contexto_tarifas: dict = None) -> str:
+    """Respuesta conversacional del asistente.
+
+    Args:
+        historial:         lista de mensajes previos {role, content}
+        mensaje_usuario:   texto del turno actual
+        contexto_tarifas:  dict de tarifas activas del taller
+                           (st.session_state.tarifas_custom o TARIFAS base).
+                           Se inyecta al final del system prompt para que
+                           la IA use los precios reales del taller, no los
+                           valores hardcoded del prompt original.
+    """
+    client = get_client()
+    if client is None:
+        return (
+            "⚠️ **IA no configurada.** Para activarla, configura la variable de entorno "
+            "`ANTHROPIC_API_KEY` con tu API key de Anthropic."
+        )
+    try:
+        # RAG dinámico: inyectar tarifas reales del taller al system prompt
+        _tarifas_txt = _tarifas_a_texto(contexto_tarifas or TARIFAS)
+        _prompt_final = SYSTEM_PROMPT + (
+            f"\n\nTARIFAS DE TRABAJO ACTUALES DEL TALLER:\n{_tarifas_txt}"
+        )
+        messages = [{"role": m["role"], "content": m["content"]} for m in historial]
+        messages.append({"role": "user", "content": mensaje_usuario})
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=1024,
+            system=_prompt_final,
+            messages=messages,
+        )
+        return response.content[0].text
+    except anthropic.AuthenticationError:
+        return "❌ API key inválida. Verifica el archivo `.streamlit/secrets.toml`."
+    except anthropic.RateLimitError:
+        return "⏳ Muchas consultas seguidas. Espera unos segundos e intenta de nuevo."
+    except Exception as e:
+        return f"❌ Error: {str(e)}"
+
+
+def interpretar_proyecto(descripcion: str) -> dict | None:
+    """
+    Interpreta una descripción libre de proyecto y extrae parámetros
+    para pre-llenar la calculadora. Retorna dict o None si falla.
+    """
+    client = get_client()
+    if client is None:
+        return None
+    try:
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=600,
+            system=SYSTEM_INTERPRET,
+            messages=[{"role": "user", "content": descripcion}],
+        )
+        raw = response.content[0].text.strip()
+        # Limpiar si viene con backticks
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        return json.loads(raw.strip())
+    except Exception:
+        return None
+
+
+def generar_resumen_cotizacion(resultado: dict, contexto: dict) -> str:
+    """
+    Genera un resumen inteligente de la cotización para mostrar al usuario.
+    Le dice si el precio está bien, si hay riesgos, y qué puede optimizar.
+    """
+    client = get_client()
+    if client is None:
+        return ""
+
+    prompt = f"""El usuario acaba de calcular una cotización. Analiza los resultados y da un resumen ejecutivo breve (máx 3 párrafos):
+
+DATOS DEL PROYECTO:
+- Material: {contexto.get('categoria', '?')} — {contexto.get('referencia', '?')}
+- Tipo: {contexto.get('tipo_proyecto', '?')}
+- m² instalados: {contexto.get('m2_real', '?')}
+- Aprovechamiento lámina: {resultado.get('aprovechamiento', 0):.0f}%
+- Retal: {resultado.get('retal', 0):.2f} m²
+
+RESULTADOS:
+- Costo total: ${resultado.get('costo_total', 0):,.0f}
+- Precio sugerido (margen {resultado.get('margen_pct', 40):.0f}%): ${resultado.get('precio_sugerido', 0):,.0f}
+- Utilidad proyectada: ${resultado.get('utilidad', 0):,.0f}
+- Desglose: material ${resultado.get('c1_material', 0):,.0f} | mano de obra ${resultado.get('c2_mano_obra', 0):,.0f} | logística ${resultado.get('c5_logistica', 0):,.0f}
+
+Comenta: ¿el aprovechamiento es bueno o hay mucho retal? ¿el margen es saludable? ¿hay algo que optimizar?
+Sé directo y usa formato de moneda colombiana ($1.000.000)."""
+
+    try:
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=500,
+            system=SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return response.content[0].text
+    except Exception:
+        return ""
+# ── System prompt del Bot SOS ─────────────────────────────────────────────────
+_SYSTEM_SOS = """Eres el asistente de ayuda rapida de Costo360, sistema de cotización de Mármoles Collante & Castro Ltda de presupuestos y control de costos para talleres de piedra y mármol.
+
+TU MISION: Responder dudas sobre como usar la app y sobre terminologia de marmoleria.
+Respondes en MAXIMO 2 parrafos cortos. Sin listas ni encabezados. Directo y claro.
+
+PAGINAS DE LA APP:
+- Inicio: pantalla de bienvenida y tour guiado
+- Cotizacion Directa: cotizador principal (ML, m2, materiales, logistica, calculo)
+- Cotizacion AIU: cotizador para obra publica con estructura A+I+U+IVA
+- Historial: registro de todas las cotizaciones, busqueda y cambio de estado
+- Dashboard: analiticas del negocio, materiales mas rentables, facturacion mensual
+- Banco de Retales: inventario de sobrantes de material aprovechables
+- Parametros: edicion de tarifas de mano de obra, logistica y viaticos
+- Asistente IA: chat completo para analisis de proyectos y asesoria de costos
+- Configuracion: datos de la empresa, logo, banco, condiciones de los PDFs
+- Gestion de Equipo: (solo Admin) registrar y gestionar usuarios del sistema
+
+GLOSARIO CLAVE DE MARMOLERIA:
+- ML (Metro Lineal): unidad de medida de longitud. Un meson de 3 ML x 0,60 m de ancho = 1,80 m2.
+- Retal: sobrante de lamina que quedo tras cortar el proyecto. Puede reutilizarse.
+- Lamina / Placa: pieza completa de piedra tal como llega del proveedor.
+- Aprovechamiento: % de la lamina realmente usado. 85%+ es bueno; <70% hay mucho desperdicio.
+- Perfilado: acabado del borde visible de la piedra (bisel, media cana, recto, etc.).
+- AIU: Administracion + Imprevistos + Utilidad. Estructura de precios para obra publica.
+- IVA en AIU: segun Decreto 1372/92 de Colombia, el IVA (19%) se aplica SOLO sobre la Utilidad.
+- Mano de obra: se paga por ML cortado e instalado, no por hora.
+- Consumibles: lijas, masilla de poliester, ceras, sellador, estopa usados en la instalacion.
+- Disco diamantado: herramienta de corte. Se desgasta ~90 m2 en marmol, menos en sinterizado.
+- Sinterizado: material tecnico de alta resistencia. Requiere herramientas especiales.
+- Quarzita: piedra natural muy dura, diferente al quarztone (cuarzo compactado).
+- Zocalo: pieza baja de piedra instalada en la pared junto al piso (10 cm alto estandar).
+- Margen: (precio - costo) / precio x 100. Saludable: 30-45%. Minimo viable: 20%.
+
+TONO: Espanol colombiano claro. Amigable pero profesional. Sin tecnicismos innecesarios.
+"""
+
+
+def chat_sos(pregunta: str, contexto_actual: str = "Inicio", contexto_form: str = "",
+             contexto_tarifas: dict = None) -> str:
+    """
+    Asistente contextual rapido para el boton SOS del sidebar.
+
+    Args:
+        pregunta:          duda del usuario en texto libre
+        contexto_actual:   pagina en la que esta el usuario (st.session_state.nav_radio)
+        contexto_form:     volcado en texto de st.session_state.pre — datos
+                           del formulario activo (material, dimensiones, precios, etc.)
+        contexto_tarifas:  dict de tarifas activas del taller
+                           (st.session_state.tarifas_custom o TARIFAS base).
+                           Se inyecta al system prompt para que la IA responda
+                           usando los costos reales configurados en Parámetros.
+
+    Returns:
+        Respuesta en maximo 2 parrafos. Mensaje de error descriptivo si falla.
+    """
+    client = get_client()
+    if client is None:
+        return (
+            "El asistente IA no esta configurado. Para activarlo, agrega tu API key "
+            "de Anthropic en `.streamlit/secrets.toml` con la clave `ANTHROPIC_API_KEY`."
+        )
+    try:
+        # ── RAG dinámico: inyectar tarifas reales en el system prompt ──────────
+        _tarifas_txt_sos = _tarifas_a_texto(contexto_tarifas or TARIFAS)
+        _system_sos_final = _SYSTEM_SOS + (
+            f"\n\nTARIFAS DE TRABAJO ACTUALES DEL TALLER:\n{_tarifas_txt_sos}"
+        )
+
+        # ── Construir mensaje con contexto del formulario ─────────────────────
+        _partes = [f"Estoy en la seccion '{contexto_actual}' de la app."]
+        if contexto_form.strip():
+            _partes.append(
+                "\n\nAQUI TIENES LOS DATOS ACTUALES DE LA CALCULADORA DEL USUARIO. "
+                "Basa tus respuestas en estas medidas, precios y selecciones exactas:\n"
+                + contexto_form
+            )
+        _partes.append(f"\n\nMi duda es: {pregunta}")
+        mensaje = "".join(_partes)
+
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=400,
+            system=_system_sos_final,
+            messages=[{"role": "user", "content": mensaje}],
+        )
+        return response.content[0].text
+    except Exception as e:
+        return f"No pude consultar la IA en este momento. ({type(e).__name__})"
+
+
+def extraer_coordenadas_plano(descripcion: str) -> dict | None:
+    """
+    Interpreta una descripción libre de plano de taller y extrae
+    coordenadas y medidas para el motor de generación de planos SVG.
+    Retorna dict con las coordenadas o None si falla.
+    """
+    client = get_client()
+    if client is None:
+        return None
+
+    _SYSTEM_PLANO = """Eres un extractor de datos para un generador de planos de marmolería.
+El usuario describe las medidas de un proyecto. Extrae las dimensiones y devuelve SOLO un JSON.
+
+REGLAS:
+1. Devuelve SOLO el JSON, sin texto antes ni después, sin backticks
+2. Convierte todas las medidas a metros (ej: 90cm → 0.90)
+3. Si una medida no se menciona, usa null
+4. tipo_pieza: "meson", "isla", "bano", "piso", "escalera", "fachada", "otro"
+
+JSON a retornar:
+{
+  "tipo_pieza": "string",
+  "piezas": [
+    {
+      "nombre": "string",
+      "largo": numero_o_null,
+      "ancho": numero_o_null,
+      "cantidad": numero_entero
+    }
+  ],
+  "notas": "observaciones adicionales o null"
+}
+"""
+    try:
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=600,
+            system=_SYSTEM_PLANO,
+            messages=[{"role": "user", "content": descripcion}],
+        )
+        raw = response.content[0].text.strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        return json.loads(raw.strip())
+    except Exception:
+        return None
+
+
+# ── Auditor financiero de cotizaciones ─────────────────────────────────────────-
+_SYSTEM_AUDITOR = """Eres un AUDITOR FINANCIERO experto en marmolería para Costo360 / Mármoles Collante & Castro,
+plataforma SaaS B2B de presupuestos y control de costos para talleres de piedra y mármol.
+
+Tu misión: detectar FUGAS DE DINERO REALES y SERVICIOS NO COBRADOS antes de enviar la cotización al cliente.
+
+═══ REGLAS DE ORO (OBLIGATORIAS) ═══
+
+REGLA 1 — EL MOTOR DE CÁLCULO ES ABSOLUTO:
+El sistema calculó el IVA, el retal, la merma y todos los totales con precisión matemática.
+PROHIBIDO: sugerir que el IVA "se come" el margen, que la suma está mal, o cuestionar cualquier cálculo numérico del sistema.
+Si ves un margen del 30% después de IVA, ese 30% ES CORRECTO. Analízalo como tal.
+
+REGLA 2 — TARIFAS INCUESTIONABLES:
+Los valores en pesos ($) de mano de obra, viáticos y logística que llegan en el JSON son las tarifas oficiales de la empresa.
+PROHIBIDO: decir que están "por debajo del mercado", "parecen bajas" o sugerir que deberían ser más altas.
+SÍ genera alerta ÚNICAMENTE si un trabajo obvio tiene costo = $0 (ej. instalación $0, flete $0 en proyecto foráneo).
+
+REGLA 3 — IGNORA VARIABLES BOOLEANAS DEL SISTEMA:
+No analices ni menciones variables internas como `zocalo_activo`, `foraneo_activo`, `viaticos_activos` ni ningún booleano.
+Solo analiza montos finales en COP. Si el costo de zócalos es $0 y el proyecto claramente los requiere, eso sí es una alerta.
+
+REGLA 4 — FOCO EN OPORTUNIDADES REALES:
+Busca exclusivamente:
+- Servicios no cobrados: lavaplatos, perforaciones (pocetas, grifos), desmontes, subidas por escalera, silicona visible.
+- Viáticos omitidos: proyecto foráneo (km > 60) con c6_viaticos = $0.
+- Margen de ganancia real (margen_pct) menor al 25%.
+- Merma declarada incoherente: sinterizado o quarzita con merma < 10%.
+
+REGLA 5 — ESTILO TELEGRÁFICO OBLIGATORIO:
+Cada alerta y cada sugerencia DEBE tener MÁXIMO 15 palabras.
+PROHIBIDO escribir párrafos, explicaciones o justificaciones.
+Ve directo al dato, al riesgo y al dinero.
+
+═══ FORMATO DE RESPUESTA ═══
+
+Responde ÚNICAMENTE con un JSON válido, SIN texto antes ni después, SIN backticks, SIN comentarios:
+{
+  "estado": "verde|amarillo|rojo",
+  "margen_analisis": "Una sola frase directa sobre el margen. Máximo 20 palabras.",
+  "alertas": ["Alerta corta ≤15 palabras", "Otra alerta corta"],
+  "sugerencias": ["Sugerencia corta ≤15 palabras", "Otra sugerencia corta"]
+}
+
+Criterios de estado:
+- "verde": margen_pct ≥ 30% y sin fugas evidentes.
+- "amarillo": margen_pct entre 20% y 29%, o hay 1-2 servicios probablemente omitidos.
+- "rojo": margen_pct < 20%, o hay fuga de dinero grave (flete $0 en foráneo, instalación $0).
+
+Si alertas o sugerencias están vacías, devuelve listas vacías []. No inventes problemas que no existen.
+
+REGLA 6 — LENGUAJE COMERCIAL HUMANO (OBLIGATORIA):
+Está ESTRICTAMENTE PROHIBIDO mencionar nombres de variables internas, claves del JSON o términos de código en tus respuestas.
+PROHIBIDO escribir: c3_zocalos, c4_riesgo, c5_logistica, c6_viaticos, c7_adicionales, margen_pct, foraneo_activo, zocalo_activo, viaticos_activos, agente_externo, km, num_peajes, m2_real, ml_proyecto, datos_json, ni ninguna clave técnica.
+OBLIGATORIO traducir todo hallazgo a lenguaje de negocios natural comprensible para un vendedor:
+- c3_zocalos → "costo de zócalos"
+- c4_riesgo → "provisión de riesgo por rotura"
+- c5_logistica → "costo de transporte y entrega"
+- c6_viaticos → "viáticos del equipo de instalación"
+- c7_adicionales → "costos adicionales de obra"
+- margen_pct → "margen de ganancia"
+- foraneo_activo → "proyecto fuera de la ciudad"
+- m2_real → "metros cuadrados del proyecto"
+- ml_proyecto → "metros lineales del proyecto"
+Si no sabes cómo traducir un término técnico, descríbelo por su función comercial, nunca por su nombre en código.
+"""
+
+
+def auditor_rentabilidad(datos_cotizacion: dict) -> dict:
+    """
+    Analiza la rentabilidad y riesgos de una cotización de marmolería.
+
+    Args:
+        datos_cotizacion: dict con toda la información relevante de la cotización.
+
+    Returns:
+        dict con la estructura:
+        {
+          "estado": "verde|amarillo|rojo",
+          "margen_analisis": "texto",
+          "alertas": [...],
+          "sugerencias": [...]
+        }
+
+    Lanza:
+        RuntimeError si la IA no está disponible.
+        ValueError si la respuesta de la IA no es un JSON válido con la estructura esperada.
+    """
+    client = get_client()
+    if client is None:
+        raise RuntimeError(
+            "IA no disponible. Configura ANTHROPIC_API_KEY en .streamlit/secrets.toml"
+        )
+
+    try:
+        payload_str = json.dumps(datos_cotizacion, ensure_ascii=False, indent=2)
+        prompt = (
+            "Revisa la siguiente cotización de marmolería y devuelve ÚNICAMENTE un JSON "
+            "con el análisis usando la estructura indicada en el system prompt.\n\n"
+            "COTIZACION:\n"
+            f"{payload_str}\n"
+        )
+
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=2000,
+            system=_SYSTEM_AUDITOR,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        raw = "".join(
+            getattr(b, "text", "") for b in response.content
+            if hasattr(b, "text") and b.text
+        ).strip()
+
+        # Extracción robusta del primer bloque JSON con regex
+        match = re.search(r"\{.*\}", raw, re.DOTALL)
+        if not match:
+            raise ValueError(f"La IA no devolvió un JSON válido. Esto fue lo que respondió:\n{raw}")
+
+        json_str = match.group(0)
+        data = json.loads(json_str)
+
+        # Validación mínima de estructura
+        if not isinstance(data, dict):
+            raise ValueError("La IA no devolvió un objeto JSON de nivel raíz.")
+        for key in ("estado", "margen_analisis", "alertas", "sugerencias"):
+            if key not in data:
+                raise ValueError(f"Falta la clave obligatoria '{key}' en la respuesta de la IA.")
+
+        return data
+    except ValueError:
+        # Propagar ValueError tal cual, según requisito
+        raise
+    except Exception as e:
+        raise ValueError(f"Fallo al analizar la respuesta del auditor IA: {e}") from e

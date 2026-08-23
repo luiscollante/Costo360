@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Costomarmol</string>
+    <string name="title_activity_main">Costomarmol</string>
+    <string name="package_name">com.marmolescollante.costomarmol</string>
+    <string name="custom_url_scheme">com.marmolescollante.costomarmol</string>
+</resources>

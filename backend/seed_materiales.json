@@ -1,0 +1,2297 @@
+[
+  {
+    "categoria": "Mármol",
+    "referencia": "CAFE FARAON-70X300 SPLIT FACE-ESP-15-CON EMPAQUE",
+    "precio_m2": 173000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMA SIENNA-70X300 SPLIT FACE-ESP-15-CON EMPAQUE",
+    "precio_m2": 184000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "ROYAL CREAM-70X300 SPLIT FACE-ESP-15-CON EMPAQUE",
+    "precio_m2": 173000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "BALI GREEN-100X100 TABLETA-ESP-10-MATE",
+    "precio_m2": 184000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "BALI GREEN-306X306 10X10 FONDO-ESP-10-MATE",
+    "precio_m2": 226000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "BALI GREEN-100X200 TABLETA-ESP-10-MATE",
+    "precio_m2": 196000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "BLANCO ZEUS-TABLETA 600x600-ESP-20-BRILLADO",
+    "precio_m2": 263000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMA MARFIL CLASICO-JUNTA PERDIDA 400-ESP-12-NATURAL",
+    "precio_m2": 158000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMA MARFIL CLASICO-JUNTA PERDIDA 400-ESP-15-NATURAL",
+    "precio_m2": 158000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMA MARFIL CLASICO-JUNTA PERDIDA 600-ESP-15-NATURAL",
+    "precio_m2": 173000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMA MARFIL CLASICO-TABLETA 1200x1200-ESP-15-NATURAL",
+    "precio_m2": 200000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMA NOCCIOLA JUNTA PERDIDA 150-ESP 10-NATURAL",
+    "precio_m2": 126000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMA NOCCIOLA JUNTA PERDIDA 400-ESP 10-NATURAL",
+    "precio_m2": 142000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMA NOCCIOLA JUNTA PERDIDA 600-ESP 10-NATURAL",
+    "precio_m2": 152000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMA NOCCIOLA TABLETA 1200X1200-ESP 15-NATURAL",
+    "precio_m2": 179000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMA TIPO BOTICINO-JUNTA PERDIDA 400-ESP-15-NATURAL",
+    "precio_m2": 200000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMO SICILIA-400 JUNTA PERDIDA-ESP-15-NATURAL",
+    "precio_m2": 205000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMO SICILIA-600 JUNTA PERDIDA-ESP-15-NATURAL",
+    "precio_m2": 205000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMO SICILIA-TABLETA 1200x1200-ESP-15-NATURAL",
+    "precio_m2": 236000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "LIGTH CREAM-CALIZA-JUNTA PERDIDA 400 ESP 12-NATURAL",
+    "precio_m2": 179000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "SANDSTONE-JUNTA PERDIDA 400-ESP-15-NATURAL",
+    "precio_m2": 200000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "TRAVERTINO CHIARO JUNTA PERDIDA 150-ESP 20 NATURAL",
+    "precio_m2": 137000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "TRAVERTINO CHIARO JUNTA PERDIDA 300-ESP 16 NATURAL",
+    "precio_m2": 158000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "TRAVERTINO CHIARO-JUNTA PERDIDA 300-ESP-20-NATURAL",
+    "precio_m2": 168000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "TRAVERTINO CHIARO JUNTA PERDIDA 400-ESP 16 NATURAL",
+    "precio_m2": 158000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "TRAVERTINO CHIARO-JUNTA PERDIDA 400-ESP-20-NATURAL",
+    "precio_m2": 168000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "TRAVERTINO CHIARO-JUNTA PERDIDA 600-ESP-16-NATURAL",
+    "precio_m2": 194000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "T SATURNIA-400X400 TABLETA-ESP-12-MATE SIN RETAPAR",
+    "precio_m2": 131000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "TRAVERTINO SATURNIA-JUNTA PERDIDA-400-ESP-20-NATURAL",
+    "precio_m2": 168000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "VAINILLA-400 JUNTA PERDIDA-ESP-12-BRILLADO",
+    "precio_m2": 263000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "VAINILLA-1200X1200 TABLETA-ESP-12-BRILLADO",
+    "precio_m2": 420000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "PIZARRA NEGRA-TABLETA-300x600x11-NATURAL",
+    "precio_m2": 168000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "PIZARRA OCRE-TABLETA-300x600x11-NATURAL",
+    "precio_m2": 168000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "ARMANI SILVER (6mm MATE)",
+    "precio_m2": 263000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "COSMOPOLITA IVORY (6mm MATE)",
+    "precio_m2": 263000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "DUCAL GOLD (6mm MATE)",
+    "precio_m2": 263000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "DUCAL GOLD (6mm BRILLADO)",
+    "precio_m2": 278000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "LASSA WHITE (6mm MATE)",
+    "precio_m2": 263000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "LASSA WHITE (6mm BRILLADO)",
+    "precio_m2": 278000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "PALOMA STONE (6mm MATE)",
+    "precio_m2": 263000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "TAJ MAHAL (6mm MATE)",
+    "precio_m2": 263000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "PURE BLACK (12mm)",
+    "precio_m2": 341000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "PURE GREY (12mm)",
+    "precio_m2": 341000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "PURE WHITE (12mm)",
+    "precio_m2": 341000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "BIANCO APUANO (12mm MATE)",
+    "precio_m2": 399000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "CALACATUM (12mm MATE)",
+    "precio_m2": 399000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "GRIGIO (12mm MATE)",
+    "precio_m2": 399000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "MICHELANGELO (12mm MATE)",
+    "precio_m2": 399000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "NEW GREY (12mm MATE)",
+    "precio_m2": 399000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "BIANCHISSIMO (12mm MATE)",
+    "precio_m2": 420000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "BIANCHISSIMO (12mm BRILLADO)",
+    "precio_m2": 525000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "CALACATTA DORATO (12mm MATE)",
+    "precio_m2": 473000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "NEVE (12mm MATE)",
+    "precio_m2": 525000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "STATUARIO MAXIMUS (12mm MATE)",
+    "precio_m2": 662000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "ALLURE BLACK (12mm MATE)",
+    "precio_m2": 672000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "ALTO STATUARIO (6mm MATE)",
+    "precio_m2": 420000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "ALTO STATUARIO (6mm BRILLADO)",
+    "precio_m2": 525000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "ALTO STATUARIO (12mm MATE)",
+    "precio_m2": 672000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "ALTO STATUARIO (12mm BRILLADO)",
+    "precio_m2": 819000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "ARIZONA SAND (12mm MATE)",
+    "precio_m2": 672000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "ARMANI SILVER (12mm MATE)",
+    "precio_m2": 672000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "BELVEDERE BLACK (6mm MATE)",
+    "precio_m2": 420000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "BELVEDERE BLACK (6mm BRILLADO)",
+    "precio_m2": 525000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "BELVEDERE BLACK (12mm MATE)",
+    "precio_m2": 672000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "BELVEDERE BLACK (12mm BRILLADO)",
+    "precio_m2": 819000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "BOREAL SAND (6mm MATE)",
+    "precio_m2": 420000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "BOREAL SAND (12mm MATE)",
+    "precio_m2": 672000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "BOREAL UMBER (6mm MATE)",
+    "precio_m2": 420000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "BOREAL UMBER (12mm MATE)",
+    "precio_m2": 672000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "BORGOGNA SILVER (12mm MATE)",
+    "precio_m2": 672000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "CALACATTA ELISIO (6mm MATE)",
+    "precio_m2": 420000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "CALACATTA GRISEO (6mm MATE)",
+    "precio_m2": 420000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "CARDOSO GRAY (6mm MATE)",
+    "precio_m2": 420000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "CARDOSO GRAY (12mm MATE)",
+    "precio_m2": 672000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "COSMOPOLITA GRAY (6mm MATE)",
+    "precio_m2": 420000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "COSMOPOLITA GRAY (12mm MATE)",
+    "precio_m2": 672000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "CROTONE PULPIS (6mm MATE)",
+    "precio_m2": 420000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "CROTONE PULPIS (6mm BRILLADO)",
+    "precio_m2": 525000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "CROTONE PULPIS (12mm MATE)",
+    "precio_m2": 672000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "CROTONE PULPIS (12mm BRILLADO)",
+    "precio_m2": 819000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "DUCAL GOLD (6mm MATE)",
+    "precio_m2": 420000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "DUCAL GOLD (6mm BRILLADO)",
+    "precio_m2": 525000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "DUCAL GOLD (12mm MATE)",
+    "precio_m2": 672000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "DUCAL GOLD (12mm BRILLADO)",
+    "precio_m2": 819000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "GRASSI WHITE (6mm MATE)",
+    "precio_m2": 420000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "GRASSI WHITE (6mm BRILLADO)",
+    "precio_m2": 525000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "GRASSI WHITE (12mm MATE)",
+    "precio_m2": 672000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "GRASSI WHITE (12mm BRILLADO)",
+    "precio_m2": 819000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "MOON BLACK (6mm MATE)",
+    "precio_m2": 420000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "MOON BLACK (12mm MATE)",
+    "precio_m2": 672000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "STATUARIO MAXIMUS (12mm MATE)",
+    "precio_m2": 662000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "TIVOLI WHITE (12mm MATE)",
+    "precio_m2": 672000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "VARESE ONICE (6mm MATE)",
+    "precio_m2": 525000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Amazonite (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Antartica White (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Arabescato Corchia (12mm MATE)",
+    "precio_m2": 1050000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Arabescato Corchia (12mm BRILLADO)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Avatar Blue (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Baobab (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Bianco Rhino (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Calacatta Borghini (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Calacatta Macchia Vecchia (6mm MATE)",
+    "precio_m2": 525000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Calacatta Macchia Vecchia (6mm BRILLADO)",
+    "precio_m2": 630000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Calacatta Macchia Vecchia (12mm MATE)",
+    "precio_m2": 945000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Calacatta Macchia Vecchia (12mm BRILLADO)",
+    "precio_m2": 1050000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Calacatta Ming (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Calacatta Viola (12mm MATE)",
+    "precio_m2": 1050000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Calacatta Viola (12mm BRILLADO)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Cote D Azur (12mm MATE)",
+    "precio_m2": 1050000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Cote D Azur (12mm BRILLADO)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Cremo Delicato (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Cristallo Azure (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Cristallo White (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Fusion Blue (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Invisible Grey (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Louise Blu (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Noir Grand Antique (12mm MATE)",
+    "precio_m2": 1050000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Noir Grand Antique (12mm BRILLADO)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Onyx Black (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Sahara Noir (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Sodalite Blue (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "ST. Barth (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Statuario Classic (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Swiss Alps (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Taj Mahal (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "Tramonto (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Sinterizado",
+    "referencia": "White Beauty (12mm MATE)",
+    "precio_m2": 1260000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": 160,
+    "alto_lamina_cm": 320,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "VERMONT BROWN",
+    "precio_m2": 236000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "XIAMEN WHITE",
+    "precio_m2": 236000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "BEIGE ROSA",
+    "precio_m2": 254000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "BLANCO ATLANTICO",
+    "precio_m2": 254000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "MING ROSE",
+    "precio_m2": 254000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "VERDE UBATUBA",
+    "precio_m2": 376000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "XANGI WHITE",
+    "precio_m2": 394000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "BENGAL BLACK",
+    "precio_m2": 499000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "PATAGONIA",
+    "precio_m2": 499000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "MEDITERRANEO",
+    "precio_m2": 499000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "NEGRO SAN GABRIEL",
+    "precio_m2": 517000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "SILVER GREY 16MM",
+    "precio_m2": 551000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "USHUARA",
+    "precio_m2": 569000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "BOSTON BROWN",
+    "precio_m2": 578000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "ROYAL GOLD",
+    "precio_m2": 612000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "NEW TITANIUM",
+    "precio_m2": 638000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "NEGRO ZIMBAUE",
+    "precio_m2": 656000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "SILVER GREY 20MM",
+    "precio_m2": 674000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "GRIZZLY",
+    "precio_m2": 691000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "LAVA",
+    "precio_m2": 814000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "WHITE SHADOW",
+    "precio_m2": 814000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "BLUE FANTASY",
+    "precio_m2": 866000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "WHITE STORM",
+    "precio_m2": 901000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "BLACK RIVER",
+    "precio_m2": 901000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "NEW DELICATUS",
+    "precio_m2": 901000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "BIANCO MIRAMARE",
+    "precio_m2": 1042000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "GOLDEN WHITE",
+    "precio_m2": 609000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "MAGMA GOLD",
+    "precio_m2": 609000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "SPLENDOUR GOLD",
+    "precio_m2": 609000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "WHITE AURUM",
+    "precio_m2": 1058000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "WHITE DELICATUS",
+    "precio_m2": 1058000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "BELGIUM BLACK",
+    "precio_m2": 704000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "BIANCO AZURRO",
+    "precio_m2": 1199000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "BLUE SKY",
+    "precio_m2": 1199000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "DELICATUS",
+    "precio_m2": 1199000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "ROMA",
+    "precio_m2": 1199000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "COLISEU",
+    "precio_m2": 1357000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "ARTIC CREAM",
+    "precio_m2": 1391000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "DEJAVU",
+    "precio_m2": 1391000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "MOON YELLOW",
+    "precio_m2": 1391000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "JUPARANA FALESIA",
+    "precio_m2": 1391000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "DALIA WHITE",
+    "precio_m2": 1583000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "TROPICAL STORM",
+    "precio_m2": 2389000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Granito",
+    "referencia": "AMAZONAS",
+    "precio_m2": 2914000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarzita",
+    "referencia": "BIANCO SUPREME",
+    "precio_m2": 473000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarzita",
+    "referencia": "CREAM DOR",
+    "precio_m2": 609000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarzita",
+    "referencia": "GREEN RIVER",
+    "precio_m2": 609000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarzita",
+    "referencia": "GRIS OCEANO",
+    "precio_m2": 609000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarzita",
+    "referencia": "INFINITY WHITE",
+    "precio_m2": 567000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarzita",
+    "referencia": "OBEROI",
+    "precio_m2": 609000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarzita",
+    "referencia": "OTONO",
+    "precio_m2": 609000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarzita",
+    "referencia": "SNOW WHITE",
+    "precio_m2": 525000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarzita",
+    "referencia": "SPRING FALLS",
+    "precio_m2": 609000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarzita",
+    "referencia": "TAUPE WHITE",
+    "precio_m2": 609000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "ARABESCATO",
+    "precio_m2": 1163000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "ARMANI BROWN",
+    "precio_m2": 638000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "BARDIGLIO",
+    "precio_m2": 672000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "BLANCO ARTEMISA",
+    "precio_m2": 814000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "BLANCO CARRARA EXTRA",
+    "precio_m2": 971000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "BLANCO THASSOS EXTRA",
+    "precio_m2": 1339000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "BLANCO ZEUS",
+    "precio_m2": 1163000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "BLANCO ZEUS EXTRA",
+    "precio_m2": 1286000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "BOTTICINO (ITALIANO)",
+    "precio_m2": 727000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CAFE FARAON",
+    "precio_m2": 499000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CALACATTA BELGIA",
+    "precio_m2": 656000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CALACATTA CALDIA",
+    "precio_m2": 1058000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CALACATTA MIELE",
+    "precio_m2": 656000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CALACATTA NUOVO",
+    "precio_m2": 2039000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMA MARFIL ALBA",
+    "precio_m2": 761000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMA MARFIL BASIC",
+    "precio_m2": 604000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMA MARFIL CLASICO 15mms ESP",
+    "precio_m2": 595000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMA MARFIL CLASICO 20mms ESP",
+    "precio_m2": 630000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMA MARFIL DE LUXE",
+    "precio_m2": 901000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMA SIENNA 15mms ESP",
+    "precio_m2": 420000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMA SIENNA 15mms ESP",
+    "precio_m2": 385000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMA SIENNA 20mms ESP",
+    "precio_m2": 507000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMA SIENNA 20mms ESP",
+    "precio_m2": 412000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMA TIPO BOTICCINO",
+    "precio_m2": 761000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CREMO SICILIA",
+    "precio_m2": 691000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "GRIGIO DELICATO",
+    "precio_m2": 814000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "KRAKEN",
+    "precio_m2": 814000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "LIGHT CREAM (CALIZA)",
+    "precio_m2": 586000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "MARRON EMPERADOR",
+    "precio_m2": 814000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "MATARAZZO",
+    "precio_m2": 567000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "MILOS",
+    "precio_m2": 971000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "NEGRO MARQUINA",
+    "precio_m2": 1024000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "NEGRO PORTORO",
+    "precio_m2": 2914000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "ONIX (Miel, Blanco, Iris, Amber, Mirafiori, Rosa, Sunset)",
+    "precio_m2": 1785000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "ROYAL CREAM",
+    "precio_m2": 517000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "SILVER BLUE",
+    "precio_m2": 937000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "TEKA STONE",
+    "precio_m2": 727000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "TRAVERTINO CHIARO",
+    "precio_m2": 665000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "TRAVERTINO CHIARO",
+    "precio_m2": 779000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "VAINILLA",
+    "precio_m2": 901000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "VERDE GUATEMALA",
+    "precio_m2": 761000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "VERDE MARE",
+    "precio_m2": 586000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "VERDE TIKAL",
+    "precio_m2": 638000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "VOLAKAS",
+    "precio_m2": 1120000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "VOLAKAS EXTRA",
+    "precio_m2": 1216000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CAFE PINTA",
+    "precio_m2": 321000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "CAFE PINTA",
+    "precio_m2": 355000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "PIEDRA MUNECA",
+    "precio_m2": 333000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "SINO ACUAMARINA",
+    "precio_m2": 335000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "SINO ACUAMARINA",
+    "precio_m2": 359000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "SINO DARK",
+    "precio_m2": 335000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "SINO DARK",
+    "precio_m2": 359000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "SINO VETA",
+    "precio_m2": 335000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Mármol",
+    "referencia": "SINO VETA",
+    "precio_m2": 359000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarztone",
+    "referencia": "ALPINE MIST",
+    "precio_m2": 546000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarztone",
+    "referencia": "ATERRA",
+    "precio_m2": 546000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarztone",
+    "referencia": "BIANCO DRIFT",
+    "precio_m2": 546000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarztone",
+    "referencia": "BIANCO EXTRA",
+    "precio_m2": 315000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarztone",
+    "referencia": "BLANCO POLAR",
+    "precio_m2": 247000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarztone",
+    "referencia": "CALACATTA NUVO",
+    "precio_m2": 546000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarztone",
+    "referencia": "CEMENTO",
+    "precio_m2": 399000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarztone",
+    "referencia": "CLEARSKIES",
+    "precio_m2": 693000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarztone",
+    "referencia": "EMPIRA WHITE",
+    "precio_m2": 546000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarztone",
+    "referencia": "FRESH CONCRETE",
+    "precio_m2": 546000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarztone",
+    "referencia": "GRIS CLASICO",
+    "precio_m2": 368000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarztone",
+    "referencia": "KENIA BLACK",
+    "precio_m2": 399000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarztone",
+    "referencia": "OFF WHITE",
+    "precio_m2": 546000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarztone",
+    "referencia": "POLAR M L (media placa)",
+    "precio_m2": 205000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarztone",
+    "referencia": "POLAR M S (media placa)",
+    "precio_m2": 197000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarztone",
+    "referencia": "RAW CONCRETE",
+    "precio_m2": 546000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarztone",
+    "referencia": "RUGGED CONCRETE",
+    "precio_m2": 546000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarztone",
+    "referencia": "STATUARIO NUVO",
+    "precio_m2": 546000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarztone",
+    "referencia": "SLEEK CONCRETE",
+    "precio_m2": 546000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  },
+  {
+    "categoria": "Quarztone",
+    "referencia": "WHITE ATTICA",
+    "precio_m2": 546000.0,
+    "precio_lamina": null,
+    "ancho_lamina_cm": null,
+    "alto_lamina_cm": null,
+    "proveedor": "Gramar"
+  }
+]

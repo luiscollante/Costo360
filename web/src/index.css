@@ -1,23 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
 @import "tailwindcss";
 
 @theme {
-  --color-brand-green: #1f6f54;
-  --color-brand-gold: #c9a45c;
-  --color-brand-bg: #0f1a14;
-  --color-brand-surface: #162019;
-  --color-brand-text: #e8f0eb;
+  --color-brand-bg: #F5E8D2;
+  --color-brand-surface: #FFFFFF;
+  --color-brand-border: #E5D5BA;
+  --color-brand-primary: #15612E;
+  --color-brand-primary-light: #1A7A3A;
+  --color-brand-text: #4A4A4A;
+  --color-brand-text-dark: #1A1A1A;
+  --color-brand-muted: #8A8A8A;
+  --color-brand-gold: #D4AF37;
+  --color-brand-gold-light: #F0C447;
+  --color-brand-input: #FFFFFF;
+  --color-brand-input-deep: #FDFBF7;
 
-  --font-body: "Plus Jakarta Sans", system-ui, sans-serif;
-  --font-heading: "Playfair Display", serif;
+  --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
 }
 
-:root {
-  color-scheme: dark;
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Light mode strict enforcement (JARVIS-DESIGN) */
+html {
+  color-scheme: light;
 }
 
 body {
-  margin: 0;
   background-color: var(--color-brand-bg);
   color: var(--color-brand-text);
-  font-family: var(--font-body);
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+/* Texture overlay for background */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+  background-image: url('/Textura Sutil de Fondo (Patrón de Veta Ruido).png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 0.03;
+}
+
+/* Glassmorphism base utility */
+.glass {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 32px rgba(74, 74, 74, 0.05);
+}
+
+.glass-gold {
+  background: rgba(212, 175, 55, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: 0 8px 32px rgba(212, 175, 55, 0.1);
+}
+
+/* Shimmer animation (Premium shine) */
+@keyframes shimmer {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+.shimmer-text {
+  background: linear-gradient(90deg, var(--color-brand-gold) 0%, #FFF 50%, var(--color-brand-gold) 100%);
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+
+.shimmer-border::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px; /* Border thickness */
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  background-size: 200% 100%;
+  animation: shimmer 3s infinite linear;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.group:hover .shimmer-border::after {
+  opacity: 1;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(21, 97, 46, 0.2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(21, 97, 46, 0.5); }

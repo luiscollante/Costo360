@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+psycopg2-binary
+SQLAlchemy
+pydantic
+anthropic
+reportlab
+Pillow
+python-multipart
+httpx
+slowapi
+google-genai
+defusedxml
+tzdata

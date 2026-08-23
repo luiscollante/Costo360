@@ -1,50 +1,76 @@
-import { useEffect, useState } from 'react'
-import type { Session } from '@supabase/supabase-js'
-import { supabase } from './lib/supabaseClient'
-import Login from './pages/Login'
+import { useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useAuthStore } from '@/store/auth'
+import LoginPage from '@/pages/LoginPage'
+import DashboardPage from '@/pages/DashboardPage'
+import CotizacionPage from '@/pages/CotizacionPage'
+import HistorialPage from '@/pages/HistorialPage'
+import RetalesPage from '@/pages/RetalesPage'
+import ConfigPage from '@/pages/ConfigPage'
+import PrivateRoute from '@/components/PrivateRoute'
+import AdminRoute from '@/components/AdminRoute'
+import AdminPage from '@/pages/AdminPage'
+import ParametrosPage from '@/pages/ParametrosPage'
+import NestingPage from '@/pages/NestingPage'
+import CotizacionExpressPage from '@/pages/CotizacionExpressPage'
+import CotizacionAIUPage from '@/pages/CotizacionAIUPage'
+import ToastHost from '@/components/ToastHost'
+import LandingPage from '@/pages/LandingPage'
 
-function App() {
-  const [session, setSession] = useState<Session | null>(null)
-  const [checkingSession, setCheckingSession] = useState(true)
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { staleTime: 1000 * 60 * 5, retry: 1 },
+  },
+})
+
+function Private({ children }: { children: React.ReactNode }) {
+  return <PrivateRoute>{children}</PrivateRoute>
+}
+
+// Espera a que la sesión se hidrate desde Preferences (solo aplica en el APK — en la web
+// `hydrated` ya empieza en `true`, así que esto no agrega ninguna espera visible ahí).
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const hydrated = useAuthStore((s) => s.hydrated)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
-      setCheckingSession(false)
-    })
-
-    const { data: subscription } = supabase.auth.onAuthStateChange(
-      (_event, newSession) => setSession(newSession)
-    )
-
-    return () => subscription.subscription.unsubscribe()
+    useAuthStore.getState().hydrate()
   }, [])
 
-  if (checkingSession) {
+  if (!hydrated) {
     return (
-      <div className="min-h-svh flex items-center justify-center bg-brand-bg text-brand-text/60">
-        Cargando…
+      <div className="min-h-screen flex items-center justify-center bg-brand-bg">
+        <div className="w-8 h-8 border-2 border-brand-muted/30 border-t-brand-primary rounded-full animate-spin" />
       </div>
     )
   }
 
-  if (!session) {
-    return <Login />
-  }
-
-  return (
-    <div className="min-h-svh flex flex-col items-center justify-center gap-4 bg-brand-bg text-brand-text">
-      <h1 className="font-heading text-2xl">Sesión iniciada</h1>
-      <p className="text-brand-text/60">{session.user.email}</p>
-      <button
-        type="button"
-        onClick={() => supabase.auth.signOut()}
-        className="rounded-lg bg-brand-surface border border-white/10 px-4 py-2 text-sm hover:border-brand-gold"
-      >
-        Cerrar sesión
-      </button>
-    </div>
-  )
+  return <>{children}</>
 }
 
-export default App
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ToastHost />
+      <AuthGate>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/dashboard" element={<Private><DashboardPage /></Private>} />
+            <Route path="/cotizacion" element={<Private><CotizacionPage /></Private>} />
+            <Route path="/express" element={<Private><CotizacionExpressPage /></Private>} />
+            <Route path="/cotizacion-aiu" element={<Private><CotizacionAIUPage /></Private>} />
+            <Route path="/historial" element={<Private><HistorialPage /></Private>} />
+            <Route path="/retales" element={<Private><RetalesPage /></Private>} />
+            <Route path="/nesting" element={<Private><NestingPage /></Private>} />
+            <Route path="/parametros" element={<Private><ParametrosPage /></Private>} />
+            <Route path="/configuracion" element={<Private><ConfigPage /></Private>} />
+            <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthGate>
+    </QueryClientProvider>
+  )
+}

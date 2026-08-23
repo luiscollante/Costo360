@@ -1,0 +1,24 @@
+{
+  "name": "Costomarmol",
+  "short_name": "Costomarmol",
+  "description": "Herramienta de cotización — Mármoles Collante & Castro",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#060D1B",
+  "theme_color": "#0C1B3A",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
