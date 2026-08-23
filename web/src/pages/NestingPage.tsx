@@ -1,11 +1,15 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Grid, Plus, X, Download, AlertTriangle, Minus, Maximize2 } from 'lucide-react'
+import { Grid, Plus, X, Download, AlertTriangle, Minus, Maximize2, PackagePlus, Check } from 'lucide-react'
 import AppLayout from '@/components/AppLayout'
 import { generarNesting } from '@/api/nesting'
 import type { NestingResult } from '@/api/nesting'
+import { crearRetal } from '@/api/retales'
 import { formatNum } from '@/lib/utils'
 import { downloadFile } from '@/lib/downloadFile'
+import MaterialCombobox from '@/components/MaterialCombobox'
+
+const MATERIALES_NESTING = ['Mármol', 'Granito', 'Sinterizado', 'Quarztone', 'Quarzita'] as const
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -194,6 +198,11 @@ function FormPanel({
   setPiezas,
   onGenerar,
   loading,
+  categoria,
+  setCategoria,
+  materialRef,
+  setMaterialRef,
+  setMaterialPrecioM2,
 }: {
   laminaLargo: string
   setLaminaLargo: (v: string) => void
@@ -203,6 +212,11 @@ function FormPanel({
   setPiezas: React.Dispatch<React.SetStateAction<PiezaLocal[]>>
   onGenerar: () => void
   loading: boolean
+  categoria: string
+  setCategoria: (v: string) => void
+  materialRef: string
+  setMaterialRef: (v: string) => void
+  setMaterialPrecioM2: (v: number) => void
 }) {
   const largo = parseFloat(laminaLargo) || 0
   const ancho = parseFloat(laminaAncho) || 0
@@ -234,6 +248,37 @@ function FormPanel({
 
   return (
     <div className="flex flex-col gap-6 min-w-0">
+
+      {/* Material section — necesario para poder guardar el retal sobrante al Banco */}
+      <div className="glass rounded-xl border border-brand-border/60 p-5">
+        <div className="flex items-center gap-2 mb-1">
+          <div className="w-0.5 h-4 bg-brand-primary rounded-full" />
+          <h3 className="text-xs font-semibold tracking-[0.15em] uppercase text-brand-muted">
+            Material
+          </h3>
+        </div>
+        <p className="text-[10px] text-brand-muted/50 mb-4 pl-2.5">Para poder guardar el sobrante en el Banco de Retales</p>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <FieldLabel>Categoría</FieldLabel>
+            <select
+              value={categoria}
+              onChange={(e) => { setCategoria(e.target.value); setMaterialRef(''); setMaterialPrecioM2(0) }}
+              className="w-full px-3 py-2.5 rounded bg-brand-input border border-brand-border text-sm text-brand-text focus:outline-none focus:border-brand-primary transition-colors"
+            >
+              {MATERIALES_NESTING.map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+          <div>
+            <FieldLabel>Referencia</FieldLabel>
+            <MaterialCombobox
+              categoria={categoria}
+              value={materialRef}
+              onChange={(ref, precioM2) => { setMaterialRef(ref); setMaterialPrecioM2(precioM2) }}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Lamina section */}
       <div className="glass rounded-xl border border-brand-border/60 p-5">
@@ -455,17 +500,53 @@ const ZOOM_STEP = 0.2
 function ResultPanel({
   result,
   totalPiezas,
+  categoria,
+  materialRef,
+  materialPrecioM2,
 }: {
   result: NestingResult | null
   totalPiezas: number
+  categoria: string
+  materialRef: string
+  materialPrecioM2: number
 }) {
   const [zoom, setZoom] = React.useState(1)
+  const [guardando, setGuardando] = useState(false)
+  const [guardado, setGuardado] = useState(false)
+  const [errorGuardar, setErrorGuardar] = useState<string | null>(null)
 
   async function handleDownload() {
     if (!result?.svg) return
     const blob = new Blob([result.svg], { type: 'image/svg+xml' })
     await downloadFile(blob, 'plano_nesting.svg', 'image/svg+xml')
   }
+
+  async function handleGuardarRetal() {
+    if (!result) return
+    const areaLibre = result.area_lamina - result.area_usada
+    if (areaLibre <= 0) return
+    setGuardando(true)
+    setErrorGuardar(null)
+    try {
+      await crearRetal({
+        material_categoria: categoria,
+        referencia: materialRef || undefined,
+        m2_disponibles: Math.round(areaLibre * 1000) / 1000,
+        precio_mercado_m2: materialPrecioM2 || undefined,
+        notas: 'Generado desde Nesting — sobrante del plano de corte',
+      })
+      setGuardado(true)
+    } catch {
+      setErrorGuardar('No se pudo guardar el retal. Intenta de nuevo.')
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  useEffect(() => {
+    setGuardado(false)
+    setErrorGuardar(null)
+  }, [result])
 
   if (!result) {
     return (
@@ -493,6 +574,34 @@ function ResultPanel({
       transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
       className="flex flex-col gap-5"
     >
+
+      {/* Guardar retal — el sobrante ya NO se pierde, queda disponible para la próxima cotización */}
+      {areaLibre > 0.01 && (
+        <div className="glass rounded-xl border border-brand-border/60 px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-brand-primary/15 border border-brand-primary/30 flex items-center justify-center shrink-0">
+              <PackagePlus size={16} className="text-brand-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-brand-text">
+                {formatNum(areaLibre, 2)} m² de sobrante en {categoria}{materialRef ? ` — ${materialRef}` : ''}
+              </p>
+              <p className="text-[11px] text-brand-muted/60">Guárdalo en el Banco de Retales para usarlo en una próxima cotización</p>
+            </div>
+          </div>
+          <button
+            onClick={handleGuardarRetal}
+            disabled={guardando || guardado}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-primary text-white text-xs font-semibold shadow-[0_0_16px_#1F6F5430] hover:shadow-[0_0_28px_#1F6F5450] disabled:opacity-60 transition-all shrink-0"
+          >
+            {guardado ? <Check className="w-3.5 h-3.5" /> : <PackagePlus className="w-3.5 h-3.5" />}
+            {guardado ? 'Guardado en Retales' : guardando ? 'Guardando…' : 'Guardar retal'}
+          </button>
+        </div>
+      )}
+      {errorGuardar && (
+        <p className="text-xs text-red-400 -mt-2">{errorGuardar}</p>
+      )}
 
       {/* Metrics row — color-coded */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -628,6 +737,9 @@ export default function NestingPage() {
   const [result, setResult] = useState<NestingResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [categoria, setCategoria] = useState<string>(MATERIALES_NESTING[0])
+  const [materialRef, setMaterialRef] = useState('')
+  const [materialPrecioM2, setMaterialPrecioM2] = useState(0)
 
   async function handleGenerar() {
     setLoading(true)
@@ -712,10 +824,21 @@ export default function NestingPage() {
             setPiezas={setPiezas}
             onGenerar={handleGenerar}
             loading={loading}
+            categoria={categoria}
+            setCategoria={setCategoria}
+            materialRef={materialRef}
+            setMaterialRef={setMaterialRef}
+            setMaterialPrecioM2={setMaterialPrecioM2}
           />
 
           {/* Right — Result */}
-          <ResultPanel result={result} totalPiezas={piezas.length} />
+          <ResultPanel
+            result={result}
+            totalPiezas={piezas.length}
+            categoria={categoria}
+            materialRef={materialRef}
+            materialPrecioM2={materialPrecioM2}
+          />
         </div>
       </div>
     </AppLayout>

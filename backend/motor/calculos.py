@@ -56,9 +56,36 @@ def calcular_peso_proyecto(piezas: list, categoria: str) -> float:
     return round(peso_total, 2)
 
 
-def calcular_merma_inteligente(piezas: list, categoria: str) -> dict:
+def _obtener_merma_pct(categoria: str, tarifas_src=None) -> float:
     """
-    Calcula el desperdicio por pieza usando el factor merma_base de cada material.
+    Devuelve el % de merma a usar para un material: primero busca una fila
+    "merma_pct" en la receta de tarifas de la empresa (editable en Parámetros);
+    si no existe (empresa vieja que no ha guardado ese campo aún), cae de
+    vuelta al valor hardcodeado en PROPIEDADES_MATERIAL.
+    """
+    props_default = PROPIEDADES_MATERIAL.get(categoria, PROPIEDADES_MATERIAL["Mármol"])
+    default_pct = props_default["merma_base"]
+    if not tarifas_src:
+        return default_pct
+    tar_entry = tarifas_src.get(categoria)
+    if tar_entry is None:
+        return default_pct
+    if isinstance(tar_entry, list):
+        for regla in tar_entry:
+            if regla.get("inductor") == "merma_pct":
+                return float(regla["valor"])
+        return default_pct
+    if isinstance(tar_entry, dict) and "merma_pct" in tar_entry:
+        return float(tar_entry["merma_pct"])
+    return default_pct
+
+
+def calcular_merma_inteligente(piezas: list, categoria: str, tarifas_src=None) -> dict:
+    """
+    Calcula el desperdicio por pieza usando el % de merma de cada material —
+    editable por empresa en Parámetros (fila "Merma / desperdicio", inductor
+    "merma_pct"); si la empresa no lo ha configurado, usa el valor por defecto
+    de PROPIEDADES_MATERIAL.
 
     Si hay piezas de distintos materiales, el desperdicio se calcula
     independientemente para cada pieza y se suma.
@@ -68,7 +95,6 @@ def calcular_merma_inteligente(piezas: list, categoria: str) -> dict:
         detalle         : lista de dicts {nombre, material, area_m2, merma_pct, merma_m2}
         explicacion_txt : texto en lenguaje natural para mostrar en st.info()
     """
-    props_default = PROPIEDADES_MATERIAL.get(categoria, PROPIEDADES_MATERIAL["Mármol"])
     detalle = []
     merma_total = 0.0
     categorias_usadas = set()
@@ -76,11 +102,10 @@ def calcular_merma_inteligente(piezas: list, categoria: str) -> dict:
     for p in piezas:
         cat_pieza = p.get("categoria", categoria)
         categorias_usadas.add(cat_pieza)
-        props = PROPIEDADES_MATERIAL.get(cat_pieza, props_default)
         largo_total = float(p.get("ml", float(p.get("largo", 0.0)) * int(p.get("cantidad", 1))))
         ancho  = float(p.get("ancho_custom", p.get("ancho", 0.60)))
         area   = largo_total * ancho
-        merma_pct = props["merma_base"]
+        merma_pct = _obtener_merma_pct(cat_pieza, tarifas_src)
         merma_m2  = area * merma_pct
         merma_total += merma_m2
         detalle.append({
@@ -263,8 +288,7 @@ def calcular_cotizacion_directa(
         costo_material_optimizado = 0.0
         for _p in piezas_temp:
             _cat_p   = _p.get("categoria", categoria)
-            _props_p = PROPIEDADES_MATERIAL.get(_cat_p, PROPIEDADES_MATERIAL.get(categoria, {}))
-            _merma_p = float(_props_p.get("merma_base", 0.08))
+            _merma_p = _obtener_merma_pct(_cat_p, kwargs.get("tarifas_override"))
             _largo_p = float(_p.get("ml", float(_p.get("largo", 0.0)) * int(_p.get("cantidad", 1))))
             _ancho_p = float(_p.get("ancho_custom", _p.get("ancho", 0.60)))
             _area_p  = _largo_p * _ancho_p
@@ -312,15 +336,20 @@ def calcular_cotizacion_directa(
     # Si el dict ya es una lista (formato receta nativo), se usa directamente.
     def _tar_a_receta(tar_dict: dict) -> list:
         """Convierte un dict plano de tarifas al formato de lista de reglas."""
-        return [
+        receta = [
             {"nombre_interno": "Mano obra borde",       "inductor": "por_ml",              "valor": float(tar_dict.get("prod_ml",       60_000)), "etiqueta_pdf": "c2_mano_obra"},
-            {"nombre_interno": "Mano obra área",         "inductor": "por_m2",              "valor": float(tar_dict.get("prod_m2",       35_000)), "etiqueta_pdf": "c2_mano_obra"},
+            {"nombre_interno": "Mano obra área",         "inductor": "por_m2_mano_obra",    "valor": float(tar_dict.get("prod_m2",       35_000)), "etiqueta_pdf": "c2_mano_obra"},
             {"nombre_interno": "Instalación zócalo",     "inductor": "por_ml_zocalo",       "valor": float(tar_dict.get("zocalo",        12_000)), "etiqueta_pdf": "c3_zocalos"},
             {"nombre_interno": "Desgaste disco",         "inductor": "por_m2",              "valor": float(tar_dict.get("disco",          2_200)), "etiqueta_pdf": "c4_insumos"},
             {"nombre_interno": "Uso máquina cortadora",  "inductor": "por_dia",             "valor": float(tar_dict.get("maquina",       20_000)), "etiqueta_pdf": "c4_insumos"},
             {"nombre_interno": "Consumibles",            "inductor": "por_m2",              "valor": float(tar_dict.get("consumibles",    8_500)), "etiqueta_pdf": "c4_insumos"},
             {"nombre_interno": "Riesgo rotura",          "inductor": "porcentaje_material", "valor": float(tar_dict.get("riesgo_rotura",  0.02)), "etiqueta_pdf": "c4_insumos"},
         ]
+        # Merma es opcional en el formato plano legacy — si no viene, calcular_merma_override()
+        # cae de vuelta a PROPIEDADES_MATERIAL, así que no hace falta un default aquí.
+        if "merma_pct" in tar_dict:
+            receta.append({"nombre_interno": "Merma / desperdicio", "inductor": "merma_pct", "valor": float(tar_dict["merma_pct"]), "etiqueta_pdf": ""})
+        return receta
 
     def _resolver_receta(tar_entry) -> list:
         """Devuelve siempre una lista de reglas, independientemente del formato de entrada."""
@@ -416,16 +445,13 @@ def calcular_cotizacion_directa(
                     pass       # ya calculado globalmente antes del loop
                 elif inductor == "por_ml" and uv == "ml":
                     acumulados[bucket] += valor * largo_total
-                elif inductor == "por_m2":
-                    # por_m2 aplica a todas las piezas (disco, consumibles)
-                    # Para mano obra área: solo si la unidad de venta es m²
-                    _es_mo_area = regla.get("nombre_interno", "").lower().startswith("mano obra área")
-                    if _es_mo_area:
-                        if uv == "m2":
-                            acumulados[bucket] += valor * area_p
-                    else:
-                        # Insumos y consumibles aplican a toda el área cortada
+                elif inductor == "por_m2_mano_obra":
+                    # Mano de obra por área — solo aplica si la pieza se vende por m² (pisos, fachadas)
+                    if uv == "m2":
                         acumulados[bucket] += valor * area_p
+                elif inductor == "por_m2":
+                    # Insumos (disco, consumibles) — aplican a toda el área cortada, sin importar unidad de venta
+                    acumulados[bucket] += valor * area_p
                 elif inductor == "porcentaje_material":
                     acumulados[bucket] += valor * _costo_mat_p
                 elif inductor == "por_ml_zocalo":
@@ -489,7 +515,7 @@ def calcular_cotizacion_directa(
 
         _receta_fb = _resolver_receta(tar)
         _tarifa_ml_fb  = next((r["valor"] for r in _receta_fb if r["inductor"] == "por_ml"),        60_000.0)
-        _tarifa_m2_fb  = next((r["valor"] for r in _receta_fb if r["inductor"] == "por_m2" and "área" in r.get("nombre_interno","").lower()), round(_tarifa_ml_fb * 0.55))
+        _tarifa_m2_fb  = next((r["valor"] for r in _receta_fb if r["inductor"] == "por_m2_mano_obra"), round(_tarifa_ml_fb * 0.55))
         c2_ml = ml_piezas * _tarifa_ml_fb
         c2_m2 = m2_piezas * _tarifa_m2_fb
         c2    = c2_ml + c2_m2
@@ -562,7 +588,7 @@ def calcular_cotizacion_directa(
     aprovechamiento = min(100.0, m2_ref / area_placa_comprada * 100) if area_placa_comprada > 0 else 0.0
 
     # ── Merma inteligente multi-material ─────────────────────────────────────
-    _merma_info = calcular_merma_inteligente(kwargs.get("piezas", []), categoria)
+    _merma_info = calcular_merma_inteligente(kwargs.get("piezas", []), categoria, _tarifas_src)
 
     return {
         # Identificación

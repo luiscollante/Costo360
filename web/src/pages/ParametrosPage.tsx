@@ -15,12 +15,28 @@ const MAIN_TABS = ['Tarifas', 'Adicionales'] as const
 type MainTab = (typeof MAIN_TABS)[number]
 
 const INDUCTOR_BADGE: Record<string, { label: string; cls: string }> = {
-  por_ml:                { label: 'por ml',     cls: 'bg-brand-primary/15 text-brand-text border border-brand-primary/30' },
-  por_m2:                { label: 'por m²',     cls: 'bg-[#22D3A5]/15 text-[#22D3A5] border border-[#22D3A5]/30' },
-  por_dia:               { label: 'por día',    cls: 'bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30' },
-  porcentaje_material:   { label: '% material', cls: 'bg-purple-500/15 text-purple-300 border border-purple-500/30' },
+  por_ml:                { label: 'por ml',       cls: 'bg-brand-primary/15 text-brand-text border border-brand-primary/30' },
+  por_m2_mano_obra:      { label: 'por m² (M.O.)', cls: 'bg-[#22D3A5]/15 text-[#22D3A5] border border-[#22D3A5]/30' },
+  por_m2:                { label: 'por m²',       cls: 'bg-[#2DD4BF]/15 text-[#2DD4BF] border border-[#2DD4BF]/30' },
+  por_dia:               { label: 'por día',      cls: 'bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30' },
+  porcentaje_material:   { label: '% material',   cls: 'bg-purple-500/15 text-purple-300 border border-purple-500/30' },
   por_ml_zocalo:         { label: 'por ml zócalo', cls: 'bg-orange-500/15 text-orange-300 border border-orange-500/30' },
+  merma_pct:             { label: '% merma',      cls: 'bg-rose-500/15 text-rose-300 border border-rose-500/30' },
 }
+
+// Catálogo cerrado de tipos de cálculo que una empresa puede elegir al agregar una fila nueva.
+// Agregar un tipo NUEVO a este catálogo es trabajo del desarrollador (requiere lógica nueva en
+// el motor de cálculo) — lo que cada empresa sí controla libremente es cuántas FILAS usa de este
+// catálogo y con qué nombre/valor. Ver ARQUITECTURA_AGENTES_OPERACION.md y motor/parametros.py.
+const INDUCTORES_DISPONIBLES: { value: string; label: string; bucketDefault: string; esPorcentaje: boolean }[] = [
+  { value: 'por_ml',              label: 'Por metro lineal (mano de obra en bordes)', bucketDefault: 'c2_mano_obra', esPorcentaje: false },
+  { value: 'por_m2_mano_obra',    label: 'Por m² (mano de obra en área — pisos/fachadas)', bucketDefault: 'c2_mano_obra', esPorcentaje: false },
+  { value: 'por_m2',              label: 'Por m² cortado (insumo/consumible)', bucketDefault: 'c4_insumos', esPorcentaje: false },
+  { value: 'por_dia',             label: 'Por día de obra (costo fijo del proyecto)', bucketDefault: 'c4_insumos', esPorcentaje: false },
+  { value: 'porcentaje_material', label: '% del costo del material', bucketDefault: 'c4_insumos', esPorcentaje: true },
+  { value: 'por_ml_zocalo',       label: 'Por metro lineal de zócalo', bucketDefault: 'c3_zocalos', esPorcentaje: false },
+  { value: 'merma_pct',           label: '% de merma / desperdicio de material', bucketDefault: '', esPorcentaje: true },
+]
 
 function InductorBadge({ inductor }: { inductor: string }) {
   const info = INDUCTOR_BADGE[inductor] ?? { label: inductor, cls: 'bg-brand-surface text-brand-muted border border-brand-border' }
@@ -43,10 +59,19 @@ interface TarifasTabProps {
   tarifas: Record<string, TarifaItem[]>
   canEdit: boolean
   onChange: (material: string, index: number, value: number) => void
+  onRename: (material: string, index: number, nombre: string) => void
+  onAddRow: (material: string, inductor: string) => void
+  onRemoveRow: (material: string, index: number) => void
 }
 
-function TarifasTab({ tarifas, canEdit, onChange }: TarifasTabProps) {
+// Los valores tipo "%" se guardan como fracción (0.02 = 2%) — helpers para mostrar/editar en %.
+function esPorcentajeInductor(inductor: string): boolean {
+  return inductor === 'porcentaje_material' || inductor === 'merma_pct'
+}
+
+function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRow }: TarifasTabProps) {
   const [activeMat, setActiveMat] = useState<Material>(MATERIALES[0])
+  const [nuevoInductor, setNuevoInductor] = useState(INDUCTORES_DISPONIBLES[0].value)
   const filas = tarifas[activeMat] ?? []
 
   return (
@@ -73,11 +98,21 @@ function TarifasTab({ tarifas, canEdit, onChange }: TarifasTabProps) {
         {filas.length === 0 ? (
           <p className="px-5 py-8 text-center text-sm text-brand-muted">Sin tarifas para este material.</p>
         ) : filas.map((item, idx) => {
-          const esPorcentaje = item.inductor === 'porcentaje_material'
+          const esPorcentaje = esPorcentajeInductor(item.inductor)
           return (
-            <div key={item.etiqueta_pdf} className="px-5 py-3.5 flex items-center justify-between gap-4 hover:bg-brand-surface/30 transition-colors">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-brand-text leading-tight">{item.nombre_interno}</p>
+            <div key={`${item.inductor}-${idx}`} className="px-5 py-3.5 flex items-center justify-between gap-4 hover:bg-brand-surface/30 transition-colors">
+              <div className="min-w-0 flex-1">
+                {canEdit ? (
+                  <input
+                    type="text"
+                    value={item.nombre_interno}
+                    onChange={(e) => onRename(activeMat, idx, e.target.value)}
+                    className="text-sm font-medium text-brand-text leading-tight bg-transparent border-none outline-none w-full focus:bg-brand-input rounded px-1 -mx-1"
+                    placeholder="Nombre de este costo"
+                  />
+                ) : (
+                  <p className="text-sm font-medium text-brand-text leading-tight">{item.nombre_interno}</p>
+                )}
                 <div className="mt-1"><InductorBadge inductor={item.inductor} /></div>
               </div>
               {canEdit ? (
@@ -85,24 +120,55 @@ function TarifasTab({ tarifas, canEdit, onChange }: TarifasTabProps) {
                   {!esPorcentaje && <span className="text-[10px] text-brand-muted/50">COP</span>}
                   <input
                     type="number"
-                    value={item.valor}
+                    value={esPorcentaje ? Math.round(item.valor * 1000) / 10 : item.valor}
                     step={esPorcentaje ? 0.1 : 1000}
                     min={0}
                     max={esPorcentaje ? 100 : undefined}
-                    onChange={(e) => onChange(activeMat, idx, parseFloat(e.target.value) || 0)}
+                    onChange={(e) => {
+                      const raw = parseFloat(e.target.value) || 0
+                      onChange(activeMat, idx, esPorcentaje ? raw / 100 : raw)
+                    }}
                     className={`${inputBase} w-28`}
                   />
                   {esPorcentaje && <span className="text-[10px] text-brand-muted/50">%</span>}
+                  <button
+                    onClick={() => onRemoveRow(activeMat, idx)}
+                    className="p-1.5 rounded-md text-brand-muted/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    title="Eliminar este costo"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               ) : (
                 <span className="font-mono text-sm text-brand-text shrink-0">
-                  {esPorcentaje ? `${item.valor}%` : formatCOP(item.valor)}
+                  {esPorcentaje ? `${Math.round(item.valor * 1000) / 10}%` : formatCOP(item.valor)}
                 </span>
               )}
             </div>
           )
         })}
       </div>
+
+      {canEdit && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <select
+            value={nuevoInductor}
+            onChange={(e) => setNuevoInductor(e.target.value)}
+            className="px-3 py-2 rounded-lg bg-brand-input border border-brand-border text-xs text-brand-text focus:outline-none focus:border-brand-primary transition-colors max-w-[280px]"
+          >
+            {INDUCTORES_DISPONIBLES.map((ind) => (
+              <option key={ind.value} value={ind.value}>{ind.label}</option>
+            ))}
+          </select>
+          <button
+            onClick={() => onAddRow(activeMat, nuevoInductor)}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-brand-border text-sm text-brand-muted hover:text-brand-text hover:border-brand-primary/50 transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Agregar costo para {activeMat}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -254,6 +320,39 @@ export default function ParametrosPage() {
     })
   }, [])
 
+  const handleTarifaRename = useCallback((material: string, index: number, nombre: string) => {
+    setData((prev) => {
+      if (!prev) return prev
+      const updated = prev.tarifas[material].map((item, i) =>
+        i === index ? { ...item, nombre_interno: nombre } : item
+      )
+      return { ...prev, tarifas: { ...prev.tarifas, [material]: updated } }
+    })
+  }, [])
+
+  const handleTarifaAddRow = useCallback((material: string, inductor: string) => {
+    setData((prev) => {
+      if (!prev) return prev
+      const cfg = INDUCTORES_DISPONIBLES.find((i) => i.value === inductor) ?? INDUCTORES_DISPONIBLES[0]
+      const nuevaFila: TarifaItem = {
+        nombre_interno: 'Nuevo costo',
+        inductor: cfg.value,
+        valor: 0,
+        etiqueta_pdf: cfg.bucketDefault,
+      }
+      const existentes = prev.tarifas[material] ?? []
+      return { ...prev, tarifas: { ...prev.tarifas, [material]: [...existentes, nuevaFila] } }
+    })
+  }, [])
+
+  const handleTarifaRemoveRow = useCallback((material: string, index: number) => {
+    setData((prev) => {
+      if (!prev) return prev
+      const updated = (prev.tarifas[material] ?? []).filter((_, i) => i !== index)
+      return { ...prev, tarifas: { ...prev.tarifas, [material]: updated } }
+    })
+  }, [])
+
 
 
   const handleAdicionalesChange = useCallback((index: number, field: keyof AdicionalItem, value: string | number) => {
@@ -389,6 +488,9 @@ export default function ParametrosPage() {
                     tarifas={data.tarifas}
                     canEdit={canEdit}
                     onChange={handleTarifaChange}
+                    onRename={handleTarifaRename}
+                    onAddRow={handleTarifaAddRow}
+                    onRemoveRow={handleTarifaRemoveRow}
                   />
                 )}
 

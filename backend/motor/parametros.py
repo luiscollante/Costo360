@@ -60,18 +60,34 @@ PROPIEDADES_MATERIAL = {
 # evalúa iterativamente para calcular los costos de producción.
 #
 # Cada regla tiene 4 campos:
-#   nombre_interno : str  — identificador del costo (solo para trazabilidad/logs)
-#   inductor       : str  — base de cálculo. Valores válidos:
-#                           "por_ml"              → valor × ml de la pieza
-#                           "por_m2"              → valor × m² de la pieza
-#                           "por_dia"             → valor × dias del proyecto (1 vez global)
-#                           "porcentaje_material" → valor × costo_material de la pieza
-#                           "por_ml_zocalo"       → valor × ml de zócalo de la pieza
-#   valor          : float — monto COP o fracción decimal (para porcentaje_material)
+#   nombre_interno : str  — identificador del costo (solo para trazabilidad/logs;
+#                           YA NO se usa para decidir lógica — ver nota abajo)
+#   inductor       : str  — base de cálculo. Catálogo CERRADO de tipos soportados
+#                           (agregar un tipo nuevo es trabajo del desarrollador,
+#                           no del usuario — el usuario solo agrega/quita FILAS):
+#                           "por_ml"              → valor × ml de la pieza (piezas tipo borde)
+#                           "por_m2_mano_obra"     → valor × m² de la pieza, SOLO si unidad_venta=="m2"
+#                           "por_m2"               → valor × m² cortado (insumos: disco, consumibles — aplica siempre)
+#                           "por_dia"              → valor × dias del proyecto (1 vez global)
+#                           "porcentaje_material"  → valor × costo_material de la pieza
+#                           "por_ml_zocalo"        → valor × ml de zócalo de la pieza
+#                           "merma_pct"            → % de desperdicio de material (no se suma a costo_total
+#                                                     directamente — sobreescribe merma_base del material,
+#                                                     ver override en calculos.py)
+#   valor          : float — monto COP o fracción decimal (para porcentaje_material / merma_pct)
 #   etiqueta_pdf   : str  — bucket destino de la sumatoria. Valores válidos:
 #                           "c2_mano_obra"  — mano de obra (producción)
 #                           "c3_zocalos"    — instalación de zócalos
 #                           "c4_insumos"    — consumibles, disco, máquina, riesgo
+#                           "" (vacío)      — para "merma_pct", que no suma a ningún bucket
+#
+# CADA EMPRESA PUEDE AGREGAR/QUITAR FILAS LIBREMENTE (2026-08-23): la UI de
+# Parámetros permite crear una fila nueva eligiendo nombre libre + un "inductor"
+# de este catálogo cerrado + a qué bucket suma. El motor de calculos.py despacha
+# SIEMPRE por el campo "inductor" (nunca por texto de "nombre_interno") — antes
+# había un caso especial que miraba si el nombre empezaba con "mano obra área",
+# lo cual se rompía si una empresa renombraba o agregaba una fila nueva. Ahora
+# "por_m2_mano_obra" es su propio tipo, independiente del nombre de la fila.
 #
 # COMPATIBILIDAD HACIA ATRÁS: calculos.py incluye el adaptador _tar_a_receta()
 # que convierte automáticamente el formato plano legacy (prod_ml, disco, etc.)
@@ -87,7 +103,7 @@ TARIFAS = {
         # El operario cobra por ML cortado e instalado (mesones, baños, escaleras).
         # En proyectos de área (pisos, fachadas) cobra por m².
         {"nombre_interno": "Mano obra borde",        "inductor": "por_ml",              "valor":  60_000, "etiqueta_pdf": "c2_mano_obra"},
-        {"nombre_interno": "Mano obra área",          "inductor": "por_m2",              "valor":  35_000, "etiqueta_pdf": "c2_mano_obra"},
+        {"nombre_interno": "Mano obra área",          "inductor": "por_m2_mano_obra",    "valor":  35_000, "etiqueta_pdf": "c2_mano_obra"},
         # ── Zócalos ───────────────────────────────────────────────────────────
         {"nombre_interno": "Instalación zócalo",      "inductor": "por_ml_zocalo",       "valor":  12_000, "etiqueta_pdf": "c3_zocalos"},
         # ── Insumos y riesgo ──────────────────────────────────────────────────
@@ -99,10 +115,12 @@ TARIFAS = {
         {"nombre_interno": "Consumibles",             "inductor": "por_m2",              "valor":   8_500, "etiqueta_pdf": "c4_insumos"},
         # Provisión por rotura accidental. Porcentaje del costo del material.
         {"nombre_interno": "Riesgo rotura",           "inductor": "porcentaje_material", "valor":   0.02,  "etiqueta_pdf": "c4_insumos"},
+        # Merma/desperdicio de material — editable por empresa (antes fija en código).
+        {"nombre_interno": "Merma / desperdicio",     "inductor": "merma_pct",           "valor":   0.08,  "etiqueta_pdf": ""},
     ],
     "Granito": [
         {"nombre_interno": "Mano obra borde",         "inductor": "por_ml",              "valor":  55_000, "etiqueta_pdf": "c2_mano_obra"},
-        {"nombre_interno": "Mano obra área",          "inductor": "por_m2",              "valor":  32_000, "etiqueta_pdf": "c2_mano_obra"},
+        {"nombre_interno": "Mano obra área",          "inductor": "por_m2_mano_obra",    "valor":  32_000, "etiqueta_pdf": "c2_mano_obra"},
         {"nombre_interno": "Instalación zócalo",      "inductor": "por_ml_zocalo",       "valor":  14_000, "etiqueta_pdf": "c3_zocalos"},
         # Disco de mayor calidad por dureza del granito (Mohs 6–7).
         {"nombre_interno": "Desgaste disco",          "inductor": "por_m2",              "valor":   6_000, "etiqueta_pdf": "c4_insumos"},
@@ -111,11 +129,12 @@ TARIFAS = {
         {"nombre_interno": "Consumibles",             "inductor": "por_m2",              "valor":  10_000, "etiqueta_pdf": "c4_insumos"},
         # Granito es menos frágil que mármol (menor porosidad).
         {"nombre_interno": "Riesgo rotura",           "inductor": "porcentaje_material", "valor":   0.01,  "etiqueta_pdf": "c4_insumos"},
+        {"nombre_interno": "Merma / desperdicio",     "inductor": "merma_pct",           "valor":   0.06,  "etiqueta_pdf": ""},
     ],
     "Sinterizado": [
         # Herramientas especiales y mayor precisión en el corte.
         {"nombre_interno": "Mano obra borde",         "inductor": "por_ml",              "valor":  85_000, "etiqueta_pdf": "c2_mano_obra"},
-        {"nombre_interno": "Mano obra área",          "inductor": "por_m2",              "valor":  52_000, "etiqueta_pdf": "c2_mano_obra"},
+        {"nombre_interno": "Mano obra área",          "inductor": "por_m2_mano_obra",    "valor":  52_000, "etiqueta_pdf": "c2_mano_obra"},
         {"nombre_interno": "Instalación zócalo",      "inductor": "por_ml_zocalo",       "valor":  20_000, "etiqueta_pdf": "c3_zocalos"},
         # Disco de diamante de ultra-precisión — mayor desgaste por dureza.
         {"nombre_interno": "Desgaste disco",          "inductor": "por_m2",              "valor":  18_000, "etiqueta_pdf": "c4_insumos"},
@@ -124,21 +143,23 @@ TARIFAS = {
         {"nombre_interno": "Consumibles",             "inductor": "por_m2",              "valor":  25_000, "etiqueta_pdf": "c4_insumos"},
         # Alta tensión superficial: el sinterizado puede fracturarse si hay vibración.
         {"nombre_interno": "Riesgo rotura",           "inductor": "porcentaje_material", "valor":   0.08,  "etiqueta_pdf": "c4_insumos"},
+        {"nombre_interno": "Merma / desperdicio",     "inductor": "merma_pct",           "valor":   0.15,  "etiqueta_pdf": ""},
     ],
     "Quarztone": [
         {"nombre_interno": "Mano obra borde",         "inductor": "por_ml",              "valor":  65_000, "etiqueta_pdf": "c2_mano_obra"},
         # Cuarzo compactado: pisos sin cortes de perfil complejos.
-        {"nombre_interno": "Mano obra área",          "inductor": "por_m2",              "valor":  38_000, "etiqueta_pdf": "c2_mano_obra"},
+        {"nombre_interno": "Mano obra área",          "inductor": "por_m2_mano_obra",    "valor":  38_000, "etiqueta_pdf": "c2_mano_obra"},
         {"nombre_interno": "Instalación zócalo",      "inductor": "por_ml_zocalo",       "valor":  16_000, "etiqueta_pdf": "c3_zocalos"},
         {"nombre_interno": "Desgaste disco",          "inductor": "por_m2",              "valor":   5_200, "etiqueta_pdf": "c4_insumos"},
         {"nombre_interno": "Uso máquina cortadora",   "inductor": "por_dia",             "valor":  27_000, "etiqueta_pdf": "c4_insumos"},
         {"nombre_interno": "Consumibles",             "inductor": "por_m2",              "valor":   9_000, "etiqueta_pdf": "c4_insumos"},
         {"nombre_interno": "Riesgo rotura",           "inductor": "porcentaje_material", "valor":   0.01,  "etiqueta_pdf": "c4_insumos"},
+        {"nombre_interno": "Merma / desperdicio",     "inductor": "merma_pct",           "valor":   0.07,  "etiqueta_pdf": ""},
     ],
     "Quarzita": [
         # Mayor dureza que el cuarzo → más desgaste en herramientas.
         {"nombre_interno": "Mano obra borde",         "inductor": "por_ml",              "valor":  70_000, "etiqueta_pdf": "c2_mano_obra"},
-        {"nombre_interno": "Mano obra área",          "inductor": "por_m2",              "valor":  42_000, "etiqueta_pdf": "c2_mano_obra"},
+        {"nombre_interno": "Mano obra área",          "inductor": "por_m2_mano_obra",    "valor":  42_000, "etiqueta_pdf": "c2_mano_obra"},
         {"nombre_interno": "Instalación zócalo",      "inductor": "por_ml_zocalo",       "valor":  15_000, "etiqueta_pdf": "c3_zocalos"},
         {"nombre_interno": "Desgaste disco",          "inductor": "por_m2",              "valor":   8_000, "etiqueta_pdf": "c4_insumos"},
         {"nombre_interno": "Uso máquina cortadora",   "inductor": "por_dia",             "valor":  28_000, "etiqueta_pdf": "c4_insumos"},
@@ -146,8 +167,15 @@ TARIFAS = {
         {"nombre_interno": "Consumibles",             "inductor": "por_m2",              "valor":  15_000, "etiqueta_pdf": "c4_insumos"},
         # Dureza superior genera más riesgo de fractura en el corte diagonal.
         {"nombre_interno": "Riesgo rotura",           "inductor": "porcentaje_material", "valor":   0.05,  "etiqueta_pdf": "c4_insumos"},
+        {"nombre_interno": "Merma / desperdicio",     "inductor": "merma_pct",           "valor":   0.10,  "etiqueta_pdf": ""},
     ],
 }
+
+# Tipos de inductor válidos — catálogo cerrado que la UI ofrece al agregar una fila nueva.
+INDUCTORES_VALIDOS = [
+    "por_ml", "por_m2_mano_obra", "por_m2", "por_dia",
+    "porcentaje_material", "por_ml_zocalo", "merma_pct",
+]
 
 LOGISTICA = {
     # Precio de la gasolina corriente (COP/galón) — Barranquilla Feb 2026
