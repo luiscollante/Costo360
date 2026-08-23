@@ -5,7 +5,7 @@ import json
 import re
 import anthropic
 import os
-from parametros import TARIFAS, LOGISTICA, VIATICOS, AIU_DEFAULTS, CATEGORIAS_MATERIAL
+from parametros import TARIFAS, AIU_DEFAULTS, CATEGORIAS_MATERIAL
 
 
 # ── Serializador de tarifas para RAG dinámico ─────────────────────────────────
@@ -51,12 +51,6 @@ def _tarifas_a_texto(tarifas: dict) -> str:
 SYSTEM_PROMPT = """Eres el asistente experto en costos y cotización de Costo360, sistema de cotización de Mármoles Collante & Castro Ltda de presupuestos y control de costos para talleres de piedra y mármol.
 Ayudas a marmoleros y talleres a calcular el costo real de sus proyectos.
 
-DATOS DEL MERCADO (Feb 2026, Colombia):
-- Gasolina: $15.800/galón
-- Flete externo: Costo estimado según rango de kilómetros (promedio $45.000 - $80.000).
-- Externo/Tercero: flete fijo $165.000 | Peaje: $19.500 | Flete agente: $85.000
-- Viáticos pueblo: $145.000/noche/persona | Ciudad: $178.000/noche/persona
-
 [Las tarifas de mano de obra se inyectan dinámicamente por petición — ver TARIFAS DE TRABAJO ACTUALES DEL TALLER al final del prompt]
 
 ESTRUCTURA AIU (norma colombiana):
@@ -97,11 +91,6 @@ JSON a retornar:
   "m2_usados": numero_o_null,
   "m2_proyecto": numero_o_null,
   "tipo_proyecto": "Mesón|Cocina|Baño|Piso|Escalera|Fachada|Otro|null",
-  "agente_externo_taller": true_o_false,
-  "km": numero_o_null,
-  "peajes": numero_o_null,
-  "foraneo": false,
-  "noches": 0,
   "dias_obra": numero_o_null,
   "personas": numero_o_null,
   "datos_faltantes": ["lista de campos que el usuario no mencionó y son necesarios"]
@@ -217,7 +206,7 @@ RESULTADOS:
 - Costo total: ${resultado.get('costo_total', 0):,.0f}
 - Precio sugerido (margen {resultado.get('margen_pct', 40):.0f}%): ${resultado.get('precio_sugerido', 0):,.0f}
 - Utilidad proyectada: ${resultado.get('utilidad', 0):,.0f}
-- Desglose: material ${resultado.get('c1_material', 0):,.0f} | mano de obra ${resultado.get('c2_mano_obra', 0):,.0f} | logística ${resultado.get('c5_logistica', 0):,.0f}
+- Desglose: material ${resultado.get('c1_material', 0):,.0f} | mano de obra ${resultado.get('c2_mano_obra', 0):,.0f}
 
 Comenta: ¿el aprovechamiento es bueno o hay mucho retal? ¿el margen es saludable? ¿hay algo que optimizar?
 Sé directo y usa formato de moneda colombiana ($1.000.000)."""
@@ -240,12 +229,12 @@ Respondes en MAXIMO 2 parrafos cortos. Sin listas ni encabezados. Directo y clar
 
 PAGINAS DE LA APP:
 - Inicio: pantalla de bienvenida y tour guiado
-- Cotizacion Directa: cotizador principal (ML, m2, materiales, logistica, calculo)
+- Cotizacion Directa: cotizador principal (ML, m2, materiales, calculo)
 - Cotizacion AIU: cotizador para obra publica con estructura A+I+U+IVA
 - Historial: registro de todas las cotizaciones, busqueda y cambio de estado
 - Dashboard: analiticas del negocio, materiales mas rentables, facturacion mensual
 - Banco de Retales: inventario de sobrantes de material aprovechables
-- Parametros: edicion de tarifas de mano de obra, logistica y viaticos
+- Parametros: edicion de tarifas de mano de obra y costos de fabricacion
 - Asistente IA: chat completo para analisis de proyectos y asesoria de costos
 - Configuracion: datos de la empresa, logo, banco, condiciones de los PDFs
 - Gestion de Equipo: (solo Admin) registrar y gestionar usuarios del sistema
@@ -387,18 +376,17 @@ PROHIBIDO: sugerir que el IVA "se come" el margen, que la suma está mal, o cues
 Si ves un margen del 30% después de IVA, ese 30% ES CORRECTO. Analízalo como tal.
 
 REGLA 2 — TARIFAS INCUESTIONABLES:
-Los valores en pesos ($) de mano de obra, viáticos y logística que llegan en el JSON son las tarifas oficiales de la empresa.
+Los valores en pesos ($) de mano de obra que llegan en el JSON son las tarifas oficiales de la empresa.
 PROHIBIDO: decir que están "por debajo del mercado", "parecen bajas" o sugerir que deberían ser más altas.
-SÍ genera alerta ÚNICAMENTE si un trabajo obvio tiene costo = $0 (ej. instalación $0, flete $0 en proyecto foráneo).
+SÍ genera alerta ÚNICAMENTE si un trabajo obvio tiene costo = $0 (ej. instalación $0).
 
 REGLA 3 — IGNORA VARIABLES BOOLEANAS DEL SISTEMA:
-No analices ni menciones variables internas como `zocalo_activo`, `foraneo_activo`, `viaticos_activos` ni ningún booleano.
+No analices ni menciones variables internas como `zocalo_activo` ni ningún booleano.
 Solo analiza montos finales en COP. Si el costo de zócalos es $0 y el proyecto claramente los requiere, eso sí es una alerta.
 
 REGLA 4 — FOCO EN OPORTUNIDADES REALES:
 Busca exclusivamente:
 - Servicios no cobrados: lavaplatos, perforaciones (pocetas, grifos), desmontes, subidas por escalera, silicona visible.
-- Viáticos omitidos: proyecto foráneo (km > 60) con c6_viaticos = $0.
 - Margen de ganancia real (margen_pct) menor al 25%.
 - Merma declarada incoherente: sinterizado o quarzita con merma < 10%.
 
@@ -420,21 +408,18 @@ Responde ÚNICAMENTE con un JSON válido, SIN texto antes ni después, SIN backt
 Criterios de estado:
 - "verde": margen_pct ≥ 30% y sin fugas evidentes.
 - "amarillo": margen_pct entre 20% y 29%, o hay 1-2 servicios probablemente omitidos.
-- "rojo": margen_pct < 20%, o hay fuga de dinero grave (flete $0 en foráneo, instalación $0).
+- "rojo": margen_pct < 20%, o hay fuga de dinero grave (instalación $0).
 
 Si alertas o sugerencias están vacías, devuelve listas vacías []. No inventes problemas que no existen.
 
 REGLA 6 — LENGUAJE COMERCIAL HUMANO (OBLIGATORIA):
 Está ESTRICTAMENTE PROHIBIDO mencionar nombres de variables internas, claves del JSON o términos de código en tus respuestas.
-PROHIBIDO escribir: c3_zocalos, c4_riesgo, c5_logistica, c6_viaticos, c7_adicionales, margen_pct, foraneo_activo, zocalo_activo, viaticos_activos, agente_externo, km, num_peajes, m2_real, ml_proyecto, datos_json, ni ninguna clave técnica.
+PROHIBIDO escribir: c3_zocalos, c4_riesgo, c7_adicionales, margen_pct, zocalo_activo, m2_real, ml_proyecto, datos_json, ni ninguna clave técnica.
 OBLIGATORIO traducir todo hallazgo a lenguaje de negocios natural comprensible para un vendedor:
 - c3_zocalos → "costo de zócalos"
 - c4_riesgo → "provisión de riesgo por rotura"
-- c5_logistica → "costo de transporte y entrega"
-- c6_viaticos → "viáticos del equipo de instalación"
 - c7_adicionales → "costos adicionales de obra"
 - margen_pct → "margen de ganancia"
-- foraneo_activo → "proyecto fuera de la ciudad"
 - m2_real → "metros cuadrados del proyecto"
 - ml_proyecto → "metros lineales del proyecto"
 Si no sabes cómo traducir un término técnico, descríbelo por su función comercial, nunca por su nombre en código.

@@ -1980,8 +1980,6 @@ const COST_LABELS: Record<string, string> = {
   c2_mano_obra: 'Mano de obra',
   c3_zocalos: 'Zócalos',
   c4_insumos: 'Insumos y consumibles',
-  c5_logistica: 'Logística y transporte',
-  c6_viaticos: 'Viáticos',
   c7_adicionales: 'Adicionales',
 }
 

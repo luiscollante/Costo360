@@ -13,7 +13,7 @@
 #   Mano de obra siempre se paga en ML (operario cobra por ml cortado e instalado),
 #   EXCEPTO pisos y revestimientos donde se paga por m² (menos cortes).
 
-from parametros import LOGISTICA, VIATICOS, TARIFAS, PROPIEDADES_MATERIAL
+from parametros import TARIFAS, PROPIEDADES_MATERIAL
 
 
 # ── Conversor ML → m² ────────────────────────────────────────────────────────
@@ -547,17 +547,10 @@ def calcular_cotizacion_directa(
     costo_extra_material_zocalo = 0.0
     costo_material_total = costo_material
 
-    # ── ⑤ Logística y Viáticos (Eliminados) ─────────────────────────────────
-    c5 = 0.0
-    log_dict = {}
-    c6 = 0.0
-    peso_carga_kg = 0.0
-
-
     # ── ⑦ Adicionales ────────────────────────────────────────────────────────
     c7 = calcular_adicionales(adicionales_activos, cantidades_add, etapa, adicionales_lista)
 
-    costo_total = costo_material_total + c2 + c3 + c4 + c5 + c6 + c7
+    costo_total = costo_material_total + c2 + c3 + c4 + c7
 
     # ── Precio sugerido global ────────────────────────────────────────────────
     margen = max(0.01, min(margen_pct / 100, 0.99))
@@ -621,9 +614,6 @@ def calcular_cotizacion_directa(
         "c4_disco_maq":      costo_disco_maq,
         "c4_consumibles":    costo_consumibles,
         "c4_riesgo":         costo_riesgo,
-        "c5_logistica":      c5,
-        "c5_detalle":        log_dict,
-        "c6_viaticos":       c6,
         "c7_adicionales":    c7,
         "costo_total":       costo_total,
         "precio_sugerido":   precio_sugerido,
@@ -638,8 +628,7 @@ def calcular_cotizacion_directa(
         "estrategia_precio":         estrategia_precio,
         "ganancia_oculta_retal":     ganancia_oculta_retal,
         "costo_material_placa_completa": costo_material_placa_completa,
-        # Peso y merma
-        "peso_carga_kg":     peso_carga_kg,
+        # Merma
         "merma_info":        _merma_info,
         "merma_total_m2":    _merma_info["merma_total_m2"],
     }
@@ -667,12 +656,6 @@ def calcular_aiu(cd, pct_a, pct_i, pct_u,
 
     incluir_iva=False: cotización exenta (régimen simplificado).
     En ese caso val_iva=0 y el total se ajusta dinámicamente.
-
-    logistica_override / viaticos_override / vehiculos_custom:
-        Permiten que el módulo AIU use las tarifas personalizadas que el
-        Admin configuró en Parámetros, exactamente igual que Cotización Directa.
-        Sin estos overrides, AIU ignoraba los cambios del usuario y cotizaba
-        siempre con los valores hardcodeados de LOGISTICA/VIATICOS (C-03).
     """
     val_a   = cd * (pct_a / 100)
     val_i   = cd * (pct_i / 100)
@@ -684,17 +667,11 @@ def calcular_aiu(cd, pct_a, pct_i, pct_u,
     val_iva = val_u * 0.19 if incluir_iva else 0.0
     sub_aiu = val_a + val_i + val_u + val_iva
 
-    # Logística y viáticos eliminados
-    log_dict = {}
-    logistica = 0.0
-    viaticos  = 0.0
-    precio_total = cd + sub_aiu + logistica + viaticos
+    precio_total = cd + sub_aiu
     margen_pct   = ((val_u + val_iva) / precio_total * 100) if precio_total > 0 else 0
     return {
         "cd": cd, "val_a": val_a, "val_i": val_i, "val_u": val_u,
         "val_iva": val_iva, "sub_aiu": sub_aiu,
-        "logistica": logistica, "logistica_detalle": log_dict,
-        "viaticos": viaticos,
         "precio_total": precio_total, "margen_pct": margen_pct,
         "pct_a": pct_a, "pct_i": pct_i, "pct_u": pct_u,
         "incluir_iva": incluir_iva,

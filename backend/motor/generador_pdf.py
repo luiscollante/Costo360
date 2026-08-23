@@ -1081,8 +1081,7 @@ def generar_pdf_cotizacion_aiu(resultado, numero=None, empresa_info=None, logo_b
     _val_u_pre = r.get("val_u", _cd_pre * _pct_u_pre / 100)
     _incluir_iva_pre = incluir_iva and r.get("incluir_iva", True)
     _val_iva_pre = r.get("val_iva", _val_u_pre * 0.19) if _incluir_iva_pre else 0.0
-    _logistica_pre = r.get("logistica", 0); _viaticos_pre = r.get("viaticos", 0)
-    precio_total = r.get("precio_total", _cd_pre + _val_a_pre + _val_i_pre + _val_u_pre + _val_iva_pre + _logistica_pre + _viaticos_pre)
+    precio_total = r.get("precio_total", _cd_pre + _val_a_pre + _val_i_pre + _val_u_pre + _val_iva_pre)
     anticipo_val = precio_total * (anticipo_pct / 100)
 
     story = []
@@ -1186,8 +1185,7 @@ def generar_pdf_cotizacion_aiu(resultado, numero=None, empresa_info=None, logo_b
     val_u = r.get("val_u", cd * pct_u / 100)
     incluir_iva = incluir_iva and r.get("incluir_iva", True)
     val_iva = r.get("val_iva", val_u * 0.19) if incluir_iva else 0.0
-    logistica = r.get("logistica", 0); viaticos = r.get("viaticos", 0)
-    precio_total = r.get("precio_total", cd + val_a + val_i + val_u + val_iva + logistica + viaticos)
+    precio_total = r.get("precio_total", cd + val_a + val_i + val_u + val_iva)
     anticipo_val = precio_total * (anticipo_pct / 100)
 
     _CD_BG    = colors.HexColor("#E8F0FB")
@@ -1207,8 +1205,6 @@ def generar_pdf_cotizacion_aiu(resultado, numero=None, empresa_info=None, logo_b
     s_tot_val = ParagraphStyle("s_tot_val", fontSize=12,  fontName="Helvetica-Bold",   leading=15, textColor=C["accent"], alignment=TA_RIGHT)
     s_ant_lbl = ParagraphStyle("s_ant_lbl", fontSize=9,   fontName="Helvetica-Bold",   leading=11, textColor=C["accent"])
     s_ant_val = ParagraphStyle("s_ant_val", fontSize=9,   fontName="Helvetica-Bold",   leading=11, textColor=C["accent"], alignment=TA_RIGHT)
-    s_log_lbl = ParagraphStyle("s_log_lbl", fontSize=8.5, fontName="Helvetica",        leading=11, textColor=C["gray"])
-    s_log_val = ParagraphStyle("s_log_val", fontSize=8.5, fontName="Helvetica",        leading=11, textColor=C["gray"], alignment=TA_RIGHT)
 
     tbl_cd_hdr = Table([[Paragraph("COSTO DIRECTO (CD)", s_cd_lbl), Paragraph("100%", s_aiu_pct), Paragraph(_num(cd), s_cd_val)]], colWidths=COL_AIU_3)
     tbl_cd_hdr.setStyle(TableStyle([
@@ -1245,10 +1241,6 @@ def generar_pdf_cotizacion_aiu(resultado, numero=None, empresa_info=None, logo_b
     story.append(KeepTogether([tbl_aiu_comp]))
 
     filas_extra = []
-    if logistica > 0:
-        filas_extra.append([Paragraph("Logística y transporte integrada", s_log_lbl), Paragraph("—", s_log_lbl), Paragraph(_num(logistica), s_log_val)])
-    if viaticos > 0:
-        filas_extra.append([Paragraph("Viáticos y gastos foráneos", s_log_lbl), Paragraph("—", s_log_lbl), Paragraph(_num(viaticos), s_log_val)])
     filas_extra.append([Paragraph(f"ANTICIPO A PAGAR  ({anticipo_pct}% del total)", s_ant_lbl), Paragraph(f"{anticipo_pct}%", s_ant_val), Paragraph(_num(anticipo_val), s_ant_val)])
     filas_extra.append([Paragraph("TOTAL DEL CONTRATO", s_tot_lbl), Paragraph("", s_tot_lbl), Paragraph(_num(precio_total), s_tot_val)])
     idx_ant_extra = len(filas_extra) - 2

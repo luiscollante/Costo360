@@ -7,13 +7,6 @@ export interface TarifaItem {
   etiqueta_pdf: string
 }
 
-export interface ViaticosZona {
-  hospedaje: number
-  almuerzo: number
-  alimentacion: number
-  transporte_local: number
-}
-
 export interface AdicionalItem {
   concepto: string
   unidad: string
@@ -25,14 +18,6 @@ export interface AdicionalItem {
 
 export interface ParametrosData {
   tarifas: Record<string, TarifaItem[]>
-  logistica: {
-    precio_gasolina: number
-    flete_externo: number
-  }
-  viaticos: {
-    pueblo: ViaticosZona
-    ciudad: ViaticosZona
-  }
   adicionales: AdicionalItem[]
 }
 

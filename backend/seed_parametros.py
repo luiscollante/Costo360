@@ -63,26 +63,6 @@ TARIFAS = {
     ],
 }
 
-LOGISTICA = {
-    "precio_gasolina": 16_000,
-    "flete_externo":  165_000,
-}
-
-VIATICOS = {
-    "pueblo": {
-        "hospedaje":        60_000,
-        "almuerzo":         25_000,
-        "alimentacion":     65_000,
-        "transporte_local": 20_000,
-    },
-    "ciudad": {
-        "hospedaje":        90_000,
-        "almuerzo":         28_000,
-        "alimentacion":     68_000,
-        "transporte_local": 20_000,
-    },
-}
-
 AIU_DEFAULTS = {"a": 2.0, "i": 2.0, "u": 5.0}
 
 
@@ -91,8 +71,6 @@ def seed():
     with conn.cursor() as cur:
         for clave, valor in [
             ("tarifas",      TARIFAS),
-            ("logistica",    LOGISTICA),
-            ("viaticos",     VIATICOS),
             ("aiu_defaults", AIU_DEFAULTS),
         ]:
             cur.execute(

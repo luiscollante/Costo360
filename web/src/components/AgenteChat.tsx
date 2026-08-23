@@ -11,7 +11,7 @@ const SALUDO: MensajeChat = {
 const SUGERENCIAS = [
   '¿Qué es la merma de material?',
   '¿Cómo cobro la mano de obra de instalación?',
-  'Quiero agregar un costo de transporte, ¿cómo lo clasifico?',
+  'Quiero agregar un costo de consumibles, ¿cómo lo clasifico?',
 ]
 
 export default function AgenteChat() {

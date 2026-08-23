@@ -50,8 +50,6 @@ export interface CotizacionResult {
   c2_mano_obra: number
   c3_zocalos: number
   c4_insumos: number
-  c5_logistica: number
-  c6_viaticos: number
   c7_adicionales: number
   retal: number
   m2_real: number
@@ -89,8 +87,6 @@ export interface ResultadoAIU {
   val_i: number
   val_u: number
   val_iva: number
-  logistica: number
-  viaticos: number
   precio_total: number
   margen_pct: number
   nombre_cliente: string

@@ -177,30 +177,6 @@ INDUCTORES_VALIDOS = [
     "porcentaje_material", "por_ml_zocalo", "merma_pct",
 ]
 
-LOGISTICA = {
-    # Precio de la gasolina corriente (COP/galón) — Barranquilla Feb 2026
-    "precio_gasolina": 16_000,
-
-    # Flete externo base: costo fijo por viaje cuando se usa agente o tercero
-    "flete_externo":   165_000,
-}
-
-VIATICOS = {
-    # Desglose real por componente — suma = costo diario por persona
-    "pueblo": {
-        "hospedaje":         60_000,  # Alojamiento en pueblo/corregimiento
-        "almuerzo":          25_000,  # Solo almuerzo
-        "alimentacion":      65_000,  # Desayuno + almuerzo + cena (3 comidas)
-        "transporte_local":  20_000,  # Movilidad local (moto, taxi, buseta)
-    },
-    "ciudad": {
-        "hospedaje":         90_000,  # Hotel o posada en ciudad capital
-        "almuerzo":          28_000,  # Solo almuerzo (ciudad más caro)
-        "alimentacion":      68_000,  # Comidas en ciudad (ligeramente más caro)
-        "transporte_local":  20_000,  # Transporte urbano
-    },
-}
-
 ADICIONALES = [
     {"concepto": "Fregadero instalación bajo cubierta", "unidad": "und",   "terminada": 35_000, "acabados": 42_000, "estructura": 50_000, "comercial": 55_000},
     {"concepto": "Sellante y silicona especializada",   "unidad": "und",   "terminada": 28_000, "acabados": 32_000, "estructura": 38_000, "comercial": 40_000},
@@ -366,7 +342,7 @@ TOUR_PASOS = [
         "etiqueta": "COTIZADOR",
         "icono":    "📐",
         "titulo":   "Cotizacion Directa — el corazon de la app",
-        "cuerpo":   "Define el material, agrega las piezas del proyecto, configura logistica y presiona Calcular. Obtienes de inmediato el precio sugerido, el desglose completo de costos y el margen de utilidad.\n\nEl cotizador guarda automaticamente cada calculo en el Historial para que puedas rastrearlo y editarlo cuando necesites.",
+        "cuerpo":   "Define el material, agrega las piezas del proyecto, configura el proyecto y presiona Calcular. Obtienes de inmediato el precio sugerido, el desglose completo de costos y el margen de utilidad.\n\nEl cotizador guarda automaticamente cada calculo en el Historial para que puedas rastrearlo y editarlo cuando necesites.",
         "pagina":   "Cotizacion Directa",
     },
     {
