@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Sun, Moon } from 'lucide-react'
+import { Menu, X, Sun, Moon, Search } from 'lucide-react'
 import Sidebar from './Sidebar'
 import AgenteChat from './AgenteChat'
+import CommandPalette from './CommandPalette'
 import { useTheme } from '../hooks/useTheme'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -83,9 +84,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Desktop header bar — toggle button, only visible lg+ */}
       <header
-        className="hidden lg:flex h-12 items-center justify-end px-6 border-b border-brand-border/30 fixed top-0 right-0 bg-brand-bg/80 z-20"
+        className="hidden lg:flex h-12 items-center justify-end gap-2.5 px-6 border-b border-brand-border/30 fixed top-0 right-0 bg-brand-bg/80 z-20"
         style={{ left: '224px', backdropFilter: 'blur(12px)' }}
       >
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent('costo360:open-command-palette'))}
+          className="flex items-center gap-2 px-3 h-9 rounded-lg border border-brand-border text-brand-muted hover:text-brand-text hover:border-brand-primary/40 transition-all cursor-pointer"
+          aria-label="Buscar y navegar (Ctrl+K)"
+        >
+          <Search size={14} />
+          <span className="text-xs">Buscar</span>
+          <kbd className="text-[10px] px-1.5 py-0.5 rounded border border-brand-border/70 text-brand-muted/50 font-mono">Ctrl K</kbd>
+        </button>
         <button
           type="button"
           onClick={toggleTheme}
@@ -115,6 +126,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </AnimatePresence>
       </main>
 
+      <CommandPalette />
       <AgenteChat />
     </div>
   )
