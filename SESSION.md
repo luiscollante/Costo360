@@ -2,6 +2,44 @@
 
 ---
 
+## Sesión: 2026-08-23 a 2026-08-24 — Prototipo funcional en `web/`+`backend/`, limpieza de raíz, y decisión de ruta técnica para el rediseño
+
+### Qué se hizo
+- **Confirmado: la otra IA que trabajaba en `web/` ya no está activa** — el usuario dio luz verde explícita ("sigue tú") para que esta sesión retome el trabajo técnico completo ahí.
+- **Parámetros rediseñado por completo:** cada empresa ahora puede renombrar, agregar y eliminar sus propias filas de costo por material (antes era un formulario fijo), y la merma de material pasó a ser una fila editable más de la receta, con respaldo al valor por defecto si no existe. Se corrigió además un bug real de despacho por nombre hardcodeado ("Mano obra área") reemplazado por un tipo de inductor propio (`por_m2_mano_obra`).
+- **Integración Nesting → Banco de Retales:** el sobrante de una lámina generada en el plano de corte ahora se puede guardar con un clic como retal reutilizable.
+- **Módulo nuevo: Inventario de láminas** (`backend/routers/inventario.py`, `web/src/pages/InventarioPage.tsx`) — CRUD completo de stock real (cantidad, dimensiones, costo, ubicación, alerta de stock mínimo), distinto del catálogo de precios (solo lectura) y del banco de retales (sobrantes) que ya existían.
+- **Dashboard con granularidad diaria/semanal/mensual** e **Historial con filtros de estado y rango de fechas** (antes solo búsqueda de texto libre).
+- **Primer agente de IA construido:** chat flotante de Parámetros usando Gemini 3.5 Flash-Lite, con contexto real de las tarifas de la empresa, solo explica/orienta (no modifica datos). Requiere `GEMINI_AGENTE_API_KEY` o `GEMINI_API_KEY` válida en el entorno del backend — la que hay en `.env` está vencida, responde con error controlado mientras tanto.
+- **UI memorable:** paleta de comandos Ctrl+K (librería `cmdk`) para navegar toda la app con búsqueda difusa, al estilo Linear/Raycast.
+- **Verificación en vivo real, no solo build:** se levantó Docker Desktop → Postgres local → backend → frontend, se inició sesión con el usuario admin real, y se probaron de punta a punta: guardar/recargar Parámetros, CRUD de Inventario, generar plano de Nesting y guardar retal, filtros de Historial, granularidad de Dashboard, y las 3 rutas de cotización (Directa, Express, AIU) incluyendo generación de PDF. Todos los datos de prueba se limpiaron al final.
+- **Eliminado el código muerto de logística/viáticos/foráneo de todo el sistema** — a pedido explícito del usuario. Ya estaba marcado "(Eliminados)" en el motor de cálculo (`c5`/`c6` siempre en $0, sin ninguna pantalla que los alimentara) pero seguía declarado en `parametros.py`/`seed_parametros.py`, sembrado en la base de datos, referenciado en el generador de PDF, y citado en el prompt del copiloto de IA legado (que además tenía un `import` roto apuntando a esas constantes). Se dejó intacto "Transporte al sitio" en las listas de inclusiones del PDF/wizard — es un servicio incluido normal (entrega de material), no el feature eliminado.
+- **Reorganización de la raíz del repositorio** — a pedido explícito del usuario, con dos rondas de preguntas de por medio porque la primera propuesta tocaba archivos con riesgo real (la app de Streamlit en producción). Resultado: `docs/` (documentación de planeación + el landing prototype estático ya reemplazado por `web/src/pages/LandingPage.tsx`), `_scratch/` (scripts de debug sueltos), y 7 repositorios sin relación con Costo360 (MiMo-Code, agent-reach, agents-towards-production, ai-website-cloner-template, antigravity-skills, scraplink, skills) movidos fuera del proyecto a `C:\Costo360-referencias\`. Deliberadamente sin tocar: la app de Streamlit completa (sigue en producción real, `.devcontainer` apunta a esa ruta exacta), `PROGRESS.md`/`SESSION.md`/`CONTEXTO_*.md` (el harness los lee en ruta fija), `Agents/` (204 archivos, probable fuente real de subagentes de este entorno), y los logos/`assets/` (referenciados por `app.py`).
+- **Investigación y decisión de ruta tecnológica para el rediseño de UI/UX:** el usuario pidió investigar tendencias 2026 de frontend/backend impulsadas por el auge de agentes de IA. Se investigaron 3 rutas (A: evolucionar React+FastAPI actuales con CopilotKit/AG-UI + generación automática de cliente TypeScript; B: unificar todo a TypeScript/Next.js+Node; C: unificar todo a Python con Reflex). El usuario corrigió una imprecisión propia (los agentes de Costo360 no diseñan la UI de forma autónoma — solo el agente nativo interactúa/navega dentro de una interfaz que el fundador diseña) y pidió que quedara reflejado consistentemente. Se recomendó y el usuario confirmó la **Ruta A**, con el razonamiento explícito de que usar la tecnología más probada libera tiempo/riesgo para invertir en lo que sí hace "revolucionaria" a la startup (el producto, no el nombre del framework).
+- **Entrevista de producto completa:** el fundador narró la experiencia de un usuario final simulando ser gerente de una empresa real del sector (Gramar, Granitos y Mármoles S.A.S.) y de ahí salieron **8 reglas de arquitectura no negociables** — la más crítica: aislamiento total de datos entre clientes del Agente de IA (regla de oro). Ver detalle completo en la memoria `project_costo360_redesign_ruta_a` y en los 2 cuadernos de Notion.
+- **2 cuadernos de Notion creados y verificados** (contenido revisado con fetch después de cada edición, no solo publicado a ciegas):
+  - [Costo360 — 3 Rutas para el Rediseño de la Plataforma](https://app.notion.com/p/3c5984465f32811d80c8dcebf7ce1fc9)
+  - [Costo360 — Entrevista: Visión del Producto y Reglas No Negociables](https://app.notion.com/p/3c5984465f3281ab8b45f8180c77bca2)
+
+### Archivos modificados/creados
+- **Backend:** `motor/parametros.py`, `motor/calculos.py`, `motor/generador_pdf.py`, `motor/asistente_ia.py`, `seed_parametros.py`, `main.py`, `routers/dashboard.py`, `routers/cotizacion.py` — modificados. `routers/inventario.py`, `routers/agente.py` — nuevos.
+- **Frontend:** `pages/ParametrosPage.tsx`, `pages/NestingPage.tsx`, `pages/DashboardPage.tsx`, `pages/HistorialPage.tsx`, `pages/CotizacionPage.tsx`, `components/AppLayout.tsx`, `components/Sidebar.tsx`, `App.tsx`, `api/parametros.ts`, `api/dashboard.ts`, `api/cotizacion.ts`, `types/cotizacion.ts` — modificados. `pages/InventarioPage.tsx`, `api/inventario.ts`, `api/agente.ts`, `components/AgenteChat.tsx`, `components/CommandPalette.tsx` — nuevos. Dependencia nueva: `cmdk`.
+- **Raíz:** `docs/` y `_scratch/` creados; `ARQUITECTURA_AGENTES_OPERACION.md`, `IDEA_PRINCIPAL_COSTO360.md`, `PLAN_COSTOS_COMPLETO_COSTO360.md`, `GOAL_LOOP.md`, `index.html`→`docs/index-legacy-landing.html` movidos; `test_db.py`, `test_motor.py`, `test_payload.json`, `test_req.py`, `restore.py`, `parametros_export.json` movidos a `_scratch/`; 7 carpetas movidas fuera del repo a `C:\Costo360-referencias\`.
+- 6 commits nuevos en git local (ver `git log`).
+
+### Decisiones tomadas
+- Ruta A confirmada para el rediseño: evolucionar React+FastAPI, no reescribir a TypeScript puro ni a Reflex/Python puro.
+- 8 reglas de arquitectura no negociables para el rediseño (aislamiento por cliente, jerarquía interna, roles nombre-libre/permiso-fijo, sesión única con control real, BI exclusivo Admin, doble modo agente+manual, Agente nunca entrega trabajo incompleto, más el cupo de usuarios por plan).
+- Planes confirmados: Starter 1 cupo, Pro 3 cupos (1 Admin + 2 usuarios), Enterprise hasta 9 — mismo motor de roles para los 3, cambia solo el cupo.
+- Estructura del plan de rediseño acordada (5 partes): arquitectura de información → integración del Agente → roles/permisos/sesiones → rediseño visual/UX → plan de fases.
+
+### Primera tarea de la próxima sesión
+- **Escribir el plan de rediseño completo bajo la Ruta A**, siguiendo las 5 partes ya acordadas con el usuario — es el corte exacto donde se quedó esta sesión.
+- Preguntar si el usuario quiere comitear los 2 archivos con cambios pendientes en git (`docs/ARQUITECTURA_AGENTES_OPERACION.md`, `docs/PLAN_COSTOS_COMPLETO_COSTO360.md`).
+- Si se retoma el chat de IA, recordar que `GEMINI_API_KEY` está vencida y hay que renovarla.
+
+---
+
 ## Sesión: 2026-08-21 (segunda continuación) — Ajuste de Equipos y auditoría legal exhaustiva
 
 ### Qué se hizo

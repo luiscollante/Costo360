@@ -145,6 +145,20 @@ Comparten toda la infraestructura de la sección 1 — el costo incremental de c
 
 ---
 
+## 4.1 Agente 7 — Asistente Personal del Fundador (agregado 2026-08-22)
+
+**Alcance:** distinto a los 6 agentes anteriores — no opera de cara a los talleres clientes, sino que automatiza el trabajo administrativo personal del fundador dentro del ecosistema Microsoft: gestiona el correo de Outlook, agenda reuniones, atiende comunicaciones de clientes/proveedores por correo, y notifica al fundador de forma proactiva. No reemplaza al Agente de Atención al Cliente (ese vive dentro de la app/WhatsApp y habla con los talleres) — este es el "secretario" personal del fundador.
+
+**Stack técnico — distinto a los otros 6:** los agentes 1-6 corren sobre LangGraph + Claude Sonnet 5/Fable + Gemini 3.1 Pro, en Azure Container Apps. El Agente 7 corre sobre **Microsoft Copilot Studio** (la herramienta nativa de Microsoft para construir y publicar agentes dentro de Outlook/Teams) — un stack completamente distinto, propio del ecosistema Microsoft 365.
+
+**Verificado 2026-08-22 (no asumido):** Microsoft 365 Business Premium por sí solo **no incluye** la posibilidad de construir agentes autónomos — solo trae un asistente de chat básico que hay que activar manualmente cada vez (Copilot Chat). Para un agente que actúa por su cuenta (revisa la bandeja, agenda, avisa sin que se le pida) hace falta la licencia adicional **Microsoft 365 Copilot** (~$30 USD/usuario/mes). La función de "bandeja proactiva sin pedirlo" todavía está en vista previa limitada (Frontier Preview) en Microsoft, no disponible de forma general todavía.
+
+**Costo real:** $30 USD/mes × TRM $3.048,12 = **$91.444 COP/mes** (1 usuario — el fundador).
+
+**Tratamiento en el modelo financiero:** el Excel ya fue enviado al asesor docente y no se puede modificar. Este costo **no se agrega como una línea nueva** — queda cubierto dentro de los colchones ya presupuestados (Imprevistos en Inversión, y/o el margen que dan "Otros gastos administrativos" y la contingencia de nómina en Gastos, que no son compromisos garantizados). Ver nota en `PLAN_COSTOS_COMPLETO_COSTO360.md`.
+
+---
+
 ## 5. CAPEX real para el modelo financiero de la universidad
 
 Como se construye con Claude Code (sección 0), **no hay línea de salario de desarrollador externo que presupuestar** — a diferencia del CAPEX de $20M–$60M COP de la investigación original, que asumía contratar un arquitecto senior. Lo que sí es real y vale la pena incluir en el modelo financiero:
@@ -163,3 +177,39 @@ Esto cambia radicalmente el pedido de inversión para esta parte específica del
 2. Confirmar que creas una cuenta/API key de Anthropic para Claude Sonnet 5 (igual que hicimos con Gemini)
 3. Confirmar con un abogado real que el alcance del Agente Legal (sección 4, punto 6) es seguro antes de construirlo
 4. Luz verde para empezar a construir el Agente de Atención al Cliente en `C:\Costo360\agentes-operacion\`
+
+---
+
+## 7. Auditoría de infraestructura (2026-08-22) — hallazgos y plan de acción
+
+Auditoría independiente de toda la Capa A + Capa B + los 7 agentes, hecha con dos revisores separados (uno de seguridad/cumplimiento/escalabilidad, otro comparando contra prácticas reales de startups de IA 2026) — ninguno de los dos diseñó la arquitectura, para que la revisión fuera honesta y no autocomplaciente. Detalle completo con fuentes en el cuaderno de Notion "Costo360 — Auditoría de Infraestructura".
+
+### 🔴 Crítico
+
+1. **Punto único de falla: Capa A y Capa B comparten el mismo proyecto Supabase.** Un agente con una consulta pesada o trabada podría tumbar la app que usan los talleres al mismo tiempo. **Acción:** separar Capa B a su propio proyecto Supabase (o pooler dedicado) + `statement_timeout` agresivo en el schema `agentes`.
+2. **No existe CI/CD — ningún control automático antes de publicar cambios.** Contradice directamente el posicionamiento de "empresa dirigida casi 100% por IA" si no hay red de seguridad automatizada. **Acción:** set barato de ~30 pruebas automáticas (segundos, centavos de dólar) antes de cada despliegue.
+3. **Habeas Data — falta formalizar cláusulas de transmisión de datos con cada proveedor** (Supabase, Azure, Anthropic, Google, Meta). No es transferencia internacional prohibida (es "transmisión", legal), pero los ToS genéricos de cada proveedor no bastan por sí solos. RNBD ante la SIC no aplica todavía (umbral de ~$5.000M en activos). **Acción:** tarea real para el Agente Legal + abogado humano.
+
+### 🟡 Importante
+
+4. Sin medición de tendencia de calidad de los agentes (Fable revisa cada respuesta puntual, no detecta degradación agregada en el tiempo) — usar Langfuse (ya existe) para muestrear ~10% semanal con un juez LLM barato.
+5. Sin monitoreo de "¿el servidor sigue vivo?" (solo hay monitoreo de errores de código) — agregar un synthetic monitor barato con alerta al celular.
+6. El polling de 5-10 seg entre agentes ya genera demora perceptible en el chat de Atención al Cliente **hoy**, no solo a futuro escala — reconsiderar una cola con aviso instantáneo solo para esa función específica.
+7. Feature flags para lanzar cambios de agentes gradualmente: **ya están pagados y sin usar** — PostHog los incluye gratis, falta solo activarlos.
+8. Gestión de credenciales de ~12 proveedores dispersa por plataforma — no es urgente hoy, pero conviene centralizar con Doppler/Infisical antes de que crezca más.
+9. Pedir a Anthropic y Google un límite de uso más alto (tier Scale/Custom) **antes** de crecer, no después — Gemini orquesta el 100% de los mensajes y Claude+Fable revisan el 100%, ambos son dependencias críticas. Vigilar también el "quality rating" de WhatsApp Cloud API (una caída congela el límite de mensajes del Agente de Ventas).
+
+### 🟢 Confirmado que ya está bien (no cambiar)
+
+Stack de producto (Vercel+Supabase+Cloudflare+Resend), el trío Langfuse+Sentry+PostHog como observabilidad, y `SKIP LOCKED` como mecanismo de cola — los 3 confirmados como razonables para esta etapa, sin necesidad de Kafka/Redis/IaC completo todavía (eso sería sobre-ingeniería prematura con ~150 clientes proyectados).
+
+### Prioridad de ejecución sugerida
+
+1. CI/CD con pruebas mínimas (barato, urgente, contradice la narrativa si falta)
+2. Separar o proteger el Supabase de Capa B
+3. Cláusulas de transmisión de datos con cada proveedor (Agente Legal)
+4. Monitoreo de disponibilidad con alerta
+5. Evals agregados semanales sobre Langfuse
+6. Activar feature flags de PostHog
+7. Gestión de credenciales centralizada
+8. Solicitar límites más altos a Anthropic/Google antes de escalar

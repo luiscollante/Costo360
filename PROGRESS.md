@@ -30,17 +30,34 @@
 - **Reemplazo completo de la proyección de Ingresos (2026-08-21):** se auditó "Cantidad vendida por mes" contra la documentación propia — la proyección anterior (171 clientes) implicaba capturar el 85% del mercado regional original identificado en el estudio de marzo. Se confirmó con el usuario que el alcance real para 2027 es nacional (LatAm queda para después del año 5), y se investigó el mercado nacional real (218 empresas bajo el código oficial CIIU 2396, estimado 450-650 con informalidad del sector). Se reemplazó la curva lineal por una curva en "S" que llega a 108 clientes en diciembre (~17-24% del mercado nacional estimado). **Ingresos Año 1: $405.900.000 → $174.900.000.** Punto de equilibrio mensual: febrero → mayo. Margen EBITDA: ~74,7% → ~40%. Margen Neto: ~59,6% → ~32%.
 - **Auditoría legal exhaustiva de la constitución de la empresa (2026-08-21, continuación):** se investigó si "Registro legal y constitución" cubría todos los gastos legales reales. Hallazgo importante: faltaba un gasto real nunca contemplado — **registrar la marca "Costo360" ante la SIC** (~$1.432.000) antes de lanzar, porque Colombia es un sistema "primero en registrar, primero en derecho" (sin esto, un tercero podría registrar el nombre primero). Se confirmó que las patentes NO aplican al software en Colombia (protección correcta: derecho de autor, automático y gratis). También se amplió el paquete legal de datos ($1.000.000 → $1.800.000) para cubrir Términos y Condiciones + contrato de suscripción SaaS, que no estaban incluidos. De paso se corrigieron 2 accesorios de Equipos (celular, SSD) que habían quedado en el mínimo del rango real, no en un punto medio con colchón.
 - **Inversión total FINAL de la sesión: $71.390.000 COP, 100% financiada por inversionista** (constitución+marca $2.000.000, paquete legal de datos $1.800.000, equipos $17.600.000, resto sin cambios).
+- **Confirmado (2026-08-23): la otra IA que trabajaba en `web/` ya no está activa.** El usuario dio luz verde explícita para que esta sesión retome el trabajo técnico completo en `web/`+`backend/`.
+- **Prototipo funcional construido y verificado en vivo (2026-08-23):** Parámetros rediseñado (cada empresa define sus propias filas de costo, merma editable por material), integración Nesting→Banco de Retales, módulo nuevo de Inventario de láminas (CRUD completo), Dashboard con granularidad diaria/semanal/mensual, filtros de estado/fecha en Historial, primer agente de IA (chat de Parámetros con Gemini 3.5 Flash-Lite), paleta de comandos Ctrl+K. Todo probado extremo a extremo contra una base de datos real (Docker Postgres local) — login real, las 3 rutas de cotización (Directa, Express, AIU) generando PDF, guardado y filtros funcionando. Detalle completo: ver memoria `project_costo360_prototipo_web`.
+- **Código muerto de logística/viáticos eliminado de todo el sistema (2026-08-23):** `LOGISTICA`/`VIATICOS` ya estaban marcados "(Eliminados)" en el motor de cálculo (siempre en $0, sin UI que los alimentara) pero seguían declarados y sembrados en la base de datos — se retiraron por completo del backend, PDF, prompt del copiloto legado y tipos del frontend.
+- **Raíz del repositorio reorganizada (2026-08-23):** `docs/` (documentación de planeación), `_scratch/` (scripts de debug sueltos), y 7 repositorios de referencia sin relación con Costo360 movidos fuera del proyecto a `C:\Costo360-referencias\`. La app de Streamlit, los archivos que lee el harness (`PROGRESS.md`/`SESSION.md`/`CONTEXTO_*.md`), `Agents/` y los logos quedaron intactos a propósito — ver memoria `project_costo360_prototipo_web`.
+- **Decisión de ruta tecnológica para el rediseño (2026-08-23/24):** investigadas 3 rutas posibles (evolucionar el stack actual, unificar todo a TypeScript, o unificar todo a Python con Reflex) — **se eligió la Ruta A** (evolucionar React+FastAPI actuales, sumando CopilotKit/AG-UI para que el Agente interactúe con la pantalla, y generación automática de cliente TypeScript desde el schema de FastAPI). Documentado en Notion, con el razonamiento de por qué esto sirve mejor a la ambición de "startup revolucionaria" que las otras dos rutas.
+- **Entrevista de producto completada (2026-08-24):** el fundador narró la experiencia de un usuario final (caso Gramar) y definió **8 reglas de arquitectura no negociables** para el rediseño (aislamiento total de datos entre clientes, aislamiento jerárquico dentro de un mismo cliente, roles con nombre libre pero permiso fijo, sesión única por usuario con control real para el usuario legítimo, modo BI exclusivo del rol Admin, doble modo de uso agente+navegación manual, el Agente nunca entrega trabajo incompleto en silencio, entre otras). Planes confirmados: Starter 1 cupo, Pro 3 cupos (1 Admin + 2 usuarios), Enterprise hasta 9. Detalle completo: ver memoria `project_costo360_redesign_ruta_a`.
 
 ---
 
 ## 🔄 En progreso
 
-- Nada a medio camino — todas las decisiones de esta sesión quedaron documentadas y comiteadas en git.
-- Estado real de `web/` (la otra IA) sin verificar por esta sesión — si se retoma el trabajo técnico, primero hay que leer el código actual, no asumir el de la última vez que esta sesión lo tocó (2026-08-09).
+- **Plan de rediseño bajo la Ruta A — estructura propuesta, contenido aún no escrito.** El fundador confirmó el orden propuesto (arquitectura de información → integración del Agente → roles/permisos/sesiones → rediseño visual/UX → plan de fases) pero el plan detallado todavía no se ha construido. Es la primera tarea de la próxima sesión.
+- Hay 2 archivos con cambios sin commitear en git (`docs/ARQUITECTURA_AGENTES_OPERACION.md`, `docs/PLAN_COSTOS_COMPLETO_COSTO360.md`, contenido de la auditoría de Agente 7 e infraestructura de sesiones anteriores) — preguntar al usuario si quiere comitearlos.
 
 ---
 
 ## 📋 Siguiente
+
+### Rediseño técnico bajo la Ruta A (frente activo ahora mismo)
+1. ⬜ **Escribir el plan de rediseño completo** — las 5 partes ya acordadas con el usuario (ver "En progreso" arriba). Primera tarea de la próxima sesión.
+2. ⬜ Implementar el motor único de roles/permisos (mismo motor para Starter/Pro/Enterprise, cambia solo el cupo de usuarios) y el mecanismo de sesión única con aviso/control real.
+3. ⬜ Integrar CopilotKit/AG-UI para que el Agente nativo (Pro/Enterprise) navegue e interactúe dentro de la app ya construida — sin reemplazar la navegación manual (regla 7 de la entrevista).
+4. ⬜ Ajustar el comportamiento del Agente de Parámetros (o su sucesor) para que nunca entregue una cotización incompleta en silencio — debe orientar al usuario sobre qué falta (regla 8 de la entrevista).
+5. ⬜ Generación automática de cliente TypeScript desde el schema OpenAPI de FastAPI (reemplaza los tipos escritos a mano en `web/src/api/*.ts`).
+
+### Prototipo ya construido — pendientes menores
+- `GEMINI_API_KEY` en `backend/.env` está vencida/inválida — el chat de Parámetros responde con error controlado hasta que se renueve.
+- Inventario, Dashboard y Historial no tienen pruebas automatizadas — solo verificación manual en vivo del 2026-08-23.
 
 ### Modelo financiero / negocio
 - El modelo financiero está completo, con todas las cifras (Costos, Gastos, Inversión E Ingresos) respaldadas por precios/investigación reales — es la primera vez que las 4 hojas quedan así, ninguna pendiente de verificar.
@@ -50,15 +67,8 @@
 - **Nota abierta, no bloqueante:** el Agente Legal debería confirmarse con un abogado real (alcance: solo documentos propios de Costo360, nunca asesoría a talleres clientes) antes de construirlo.
 - **Nota personal del fundador, fuera del Excel:** afiliación a seguridad social como independiente (~$508.000 COP/mes: salud, pensión, ARL) — obligación personal, no de la empresa, pero real desde que haya ingresos ≥1 SMMLV.
 
-### Migración técnica (pausada mientras el otro modelo trabaja en `web/`)
-1. ✅ **Fase 1:** Frontend + Supabase Auth (construido por esta sesión)
-2. ⚠️ **Fase 2-4:** Backend, 11 módulos y deploy — construidos por el otro modelo, estado real sin verificar por esta sesión
-3. ⚠️ **Fase 5 (Android):** el otro modelo ya agregó `capacitor.config.ts` y una carpeta `android/` — no confirmado si está completa
-4. ⬜ **Fase 6:** Corte de Streamlit Cloud — pendiente
-5. ⬜ **Agentes de operación (Capa B):** arquitectura y costos completamente definidos, construcción del código aún no ha empezado — el primero a construir es Atención al Cliente
-
-### PENDIENTE — Bugs de producción en la versión Streamlit (legado)
-- CTA del hero — `index.html` cambiar `href="#"` → URL real
+### PENDIENTE — Bugs de producción en la versión Streamlit (legado, sigue en producción real — no tocar sin avisar)
+- CTA del hero — `index.html` (el de la app Streamlit, en la raíz — no confundir con `docs/index-legacy-landing.html`) cambiar `href="#"` → URL real
 - PIN en texto plano — `app.py` hashear PIN + migración de datos existentes
 - Número de cotización con `random.randint(100,999)` — riesgo de colisión
 - Configuración de empresa no alimenta los defaults del wizard
@@ -68,4 +78,4 @@
 
 ---
 
-*Última actualización: 2026-08-21*
+*Última actualización: 2026-08-24*
