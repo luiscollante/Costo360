@@ -4,6 +4,8 @@
 
 ## ✅ Hecho
 
+- **Esquema multi-tenant diseñado, auditado dos veces y aplicado al proyecto Supabase real (2026-08-26/27):** ciclo `/goal` completo para la Fase 1 del roadmap. Nuevo proyecto Supabase creado en la organización "Costo360" (antes vacía) — `project_id: hrmpyhixhbnkkpvxtuit`, región `sa-east-1`. 11 tablas (`planes`, `roles_catalogo` con 3 niveles fijos admin/gerencia/operativo, `empresas`, `usuarios` ligado a Supabase Auth, `cotizaciones`, `app_config`, `inventario_retales`, `inventario_laminas`, `audit_log`, `catalogo_materiales` compartido, `sesion_activa` placeholder), todas con Row Level Security activado y forzado. Dos auditorías independientes (Security Engineer sobre el plan, Database Optimizer sobre el SQL) encontraron y corrigieron un hallazgo crítico real: las políticas originales permitían que cualquier usuario se autoascendiera de rol o cambiara el plan de su propia empresa — ya corregido antes de aplicar. Confirmado con el fundador: `facturas_compra`/`correos_procesados` (tablas del backend actual) son sobras de un proyecto no relacionado, no se migraron. Corregido de paso un hallazgo de seguridad en `backend/main.py` (CORS con `"*"` + credenciales). SQL completo en `backend/migrations/0001_esquema_multitenant.sql` y `0002_revocar_anon_empresa_actual.sql`.
+- **Harness completado y ruta de desarrollo formalizada (2026-08-26):** `HARNESS_INICIO.md`, `ARQUITECTURA_MAESTRA.md` (documentación técnica profunda: stack completo con versiones, esquema real de base de datos, hallazgo crítico de falta de aislamiento multi-tenant, reglas sin excepción) y `PATRONES_DE_ERROR.md` (vacío, formato listo) creados. El fundador definió 5 objetivos activos del proyecto — rediseño de interfaz del producto, landing page de alto impacto, agentes de IA de operación, infraestructura gratuita para esos agentes, y agente de IA dentro del producto — formalizados en `docs/ROADMAP_COSTO360.md` con fases y dependencias (el rediseño de interfaz está bloqueado hasta resolver el aislamiento multi-tenant, que se ataca primero).
 - App funcional desplegada en Streamlit Cloud (legado, sigue en producción)
 - Rediseño visual completo (tema oscuro, glassmorphism, colores de marca)
 - Corrección de bug de navegación (`radio_ui`)
@@ -41,15 +43,15 @@
 
 ## 🔄 En progreso
 
-- **Plan de rediseño bajo la Ruta A — estructura propuesta, contenido aún no escrito.** El fundador confirmó el orden propuesto (arquitectura de información → integración del Agente → roles/permisos/sesiones → rediseño visual/UX → plan de fases) pero el plan detallado todavía no se ha construido. Es la primera tarea de la próxima sesión.
+- **Fase 2.A del roadmap:** con el esquema multi-tenant ya creado (ver Hecho abajo), falta cambiar `backend/db/client.py` para que las consultas usen el JWT del usuario en vez de rol de servicio (para que RLS proteja de verdad al backend FastAPI, no solo el acceso directo a Supabase), el trigger de aprovisionamiento de cuentas nuevas, y el rediseño visual de la interfaz en sí.
 - Hay 2 archivos con cambios sin commitear en git (`docs/ARQUITECTURA_AGENTES_OPERACION.md`, `docs/PLAN_COSTOS_COMPLETO_COSTO360.md`, contenido de la auditoría de Agente 7 e infraestructura de sesiones anteriores) — preguntar al usuario si quiere comitearlos.
 
 ---
 
 ## 📋 Siguiente
 
-### Rediseño técnico bajo la Ruta A (frente activo ahora mismo)
-1. ⬜ **Escribir el plan de rediseño completo** — las 5 partes ya acordadas con el usuario (ver "En progreso" arriba). Primera tarea de la próxima sesión.
+### Fase 1 del roadmap — fundamento técnico (frente activo ahora mismo)
+1. ⬜ **Ciclo `/goal` para el aislamiento multi-tenant** — agregar `empresa_id` a las tablas que no lo tienen, convertir `usuarios.rol` en catálogo cerrado de permisos, sentar la base de datos para sesión única. Ver `ARQUITECTURA_MAESTRA.md` sección 4 y `docs/ROADMAP_COSTO360.md` Fase 1.
 2. ⬜ Implementar el motor único de roles/permisos (mismo motor para Starter/Pro/Enterprise, cambia solo el cupo de usuarios) y el mecanismo de sesión única con aviso/control real.
 3. ⬜ Integrar CopilotKit/AG-UI para que el Agente nativo (Pro/Enterprise) navegue e interactúe dentro de la app ya construida — sin reemplazar la navegación manual (regla 7 de la entrevista).
 4. ⬜ Ajustar el comportamiento del Agente de Parámetros (o su sucesor) para que nunca entregue una cotización incompleta en silencio — debe orientar al usuario sobre qué falta (regla 8 de la entrevista).
