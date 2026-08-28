@@ -27,7 +27,7 @@ es silenciosa por diseño.
 """
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, Request
 from pydantic import BaseModel
 from psycopg2.extras import Json
 
@@ -66,7 +66,7 @@ def _age_s(ts) -> float:
 @limiter.limit("30/minute")
 def claim(
     request: Request,
-    device: DeviceIn,
+    device: DeviceIn = Body(..., embed=True),
     force: bool = False,
     usuario=Depends(get_current_user),
     conn=Depends(db_service),

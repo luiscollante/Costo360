@@ -12,7 +12,11 @@ Uso (con `backend/.env` apuntando al proyecto nuevo):
 import json
 import os
 
-from backend.db.client import get_engine
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+
+from backend.db.client import get_engine  # noqa: E402  (tras load_dotenv)
 
 
 def seed() -> int:
