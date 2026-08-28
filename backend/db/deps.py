@@ -49,6 +49,15 @@ def verificar_dispositivo(
         return usuario
     if x_device_id and x_device_id == dev:
         return usuario
+    # Distinguir "aún esperando confirmación" (este dispositivo es el retador de un
+    # takeover en curso) de "te expulsaron". El frontend solo cierra sesión ante
+    # SESSION_SUPERSEDED; SESSION_PENDING deja que `SessionGuard` siga en "esperando".
+    if usuario.get("_session_estado") == "takeover_pendiente":
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "SESSION_PENDING",
+                    "message": "Esperando confirmación en el otro dispositivo"},
+        )
     raise HTTPException(
         status_code=409,
         detail={"code": "SESSION_SUPERSEDED",

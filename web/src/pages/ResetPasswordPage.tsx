@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabaseClient'
 export default function ResetPasswordPage() {
   const navigate = useNavigate()
   const [listo, setListo] = useState(false)
+  const [sinEnlace, setSinEnlace] = useState(false)
   const [password, setPassword] = useState('')
   const [password2, setPassword2] = useState('')
   const [error, setError] = useState('')
@@ -24,7 +25,16 @@ export default function ResetPasswordPage() {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) setListo(true)
     })
-    return () => data.subscription.unsubscribe()
+    // Si a los 6 s no hay sesión, el enlace no es válido (expirado / otro navegador).
+    const t = window.setTimeout(() => {
+      supabase.auth.getSession().then(({ data }) => {
+        if (!data.session) setSinEnlace(true)
+      })
+    }, 6000)
+    return () => {
+      data.subscription.unsubscribe()
+      window.clearTimeout(t)
+    }
   }, [])
 
   async function submit(e: React.FormEvent) {
@@ -60,7 +70,19 @@ export default function ResetPasswordPage() {
           Elige una contraseña para entrar a Costo360.
         </p>
 
-        {!listo ? (
+        {sinEnlace && !listo ? (
+          <div className="text-center py-4">
+            <p className="text-sm text-brand-muted mb-4">
+              El enlace no es válido o expiró. Pide uno nuevo desde «¿Olvidaste tu contraseña?».
+            </p>
+            <button
+              onClick={() => navigate('/login')}
+              className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white font-semibold py-2.5 rounded-lg text-sm cursor-pointer"
+            >
+              Volver a iniciar sesión
+            </button>
+          </div>
+        ) : !listo ? (
           <p className="text-sm text-brand-muted text-center py-6">Validando el enlace…</p>
         ) : (
           <form onSubmit={submit} className="space-y-4">

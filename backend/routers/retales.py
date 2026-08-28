@@ -124,13 +124,18 @@ def actualizar_retal(
     if not campos:
         raise HTTPException(status_code=400, detail="Sin campos para actualizar")
 
+    restringido, uid = scope_propio(usuario)
     vals.append(retal_id)
+    where = "WHERE id = %s"
+    if restringido:
+        where += " AND usuario_id = %s"
+        vals.append(uid)
     cur = conn.cursor()
-    cur.execute(
-        f"UPDATE inventario_retales SET {', '.join(campos)} WHERE id = %s",
-        vals,
-    )
+    cur.execute(f"UPDATE inventario_retales SET {', '.join(campos)} {where} RETURNING id", vals)
+    ok = cur.fetchone()
     cur.close()
+    if not ok:
+        raise HTTPException(status_code=404, detail="Retal no encontrado o sin permiso")
     return {"ok": True}
 
 
@@ -140,7 +145,17 @@ def eliminar_retal(
     conn=Depends(db_rls),
     usuario=Depends(get_current_user),
 ):
+    restringido, uid = scope_propio(usuario)
     cur = conn.cursor()
-    cur.execute("DELETE FROM inventario_retales WHERE id = %s", (retal_id,))
+    if restringido:
+        cur.execute(
+            "DELETE FROM inventario_retales WHERE id = %s AND usuario_id = %s RETURNING id",
+            (retal_id, uid),
+        )
+    else:
+        cur.execute("DELETE FROM inventario_retales WHERE id = %s RETURNING id", (retal_id,))
+    ok = cur.fetchone()
     cur.close()
+    if not ok:
+        raise HTTPException(status_code=404, detail="Retal no encontrado o sin permiso")
     return {"ok": True}

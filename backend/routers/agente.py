@@ -64,6 +64,11 @@ def chat_agente(
     conn=Depends(db_rls),
     usuario=Depends(get_current_user),
 ):
+    # No se gatea con `puede_pedir_datos_agregados_agente`: hoy el asistente solo lee
+    # `tarifas` de la PROPIA empresa (ya visible vía GET /api/parametros para cualquier
+    # rol) y explica/orienta — no devuelve agregados de negocio. Si en el futuro accede
+    # a datos agregados (cotizaciones, márgenes), añadir aquí
+    # `Depends(require_datos_agregados_agente)` (ya definido en backend/db/deps.py).
     mensaje = (body.mensaje or "").strip()
     if not mensaje:
         raise HTTPException(status_code=400, detail="Mensaje vacío")

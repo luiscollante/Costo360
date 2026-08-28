@@ -78,8 +78,9 @@ def crear_empresa(
     cur.close()
     conn.commit()  # commit ANTES de la Admin API (no transaccional)
 
+    user_id = None
     try:
-        supabase_admin.crear_usuario(
+        user = supabase_admin.crear_usuario(
             email,
             {
                 "empresa_id": str(empresa_id),
@@ -87,13 +88,25 @@ def crear_empresa(
                 "nombre_completo": body.admin_nombre.strip(),
             },
         )
+        user_id = user.get("id") or user.get("user", {}).get("id")
         enlace = supabase_admin.generar_enlace(email, "recovery")
     except Exception as e:
+        print(f"[bootstrap] fallo al aprovisionar {email}: {e}", flush=True)
+        # Compensación: si el auth.users llegó a crearse, borrarlo (cascada limpia
+        # `usuarios`); luego borrar la empresa (cascada limpia la invitación).
+        if user_id:
+            try:
+                supabase_admin.eliminar_usuario(user_id)
+            except Exception:
+                pass
         cur = conn.cursor()
         cur.execute("DELETE FROM empresas WHERE id = %s", (empresa_id,))
         cur.close()
         conn.commit()
-        raise HTTPException(status_code=502, detail=f"No se pudo crear el usuario admin: {e}")
+        raise HTTPException(
+            status_code=502,
+            detail="No se pudo crear el usuario administrador. Intenta de nuevo.",
+        )
 
     return {
         "empresa_id": str(empresa_id),

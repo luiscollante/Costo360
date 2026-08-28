@@ -189,11 +189,15 @@ def obtener_datos_cotizacion(
     usuario=Depends(get_current_user),
 ):
     """Retorna datos_json de una cotización para poder editarla."""
+    restringido, uid = scope_propio(usuario)
     cur = conn.cursor()
-    cur.execute(
-        "SELECT datos_json, numero FROM cotizaciones WHERE id = %s",
-        (cot_id,),
-    )
+    if restringido:
+        cur.execute(
+            "SELECT datos_json, numero FROM cotizaciones WHERE id = %s AND usuario_id = %s",
+            (cot_id, uid),
+        )
+    else:
+        cur.execute("SELECT datos_json, numero FROM cotizaciones WHERE id = %s", (cot_id,))
     row = cur.fetchone()
     cur.close()
     if not row:
@@ -242,9 +246,19 @@ def actualizar_estado(
     estado = body.get("estado")
     if estado not in ("Pendiente", "Aprobada", "Rechazada", "Borrador"):
         raise HTTPException(status_code=400, detail="estado inválido")
+    restringido, uid = scope_propio(usuario)
     cur = conn.cursor()
-    cur.execute("UPDATE cotizaciones SET estado=%s WHERE id=%s", (estado, cot_id))
+    if restringido:
+        cur.execute(
+            "UPDATE cotizaciones SET estado=%s WHERE id=%s AND usuario_id=%s RETURNING id",
+            (estado, cot_id, uid),
+        )
+    else:
+        cur.execute("UPDATE cotizaciones SET estado=%s WHERE id=%s RETURNING id", (estado, cot_id))
+    ok = cur.fetchone()
     cur.close()
+    if not ok:
+        raise HTTPException(status_code=404, detail="Cotización no encontrada o sin permiso")
     return {"ok": True}
 
 
@@ -326,9 +340,15 @@ def _logo_bytes(conn, empresa_id):
     return base64.b64decode(logo_b64) if logo_b64 else None
 
 
-def _cargar_cotizacion(conn, cot_id):
+def _cargar_cotizacion(conn, cot_id, uid=None):
     cur = conn.cursor()
-    cur.execute("SELECT numero, datos_json, cliente FROM cotizaciones WHERE id = %s", (cot_id,))
+    if uid is not None:
+        cur.execute(
+            "SELECT numero, datos_json, cliente FROM cotizaciones WHERE id = %s AND usuario_id = %s",
+            (cot_id, uid),
+        )
+    else:
+        cur.execute("SELECT numero, datos_json, cliente FROM cotizaciones WHERE id = %s", (cot_id,))
     row = cur.fetchone()
     cur.close()
     if not row:
@@ -347,7 +367,8 @@ def _cargar_cotizacion(conn, cot_id):
 def descargar_pdf(cot_id: int, conn=Depends(db_rls), usuario=Depends(get_current_user)):
     """Genera y descarga el PDF de una cotización guardada."""
     emp = usuario["empresa_id"]
-    numero, resultado, _ = _cargar_cotizacion(conn, cot_id)
+    restringido, uid = scope_propio(usuario)
+    numero, resultado, _ = _cargar_cotizacion(conn, cot_id, uid if restringido else None)
     try:
         pdf_bytes = generar_pdf_cotizacion(
             resultado=resultado,
@@ -378,7 +399,8 @@ def descargar_cuenta_cobro(
 ):
     """Genera y descarga la cuenta de cobro de una cotización guardada."""
     emp = usuario["empresa_id"]
-    numero, resultado, _ = _cargar_cotizacion(conn, cot_id)
+    restringido, uid = scope_propio(usuario)
+    numero, resultado, _ = _cargar_cotizacion(conn, cot_id, uid if restringido else None)
     info = _empresa_info(conn, emp)
     datos_prestador = {
         "nombre":       info["nombre"],
@@ -419,7 +441,8 @@ def descargar_cuenta_cobro(
 def descargar_aiu_pdf(cot_id: int, conn=Depends(db_rls), usuario=Depends(get_current_user)):
     """Genera y descarga la oferta AIU de una cotización guardada."""
     emp = usuario["empresa_id"]
-    numero, resultado, _ = _cargar_cotizacion(conn, cot_id)
+    restringido, uid = scope_propio(usuario)
+    numero, resultado, _ = _cargar_cotizacion(conn, cot_id, uid if restringido else None)
     try:
         pdf_bytes = generar_pdf_cotizacion_aiu(
             resultado=resultado,

@@ -193,6 +193,51 @@ Fase 3 (aprobación del fundador + 3 decisiones) ✅.
     Redirect URLs). Ver `backend/ENV_SETUP.md` y `web/ENV_SETUP.md`.
   - Ejecutar `python -m backend.seed_catalogo` una vez tras configurar `backend/.env`.
 
+## Fase 5 — auditoría del código ejecutado (2 agentes distintos) + arreglos
+
+**Auditores:** Code Reviewer ("cambios menores") + Backend Architect ("ajustes recomendados").
+Ninguno encontró huecos de aislamiento entre empresas ni regresiones; los hallazgos críticos
+de la Fase 2 (C1-C3, S1, S2, D1-D14) están correctamente implementados en el código.
+
+**Arreglos aplicados (2026-08-27):**
+1. **Aprovisionamiento — usuario huérfano.** `bootstrap.py` y `admin.py`: si `crear_usuario`
+   tuvo éxito pero `generar_enlace` falla, el `except` ahora hace `eliminar_usuario`
+   best-effort antes de borrar la empresa / revocar la invitación. Además el error de la
+   Admin API ya NO se filtra al cliente (se loguea; el `detail` es genérico).
+2. **Sesión única — parpadeo del retador.** `verificar_dispositivo` devuelve `SESSION_PENDING`
+   (no `SESSION_SUPERSEDED`) cuando el estado es `takeover_pendiente` → el frontend ya no
+   marca "expulsado" al dispositivo que está esperando confirmación.
+3. **Frontend — bucle de refresh.** `App.tsx`: `onAuthStateChange` solo re-hidrata en
+   `SIGNED_IN`/`SIGNED_OUT`/`USER_UPDATED` (no en `TOKEN_REFRESHED`). `client.ts`: un 401 que
+   persiste tras el reintento → `signOut()`, no insistir.
+4. **`session.py::claim` — carrera del primer claim.** `INSERT ... ON CONFLICT (usuario_id)
+   DO NOTHING` + re-`SELECT` → dos primeros `claim` concurrentes ya no dan 500 (verificado
+   por SQL: rowcount 1 / 0, sin error de PK).
+5. **Regla 2 en endpoints por-id.** `cotizacion.py` (`obtener_datos`, `actualizar_estado`,
+   los 3 PDF) y `retales.py` (update/delete) ahora aplican `scope_propio` — un `operativo` ya
+   no puede leer/mutar cotizaciones o retales de un colega por id. (Era laguna preexistente;
+   S17 era el momento de cerrarla.)
+6. **`_self_test_rls`**: chequea además que `SET LOCAL ROLE` se revirtió tras el `rollback`
+   (síntoma del transaction pooler).
+7. Menores: `_verify_jwt` asevera `role == 'authenticated'`; `pool_recycle` 300→900;
+   `ResetPasswordPage` con fallback a los 6 s si el enlace no es válido; comentario en
+   `agente.py` sobre por qué no se gatea con `puede_pedir_datos_agregados_agente`; nota en
+   `rate_limiter.py` sobre `X-Forwarded-For` (deuda de despliegue).
+
+**Deuda anotada (no bloquea el cierre):** revocación real de token por dispositivo en la
+Regla 5 (GoTrue no la ofrece por-dispositivo; se usa el 409 + re-lectura sin caché de
+`activo`/`rol_codigo`); lint de CI que impida `db_service` fuera de la allowlist; extraer
+`get_engine` a `backend/db/engine.py` para quitar el import perezoso; conexión retenida
+durante generación de PDF / llamada a Gemini (primer límite de escalado); rate-limit por
+proceso en memoria; `supabase_admin` sin retry/circuit-breaker; tope de invitaciones
+pendientes por empresa; flujo de editar cotización con re-INSERT del mismo `numero` (choca
+con el `unique` — pre-existente).
+
+**Re-auditoría del delta de arreglos:** los cambios son pequeños y acotados sobre una base
+que ambos agentes aprobaron; se auto-verificaron (`tsc -b`, import-check, `py_compile`,
+prueba SQL de la carrera de `claim`). No se repitió la ronda completa de Fase 5. El fundador
+puede pedirla si lo prefiere.
+
 ---
 
 ---

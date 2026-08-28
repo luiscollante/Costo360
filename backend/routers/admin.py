@@ -114,14 +114,22 @@ def invitar_usuario(
         raise HTTPException(status_code=409, detail="Ya hay una invitación pendiente para ese correo")
     conn.commit()
 
+    user_id = None
     try:
-        supabase_admin.crear_usuario(
+        user = supabase_admin.crear_usuario(
             email,
             {"empresa_id": str(emp), "rol_codigo": body.rol_codigo,
              "nombre_completo": body.nombre_completo.strip()},
         )
+        user_id = user.get("id") or user.get("user", {}).get("id")
         enlace = supabase_admin.generar_enlace(email, "recovery")
     except Exception as e:
+        print(f"[admin] fallo al invitar {email}: {e}", flush=True)
+        if user_id:
+            try:
+                supabase_admin.eliminar_usuario(user_id)
+            except Exception:
+                pass
         cur = conn.cursor()
         cur.execute(
             "UPDATE public.invitaciones SET estado = 'revocada' "
@@ -130,7 +138,7 @@ def invitar_usuario(
         )
         cur.close()
         conn.commit()
-        raise HTTPException(status_code=502, detail=f"No se pudo crear el usuario: {e}")
+        raise HTTPException(status_code=502, detail="No se pudo crear el usuario. Intenta de nuevo.")
 
     return {"email": email, "enlace_para_definir_contrasena": enlace}
 
@@ -215,5 +223,6 @@ def eliminar_usuario(
     try:
         supabase_admin.eliminar_usuario(uid)
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"No se pudo eliminar el usuario: {e}")
+        print(f"[admin] fallo al eliminar {uid}: {e}", flush=True)
+        raise HTTPException(status_code=502, detail="No se pudo eliminar el usuario. Intenta de nuevo.")
     return {"ok": True}

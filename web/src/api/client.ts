@@ -43,6 +43,14 @@ api.interceptors.response.use(
       return Promise.reject(err)
     }
 
+    // 401 que persiste tras el reintento (token válido pero el backend lo rechaza:
+    // mismatch de proyecto/iss/aud, o reloj desfasado) → cerrar sesión, no insistir.
+    if (status === 401 && original?._retried) {
+      await supabase.auth.signOut()
+      if (window.location.pathname !== '/login') window.location.href = '/login'
+      return Promise.reject(err)
+    }
+
     if (status === 409 && err.response?.data?.detail?.code === 'SESSION_SUPERSEDED') {
       window.dispatchEvent(new CustomEvent('costo360:session-superseded'))
     }

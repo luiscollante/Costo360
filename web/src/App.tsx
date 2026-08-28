@@ -44,8 +44,12 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     getDeviceId()
     useAuthStore.getState().refresh()
-    const { data } = supabase.auth.onAuthStateChange(() => {
-      useAuthStore.getState().refresh()
+    // Solo re-hidratar en cambios de identidad — NO en TOKEN_REFRESHED (evita un
+    // bucle: 401 del backend → refreshSession → TOKEN_REFRESHED → refresh → 401…).
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+        useAuthStore.getState().refresh()
+      }
     })
     return () => data.subscription.unsubscribe()
   }, [])

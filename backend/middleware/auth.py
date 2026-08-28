@@ -53,7 +53,7 @@ def _get_jwk_client() -> PyJWKClient:
 
 def _verify_jwt(token: str) -> dict:
     signing_key = _get_jwk_client().get_signing_key_from_jwt(token)
-    return jwt.decode(
+    payload = jwt.decode(
         token,
         signing_key.key,
         algorithms=["ES256"],
@@ -62,6 +62,9 @@ def _verify_jwt(token: str) -> dict:
         leeway=30,
         options={"require": ["exp", "sub"]},
     )
+    if payload.get("role") != "authenticated":
+        raise jwt.InvalidTokenError("role no es 'authenticated'")
+    return payload
 
 
 _PERFIL_SQL = """

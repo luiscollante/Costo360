@@ -82,13 +82,23 @@ def claim(
     row = cur.fetchone()
 
     if row is None:
+        # Crear la fila. ON CONFLICT DO NOTHING cierra la carrera de dos primeros
+        # `claim` concurrentes (el FOR UPDATE de arriba no bloquea lo que no existe).
         cur.execute(
             "INSERT INTO sesion_activa (usuario_id, device_actual, estado, iniciada_en, ultimo_uso) "
-            "VALUES (%s, %s, 'activa', now(), now())",
+            "VALUES (%s, %s, 'activa', now(), now()) ON CONFLICT (usuario_id) DO NOTHING",
             (uid, Json(dev)),
         )
-        cur.close()
-        return {"status": "active"}
+        if cur.rowcount == 1:
+            cur.close()
+            return {"status": "active"}
+        # Otro dispositivo ganó la creación → re-leer y seguir la máquina normal.
+        cur.execute(
+            "SELECT estado, device_actual, retador, retador_desde "
+            "FROM sesion_activa WHERE usuario_id = %s FOR UPDATE",
+            (uid,),
+        )
+        row = cur.fetchone()
 
     estado, device_actual, retador, retador_desde = row
     actual_id = (device_actual or {}).get("id")

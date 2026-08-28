@@ -102,6 +102,18 @@ def _self_test_rls() -> None:
                     "como 'authenticated' sin sesión. El aislamiento por empresa NO es fiable."
                 )
         conn.rollback()
+
+        # Tras el rollback, `SET LOCAL ROLE` debe haberse revertido: la conexión vuelve
+        # a `postgres` (BYPASSRLS). Si NO se revirtió (síntoma del transaction pooler),
+        # una conexión sucia volvería al pool y el siguiente request correría sin RLS.
+        with conn.cursor() as cur:
+            cur.execute("select current_user")
+            if cur.fetchone()[0] != rol_base:
+                raise RuntimeError(
+                    "SET LOCAL ROLE no se revirtió tras el rollback — DATABASE_URL "
+                    "parece apuntar al transaction pooler. Usá el session pooler (:5432)."
+                )
+        conn.rollback()
     finally:
         conn.close()
 
