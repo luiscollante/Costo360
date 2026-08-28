@@ -174,7 +174,28 @@ Fase 3 (aprobación del fundador + 3 decisiones) ✅.
     expulsado (cierra sesión). Escucha el evento `costo360:session-superseded` de `client.ts`.
   - `App.tsx`: `<SessionGuard />` dentro de `Private` y de la ruta `/admin`.
   - **`tsc -b` limpio + `npm run build` OK.**
-- **B8 — Verificación (parcial)** 🟡 (2026-08-27)
+- **B8 — Verificación en vivo del backend** ✅ (2026-08-28)
+  - `backend/.env` y `web/.env` configurados por el fundador (Session pooler 5432 +
+    `SUPABASE_SERVICE_ROLE_KEY` verificados; `web/.env` con la publishable key).
+  - `python -m backend.seed_catalogo` → 255 materiales cargados.
+  - Backend arrancado contra el proyecto real → **el self-test de RLS pasó** (BYPASSRLS del
+    rol, efecto real de `SET LOCAL ROLE`, RLS bloquea sin claims, no es el transaction
+    pooler, el rol se revierte tras el rollback).
+  - **Prueba end-to-end headless (`scratchpad/b8_live.py`), TODO PASA:** alta de 2 talleres
+    por `POST /api/bootstrap/empresa`; login real con JWT de cada admin; `GET /api/auth/me`
+    con `rol_codigo`/`empresa_id`/capacidades; `POST /api/cotizacion/guardar` (`COT-2026-0001`);
+    **AISLAMIENTO — el admin de B ve 0 cotizaciones de A, `GET /api/cotizacion/{id}/datos` de
+    A → 404, A ve la suya**; `POST /api/admin/usuarios` invita `operativo` → 201 + enlace;
+    invitar `admin` → 400; sesión única (`claim` → active / pending; el retador que pide
+    datos → 409 `SESSION_PENDING`; el titular sigue con 200 durante el aviso).
+  - **Bug encontrado y corregido en la prueba (commit `3f9d01f`):** `session.claim` esperaba
+    el body sin envolver; el frontend manda `{device:{...}}` → `Body(..., embed=True)`.
+  - Datos de prueba borrados; la base del proyecto quedó limpia (0 empresas, 0 usuarios,
+    255 materiales).
+  - **Falta solo:** el click-through visual del frontend en un navegador (login, ver el modal
+    de sesión única renderizado). El contrato frontend↔backend ya quedó verificado por B8;
+    ese repaso visual encaja naturalmente en el rediseño visual (siguiente fase, donde cada
+    pantalla se reconstruye). Con eso, **fusionar `goal/fase-2a-multitenant-auth` a `master`.**
   - **Verificado por SQL (con rollback), contra el proyecto real:** con 2 empresas + 2
     admins creados por el flujo de aprovisionamiento real (invitación → `auth.users` con
     `app_metadata` → trigger), y fijando `request.jwt.claims` + `SET LOCAL ROLE authenticated`

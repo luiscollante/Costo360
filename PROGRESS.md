@@ -39,13 +39,16 @@
   - **Verificado por SQL (con rollback):** el aislamiento entre empresas funciona de verdad
     — usuario A ve 1 de cada cosa y 0 de la empresa B, no puede escribir en otra empresa,
     `folio_seq` sin carreras, mismo número de cotización permitido entre empresas.
-  - **Pendiente (necesita al fundador):** `backend/.env` (Session pooler 5432 +
-    `SUPABASE_SERVICE_ROLE_KEY` + `BOOTSTRAP_SECRET`), `web/.env` (`VITE_SUPABASE_*`), y la
-    config del panel de Supabase Auth (signup OFF + Redirect URLs). Con eso: prueba en vivo
-    por HTTP (B8), `python -m backend.seed_catalogo`, y fusionar la rama a `master`.
-  - **Próxima tarea lógica:** completar B8 (prueba en vivo) y, ya con el fundamento
-    multi-tenant en pie, arrancar el **rediseño visual del producto** (Objetivo 1 / Fase 2.A
-    del roadmap) — que era lo que el fundador pidió hacer después.
+  - **B8 verificado en vivo (2026-08-28):** el fundador configuró `backend/.env` + `web/.env`;
+    catálogo cargado (255 materiales); backend arrancado contra el proyecto real (self-test de
+    RLS pasó); prueba end-to-end headless TODO PASA — alta de 2 talleres por bootstrap, login
+    con JWT real, aislamiento entre empresas confirmado por la API real, invitaciones, y sesión
+    única. Un bug menor encontrado y corregido (`session.claim` body, commit `3f9d01f`). Base
+    del proyecto quedó limpia.
+  - **Falta:** el repaso visual del frontend en un navegador (encaja en el rediseño), y
+    **fusionar `goal/fase-2a-multitenant-auth` a `master`**.
+  - **Próxima tarea lógica:** fusionar la rama y arrancar el **rediseño visual del producto**
+    (Objetivo 1 / Fase 2.A del roadmap) — lo que el fundador pidió hacer después.
 
 - **Ciclo `/goal` rediseñado a 7 fases (0-6) e instalado `codebase-memory-mcp` (2026-08-27):** el fundador redefinió el ciclo de trabajo con un mapa de grafo del proyecto + selección de agentes (Fase 0), planificación (1), auditoría con agentes distintos y reintento en bucle si no se aprueba (2), explicación obligatoria al usuario (3), ejecución con micro-commits (4), validación de la ejecución con agentes distintos y reintento en bucle (5), y guardado/reindexado (6) — reemplaza la versión anterior de 6 pasos en `HARNESS_INICIO.md`. Se instaló el servidor MCP `codebase-memory-mcp` (grafo de conocimiento del código, local, sin dependencias) para la Fase 0 — pendiente de confirmar que el indexado (`index_repository`) funciona tras reiniciar la sesión. De paso se corrigió un hallazgo real: `CONTEXTO_COSTOMARMOL.md` no era de Costo360 (documentaba una versión de marca blanca del código para un cliente específico, bajo un nombre que hoy pertenece a otro contexto de negocio) — se sacó del repositorio y se corrigió la narrativa de origen que lo mencionaba incorrectamente como el nombre académico anterior de Costo360.
 - **Esquema multi-tenant diseñado, auditado dos veces y aplicado al proyecto Supabase real (2026-08-26/27):** ciclo `/goal` completo para la Fase 1 del roadmap. Nuevo proyecto Supabase creado en la organización "Costo360" (antes vacía) — `project_id: hrmpyhixhbnkkpvxtuit`, región `sa-east-1`. 11 tablas (`planes`, `roles_catalogo` con 3 niveles fijos admin/gerencia/operativo, `empresas`, `usuarios` ligado a Supabase Auth, `cotizaciones`, `app_config`, `inventario_retales`, `inventario_laminas`, `audit_log`, `catalogo_materiales` compartido, `sesion_activa` placeholder), todas con Row Level Security activado y forzado. Dos auditorías independientes (Security Engineer sobre el plan, Database Optimizer sobre el SQL) encontraron y corrigieron un hallazgo crítico real: las políticas originales permitían que cualquier usuario se autoascendiera de rol o cambiara el plan de su propia empresa — ya corregido antes de aplicar. Confirmado con el fundador: `facturas_compra`/`correos_procesados` (tablas del backend actual) son sobras de un proyecto no relacionado, no se migraron. Corregido de paso un hallazgo de seguridad en `backend/main.py` (CORS con `"*"` + credenciales). SQL completo en `backend/migrations/0001_esquema_multitenant.sql` y `0002_revocar_anon_empresa_actual.sql`.
