@@ -65,7 +65,31 @@ Fase 3 (aprobación del fundador + 3 decisiones) ✅.
   - Import-check OK de los 12 routers + helpers con Python 3.14/venv. La verificación en vivo
     (self-test contra la BD) necesita `backend/.env` con la cadena del proyecto nuevo +
     `SUPABASE_SERVICE_ROLE_KEY` → **acción del fundador antes de B8**.
-- **B3 — Routers a `db_rls` + capacidades + atomicidad** ⬜
+- **B3 — Routers a `db_rls` + capacidades + atomicidad** ✅ (2026-08-27)
+  - `db/config_helpers.py`: `cfg_get(conn, empresa_id, key)` con typecheck (no `json.loads`
+    sobre jsonb — hallazgo D2); `cfg_set(conn, empresa_id, key, val)` UPSERT sobre
+    `(empresa_id, clave)` vía `psycopg2.extras.Json`, **sin `commit()`** (D7).
+  - `services/audit_service.py`: `log_accion(..., *, empresa_id, usuario_id, ip)` con
+    **SAVEPOINT** y sin tocar commit/rollback de la conexión compartida (D1).
+  - `db/deps.py`: reescrito a capacidades — `require_gestion_usuarios`, `require_dashboard`,
+    `require_datos_agregados_agente`, y `scope_propio(usuario)` que centraliza el aislamiento
+    jerárquico interno (Regla 2 / S17).
+  - `db/client.py`: eliminado el alias `db_conn`.
+  - Routers migrados a `db_rls` y sin `commit()` intermedios: `cotizacion`, `dashboard`,
+    `retales`, `inventario`, `parametros`, `config`, `materiales`, `agente`. `nesting` (no
+    usa BD) — se le quitó la dependencia de conexión. `calculos` sin cambios (no BD).
+  - `_siguiente_numero` → contador atómico `folio_seq` (`INSERT ... ON CONFLICT DO UPDATE
+    ... RETURNING`), scope por empresa (D4). Todos los `INSERT` de datos incluyen ahora
+    `empresa_id` (obligado por `WITH CHECK` de RLS).
+  - `dashboard` pasa a estar gateado por `require_dashboard` (Regla 6: Operativo no accede);
+    se eliminó la rama "solo lo propio" de ahí. `historial`/`retales listar` conservan
+    `scope_propio` (Regla 2). `parametros`/`config` de escritura → `puede_ver_dashboard`
+    (admin+gerencia).
+  - Quitados los defaults del taller piloto (`"Mármoles Collante & Castro Ltda"`,
+    `"Barranquilla"`) de `config.py` — cada empresa parte de valores vacíos.
+  - `finanzas.py` desconectado con nota de cabecera (no lo importa `main.py`; no compila
+    contra el `db/*` nuevo, se conserva como referencia — R7).
+  - Import-check + `py_compile` OK de los 12 routers + core con Python 3.14/venv.
 - **B4 — Aprovisionamiento + gestión de usuarios** ⬜
 - **B5 — Backend sesión única** ⬜
 - **B6 — Frontend auth** ⬜

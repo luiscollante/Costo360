@@ -104,8 +104,3 @@ def db_rls(user: dict = Depends(get_current_user)):
         except Exception:
             pass
         conn.close()
-
-
-# Alias temporal para routers de datos aún no migrados. B3 los pasa a `db_rls`/`db_service`
-# uno a uno y elimina este alias.
-db_conn = db_service

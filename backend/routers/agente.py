@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional
 
-from backend.db.client import db_conn
+from backend.db.client import db_rls
 from backend.db.config_helpers import cfg_get
 from backend.middleware.auth import get_current_user
 from backend.middleware.rate_limiter import limiter
@@ -59,8 +59,8 @@ def _client():
 def chat_agente(
     request: Request,
     body: ChatIn,
-    conn=Depends(db_conn),
-    _usuario=Depends(get_current_user),
+    conn=Depends(db_rls),
+    usuario=Depends(get_current_user),
 ):
     mensaje = (body.mensaje or "").strip()
     if not mensaje:
@@ -77,7 +77,7 @@ def chat_agente(
 
     from google.genai import types
 
-    tarifas = cfg_get(conn, "tarifas") or {}
+    tarifas = cfg_get(conn, usuario["empresa_id"], "tarifas") or {}
     system_instruction = _SYSTEM_PROMPT + json.dumps(tarifas, ensure_ascii=False)
 
     contents = []

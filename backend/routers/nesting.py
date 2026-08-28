@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
 from backend.middleware.auth import get_current_user
-from backend.db.client import db_conn
 
 # motor_planos está en sys.path gracias al bloque de main.py
 from motor_planos import optimizar_corte_2d
@@ -12,7 +11,6 @@ router = APIRouter(prefix="/api/nesting", tags=["nesting"])
 def generar_nesting(
     body: dict,
     usuario=Depends(get_current_user),
-    conn=Depends(db_conn),
 ):
     """
     Calcula el nesting 2D (Guillotine Best Short Side Fit + rotación) sobre una lámina

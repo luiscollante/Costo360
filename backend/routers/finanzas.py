@@ -6,7 +6,12 @@ from backend.db.deps import require_admin_or_gerente
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import date, datetime
-from backend.db.client import db_conn
+# DESCONECTADO en la Fase 2.A (2026-08-27). Este router opera sobre `facturas_compra`,
+# una tabla que NO pertenece a Costo360 (sobra de otro proyecto, confirmado por el
+# fundador) y que no existe en el esquema multi-tenant. `main.py` ya no lo registra.
+# Se conserva el archivo por si sirve de referencia a los agentes de operación; NO
+# importa limpio contra el `backend/db/*` de la Fase 2.A. Ver docs/PLAN_FASE_2A.md (R7).
+from backend.db.client import db_conn  # noqa: F401  (símbolo eliminado — router inactivo)
 from backend.services.etl_service import process_emails, procesar_adjunto, TEMP_DIR
 from google import genai
 

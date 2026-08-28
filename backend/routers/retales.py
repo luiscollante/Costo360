@@ -2,8 +2,9 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from backend.db.client import db_conn
+from backend.db.client import db_rls
 from backend.middleware.auth import get_current_user
+from backend.db.deps import scope_propio
 
 router = APIRouter(prefix="/api/retales", tags=["retales"])
 
@@ -51,12 +52,11 @@ class RetalUpdate(BaseModel):
 
 
 @router.get("")
-def listar_retales(conn=Depends(db_conn), usuario=Depends(get_current_user)):
+def listar_retales(conn=Depends(db_rls), usuario=Depends(get_current_user)):
     cur = conn.cursor()
-    rol = usuario.get("rol", "Operario")
-    uid = usuario["id"]
+    restringido, uid = scope_propio(usuario)
 
-    if rol == "Operario":
+    if restringido:
         cur.execute(
             f"SELECT {_COLS} FROM inventario_retales "
             "WHERE usuario_id = %s ORDER BY estado ASC, fecha_ingreso DESC",
@@ -74,17 +74,18 @@ def listar_retales(conn=Depends(db_conn), usuario=Depends(get_current_user)):
 
 
 @router.post("", status_code=201)
-def crear_retal(body: RetalIn, conn=Depends(db_conn), usuario=Depends(get_current_user)):
+def crear_retal(body: RetalIn, conn=Depends(db_rls), usuario=Depends(get_current_user)):
     m2_orig = body.m2_original if body.m2_original is not None else body.m2_disponibles
     hoy = date.today().isoformat()
     cur = conn.cursor()
     cur.execute(
         """INSERT INTO inventario_retales
-        (material_categoria, referencia, m2_disponibles, m2_original,
+        (empresa_id, material_categoria, referencia, m2_disponibles, m2_original,
          fecha_ingreso, estado, notas, precio_recuperacion, precio_mercado_m2, usuario_id)
-        VALUES (%s,%s,%s,%s,%s,'Disponible',%s,%s,%s,%s)
+        VALUES (%s,%s,%s,%s,%s,%s,'Disponible',%s,%s,%s,%s)
         RETURNING id""",
         (
+            usuario["empresa_id"],
             body.material_categoria, body.referencia,
             body.m2_disponibles, m2_orig,
             hoy, body.notas,
@@ -93,7 +94,6 @@ def crear_retal(body: RetalIn, conn=Depends(db_conn), usuario=Depends(get_curren
         ),
     )
     new_id = cur.fetchone()[0]
-    conn.commit()
     cur.close()
     return {"id": new_id, "ok": True}
 
@@ -102,7 +102,7 @@ def crear_retal(body: RetalIn, conn=Depends(db_conn), usuario=Depends(get_curren
 def actualizar_retal(
     retal_id: int,
     body: RetalUpdate,
-    conn=Depends(db_conn),
+    conn=Depends(db_rls),
     usuario=Depends(get_current_user),
 ):
     campos = []
@@ -129,7 +129,6 @@ def actualizar_retal(
         f"UPDATE inventario_retales SET {', '.join(campos)} WHERE id = %s",
         vals,
     )
-    conn.commit()
     cur.close()
     return {"ok": True}
 
@@ -137,11 +136,10 @@ def actualizar_retal(
 @router.delete("/{retal_id}")
 def eliminar_retal(
     retal_id: int,
-    conn=Depends(db_conn),
+    conn=Depends(db_rls),
     usuario=Depends(get_current_user),
 ):
     cur = conn.cursor()
     cur.execute("DELETE FROM inventario_retales WHERE id = %s", (retal_id,))
-    conn.commit()
     cur.close()
     return {"ok": True}
