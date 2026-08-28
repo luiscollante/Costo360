@@ -85,22 +85,65 @@ memoria", "guarda todo" o equivalentes — ejecuta los pasos de abajo en ese mis
 
 ---
 
-## 🔁 Ciclo de trabajo opcional — `/goal` (Planear → Validar → Ejecutar → Validar → Guardar)
+## 🔁 Ciclo de trabajo `/goal` — Fases 0 a 6
 
-Para cualquier tarea no trivial (ej. resolver el aislamiento multi-tenant del Objetivo 1):
+Versión definida por el fundador el 2026-08-27, reemplaza la versión anterior de 6 pasos. Se usa
+para cualquier tarea no trivial (ej. resolver el aislamiento multi-tenant del Objetivo 1).
 
-1. **Seleccionar agentes** pertinentes a la tarea (2 a 4) del catálogo disponible en el entorno.
-2. **Planear** con esos agentes — plan detallado, archivos a tocar, orden, riesgos, marcado
-   `[ARQUITECTÓNICO]` si aplica — y presentarlo con el formato de tres partes. Esperar aprobación.
-3. **Validar el plan** con agentes DISTINTOS a los de planeación (independencia de auditoría).
-4. **Ejecutar** un archivo a la vez, con un micro-commit por archivo:
-   `git commit -m "wip(goal): <archivo> — <descripción breve>"`
-5. **Validar la ejecución** con agentes distintos a los de validación del plan.
-6. **Guardar** — repetir el protocolo de cierre de sesión de arriba, más un commit final de
-   documentación.
+### Fase 0 — Mapa del proyecto + selección de agentes
+- Consulta el grafo de conocimiento del proyecto (`codebase-memory-mcp`, instalado 2026-08-26/27 —
+  vía el skill `codebase-memory` o los agentes `codebase-memory` / `codebase-memory-scout` /
+  `codebase-memory-auditor`) para tener una visión estructural completa antes de planear. Revisa
+  primero `list_projects`/`index_status`; si el proyecto no está indexado o el índice está
+  desactualizado (`detect_changes`), indícalo e indexa/reindexa antes de confiar en los resultados.
+  Si la herramienta falla o no está disponible, avísalo y sigue con exploración manual
+  (`Glob`/`Grep`/`Read` + `ARQUITECTURA_MAESTRA.md`) — este paso nunca bloquea el ciclo.
+- Selecciona los agentes especializados pertinentes a la tarea, de dos fuentes (confirmado por el
+  fundador, 2026-08-27):
+  - **`C:\Costo360\Agents\`** — catálogo de subagentes invocables directamente (Backend Architect,
+    Security Engineer, Database Optimizer, etc. — es la misma fuente que ya usamos en el ciclo del
+    esquema multi-tenant).
+  - **`C:\Costo360-referencias\`** — material de referencia (frameworks, patrones, ejemplos de
+    otros proyectos) que puede informar cómo usar o instruir a los agentes elegidos, aunque no sean
+    agentes invocables por sí mismos como los de `Agents\`.
 
-Si algún agente rechaza en el paso 3 o 5, se vuelve al paso 2 con las observaciones como contexto
-adicional.
+### Fase 1 — Planificar
+Con los agentes seleccionados de la Fase 0, arma un plan de acción detallado: investigación,
+razonamiento, qué se va a hacer, qué archivos se tocan, en qué orden, y los riesgos — nunca se
+ejecuta nada todavía.
+
+### Fase 2 — Auditoría y validación del plan
+Selecciona agentes DISTINTOS a los de la Fase 1 para auditar y validar ese plan (evita
+autovalidación/alucinación). **Si algo no se aprueba, el ciclo vuelve a la Fase 1** a ajustar
+específicamente esa parte del plan, y luego repite la Fase 2 — así hasta que el plan quede
+validado por completo.
+
+### Fase 3 — Explicación al usuario (obligatoria por ahora)
+Explica el plan ya validado en lenguaje simple, sin tecnicismos, y espera aprobación humana
+explícita antes de ejecutar. **Esta fase es obligatoria en todo ciclo salvo que el fundador pida
+explícitamente saltarla para un ciclo puntual** — nunca se salta por iniciativa propia, incluso si
+ciclos anteriores no encontraron problemas.
+
+### Fase 4 — Ejecución
+Ejecuta el plan ya aprobado, con un **micro-commit por cada avance real** (no solo al final):
+`git commit -m "wip(goal): <qué> — <por qué>"` — así una caída de conexión, un cierre accidental, o
+un fallo de la API nunca borra trabajo ya hecho; alcanza con retomar desde el último micro-commit.
+
+### Fase 5 — Validación de la ejecución
+Selecciona agentes DISTINTOS a los de las Fases 1 y 2 para auditar el resultado real de la
+ejecución. **Si encuentran un problema, se anota y el ciclo vuelve a la Fase 1** para atacarlo —
+se repite el ciclo completo hasta que la Fase 5 quede limpia.
+
+### Fase 6 — Guardado y cierre
+- Reindexa el grafo del proyecto (`codebase-memory-mcp`) para que quede al día con lo que se acaba
+  de construir.
+- Actualiza toda la documentación (`PROGRESS.md`, `SESSION.md`, `ARQUITECTURA_MAESTRA.md`,
+  `docs/ROADMAP_COSTO360.md`, `CONTEXTO_COSTO360.md`, memoria persistente) para que refleje la
+  realidad del proyecto, no solo lo planeado.
+- Aplica el protocolo completo de cierre de sesión (sección de arriba en este mismo archivo).
+- Confirma al usuario que con solo leer `@HARNESS_INICIO.md` en la próxima sesión, retomarás
+  exactamente desde el último micro-commit — sin excepción, incluso si la sesión se cortó a mitad
+  de una fase.
 
 ---
 
