@@ -90,7 +90,33 @@ Fase 3 (aprobación del fundador + 3 decisiones) ✅.
   - `finanzas.py` desconectado con nota de cabecera (no lo importa `main.py`; no compila
     contra el `db/*` nuevo, se conserva como referencia — R7).
   - Import-check + `py_compile` OK de los 12 routers + core con Python 3.14/venv.
-- **B4 — Aprovisionamiento + gestión de usuarios** ⬜
+- **B4 — Aprovisionamiento + gestión de usuarios** ✅ (2026-08-27)
+  - `services/supabase_admin.py`: cliente `httpx` de la Admin API de GoTrue
+    (`crear_usuario` con `app_metadata` en un paso → dispara `handle_new_user`;
+    `generar_enlace` recovery; `eliminar_usuario`; `cerrar_sesiones` best-effort).
+  - `routers/bootstrap.py`: `POST /api/bootstrap/empresa` protegido por
+    `X-Bootstrap-Secret` (comparación en tiempo constante, 503 si la env está vacía,
+    rate-limit 10/h). Secuencia con compensación: `INSERT empresas`+invitación → commit
+    → `crear_usuario` → si falla, `DELETE empresas` (cascada). Registrado en `main.py`.
+  - `routers/admin.py` reconstruido (`require_gestion_usuarios` = capacidad
+    `puede_gestionar_usuarios`, solo `admin`):
+    - `GET /usuarios` (join a `auth.users` para el email, vía `db_service` con
+      `WHERE empresa_id = %s` explícito — hallazgo S2),
+    - `GET /invitaciones` (pendientes, vía `db_rls`),
+    - `POST /usuarios` (invitar `gerencia`/`operativo` — nunca `admin`; pre-chequeo de
+      cupo + el trigger como enforcement real; rate-limit 20/h; compensación si la
+      Admin API falla),
+    - `PATCH /usuarios/{uid}` (nombre/cargo/rol/activo; nunca sobre el `admin` ni la
+      propia cuenta; al desactivar o degradar → `cerrar_sesiones` best-effort, S14),
+    - `DELETE /usuarios/{uid}` (borra el `auth.users` → cascada; nunca el `admin`).
+  - `models/admin.py`: **eliminado** (modelos viejos con `id:int`).
+  - `seed_catalogo.py`: nuevo — recarga autoritativa de `catalogo_materiales` desde el
+    JSON (se ejecuta en B8).
+  - Import-check OK. 13 routers registrados.
+  - Pendiente/nota: scripts sueltos de `backend/` (`check_schema.py`, `seed_parametros.py`,
+    `download_pdf.py`, `fix_c.py`, `refactor_pdf.py`, `test_pdf.py`) quedan obsoletos o
+    con imports rotos contra el `db/*` nuevo — no se limpian en esta fase (no los usa
+    la app).
 - **B5 — Backend sesión única** ⬜
 - **B6 — Frontend auth** ⬜
 - **B7 — Frontend sesión única** ⬜
