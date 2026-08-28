@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, Query
 
 from backend.db.client import db_rls
-from backend.db.deps import require_dashboard
+from backend.db.deps import require_dashboard, verificar_dispositivo
 
-router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
+router = APIRouter(prefix="/api/dashboard", tags=["dashboard"],
+                   dependencies=[Depends(verificar_dispositivo)])
 
 _GRANULARIDADES = {
     # trunc: función de truncado de fecha · formato: máscara TO_CHAR · ventana: intervalo hacia atrás

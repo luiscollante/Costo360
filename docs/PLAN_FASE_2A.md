@@ -117,7 +117,30 @@ Fase 3 (aprobación del fundador + 3 decisiones) ✅.
     `download_pdf.py`, `fix_c.py`, `refactor_pdf.py`, `test_pdf.py`) quedan obsoletos o
     con imports rotos contra el `db/*` nuevo — no se limpian en esta fase (no los usa
     la app).
-- **B5 — Backend sesión única** ⬜
+- **B5 — Backend sesión única (Regla 5)** ✅ (2026-08-27)
+  - `middleware/auth.py`: `_PERFIL_SQL` con `LEFT JOIN sesion_activa` → `get_current_user`
+    devuelve `_session_device_id` y `_session_estado` (sin conexión extra — misma query).
+  - `db/deps.py`: `verificar_dispositivo(usuario, X-Device-Id)` — dependencia **pura**
+    (sin BD): sin fila de sesión → permite (recién logueado); coincide → permite (incluye
+    al titular durante `takeover_pendiente`); no coincide → **409 `SESSION_SUPERSEDED`**.
+    Aplicada a nivel de router en los 11 routers de datos + `admin` (NO en `auth`/`session`/
+    `bootstrap`).
+  - `routers/session.py` (`/api/auth/session/*`, todo por `db_service`, transiciones con
+    `UPDATE ... WHERE estado=<esperado>` + `rowcount`, `FOR UPDATE` en `claim` — S6/D10):
+    - `POST /claim` (`{device}`, `?force=`): crea la sesión / la reafirma / inicia
+      `takeover_pendiente` / permite forzar tras `GRACE`=30 s / cede el relevo si el retador
+      anterior venció (`TIMEOUT`=90 s) / `busy` en el caso de 3 dispositivos.
+    - `POST /keep` — el titular conserva y rechaza el intento.
+    - `POST /handoff` — el titular cede al retador.
+    - `POST /heartbeat` — polling del cliente: resuelve el timeout perezoso (cede a B si el
+      titular nunca respondió), refresca `ultimo_uso` con throttle 60 s, devuelve el estado
+      (`mine`, `am_i_retador`, etiquetas) para que el frontend muestre el aviso.
+    - `POST /logout` — borra la fila.
+  - **Limitación documentada (S5):** la expulsión se hace cumplir con el 409 de
+    `verificar_dispositivo` (GoTrue no revoca la sesión de UN dispositivo). El `device.id`
+    es de 128 bits y nunca se loguea → el 409 no es evadible en la práctica. "Sesión única
+    cooperativa": con el titular offline, la cesión a B es silenciosa por diseño.
+  - Import + `py_compile` OK. 14 routers registrados.
 - **B6 — Frontend auth** ⬜
 - **B7 — Frontend sesión única** ⬜
 - **B8 — Verificación en vivo (bloqueante)** ⬜

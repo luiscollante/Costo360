@@ -4,9 +4,10 @@ from pydantic import BaseModel
 from typing import Optional
 from backend.db.client import db_rls
 from backend.middleware.auth import get_current_user
-from backend.db.deps import scope_propio
+from backend.db.deps import scope_propio, verificar_dispositivo
 
-router = APIRouter(prefix="/api/retales", tags=["retales"])
+router = APIRouter(prefix="/api/retales", tags=["retales"],
+                   dependencies=[Depends(verificar_dispositivo)])
 
 _COLS = (
     "id,material_categoria,referencia,m2_disponibles,m2_original,"

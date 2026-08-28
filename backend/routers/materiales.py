@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, Query
 from backend.db.client import db_rls
 from backend.middleware.auth import get_current_user
+from backend.db.deps import verificar_dispositivo
 
-router = APIRouter(prefix="/api/materiales", tags=["materiales"])
+router = APIRouter(prefix="/api/materiales", tags=["materiales"],
+                   dependencies=[Depends(verificar_dispositivo)])
 
 
 @router.get("")

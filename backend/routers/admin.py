@@ -12,11 +12,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from backend.db.client import db_rls, db_service
-from backend.db.deps import require_gestion_usuarios
+from backend.db.deps import require_gestion_usuarios, verificar_dispositivo
 from backend.middleware.rate_limiter import limiter
 from backend.services import supabase_admin
 
-router = APIRouter(prefix="/api/admin", tags=["admin"])
+router = APIRouter(prefix="/api/admin", tags=["admin"],
+                   dependencies=[Depends(verificar_dispositivo)])
 
 _ROLES_INVITABLES = {"gerencia", "operativo"}
 

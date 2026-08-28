@@ -67,9 +67,11 @@ def _verify_jwt(token: str) -> dict:
 _PERFIL_SQL = """
     select u.empresa_id, u.rol_codigo, u.nombre_completo, u.cargo_visible, u.activo,
            r.puede_ver_dashboard, r.puede_usar_modo_bi_senior,
-           r.puede_pedir_datos_agregados_agente, r.puede_gestionar_usuarios
+           r.puede_pedir_datos_agregados_agente, r.puede_gestionar_usuarios,
+           sa.device_actual ->> 'id' as device_actual_id, sa.estado as sesion_estado
     from public.usuarios u
     join public.roles_catalogo r on r.codigo = u.rol_codigo
+    left join public.sesion_activa sa on sa.usuario_id = u.id
     where u.id = %s
 """
 
@@ -120,4 +122,7 @@ def get_current_user(authorization: str | None = Header(None)):
         "puede_usar_modo_bi_senior": row[6],
         "puede_pedir_datos_agregados_agente": row[7],
         "puede_gestionar_usuarios": row[8],
+        # Sesión única (Regla 5) — el dispositivo que hoy tiene la sesión, y su estado.
+        "_session_device_id": row[9],
+        "_session_estado": row[10],
     }

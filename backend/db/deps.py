@@ -8,7 +8,7 @@ cubren:
   `operativo` solo ve sus propias filas; `admin`/`gerencia` (con
   `puede_ver_dashboard`) ven todo lo de su empresa.
 """
-from fastapi import Depends, HTTPException
+from fastapi import Depends, Header, HTTPException
 
 from backend.middleware.auth import get_current_user
 
@@ -29,6 +29,31 @@ def require_datos_agregados_agente(usuario=Depends(get_current_user)):
     if not usuario.get("puede_pedir_datos_agregados_agente"):
         raise HTTPException(status_code=403, detail="Requiere permiso para consultar datos agregados")
     return usuario
+
+
+def verificar_dispositivo(
+    usuario=Depends(get_current_user),
+    x_device_id: str | None = Header(None),
+):
+    """
+    Sesión única (Regla 5). Compara el `X-Device-Id` del cliente contra el
+    dispositivo que hoy tiene la sesión (`sesion_activa.device_actual`).
+    - Sin fila de `sesion_activa` → aún no se reclamó (justo tras login): se permite.
+    - Coincide → se permite (incluye al titular durante un `takeover_pendiente`:
+      "no se cierra en silencio", el titular sigue trabajando hasta que decida).
+    - No coincide → 409 SESSION_SUPERSEDED. El cliente muestra "tu sesión se movió".
+    Los endpoints `/api/auth/session/*` NO usan esta dependencia.
+    """
+    dev = usuario.get("_session_device_id")
+    if dev is None:
+        return usuario
+    if x_device_id and x_device_id == dev:
+        return usuario
+    raise HTTPException(
+        status_code=409,
+        detail={"code": "SESSION_SUPERSEDED",
+                "message": "Tu sesión está activa en otro dispositivo"},
+    )
 
 
 def scope_propio(usuario) -> tuple[bool, str | None]:

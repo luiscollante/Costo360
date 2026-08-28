@@ -11,7 +11,7 @@ from backend.models.cotizacion import (
 )
 from backend.middleware.auth import get_current_user
 from backend.db.client import db_rls
-from backend.db.deps import scope_propio
+from backend.db.deps import scope_propio, verificar_dispositivo
 from backend.db.config_helpers import cfg_get
 from backend.services.audit_service import log_accion
 
@@ -19,7 +19,8 @@ from calculos import calcular_cotizacion_directa, calcular_aiu
 from parametros import ETAPAS_OBRA, ADICIONALES
 from generador_pdf import generar_pdf_cotizacion, generar_pdf_cotizacion_aiu, generar_cuenta_cobro
 
-router = APIRouter(prefix="/api/cotizacion", tags=["cotizacion"])
+router = APIRouter(prefix="/api/cotizacion", tags=["cotizacion"],
+                   dependencies=[Depends(verificar_dispositivo)])
 
 
 def _siguiente_numero(conn, empresa_id, prefijo: str) -> str:

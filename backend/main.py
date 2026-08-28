@@ -24,7 +24,7 @@ from slowapi.errors import RateLimitExceeded
 
 from backend.middleware.rate_limiter import limiter
 from backend.routers import (
-    auth, bootstrap, calculos, cotizacion, parametros, config, dashboard,
+    auth, session, bootstrap, calculos, cotizacion, parametros, config, dashboard,
     retales, admin, nesting, materiales, inventario, agente,
 )
 # `finanzas` NO se registra en el prototipo nuevo: opera sobre `facturas_compra`, una
@@ -141,6 +141,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(session.router)
 app.include_router(bootstrap.router)
 app.include_router(calculos.router)
 app.include_router(cotizacion.router)

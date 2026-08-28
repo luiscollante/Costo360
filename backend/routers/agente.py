@@ -6,10 +6,12 @@ from typing import Optional
 
 from backend.db.client import db_rls
 from backend.db.config_helpers import cfg_get
+from backend.db.deps import verificar_dispositivo
 from backend.middleware.auth import get_current_user
 from backend.middleware.rate_limiter import limiter
 
-router = APIRouter(prefix="/api/agente", tags=["agente"])
+router = APIRouter(prefix="/api/agente", tags=["agente"],
+                   dependencies=[Depends(verificar_dispositivo)])
 
 _MODELO = "gemini-3.5-flash-lite"
 

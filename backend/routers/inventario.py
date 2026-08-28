@@ -3,8 +3,10 @@ from pydantic import BaseModel
 from typing import Optional
 from backend.db.client import db_rls
 from backend.middleware.auth import get_current_user
+from backend.db.deps import verificar_dispositivo
 
-router = APIRouter(prefix="/api/inventario", tags=["inventario"])
+router = APIRouter(prefix="/api/inventario", tags=["inventario"],
+                   dependencies=[Depends(verificar_dispositivo)])
 
 _COLS = (
     "id,material_categoria,referencia,cantidad_laminas,ancho_cm,alto_cm,espesor_cm,"

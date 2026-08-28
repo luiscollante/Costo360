@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from backend.middleware.auth import get_current_user
+from backend.db.deps import verificar_dispositivo
 
 # motor_planos está en sys.path gracias al bloque de main.py
 from motor_planos import optimizar_corte_2d
 
-router = APIRouter(prefix="/api/nesting", tags=["nesting"])
+router = APIRouter(prefix="/api/nesting", tags=["nesting"],
+                   dependencies=[Depends(verificar_dispositivo)])
 
 
 @router.post("/generar")

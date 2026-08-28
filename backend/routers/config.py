@@ -7,10 +7,11 @@ from PIL import Image
 from backend.db.client import db_rls
 from backend.db.config_helpers import cfg_get, cfg_set
 from backend.middleware.auth import get_current_user
-from backend.db.deps import require_dashboard
+from backend.db.deps import require_dashboard, verificar_dispositivo
 from backend.services.audit_service import log_accion
 
-router = APIRouter(prefix="/api/config", tags=["config"])
+router = APIRouter(prefix="/api/config", tags=["config"],
+                   dependencies=[Depends(verificar_dispositivo)])
 
 _EMPRESA_DEFAULTS = {
     "nombre":            "",
