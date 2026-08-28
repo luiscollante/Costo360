@@ -5,7 +5,15 @@ componente, cada tabla de base de datos, cada dependencia y cada regla sin excep
 estado de avance día a día, ver `PROGRESS.md`/`SESSION.md`. Para el contexto de negocio, ver
 `CONTEXTO_COSTO360.md` y el cuaderno Notion "Costo360 — Base de Conocimiento Central".*
 
-*Última actualización: 2026-08-26.*
+*Última actualización: 2026-08-27.*
+
+> **⚠️ Fase 2.A ejecutada en la rama `goal/fase-2a-multitenant-auth` (aún NO fusionada a
+> `master`).** Cambia mucho de este documento: el backend del prototipo pasa a Supabase Auth
+> (JWT ES256/JWKS), apunta al proyecto Supabase nuevo (`hrmpyhixhbnkkpvxtuit`), y RLS protege
+> de verdad al backend vía la dependencia `db_rls`. Migraciones `0003`/`0004` aplicadas al
+> proyecto nuevo. Detalle completo y estado bloque a bloque: **`docs/PLAN_FASE_2A.md`**. Las
+> secciones de abajo describen el estado en `master`; donde diga "(Fase 2.A)" es lo que ya
+> cambió en la rama.
 
 ---
 
@@ -103,7 +111,7 @@ Cloud apuntan a `app.py` por ruta fija. Moverlo o romperlo tumba la operación r
 | Pieza | Decisión | Estado |
 |---|---|---|
 | Frontend (`web/`) | Vercel, sin GitHub (deploy directo) | Decidido, no verificado si ya está desplegado |
-| Backend (`backend/`) | Vercel (funciones serverless) o servidor propio — **a confirmar**, no hay decisión final documentada para el backend FastAPI en producción | Pendiente de aclarar en el roadmap |
+| Backend (`backend/`) | **Servidor pequeño siempre encendido** (proceso long-lived), NO serverless — confirmado por el fundador 2026-08-27. El patrón `db_rls` (`SET LOCAL ROLE` + una transacción por request) y la sesión única funcionan mejor así; el `DATABASE_URL` usa el **Session pooler** de Supabase (puerto 5432), nunca el transaction pooler (6543). | Decidido; falta elegir el proveedor concreto |
 | Base de datos | Supabase Pro (`dilskbvmvywqohtswzdw`) | En uso ya, plan real por confirmar (Free vs. Pro) |
 | Landing page | Cloudflare Pages (plan Free), separada del servidor de la app | Decidido (ver sección 9), código ya existe en `web/src/pages/LandingPage.tsx` |
 | Correo transaccional | Resend (plan Pro, presupuestado) | Planeado, no implementado |
@@ -145,12 +153,22 @@ Supabase se corrió después de aplicar y encontró un hallazgo adicional (la fu
 `empresa_actual()` era invocable públicamente sin sesión) — corregido en la misma sesión
 (`backend/migrations/0002_revocar_anon_empresa_actual.sql`).
 
-**Pendiente (Fase 2.A del roadmap, no bloquea lo de hoy):** actualizar `backend/db/client.py` para
-que las consultas usen el JWT del usuario autenticado en vez de una conexión de rol de servicio —
-sin ese cambio de conexión, RLS no protege nada de verdad en las consultas que haga el backend
-FastAPI (aunque ya protege correctamente cualquier acceso directo vía la API REST de Supabase).
-También falta el trigger de aprovisionamiento (sección 9 del archivo de migración) y la lógica real
-de la Regla 5 sobre `sesion_activa`.
+**✅ Resuelto en la rama `goal/fase-2a-multitenant-auth` (Fase 2.A, 2026-08-27):**
+- `backend/db/client.py` ahora expone `db_rls` (fija `request.jwt.claims` + `SET LOCAL ROLE
+  authenticated` por transacción, con aserción que aborta si el rol no cambió) y `db_service`
+  (rol postgres/BYPASSRLS, solo auth/aprovisionamiento/admin/sesión). Los 12 routers de datos
+  usan `db_rls`. `main.py` corre un self-test de RLS al arrancar que apaga el backend si el
+  aislamiento no está operativo o si `DATABASE_URL` apunta al transaction pooler.
+- Migración `0003_aprovisionamiento_sesion.sql`: trigger `handle_new_user` (lee
+  `raw_app_meta_data`, valida contra la tabla `invitaciones`, fail-closed ruidoso), trigger
+  `trg_usuarios_cupo_check` (cupo del plan, Regla 4), columnas de máquina de estados en
+  `sesion_activa` (`estado`, `device_actual`, `retador`, `retador_desde`, `resuelto_en`),
+  tabla `folio_seq` (contador atómico del número de cotización por empresa), `empresa_actual()`
+  con `PARALLEL SAFE` + `search_path=''`. `0004`: revoca EXECUTE de las funciones de trigger.
+- Regla 5 (sesión única con aviso real) implementada: `backend/routers/session.py` +
+  `verificar_dispositivo` (dependencia a nivel de router) + `web/src/components/SessionGuard.tsx`.
+- Verificado por SQL (con rollback): usuario A ve solo su empresa, no puede escribir en otra,
+  `folio_seq` sin carreras. Prueba en vivo por HTTP pendiente del `.env` del fundador.
 
 ### ⚠️ Hallazgo crítico — sin aislamiento multi-tenant (histórico, esquema actual sigue así hasta que se aplique la migración)
 
@@ -174,14 +192,21 @@ intentos fallidos en 1 hora, sesión vía token en el header `X-Session-Token` (
 `logout` y `logout-all` (cierra todas las sesiones del usuario). Rate limiting real: login 5/min,
 recuperación 5/hora.
 
-**Lo que se había decidido en 2026-08-08** (ver `PROGRESS.md`): migrar a Supabase Auth (login por
-correo, Google OAuth o correo+contraseña, enlaces nativos de invitación/restablecimiento en vez de
-contraseñas en texto plano). **Esa migración todavía no se ha hecho** — el prototipo sigue sobre el
-sistema de auth propio. No asumir que ya está en Supabase Auth sin verificar el código primero.
+**Migración a Supabase Auth: ✅ hecha en la rama `goal/fase-2a-multitenant-auth` (2026-08-27).**
+El backend verifica el JWT de Supabase por JWKS asimétrico (ES256), carga el perfil desde
+`public.usuarios` JOIN `roles_catalogo` sin caché, y devuelve las 4 capacidades del rol. El
+frontend usa `@supabase/supabase-js` (login por correo + Google + "olvidé mi contraseña", PKCE,
+storage adapter a `@capacitor/preferences` en el APK). Alta de cuentas 100% por invitación
+(`routers/admin.py` + Admin API de GoTrue). El sistema propio (usuario/contraseña/PIN, tabla
+`sesiones`, `services/auth_service.py`) se **eliminó**. En `master` sigue el sistema viejo hasta
+que se fusione la rama.
 
-**Regla 5 de la entrevista de producto (sesión única con control real)** tampoco está implementada
-todavía — la columna `device_hint` existe en `sesiones` pero no hay lógica que la use para avisar
-o bloquear un segundo dispositivo.
+**Regla 5 (sesión única con control real): ✅ implementada en la rama** — `routers/session.py`
+(claim/keep/handoff/heartbeat/logout, transiciones con `UPDATE ... WHERE estado=<esperado>` +
+rowcount), `verificar_dispositivo` (409 `SESSION_SUPERSEDED` / `SESSION_PENDING` según el header
+`X-Device-Id` vs `sesion_activa.device_actual`), y `SessionGuard.tsx` en el frontend. Es "sesión
+única cooperativa": la expulsión se hace cumplir con el 409, no revocando el token de Supabase
+(GoTrue no lo permite por-dispositivo).
 
 ---
 
@@ -314,6 +339,8 @@ el cuaderno Notion "Costo360 — Base de Conocimiento Central".
 | 2026-08-24 | Entrevista de producto: 8 reglas de arquitectura no negociables |
 | 2026-08-25 | Cupos definitivos (Pro=3, Enterprise=10) y confirmación de que el backend se queda en FastAPI/Python |
 | 2026-08-26 | Harness completado; roadmap de 5 objetivos formalizado (`docs/ROADMAP_COSTO360.md`) |
+| 2026-08-27 | Ciclo `/goal` rediseñado a 7 fases (0-6); `codebase-memory-mcp` instalado |
+| 2026-08-27 | **Fase 2.A ejecutada** (rama `goal/fase-2a-multitenant-auth`): backend a Supabase Auth (JWKS ES256), `db_rls`/`db_service`, self-test de RLS al arrancar, aprovisionamiento por invitación, sesión única (Regla 5), migraciones `0003`/`0004`. Decisiones: backend long-lived (no serverless), acceso 100% por invitación, Google OAuth para después |
 
 ---
 

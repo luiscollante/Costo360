@@ -198,7 +198,19 @@ Detalle completo del modelo de negocio (Business Model Canvas, métricas, valida
 
 ## Sistema de Usuarios y Multi-tenancy
 
-- **Roles:** Admin / Operario, a nivel de permisos (solo aplica en Enterprise — Starter y Pro tienen un único usuario, sin necesidad de roles). **Un único Admin por cuenta Enterprise, fijo** — es quien compró la suscripción; ese rol no se puede reasignar ni duplicar a otros usuarios. Ver "cargo decorativo" más abajo para la personalización de equipo (Gerente/Supervisor/Asesor), que es un campo aparte y no cambia los permisos.
+> **Actualización 2026-08-27 (rama `goal/fase-2a-multitenant-auth`):** implementado sobre
+> **Supabase Auth** (correo + Google + enlaces de invitación/restablecimiento). Roles reales =
+> catálogo cerrado `roles_catalogo` con **3 códigos fijos**: `admin`, `gerencia`, `operativo`,
+> cada uno con 4 capacidades booleanas (`puede_ver_dashboard`, `puede_usar_modo_bi_senior`,
+> `puede_pedir_datos_agregados_agente`, `puede_gestionar_usuarios`). `gerencia` = misma
+> visibilidad que `admin` (Dashboard, BI, datos agregados) pero **no** gestiona usuarios; solo
+> `admin` invita/edita. `operativo` no tiene ninguna de las 4 (solo cotiza y ve lo suyo). El
+> "cargo decorativo" pasa a ser la columna `usuarios.cargo_visible` (texto libre, sin efecto en
+> permisos). Alta de cuentas **100% por invitación** (nadie se auto-registra). El aislamiento
+> por empresa lo hace Row Level Security en Postgres; el filtro jerárquico dentro de la empresa
+> (Regla 2) lo hace `scope_propio` en el backend. Detalle: `docs/PLAN_FASE_2A.md`.
+
+- **Roles (histórico previo a la Fase 2.A):** Admin / Operario, a nivel de permisos (solo aplica en Enterprise — Starter y Pro tienen un único usuario, sin necesidad de roles). **Un único Admin por cuenta Enterprise, fijo** — es quien compró la suscripción; ese rol no se puede reasignar ni duplicar a otros usuarios. Ver "cargo decorativo" más abajo para la personalización de equipo (Gerente/Supervisor/Asesor), que es un campo aparte y no cambia los permisos.
 - **Aislamiento de datos:** Row Level Security en Supabase — cada taller solo ve sus propios datos
 - **Config por usuario:** claves de config con sufijo `_{user_id}` en la DB (legado; con Supabase Auth pasa a basarse en `auth.uid()`)
 - El Admin puede crear/invitar operarios al mismo taller

@@ -2,6 +2,106 @@
 
 ---
 
+## Sesión: 2026-08-27 — Fase 2.A completa: migración a Supabase Auth + aislamiento real + sesión única
+
+> Nota: SESSION.md venía sin actualizar desde el 2026-08-23/24. Entre medias hubo sesiones el
+> 26 (esquema multi-tenant aplicado) y el 27 temprano (rediseño del ciclo `/goal` a 7 fases +
+> `codebase-memory-mcp`) — su detalle está en `PROGRESS.md` y en los commits `af1c0cf`/`a443d65`.
+
+### Qué se hizo
+Ciclo `/goal` completo (Fases 0-6) en una sola sesión para la **Fase 2.A del roadmap**.
+
+- **Fase 0-1 (plan):** se indexó el grafo del proyecto y se escribió `docs/PLAN_FASE_2A.md`
+  (objetivo, estado verificado en código, arquitectura objetivo, 9 bloques B0-B8, 10 riesgos).
+- **Fase 2 (auditoría del plan):** 2 agentes independientes — **Security Engineer** y
+  **Database Optimizer** — ambos "APRUEBA CON CAMBIOS". Se incorporaron todos los hallazgos a
+  la Parte II del plan (C1-C3 críticos convergentes, S1-S17 seguridad, D1-D14 base de datos).
+- **Fase 3:** el fundador aprobó y respondió 3 decisiones (ver Decisiones abajo).
+- **Fase 4 (ejecución):** 10 micro-commits en la rama `goal/fase-2a-multitenant-auth`:
+  - **B0** preflight: verificado en el proyecto Supabase nuevo (`hrmpyhixhbnkkpvxtuit`) que
+    `postgres` tiene BYPASSRLS + es miembro de `authenticated`, que `authenticated` tiene DML
+    en las 11 tablas, que el esquema `0001`/`0002` está aplicado, que `pg_cron` no está, y
+    que ningún `.env` fue commiteado jamás.
+  - **B1** migraciones `0003_aprovisionamiento_sesion.sql` (trigger `handle_new_user` +
+    trigger de cupo + columnas de `sesion_activa` + `folio_seq` + `empresa_actual()`
+    PARALLEL SAFE) y `0004_revocar_execute_triggers.sql`. Aplicadas y **probadas end-to-end
+    con rollback** (aprovisionamiento por invitación, cupo por plan, rechazo sin invitación,
+    OAuth sin invitación → sin perfil).
+  - **B2** núcleo de auth del backend: `db_service`/`db_rls`, `get_current_user` con JWKS
+    ES256, self-test de RLS al arrancar, `main.py` sin `_CREATE_TABLES_SQL` ni seeds, CORS
+    endurecido, `services/auth_service.py` eliminado.
+  - **B3** 12 routers de datos a `db_rls`, sin `commit()` intermedios, `empresa_id` en todos
+    los INSERT, `log_accion` con SAVEPOINT, `cfg_get`/`cfg_set` con jsonb + `empresa_id`,
+    `_siguiente_numero` → `folio_seq`, `scope_propio` para la Regla 2, `db/deps.py` a
+    capacidades. `finanzas.router` desregistrado.
+  - **B4** `routers/bootstrap.py` (`POST /api/bootstrap/empresa`, `X-Bootstrap-Secret`) +
+    `routers/admin.py` reconstruido (invitar/editar/desactivar por la Admin API de GoTrue,
+    todo filtrado por `empresa_id`) + `services/supabase_admin.py`. `seed_catalogo.py`.
+  - **B5** `routers/session.py` (sesión única: claim/keep/handoff/heartbeat/logout) +
+    `verificar_dispositivo` en los 11 routers de datos + admin.
+  - **B6** frontend auth: `@supabase/supabase-js`, `supabaseClient.ts`, `deviceId.ts`,
+    `store/auth.ts` reescrito, `client.ts` (Bearer + X-Device-Id + retry), `LoginPage`
+    (correo/Google/olvidé), `ResetPasswordPage` nueva, `AdminPage` reescrita al modelo de
+    invitación, ajustes en Sidebar/Parametros/Dashboard.
+  - **B7** `SessionGuard.tsx` (aviso de sesión única) + `api/session.ts`.
+  - **B8** parcial: aislamiento entre empresas **verificado por SQL con rollback** (usuario A
+    ve 1 de cada cosa y 0 de la empresa B; no puede escribir en otra empresa; `folio_seq`
+    sin carrera). La prueba en vivo por HTTP queda pendiente del `.env` del fundador.
+- **Fase 5 (auditoría del código):** 2 agentes distintos — **Code Reviewer** ("cambios
+  menores") + **Backend Architect** ("ajustes recomendados"). Sin huecos de aislamiento ni
+  regresiones. Se aplicaron 7 arreglos (commit `f8c6e0b`): compensación de `auth.users`
+  huérfano, `SESSION_PENDING` vs `SESSION_SUPERSEDED` para no parpadear al retador, corte del
+  bucle de refresh en el frontend, `ON CONFLICT` en la carrera del primer `claim`, Regla 2 en
+  los endpoints por-id de cotización/retales, self-test post-commit, y menores.
+- **Fase 6:** reindexado el grafo, actualizada la documentación (este archivo, `PROGRESS.md`,
+  `ARQUITECTURA_MAESTRA.md`, `docs/ROADMAP_COSTO360.md`, `CONTEXTO_COSTO360.md`,
+  `PATRONES_DE_ERROR.md`, memoria persistente).
+
+### Archivos modificados/creados (rama `goal/fase-2a-multitenant-auth`, 11 commits)
+- **Backend nuevos:** `routers/bootstrap.py`, `routers/session.py`, `services/supabase_admin.py`,
+  `seed_catalogo.py`, `migrations/0003_*.sql`, `migrations/0004_*.sql`, `ENV_SETUP.md`.
+- **Backend modificados:** `db/client.py`, `db/deps.py`, `db/config_helpers.py`,
+  `middleware/auth.py`, `middleware/rate_limiter.py`, `models/auth.py`, `main.py`,
+  `requirements.txt`, `services/audit_service.py`, y los 13 routers.
+- **Backend eliminados:** `services/auth_service.py`, `models/admin.py`.
+- **Frontend nuevos:** `lib/supabaseClient.ts`, `lib/deviceId.ts`, `api/session.ts`,
+  `components/SessionGuard.tsx`, `pages/ResetPasswordPage.tsx`, `ENV_SETUP.md`.
+- **Frontend modificados:** `App.tsx`, `store/auth.ts`, `api/client.ts`, `api/auth.ts`,
+  `api/admin.ts`, `components/PrivateRoute.tsx`, `components/AdminRoute.tsx`,
+  `components/Sidebar.tsx`, `pages/LoginPage.tsx`, `pages/AdminPage.tsx`,
+  `pages/ParametrosPage.tsx`, `pages/DashboardPage.tsx`, `package.json` (+`@supabase/supabase-js`).
+- **Docs:** `docs/PLAN_FASE_2A.md` (nuevo, documento vivo de ejecución).
+
+### Decisiones tomadas
+- **Backend = servidor pequeño siempre encendido** (proceso long-lived), no serverless.
+  `ARQUITECTURA_MAESTRA.md` sección 3.4 deja de estar "a confirmar".
+- **Acceso 100% por invitación** — "Allow new users to sign up" = OFF en Supabase Auth.
+- **Google OAuth queda para después** — esta fase entrega correo+contraseña + enlaces.
+- Verificación del JWT por **JWKS asimétrico ES256** (el proyecto nuevo usa signing keys
+  asimétricas por defecto).
+- Número de cotización = tabla contador `folio_seq` (atómica, sin carrera).
+- Timeout de sesión única = resolución perezosa en `/heartbeat` (sin `pg_cron`).
+- `finanzas.router` desregistrado del prototipo nuevo.
+- Revocación de token por dispositivo en la Regla 5: NO se hace (GoTrue no la ofrece
+  por-dispositivo) — se usa el 409 de `verificar_dispositivo` + re-lectura sin caché de
+  `activo`/`rol_codigo`. "Sesión única cooperativa" (documentado).
+
+### Primera tarea de la próxima sesión
+1. Pedir al fundador que cree `backend/.env` (Session pooler 5432 + `SUPABASE_SERVICE_ROLE_KEY`
+   + `BOOTSTRAP_SECRET`) y `web/.env` (`VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` =
+   `sb_publishable_t5jOCjxELKXut05se_bgbQ_3zAk3FDJ`), y configure el panel de Supabase Auth
+   (signup OFF + Redirect URLs `http://localhost:5173/reset-password` y `/dashboard`).
+2. Ejecutar **B8**: `python -m backend.seed_catalogo`, levantar backend+frontend, y probar el
+   flujo completo (alta de empresa demo por bootstrap, login por correo, invitar un
+   `operativo`, aislamiento entre 2 empresas demo, sesión única en 2 navegadores, reset de
+   contraseña).
+3. Si B8 pasa, **fusionar `goal/fase-2a-multitenant-auth` a `master`**.
+4. Arrancar el **rediseño visual del producto** (Objetivo 1 / Fase 2.A del roadmap) — el
+   fundador lo pidió como el siguiente frente.
+5. Borrar los 3 archivos basura de la raíz (`(CURRENT_DATE`, `NOW()`, `v_cupo`).
+
+---
+
 ## Sesión: 2026-08-23 a 2026-08-24 — Prototipo funcional en `web/`+`backend/`, limpieza de raíz, y decisión de ruta técnica para el rediseño
 
 ### Qué se hizo
