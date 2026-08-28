@@ -8,9 +8,13 @@
 
 ## 1. Origen y evolución del proyecto
 
-Costo360 nació como **CostoMarmol** — el trabajo de grado ("Opción de Grado") de Luis Alejandro Collante Castro en la Universidad de la Costa (CUC), Facultad de Ciencias Empresariales. La empresa piloto y validadora, desde el primer documento hasta hoy, es **Mármoles Collante & Castro Ltda.**, Barranquilla — empresa familiar de marmolería con 2-15 empleados que atiende clientes residenciales, constructoras y arquitectos del Caribe colombiano.
+*Corregido 2026-08-27: esta sección tenía una imprecisión real sobre el nombre del proyecto — ver la nota al final.*
 
-El nombre evolucionó de **CostoMarmol** (nombre académico, Feb-Mar 2026, enfocado 100% en la empresa piloto) a **Costo360** (nombre comercial actual, con visión explícita de SaaS para todo el sector). El cambio de nombre refleja el cambio de alcance: de "herramienta interna de un taller" a "plataforma para cualquier taller de piedra natural en Colombia" — de ahí el "360": una vista completa del negocio del taller (cotización + inventario + analítica), no solo una calculadora.
+Costo360 nació como el trabajo de grado ("Opción de Grado") de Luis Alejandro Collante Castro en la Universidad de la Costa (CUC), Facultad de Ciencias Empresariales. La empresa piloto y validadora, desde el primer documento hasta hoy, es **Mármoles Collante & Castro Ltda.**, Barranquilla — empresa familiar de marmolería con 2-15 empleados que atiende clientes residenciales, constructoras y arquitectos del Caribe colombiano.
+
+El nombre comercial es **Costo360**, con visión explícita de SaaS para todo el sector: una plataforma para cualquier taller de piedra natural en Colombia, no solo para la empresa piloto — de ahí el "360": una vista completa del negocio del taller (cotización + inventario + analítica), no solo una calculadora.
+
+**Nota sobre un nombre relacionado que NO debe usarse aquí:** existió una versión de marca blanca del código de Costo360, adaptada visualmente para un cliente específico, que usó un nombre similar. Ese nombre hoy pertenece a un contexto de negocio distinto y no relacionado — no se vuelve a mencionar en la documentación de Costo360 (confirmado por el fundador, 2026-08-27).
 
 ---
 

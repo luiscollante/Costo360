@@ -14,9 +14,15 @@ estado de avance día a día, ver `PROGRESS.md`/`SESSION.md`. Para el contexto d
 Costo360 es un SaaS B2B de cotización para talleres de transformación de piedra natural en
 Colombia (mármol, granito, sinterizado, Quartzstone, cuarcita). No es un ERP ni un software
 contable — estandariza costos, genera entregables en PDF, gestiona esas cotizaciones y analiza el
-negocio del taller. Nació como trabajo de grado (CostoMarmol, Universidad de la Costa) y hoy está
+negocio del taller. Nació como trabajo de grado en la Universidad de la Costa (CUC) y hoy está
 en transición hacia startup real con inversión externa. Detalle de negocio completo en
 `CONTEXTO_COSTO360.md` y el cuaderno Notion "Costo360 — Base de Conocimiento Central".
+
+**Nota sobre un nombre relacionado que no debe usarse aquí (corregido 2026-08-27):** existió una
+versión de marca blanca del código de Costo360, adaptada visualmente para un cliente específico,
+que usó un nombre parecido a "Costo360" pero distinto. Ese nombre hoy pertenece a un contexto de
+negocio separado y no relacionado — no se menciona en esta documentación por instrucción explícita
+del fundador.
 
 ---
 
