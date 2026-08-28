@@ -174,7 +174,24 @@ Fase 3 (aprobación del fundador + 3 decisiones) ✅.
     expulsado (cierra sesión). Escucha el evento `costo360:session-superseded` de `client.ts`.
   - `App.tsx`: `<SessionGuard />` dentro de `Private` y de la ruta `/admin`.
   - **`tsc -b` limpio + `npm run build` OK.**
-- **B8 — Verificación en vivo (bloqueante)** ⬜
+- **B8 — Verificación (parcial)** 🟡 (2026-08-27)
+  - **Verificado por SQL (con rollback), contra el proyecto real:** con 2 empresas + 2
+    admins creados por el flujo de aprovisionamiento real (invitación → `auth.users` con
+    `app_metadata` → trigger), y fijando `request.jwt.claims` + `SET LOCAL ROLE authenticated`
+    como hace `db_rls`:
+    - el mismo `numero` de cotización en 2 empresas se permite (`unique (empresa_id, numero)`);
+    - el usuario A ve exactamente **1** de cada cosa (cotización, retal, empresa, usuario,
+      app_config) — **0** filas de la empresa B;
+    - A **no puede** insertar en la empresa B (`WITH CHECK` de RLS lo bloquea);
+    - `folio_seq` (UPSERT `ON CONFLICT`) funciona bajo el rol `authenticated`;
+    - el usuario B ve **0** cotizaciones de A y **1** propia.
+  - **Pendiente (necesita al fundador):** levantar backend+frontend contra el proyecto nuevo
+    y probar el flujo completo por HTTP (login por correo, invitar `operativo`, PDF, sesión
+    única en 2 navegadores, reset de contraseña, el self-test de arranque). Requiere:
+    `backend/.env` (Session pooler 5432 + `SUPABASE_SERVICE_ROLE_KEY` + `BOOTSTRAP_SECRET`),
+    `web/.env` (`VITE_SUPABASE_*`), y la config del panel de Supabase Auth (signup OFF +
+    Redirect URLs). Ver `backend/ENV_SETUP.md` y `web/ENV_SETUP.md`.
+  - Ejecutar `python -m backend.seed_catalogo` una vez tras configurar `backend/.env`.
 
 ---
 
