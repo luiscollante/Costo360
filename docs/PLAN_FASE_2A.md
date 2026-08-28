@@ -22,7 +22,25 @@ Fase 3 (aprobación del fundador + 3 decisiones) ✅.
     pendiente antes de B6; no bloquea B1–B5.
   - Menor: 2 archivos vacíos de 0 bytes en la raíz (`(CURRENT_DATE`, `NOW()`) — restos de un
     redirect de shell; untracked; pendiente de borrar.
-- **B1 — SQL `0003`/`0004`** ⬜
+- **B1 — SQL `0003`/`0004`** ✅ (2026-08-27)
+  - `0003_aprovisionamiento_sesion.sql` aplicado y probado end-to-end (DO block con
+    rollback): C1 aprovisionamiento por invitación crea `usuarios` + marca invitación
+    aceptada; C2 el trigger de cupo bloquea el 2º usuario en plan starter; C3 metadatos sin
+    invitación válida → aborta; C4 OAuth sin metadatos → `auth.users` sin perfil (acceso
+    cero). BD quedó limpia.
+  - Contenido: `empresa_actual()` → `PARALLEL SAFE` + `search_path=''` cualificado; tabla
+    `invitaciones` (+ índice único de invitación pendiente por email/empresa); trigger
+    `on_auth_user_provisioned` (`handle_new_user`, fail-closed ruidoso, lee `raw_app_meta_data`);
+    trigger `trg_usuarios_cupo_check` (`FOR UPDATE` sobre `empresas` para serializar);
+    `sesion_activa` +5 columnas (`estado`+CHECK, `device_actual`, `retador`, `retador_desde`,
+    `resuelto_en`) + storage params; tabla `folio_seq` (contador atómico de folios) + RLS.
+  - `0004_revocar_execute_triggers.sql`: revoca `EXECUTE` de las 2 funciones de disparador
+    (el linter las marcaba como RPC-invocables). Linter final: 1 sola advertencia esperada
+    (`empresa_actual()` ejecutable por `authenticated`, intencional, documentada en `0002`).
+  - **Cambio vs. plan:** el catálogo de materiales NO se siembra por migración —
+    `seed_materiales.json` tiene 10 pares `(categoría, referencia)` duplicados en 255 filas,
+    así que no admite `UNIQUE` sin una decisión de datos del fundador. Se hará con un script
+    de recarga autoritativa (`backend/seed_catalogo.py`) en B3/B8. No hay `0004` de seed.
 - **B2 — Backend auth core** ⬜
 - **B3 — Routers a `db_rls` + capacidades + atomicidad** ⬜
 - **B4 — Aprovisionamiento + gestión de usuarios** ⬜
