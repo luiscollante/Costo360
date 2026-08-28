@@ -1,61 +1,43 @@
 import { create } from 'zustand'
-import { Capacitor } from '@capacitor/core'
-import { Preferences } from '@capacitor/preferences'
-import type { Usuario } from '@/api/auth'
-
-const isNative = Capacitor.isNativePlatform()
+import { supabase } from '@/lib/supabaseClient'
+import { getMe, type Usuario } from '@/api/auth'
 
 interface AuthState {
-  token: string | null
+  /** Hay una sesión de Supabase activa. */
+  session: boolean
+  /** Perfil del backend (`/api/auth/me`). null si no está aprovisionado o sin sesión. */
   usuario: Usuario | null
+  /** Ya se resolvió el estado inicial (sesión + perfil). */
   hydrated: boolean
-  setSession: (token: string, usuario: Usuario) => void
+  /** Re-lee la sesión de Supabase y el perfil del backend. */
+  refresh: () => Promise<void>
+  /** Limpia el estado local (no cierra la sesión de Supabase — eso lo hace signOut). */
   clearSession: () => void
-  hydrate: () => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  // En el celular (APK) la sesión se hidrata de forma async desde Preferences — ver hydrate().
-  // En la web sigue siendo sessionStorage, síncrono, sin cambios de comportamiento.
-  token: isNative ? null : sessionStorage.getItem('session_token'),
-  usuario: isNative ? null : (() => {
-    const raw = sessionStorage.getItem('usuario')
-    return raw ? (JSON.parse(raw) as Usuario) : null
-  })(),
-  hydrated: !isNative,
+  session: false,
+  usuario: null,
+  hydrated: false,
 
-  hydrate: async () => {
-    if (!isNative) return
-    const [{ value: token }, { value: usuarioRaw }] = await Promise.all([
-      Preferences.get({ key: 'session_token' }),
-      Preferences.get({ key: 'usuario' }),
-    ])
-    set({
-      token: token ?? null,
-      usuario: usuarioRaw ? (JSON.parse(usuarioRaw) as Usuario) : null,
-      hydrated: true,
-    })
-  },
-
-  setSession: (token, usuario) => {
-    if (isNative) {
-      Preferences.set({ key: 'session_token', value: token })
-      Preferences.set({ key: 'usuario', value: JSON.stringify(usuario) })
-    } else {
-      sessionStorage.setItem('session_token', token)
-      sessionStorage.setItem('usuario', JSON.stringify(usuario))
+  refresh: async () => {
+    try {
+      const { data } = await supabase.auth.getSession()
+      if (!data.session) {
+        set({ session: false, usuario: null, hydrated: true })
+        return
+      }
+      try {
+        const u = await getMe()
+        set({ session: true, usuario: u, hydrated: true })
+      } catch {
+        // Autenticado en Supabase pero sin perfil (p. ej. OAuth de un no invitado).
+        set({ session: true, usuario: null, hydrated: true })
+      }
+    } catch {
+      set({ session: false, usuario: null, hydrated: true })
     }
-    set({ token, usuario })
   },
 
-  clearSession: () => {
-    if (isNative) {
-      Preferences.remove({ key: 'session_token' })
-      Preferences.remove({ key: 'usuario' })
-    } else {
-      sessionStorage.removeItem('session_token')
-      sessionStorage.removeItem('usuario')
-    }
-    set({ token: null, usuario: null })
-  },
+  clearSession: () => set({ session: false, usuario: null }),
 }))

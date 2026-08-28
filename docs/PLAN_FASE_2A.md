@@ -141,8 +141,39 @@ Fase 3 (aprobación del fundador + 3 decisiones) ✅.
     es de 128 bits y nunca se loguea → el 409 no es evadible en la práctica. "Sesión única
     cooperativa": con el titular offline, la cesión a B es silenciosa por diseño.
   - Import + `py_compile` OK. 14 routers registrados.
-- **B6 — Frontend auth** ⬜
-- **B7 — Frontend sesión única** ⬜
+- **B6 — Frontend auth** ✅ (2026-08-27)
+  - `@supabase/supabase-js@2.112` instalado.
+  - `lib/supabaseClient.ts`: cliente Supabase, `flowType:'pkce'`, storage adapter a
+    `@capacitor/preferences` en el APK. `lib/deviceId.ts`: id de dispositivo de 128 bits
+    (`crypto.getRandomValues`), persistente, nunca en logs.
+  - `store/auth.ts` reescrito: `session` (bool) + `usuario` (de `/api/auth/me`) + `refresh()`;
+    ya no guarda token (lo tiene supabase-js).
+  - `api/client.ts`: interceptor pone `Authorization: Bearer <access_token de supabase>` +
+    `X-Device-Id`; en 401 reintenta 1 vez con `refreshSession()`; en 409
+    `SESSION_SUPERSEDED` emite un evento de ventana.
+  - `api/auth.ts`: `Usuario` con `id:string`, `empresa_id`, `rol_codigo`, 4 capacidades.
+  - `pages/LoginPage.tsx`: correo+contraseña (`signInWithPassword`), "Continuar con Google"
+    (`signInWithOAuth`), "¿Olvidaste tu contraseña?" (`resetPasswordForEmail`).
+  - `pages/ResetPasswordPage.tsx`: nuevo — define contraseña tras el enlace de
+    invitación/recuperación (`updateUser({password})`). Ruta `/reset-password` añadida.
+  - `PrivateRoute`/`AdminRoute` sobre `session`+`usuario` (`puede_gestionar_usuarios`).
+  - `App.tsx`: `onAuthStateChange` → `refresh()`; `getDeviceId()` al arrancar.
+  - `api/admin.ts` + `pages/AdminPage.tsx` reescritos al modelo de invitación
+    (email + `rol_codigo` `gerencia`/`operativo` + `cargo_visible` + `activo`; muestra el
+    enlace de "define tu contraseña"; lista invitaciones pendientes).
+  - Ajustes: `Sidebar.tsx` (`puede_gestionar_usuarios`, logout con `supabase.auth.signOut`),
+    `ParametrosPage.tsx` (`puede_ver_dashboard`), `DashboardPage.tsx` (sin `username`).
+  - `web/ENV_SETUP.md`: nuevo (vars + checklist de dashboard).
+  - **`tsc -b` limpio + `npm run build` OK.**
+- **B7 — Frontend sesión única** ✅ (2026-08-27)
+  - `api/session.ts`: `claim`/`keep`/`handoff`/`heartbeat`/`logout` con payload de
+    dispositivo (id + label + plataforma).
+  - `components/SessionGuard.tsx`: montado en el área privada. Reclama la sesión al entrar;
+    poll de `heartbeat` cada 15 s; overlay con los estados: reclamando · esperando (con
+    "Forzar" tras 30 s de gracia) · aviso al titular ([Mantener aquí]/[Permitir]) ·
+    expulsado (cierra sesión). Escucha el evento `costo360:session-superseded` de `client.ts`.
+  - `App.tsx`: `<SessionGuard />` dentro de `Private` y de la ruta `/admin`.
+  - **`tsc -b` limpio + `npm run build` OK.**
 - **B8 — Verificación en vivo (bloqueante)** ⬜
 
 ---
