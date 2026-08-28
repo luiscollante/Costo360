@@ -41,7 +41,30 @@ Fase 3 (aprobación del fundador + 3 decisiones) ✅.
     `seed_materiales.json` tiene 10 pares `(categoría, referencia)` duplicados en 255 filas,
     así que no admite `UNIQUE` sin una decisión de datos del fundador. Se hará con un script
     de recarga autoritativa (`backend/seed_catalogo.py`) en B3/B8. No hay `0004` de seed.
-- **B2 — Backend auth core** ⬜
+- **B2 — Backend auth core** ✅ (2026-08-27)
+  - `db/client.py`: `db_service()` (rol postgres/BYPASSRLS — solo auth/aprovisionamiento/
+    admin/sesión) y `db_rls(user=Depends(get_current_user))` (fija `request.jwt.claims` +
+    `SET LOCAL ROLE authenticated`, **asertando** `current_user='authenticated'` o aborta 500
+    — hallazgo C2). Alias temporal `db_conn = db_service` para routers no migrados (B3 lo quita).
+  - `middleware/auth.py`: `get_current_user` verifica el JWT por **JWKS ES256**
+    (`PyJWKClient`, `algorithms=["ES256"]`, `aud='authenticated'`, `iss=<SUPABASE_URL>/auth/v1`,
+    `leeway=30`, `require exp+sub`, `sub` validado como UUID). Carga el perfil (empresa_id,
+    rol_codigo, 4 capacidades, activo, nombre) vía `db_service`, **sin caché**. Sin fila → 403;
+    `activo=false` → 403. Verificado contra el JWKS real del proyecto (kid `8c000f0f…`, ES256).
+  - `models/auth.py`: `UsuarioOut` con `id: str`, `empresa_id`, `rol_codigo`, capacidades.
+    Quitados `LoginRequest`/`TokenOut`.
+  - `routers/auth.py`: reducido a `GET /api/auth/me`. `routers/admin.py`: stub (B4 lo rehace).
+  - `services/auth_service.py`: **eliminado** (PIN/hash/sesiones propias).
+  - `main.py`: `lifespan` sin `_CREATE_TABLES_SQL` ni seeds — ahora corre `_self_test_rls()`
+    (conectividad + `rolbypassrls` del rol de conexión + `SET LOCAL ROLE authenticated` real
+    + `cotizaciones` = 0 filas sin claims + rechazo de `:6543`). CORS: `allow_credentials=False`,
+    orígenes solo localhost, header `X-Device-Id` (quitado `X-Session-Token`). `finanzas.router`
+    desregistrado.
+  - `requirements.txt`: `+pyjwt[crypto]`. `backend/ENV_SETUP.md`: nuevo (variables + checklist
+    de dashboard de Supabase Auth).
+  - Import-check OK de los 12 routers + helpers con Python 3.14/venv. La verificación en vivo
+    (self-test contra la BD) necesita `backend/.env` con la cadena del proyecto nuevo +
+    `SUPABASE_SERVICE_ROLE_KEY` → **acción del fundador antes de B8**.
 - **B3 — Routers a `db_rls` + capacidades + atomicidad** ⬜
 - **B4 — Aprovisionamiento + gestión de usuarios** ⬜
 - **B5 — Backend sesión única** ⬜

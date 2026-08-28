@@ -1,6 +1,5 @@
 import sys
 import os
-import secrets
 import types
 from dotenv import load_dotenv
 
@@ -11,19 +10,26 @@ if "backend" not in sys.modules:
     backend_module.__path__ = [os.path.dirname(__file__)]
     sys.modules["backend"] = backend_module
 
-# Motor Python path â€” centralizado aquÃ­ para que los routers no manipulen sys.path
+# Motor Python path — centralizado aquí para que los routers no manipulen sys.path
 _MOTOR_PATH = os.path.join(os.path.dirname(__file__), "motor")
 if _MOTOR_PATH not in sys.path:
     sys.path.insert(0, _MOTOR_PATH)
 
-import time
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
+
 from backend.middleware.rate_limiter import limiter
-from backend.routers import auth, calculos, cotizacion, parametros, config, dashboard, retales, admin, nesting, materiales, finanzas, inventario, agente
+from backend.routers import (
+    auth, calculos, cotizacion, parametros, config, dashboard,
+    retales, admin, nesting, materiales, inventario, agente,
+)
+# `finanzas` NO se registra en el prototipo nuevo: opera sobre `facturas_compra`, una
+# tabla que el fundador confirmó que NO es de Costo360 (sobra de otro proyecto) y que
+# no existe en el esquema multi-tenant. Ver docs/PLAN_FASE_2A.md (hallazgo R7).
 from backend.db.client import get_engine
 
 
@@ -49,236 +55,68 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONRe
         headers={"Retry-After": str(secs)},
     )
 
-_CREATE_TABLES_SQL = """
-CREATE TABLE IF NOT EXISTS usuarios (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    pin_recuperacion VARCHAR(255),
-    pin_hash_version INTEGER NOT NULL DEFAULT 0,
-    pin_bloqueado BOOLEAN NOT NULL DEFAULT FALSE,
-    rol VARCHAR(20) NOT NULL DEFAULT 'Vendedor',
-    nombre_completo VARCHAR(100),
-    activo BOOLEAN DEFAULT TRUE,
-    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
 
-CREATE TABLE IF NOT EXISTS sesiones (
-    token VARCHAR(255) PRIMARY KEY,
-    usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
-    expires_at TIMESTAMPTZ NOT NULL,
-    device_hint VARCHAR(255),
-    ultimo_uso TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+def _self_test_rls() -> None:
+    """
+    Arranca solo si el aislamiento por empresa está realmente operativo (hallazgo C1).
 
-CREATE TABLE IF NOT EXISTS audit_log (
-    id BIGSERIAL PRIMARY KEY,
-    timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
-    accion TEXT NOT NULL,
-    metadata JSONB NOT NULL DEFAULT '{}',
-    ip TEXT
-);
-CREATE INDEX IF NOT EXISTS idx_audit_log_ts     ON audit_log(timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_audit_log_accion ON audit_log(accion, timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_audit_log_user   ON audit_log(usuario_id, timestamp DESC);
+    1. Conectividad.
+    2. El rol de la conexión (`DATABASE_URL`) debe tener BYPASSRLS — si no, `empresa_actual()`
+       (SECURITY DEFINER) entraría en recursión con su propia policy y el aprovisionamiento
+       fallaría.
+    3. `SET LOCAL ROLE authenticated` debe cambiar el rol de verdad y, sin claims, las
+       políticas RLS deben bloquear (`cotizaciones` → 0 filas).
+    4. `DATABASE_URL` no debe apuntar al transaction pooler (:6543): `SET LOCAL` no
+       sobrevive a un `commit()` ahí.
+    """
+    url = os.environ.get("DATABASE_URL", "")
+    if ":6543" in url:
+        raise RuntimeError(
+            "DATABASE_URL apunta al transaction pooler (:6543). Usá el session pooler "
+            "(:5432): SET LOCAL no sobrevive a un commit() en el transaction pooler."
+        )
 
-CREATE TABLE IF NOT EXISTS cotizaciones (
-    id SERIAL PRIMARY KEY,
-    numero TEXT UNIQUE NOT NULL,
-    fecha DATE NOT NULL,
-    cliente TEXT NOT NULL,
-    material TEXT,
-    tipo TEXT,
-    m2 NUMERIC,
-    ml NUMERIC,
-    costo NUMERIC,
-    precio NUMERIC,
-    margen NUMERIC,
-    estado TEXT NOT NULL DEFAULT 'Pendiente',
-    datos_json JSONB,
-    usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL
-);
-
-CREATE TABLE IF NOT EXISTS app_config (
-    clave       TEXT PRIMARY KEY,
-    valor       TEXT NOT NULL DEFAULT '{}',
-    actualizado TEXT DEFAULT ''
-);
-
-CREATE TABLE IF NOT EXISTS inventario_retales (
-    id                  SERIAL PRIMARY KEY,
-    material_categoria  TEXT    NOT NULL,
-    referencia          TEXT    NOT NULL DEFAULT '',
-    m2_disponibles      NUMERIC NOT NULL DEFAULT 0,
-    m2_original         NUMERIC NOT NULL DEFAULT 0,
-    origen_numero       TEXT    NOT NULL DEFAULT '',
-    origen_cliente      TEXT    NOT NULL DEFAULT '',
-    fecha_ingreso       DATE    NOT NULL DEFAULT CURRENT_DATE,
-    estado              TEXT    NOT NULL DEFAULT 'Disponible',
-    notas               TEXT    NOT NULL DEFAULT '',
-    precio_recuperacion NUMERIC NOT NULL DEFAULT 0,
-    precio_mercado_m2   NUMERIC NOT NULL DEFAULT 0,
-    usuario_id          INTEGER REFERENCES usuarios(id) ON DELETE SET NULL
-);
-
-CREATE TABLE IF NOT EXISTS inventario_laminas (
-    id                  SERIAL PRIMARY KEY,
-    material_categoria  TEXT    NOT NULL,
-    referencia          TEXT    NOT NULL DEFAULT '',
-    cantidad_laminas    INTEGER NOT NULL DEFAULT 0,
-    ancho_cm            NUMERIC,
-    alto_cm             NUMERIC,
-    espesor_cm          NUMERIC,
-    costo_unitario      NUMERIC NOT NULL DEFAULT 0,
-    stock_minimo        INTEGER NOT NULL DEFAULT 0,
-    proveedor           TEXT    NOT NULL DEFAULT '',
-    ubicacion           TEXT    NOT NULL DEFAULT '',
-    notas               TEXT    NOT NULL DEFAULT '',
-    activo              BOOLEAN NOT NULL DEFAULT TRUE,
-    usuario_id          INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
-    actualizado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_inventario_laminas_cat ON inventario_laminas(material_categoria);
-
-CREATE TABLE IF NOT EXISTS catalogo_materiales (
-    id              SERIAL PRIMARY KEY,
-    categoria       TEXT    NOT NULL,
-    referencia      TEXT    NOT NULL,
-    precio_m2       NUMERIC NOT NULL DEFAULT 0,
-    precio_lamina   NUMERIC,
-    ancho_lamina_cm NUMERIC,
-    alto_lamina_cm  NUMERIC,
-    proveedor       TEXT    NOT NULL DEFAULT 'Gramar',
-    activo          BOOLEAN NOT NULL DEFAULT TRUE
-);
-CREATE INDEX IF NOT EXISTS idx_catalogo_cat ON catalogo_materiales(categoria);
-
-CREATE TABLE IF NOT EXISTS facturas_compra (
-    id SERIAL PRIMARY KEY,
-    fecha DATE,
-    mes VARCHAR(20),
-    proveedor VARCHAR(255),
-    categoria VARCHAR(100),
-    descripcion TEXT,
-    cantidad NUMERIC DEFAULT 1.0,
-    precio_unitario NUMERIC DEFAULT 0.0,
-    descuento NUMERIC DEFAULT 0.0,
-    comisiones NUMERIC DEFAULT 0.0,
-    rete_ica NUMERIC DEFAULT 0.0,
-    subtotal NUMERIC DEFAULT 0.0,
-    iva NUMERIC DEFAULT 0.0,
-    retefuente NUMERIC DEFAULT 0.0,
-    total NUMERIC DEFAULT 0.0,
-    medio_de_pago VARCHAR(100),
-    estado VARCHAR(50) DEFAULT 'PAGADA',
-    fecha_extraccion TIMESTAMPTZ DEFAULT NOW(),
-    archivo_origen VARCHAR(500)
-);
-CREATE INDEX IF NOT EXISTS idx_facturas_fecha ON facturas_compra(fecha);
-CREATE INDEX IF NOT EXISTS idx_facturas_mes ON facturas_compra(mes);
-CREATE INDEX IF NOT EXISTS idx_facturas_prov ON facturas_compra(proveedor);
-
-ALTER TABLE facturas_compra ADD COLUMN IF NOT EXISTS numero_factura VARCHAR(255);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_facturas_numero_unico
-    ON facturas_compra(proveedor, numero_factura)
-    WHERE numero_factura IS NOT NULL AND numero_factura <> '';
-
-CREATE TABLE IF NOT EXISTS correos_procesados (
-    id SERIAL PRIMARY KEY,
-    cuenta VARCHAR(255) NOT NULL,
-    message_id VARCHAR(998) NOT NULL,
-    procesado_en TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE(cuenta, message_id)
-);
-"""
-
-
-def _seed_catalogo(conn):
-    """Pobla catalogo_materiales con los precios Gramar si la tabla estÃ¡ vacÃ­a."""
-    import json, os, sqlalchemy as _sa
+    conn = get_engine().raw_connection()
     try:
-        count = conn.execute(_sa.text("SELECT COUNT(*) FROM catalogo_materiales")).scalar()
-        print(f"[seed] catalogo_materiales count={count}", flush=True)
-        if count and count > 0:
-            print("[seed] tabla ya tiene datos, saltando seed", flush=True)
-            return
-        seed_path = os.path.join(os.path.dirname(__file__), "seed_materiales.json")
-        print(f"[seed] buscando seed en: {seed_path}", flush=True)
-        if not os.path.exists(seed_path):
-            print("[seed] archivo seed no encontrado", flush=True)
-            return
-        with open(seed_path, encoding="utf-8") as f:
-            items = json.load(f)
-        print(f"[seed] insertando {len(items)} materiales...", flush=True)
-        for item in items:
-            conn.execute(
-                _sa.text(
-                    "INSERT INTO catalogo_materiales "
-                    "(categoria, referencia, precio_m2, precio_lamina, ancho_lamina_cm, alto_lamina_cm, proveedor) "
-                    "VALUES (:cat, :ref, :p_m2, :p_lam, :ancho, :alto, :prov)"
-                ),
-                {
-                    "cat":   item.get("categoria", ""),
-                    "ref":   item.get("referencia", ""),
-                    "p_m2":  item.get("precio_m2", 0),
-                    "p_lam": item.get("precio_lamina"),
-                    "ancho": item.get("ancho_lamina_cm"),
-                    "alto":  item.get("alto_lamina_cm"),
-                    "prov":  item.get("proveedor", "Gramar"),
-                },
-            )
-        conn.commit()
-        print("[seed] seed completado exitosamente", flush=True)
-    except Exception as e:
-        print(f"[seed] ERROR: {e}", flush=True)
+        with conn.cursor() as cur:
+            cur.execute("select 1")
+
+            cur.execute("select current_user, rolbypassrls from pg_roles where rolname = current_user")
+            rol_base, bypass = cur.fetchone()
+            if not bypass:
+                raise RuntimeError(
+                    f"El rol de conexión '{rol_base}' no tiene BYPASSRLS. db_service no "
+                    "funcionaría y empresa_actual() podría entrar en recursión. Revisá "
+                    "el rol de DATABASE_URL."
+                )
+
+            cur.execute("set local role authenticated")
+            cur.execute("select current_user")
+            if cur.fetchone()[0] != "authenticated":
+                raise RuntimeError("SET LOCAL ROLE authenticated no tuvo efecto.")
+            cur.execute("select count(*) from public.cotizaciones")
+            n = cur.fetchone()[0]
+            if n != 0:
+                raise RuntimeError(
+                    f"RLS no está bloqueando sin claims: cotizaciones devolvió {n} filas "
+                    "como 'authenticated' sin sesión. El aislamiento por empresa NO es fiable."
+                )
+        conn.rollback()
+    finally:
+        conn.close()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    import sqlalchemy as _sa
-    from backend.services.auth_service import hash_password
-    import subprocess
-    
-    engine = get_engine()
-    with engine.connect() as conn:
-        conn.execute(_sa.text(_CREATE_TABLES_SQL))
-        conn.commit()
-        _seed_catalogo(conn)
-        
-        # Seed parameters
-        try:
-            print("[seed] Seeding parametros...", flush=True)
-            import backend.seed_parametros
-            backend.seed_parametros.seed()
-        except Exception as e:
-            print(f"[seed] Error seeding parametros: {e}", flush=True)
-
-        # Create default admin if not exists
-        try:
-            count = conn.execute(_sa.text("SELECT COUNT(*) FROM usuarios")).scalar()
-            if count == 0:
-                admin_password = os.environ.get("DEFAULT_ADMIN_PASSWORD") or secrets.token_urlsafe(12)
-                if not os.environ.get("DEFAULT_ADMIN_PASSWORD"):
-                    print(f"[seed] DEFAULT_ADMIN_PASSWORD no configurada â€” admin creado con contraseÃ±a generada: {admin_password} (guÃ¡rdala, no se vuelve a mostrar)", flush=True)
-                else:
-                    print("[seed] Creating default admin...", flush=True)
-                pwd_hash = hash_password(admin_password)
-                conn.execute(
-                    _sa.text("INSERT INTO usuarios (username, password_hash, rol, nombre_completo) VALUES (:u, :p, :r, :n)"),
-                    {"u": "admin", "p": pwd_hash, "r": "Admin", "n": "Administrador Principal"}
-                )
-                conn.commit()
-        except Exception as e:
-            print(f"[seed] Error creating admin: {e}", flush=True)
-
+    # El esquema lo gobiernan las migraciones de Supabase (backend/migrations/*.sql),
+    # NO la app. Aquí solo se verifica que el aislamiento por empresa esté operativo.
+    _self_test_rls()
     yield
 
 
 app = FastAPI(
     title="Costo360 API",
-    version="0.2.0",
+    version="0.3.0",
     lifespan=lifespan,
     docs_url=None,
     redoc_url=None,
@@ -288,19 +126,18 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_handler)
 
+# Tokens Bearer (header que el JS fija explícitamente) → no se necesitan credenciales
+# (cookies) en CORS. Orígenes: solo desarrollo local por ahora; se añade el dominio de
+# despliegue del prototipo nuevo cuando exista (hallazgo S10).
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173", "http://127.0.0.1:5173",
-        "http://localhost:3000",
-        "https://app.marmolescollanteycastro.com",
-        "https://costo360.vercel.app",
-        "https://web-teal-seven-30.vercel.app",
         "https://localhost",  # WebView de Capacitor en el APK Android
     ],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization", "X-Session-Token"],
+    allow_headers=["Content-Type", "Authorization", "X-Device-Id"],
 )
 
 app.include_router(auth.router)
@@ -313,7 +150,6 @@ app.include_router(retales.router)
 app.include_router(admin.router)
 app.include_router(nesting.router)
 app.include_router(materiales.router)
-app.include_router(finanzas.router)
 app.include_router(inventario.router)
 app.include_router(agente.router)
 

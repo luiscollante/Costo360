@@ -4,6 +4,7 @@ python-dotenv
 psycopg2-binary
 SQLAlchemy
 pydantic
+pyjwt[crypto]
 anthropic
 reportlab
 Pillow
