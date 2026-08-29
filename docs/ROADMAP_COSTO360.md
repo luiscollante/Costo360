@@ -86,6 +86,10 @@ Una vez resuelto el fundamento de la Fase 1, estos tres frentes no se pisan entr
 avanzar en el orden que el fundador prefiera sesión a sesión:
 
 ### 2.A — Objetivo 1: Rediseño de la interfaz del producto  ← **frente activo tras cerrar B8**
+
+> **Insumo:** `docs/REVISION_UX_2026-08-29.md` — revisión de UI/UX/Accesibilidad/Marca del
+> prototipo en vivo por 3 agentes de diseño, con las 12 correcciones priorizadas para arrancar.
+
 Sobre la base de datos ya multi-tenant **y el backend ya aislado + con Supabase Auth**: nuevas
 pantallas/componentes para los módulos existentes (Cotización Directa/Express/AIU, Dashboard,
 Historial, Inventario, Retales, Nesting, Parámetros, Configuración, Panel Admin), aplicando las 8
