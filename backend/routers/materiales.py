@@ -1,14 +1,16 @@
 from fastapi import APIRouter, Depends, Query
-from backend.db.client import db_conn
+from backend.db.client import db_rls
 from backend.middleware.auth import get_current_user
+from backend.db.deps import verificar_dispositivo
 
-router = APIRouter(prefix="/api/materiales", tags=["materiales"])
+router = APIRouter(prefix="/api/materiales", tags=["materiales"],
+                   dependencies=[Depends(verificar_dispositivo)])
 
 
 @router.get("")
 def listar_materiales(
     categoria: str = Query(default=""),
-    conn=Depends(db_conn),
+    conn=Depends(db_rls),
     _usuario=Depends(get_current_user),
 ):
     try:
@@ -52,7 +54,7 @@ def listar_materiales(
 
 @router.get("/categorias")
 def listar_categorias(
-    conn=Depends(db_conn),
+    conn=Depends(db_rls),
     _usuario=Depends(get_current_user),
 ):
     try:

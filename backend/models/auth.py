@@ -1,18 +1,15 @@
 from pydantic import BaseModel
 
 
-class LoginRequest(BaseModel):
-    username: str
-    password: str
-
-
 class UsuarioOut(BaseModel):
-    id: int
-    username: str
-    rol: str
+    """Perfil del usuario autenticado (respuesta de GET /api/auth/me)."""
+    id: str                 # UUID de auth.users
+    empresa_id: str
+    rol_codigo: str         # 'admin' | 'gerencia' | 'operativo'
     nombre_completo: str
-
-
-class TokenOut(BaseModel):
-    token: str
-    usuario: UsuarioOut
+    cargo_visible: str | None = None
+    # Capacidades del catálogo de roles (roles_catalogo)
+    puede_ver_dashboard: bool
+    puede_usar_modo_bi_senior: bool
+    puede_pedir_datos_agregados_agente: bool
+    puede_gestionar_usuarios: bool

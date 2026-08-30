@@ -69,10 +69,14 @@ Supabase real (organización "Costo360", antes vacía). Ver `ARQUITECTURA_MAESTR
 el detalle completo y `backend/migrations/0001_esquema_multitenant.sql` +
 `0002_revocar_anon_empresa_actual.sql` para el SQL exacto que se aplicó.
 
-**Lo que queda de esta fase (pasa a la Fase 2.A, no bloquea empezar el rediseño visual):** cambiar
-`backend/db/client.py` para que las consultas usen el JWT del usuario en vez de una conexión de rol
-de servicio (sin esto, RLS no protege las consultas que hace el backend FastAPI todavía), y el
-trigger de aprovisionamiento que asigna `empresa_id` a cada cuenta nueva.
+**✅ Completado 2026-08-27 (rama `goal/fase-2a-multitenant-auth`, ciclo `/goal` completo):**
+la migración a Supabase Auth, `backend/db/client.py` con `db_rls` (RLS real en el backend) +
+`db_service`, el trigger de aprovisionamiento (`handle_new_user` gateado por la tabla
+`invitaciones`), el trigger de cupo por plan, la sesión única con aviso real (Regla 5), y el
+frontend sobre Supabase Auth. Migraciones `0003`/`0004` aplicadas. Auditado en Fase 2 (plan) y
+Fase 5 (código) por 4 agentes; aislamiento verificado por SQL. **Falta solo la prueba en vivo
+por HTTP (B8), que necesita el `.env` del fundador**, y fusionar la rama a `master`. Detalle:
+`docs/PLAN_FASE_2A.md`.
 
 ---
 
@@ -81,12 +85,18 @@ trigger de aprovisionamiento que asigna `empresa_id` a cada cuenta nueva.
 Una vez resuelto el fundamento de la Fase 1, estos tres frentes no se pisan entre sí y pueden
 avanzar en el orden que el fundador prefiera sesión a sesión:
 
-### 2.A — Objetivo 1: Rediseño de la interfaz del producto
-Sobre la base de datos ya multi-tenant: nuevas pantallas/componentes para los módulos existentes
-(Cotización Directa/Express/AIU, Dashboard, Historial, Inventario, Retales, Nesting, Parámetros,
-Configuración, Panel Admin), aplicando las 8 reglas de arquitectura y la identidad de marca real
-(`ARQUITECTURA_MAESTRA.md`, secciones 6-7). **No se tocan `motor/calculos.py` ni
-`motor/parametros.py`** — la lógica de cálculo ya está validada y aprobada, esto es solo interfaz.
+### 2.A — Objetivo 1: Rediseño de la interfaz del producto  ← **frente activo tras cerrar B8**
+
+> **Insumo:** `docs/REVISION_UX_2026-08-29.md` — revisión de UI/UX/Accesibilidad/Marca del
+> prototipo en vivo por 3 agentes de diseño, con las 12 correcciones priorizadas para arrancar.
+
+Sobre la base de datos ya multi-tenant **y el backend ya aislado + con Supabase Auth**: nuevas
+pantallas/componentes para los módulos existentes (Cotización Directa/Express/AIU, Dashboard,
+Historial, Inventario, Retales, Nesting, Parámetros, Configuración, Panel Admin), aplicando las 8
+reglas de arquitectura y la identidad de marca real (`ARQUITECTURA_MAESTRA.md`, secciones 6-7).
+**No se tocan `motor/calculos.py` ni `motor/parametros.py`** — la lógica de cálculo ya está
+validada. Nota: el `AdminPage` ya se reescribió al modelo de invitación en la Fase 2.A (base
+funcional, sin pulido visual); `LoginPage`/`ResetPasswordPage` ya usan la paleta de marca.
 
 ### 2.B — Objetivo 4: Infraestructura gratuita para los agentes de operación
 Montar la versión gratuita del diseño ya definido en `docs/ARQUITECTURA_AGENTES_OPERACION.md`:

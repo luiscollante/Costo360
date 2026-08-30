@@ -1,8 +1,11 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { supabase } from '@/lib/supabaseClient'
+import { getDeviceId } from '@/lib/deviceId'
 import { useAuthStore } from '@/store/auth'
 import LoginPage from '@/pages/LoginPage'
+import ResetPasswordPage from '@/pages/ResetPasswordPage'
 import DashboardPage from '@/pages/DashboardPage'
 import CotizacionPage from '@/pages/CotizacionPage'
 import HistorialPage from '@/pages/HistorialPage'
@@ -18,6 +21,7 @@ import CotizacionExpressPage from '@/pages/CotizacionExpressPage'
 import CotizacionAIUPage from '@/pages/CotizacionAIUPage'
 import ToastHost from '@/components/ToastHost'
 import LandingPage from '@/pages/LandingPage'
+import SessionGuard from '@/components/SessionGuard'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,16 +30,28 @@ const queryClient = new QueryClient({
 })
 
 function Private({ children }: { children: React.ReactNode }) {
-  return <PrivateRoute>{children}</PrivateRoute>
+  return (
+    <PrivateRoute>
+      <SessionGuard />
+      {children}
+    </PrivateRoute>
+  )
 }
 
-// Espera a que la sesión se hidrate desde Preferences (solo aplica en el APK — en la web
-// `hydrated` ya empieza en `true`, así que esto no agrega ninguna espera visible ahí).
 function AuthGate({ children }: { children: React.ReactNode }) {
   const hydrated = useAuthStore((s) => s.hydrated)
 
   useEffect(() => {
-    useAuthStore.getState().hydrate()
+    getDeviceId()
+    useAuthStore.getState().refresh()
+    // Solo re-hidratar en cambios de identidad — NO en TOKEN_REFRESHED (evita un
+    // bucle: 401 del backend → refreshSession → TOKEN_REFRESHED → refresh → 401…).
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+        useAuthStore.getState().refresh()
+      }
+    })
+    return () => data.subscription.unsubscribe()
   }, [])
 
   if (!hydrated) {
@@ -58,6 +74,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/dashboard" element={<Private><DashboardPage /></Private>} />
             <Route path="/cotizacion" element={<Private><CotizacionPage /></Private>} />
             <Route path="/express" element={<Private><CotizacionExpressPage /></Private>} />
@@ -68,7 +85,7 @@ export default function App() {
             <Route path="/nesting" element={<Private><NestingPage /></Private>} />
             <Route path="/parametros" element={<Private><ParametrosPage /></Private>} />
             <Route path="/configuracion" element={<Private><ConfigPage /></Private>} />
-            <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+            <Route path="/admin" element={<AdminRoute><SessionGuard /><AdminPage /></AdminRoute>} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </BrowserRouter>

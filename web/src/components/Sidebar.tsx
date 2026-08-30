@@ -1,7 +1,8 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@/store/auth'
-import { logout } from '@/api/auth'
+import { supabase } from '@/lib/supabaseClient'
+import { logoutSession } from '@/api/session'
 import {
   LayoutDashboard,
   PlusCircle,
@@ -59,7 +60,8 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { theme } = useTheme()
 
   async function handleLogout() {
-    try { await logout() } catch { /* ignorar */ }
+    try { await logoutSession() } catch { /* ignorar */ }
+    await supabase.auth.signOut()
     clearSession()
     navigate('/login')
   }
@@ -132,7 +134,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             </div>
           </div>
         ))}
-        {usuario?.rol === 'Admin' && (
+        {usuario?.puede_gestionar_usuarios && (
           <NavLink
             to="/admin"
             className={({ isActive }) =>
@@ -163,7 +165,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       {/* Usuario */}
       <div className="px-4 py-2.5 border-t border-brand-border shrink-0">
         <p className="text-xs text-brand-text font-medium truncate">{usuario?.nombre_completo}</p>
-        <p className="text-[10px] text-brand-muted capitalize">{usuario?.rol}</p>
+        <p className="text-[10px] text-brand-muted capitalize">{usuario?.cargo_visible || usuario?.rol_codigo}</p>
         <button
           onClick={handleLogout}
           className="mt-1.5 text-xs text-brand-muted hover:text-red-400 transition-colors cursor-pointer"

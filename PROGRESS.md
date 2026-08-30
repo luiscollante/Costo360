@@ -4,6 +4,64 @@
 
 ## ✅ Hecho
 
+- **Fase 2.A ejecutada — migración a Supabase Auth + aislamiento real + sesión única (2026-08-27):**
+  Ciclo `/goal` completo (Fases 0-6) en una sola sesión. 10 micro-commits en la rama
+  `goal/fase-2a-multitenant-auth` (aún NO fusionada a `master`). Detalle vivo en
+  `docs/PLAN_FASE_2A.md`. Resumen:
+  - **Plan** auditado por 2 agentes (Security Engineer + Database Optimizer, "aprueba con
+    cambios") y aprobado por el fundador con 3 decisiones: (1) backend = servidor pequeño
+    siempre encendido, no serverless; (2) acceso 100% por invitación (signup público OFF);
+    (3) Google OAuth queda para después (esta fase entrega correo+contraseña).
+  - **Migraciones `0003`/`0004`** aplicadas y probadas al proyecto Supabase nuevo
+    (`hrmpyhixhbnkkpvxtuit`): trigger de aprovisionamiento `handle_new_user` (lee
+    `raw_app_meta_data`, valida contra la tabla `invitaciones`, fail-closed ruidoso),
+    trigger de cupo por plan, columnas de máquina de estados en `sesion_activa`, tabla
+    `folio_seq` (contador atómico de folios), `empresa_actual()` endurecida.
+  - **Backend:** login propio (usuario/contraseña/PIN, tabla `sesiones`) → **Supabase Auth**
+    (JWT ES256 verificado por JWKS). `backend/db/client.py` con dos dependencias:
+    `db_service` (rol postgres/BYPASSRLS, solo auth/aprovisionamiento/admin/sesión) y
+    `db_rls` (fija `request.jwt.claims` + `SET LOCAL ROLE authenticated`, con aserción que
+    aborta si el aislamiento no se activó). `main.py` corre un self-test de RLS al arrancar
+    (apaga el backend si el aislamiento falla o si `DATABASE_URL` apunta al transaction
+    pooler). 12 routers de datos bajo `db_rls`, sin `commit()` intermedios, con `empresa_id`
+    en todos los INSERT y filtro jerárquico (Regla 2) centralizado en `scope_propio`.
+    Alta de empresas (`POST /api/bootstrap/empresa`) y gestión de usuarios por invitación
+    (`routers/admin.py` sobre la Admin API de GoTrue). Sesión única completa
+    (`routers/session.py`: claim/keep/handoff/heartbeat/logout + `verificar_dispositivo`).
+    `finanzas.router` desregistrado (opera sobre `facturas_compra`, que no es de Costo360).
+  - **Frontend:** `@supabase/supabase-js`, login por correo + Google + "olvidé mi
+    contraseña", página `/reset-password`, `SessionGuard` con el aviso de sesión única,
+    `AdminPage` reescrita al modelo de invitación. `tsc -b` + `npm run build` limpios.
+  - **Auditoría del código (Fase 5)** por 2 agentes distintos (Code Reviewer + Backend
+    Architect): sin huecos de aislamiento ni regresiones; 7 arreglos aplicados
+    (compensación de usuario huérfano, parpadeo del retador, bucle de refresh, carrera del
+    primer claim, Regla 2 en endpoints por-id, self-test post-commit, menores).
+  - **Verificado por SQL (con rollback):** el aislamiento entre empresas funciona de verdad
+    — usuario A ve 1 de cada cosa y 0 de la empresa B, no puede escribir en otra empresa,
+    `folio_seq` sin carreras, mismo número de cotización permitido entre empresas.
+  - **B8 verificado en vivo (2026-08-28):** el fundador configuró `backend/.env` + `web/.env`;
+    catálogo cargado (255 materiales); backend arrancado contra el proyecto real (self-test de
+    RLS pasó); prueba end-to-end headless TODO PASA — alta de 2 talleres por bootstrap, login
+    con JWT real, aislamiento entre empresas confirmado por la API real, invitaciones, y sesión
+    única. Un bug menor encontrado y corregido (`session.claim` body, commit `3f9d01f`). Base
+    del proyecto quedó limpia.
+  - **Falta:** el repaso visual del frontend en un navegador (encaja en el rediseño), y
+    **fusionar `goal/fase-2a-multitenant-auth` a `master`**.
+  - **Próxima tarea lógica:** fusionar la rama y arrancar el **rediseño visual del producto**
+    (Objetivo 1 / Fase 2.A del roadmap) — lo que el fundador pidió hacer después.
+
+- **Revisión de UI/UX/Accesibilidad/Marca del prototipo (2026-08-29):** con el backend ya
+  funcionando en vivo, se recorrieron los 12 módulos con la cuenta de dueña y la de operativo
+  (25 capturas) y se analizaron con 3 agentes (UI Designer, Brand Guardian, Accessibility
+  Auditor). Resultado consolidado y priorizado en **`docs/REVISION_UX_2026-08-29.md`** — es el
+  insumo directo del rediseño visual. Temas: contraste bajísimo en toda la app (el token de
+  texto secundario reprueba WCAG AA) · un modo oscuro a medio hacer que contradice el "light-mode
+  estricto" (recomendación unánime: eliminarlo) · logo ilegible sobre crema · colores fuera de
+  marca (morado/cian/naranja) en pantallas centrales · restos del taller piloto en
+  `manifest.json`/placeholders · el Dashboard del rol Operativo se cuelga (403 sin manejar) ·
+  formato de números no colombiano · controles de formulario sin etiqueta accesible · diálogos
+  sin gestión de foco.
+
 - **Ciclo `/goal` rediseñado a 7 fases (0-6) e instalado `codebase-memory-mcp` (2026-08-27):** el fundador redefinió el ciclo de trabajo con un mapa de grafo del proyecto + selección de agentes (Fase 0), planificación (1), auditoría con agentes distintos y reintento en bucle si no se aprueba (2), explicación obligatoria al usuario (3), ejecución con micro-commits (4), validación de la ejecución con agentes distintos y reintento en bucle (5), y guardado/reindexado (6) — reemplaza la versión anterior de 6 pasos en `HARNESS_INICIO.md`. Se instaló el servidor MCP `codebase-memory-mcp` (grafo de conocimiento del código, local, sin dependencias) para la Fase 0 — pendiente de confirmar que el indexado (`index_repository`) funciona tras reiniciar la sesión. De paso se corrigió un hallazgo real: `CONTEXTO_COSTOMARMOL.md` no era de Costo360 (documentaba una versión de marca blanca del código para un cliente específico, bajo un nombre que hoy pertenece a otro contexto de negocio) — se sacó del repositorio y se corrigió la narrativa de origen que lo mencionaba incorrectamente como el nombre académico anterior de Costo360.
 - **Esquema multi-tenant diseñado, auditado dos veces y aplicado al proyecto Supabase real (2026-08-26/27):** ciclo `/goal` completo para la Fase 1 del roadmap. Nuevo proyecto Supabase creado en la organización "Costo360" (antes vacía) — `project_id: hrmpyhixhbnkkpvxtuit`, región `sa-east-1`. 11 tablas (`planes`, `roles_catalogo` con 3 niveles fijos admin/gerencia/operativo, `empresas`, `usuarios` ligado a Supabase Auth, `cotizaciones`, `app_config`, `inventario_retales`, `inventario_laminas`, `audit_log`, `catalogo_materiales` compartido, `sesion_activa` placeholder), todas con Row Level Security activado y forzado. Dos auditorías independientes (Security Engineer sobre el plan, Database Optimizer sobre el SQL) encontraron y corrigieron un hallazgo crítico real: las políticas originales permitían que cualquier usuario se autoascendiera de rol o cambiara el plan de su propia empresa — ya corregido antes de aplicar. Confirmado con el fundador: `facturas_compra`/`correos_procesados` (tablas del backend actual) son sobras de un proyecto no relacionado, no se migraron. Corregido de paso un hallazgo de seguridad en `backend/main.py` (CORS con `"*"` + credenciales). SQL completo en `backend/migrations/0001_esquema_multitenant.sql` y `0002_revocar_anon_empresa_actual.sql`.
 - **Harness completado y ruta de desarrollo formalizada (2026-08-26):** `HARNESS_INICIO.md`, `ARQUITECTURA_MAESTRA.md` (documentación técnica profunda: stack completo con versiones, esquema real de base de datos, hallazgo crítico de falta de aislamiento multi-tenant, reglas sin excepción) y `PATRONES_DE_ERROR.md` (vacío, formato listo) creados. El fundador definió 5 objetivos activos del proyecto — rediseño de interfaz del producto, landing page de alto impacto, agentes de IA de operación, infraestructura gratuita para esos agentes, y agente de IA dentro del producto — formalizados en `docs/ROADMAP_COSTO360.md` con fases y dependencias (el rediseño de interfaz está bloqueado hasta resolver el aislamiento multi-tenant, que se ataca primero).
@@ -44,19 +102,36 @@
 
 ## 🔄 En progreso
 
-- **Fase 2.A del roadmap:** con el esquema multi-tenant ya creado (ver Hecho abajo), falta cambiar `backend/db/client.py` para que las consultas usen el JWT del usuario en vez de rol de servicio (para que RLS proteja de verdad al backend FastAPI, no solo el acceso directo a Supabase), el trigger de aprovisionamiento de cuentas nuevas, y el rediseño visual de la interfaz en sí.
-- Hay 2 archivos con cambios sin commitear en git (`docs/ARQUITECTURA_AGENTES_OPERACION.md`, `docs/PLAN_COSTOS_COMPLETO_COSTO360.md`, contenido de la auditoría de Agente 7 e infraestructura de sesiones anteriores) — preguntar al usuario si quiere comitearlos.
+- **Fase 2.A — cierre pendiente:** el código está completo y auditado en la rama
+  `goal/fase-2a-multitenant-auth` (no fusionada). Falta la prueba en vivo por HTTP (B8),
+  que necesita `backend/.env` + `web/.env` + config del panel de Supabase Auth — acción del
+  fundador. Ver `docs/PLAN_FASE_2A.md`, sección "B8" y "Deuda anotada".
+- Hay 3 archivos vacíos de 0 bytes en la raíz del repo (`(CURRENT_DATE`, `NOW()`, `v_cupo`) —
+  basura de redirects de shell, untracked, sin commitear. Borrarlos cuando se confirme.
 
 ---
 
 ## 📋 Siguiente
 
-### Fase 1 del roadmap — fundamento técnico (frente activo ahora mismo)
-1. ⬜ **Ciclo `/goal` para el aislamiento multi-tenant** — agregar `empresa_id` a las tablas que no lo tienen, convertir `usuarios.rol` en catálogo cerrado de permisos, sentar la base de datos para sesión única. Ver `ARQUITECTURA_MAESTRA.md` sección 4 y `docs/ROADMAP_COSTO360.md` Fase 1.
-2. ⬜ Implementar el motor único de roles/permisos (mismo motor para Starter/Pro/Enterprise, cambia solo el cupo de usuarios) y el mecanismo de sesión única con aviso/control real.
-3. ⬜ Integrar CopilotKit/AG-UI para que el Agente nativo (Pro/Enterprise) navegue e interactúe dentro de la app ya construida — sin reemplazar la navegación manual (regla 7 de la entrevista).
-4. ⬜ Ajustar el comportamiento del Agente de Parámetros (o su sucesor) para que nunca entregue una cotización incompleta en silencio — debe orientar al usuario sobre qué falta (regla 8 de la entrevista).
-5. ⬜ Generación automática de cliente TypeScript desde el schema OpenAPI de FastAPI (reemplaza los tipos escritos a mano en `web/src/api/*.ts`).
+### Fase 1 + 2.A (fundamento técnico) — ✅ hecho salvo la prueba en vivo
+1. ✅ **Aislamiento multi-tenant** — esquema con `empresa_id` en todas las tablas (2026-08-26),
+   y en la Fase 2.A: RLS que protege de verdad al backend (`db_rls`), `usuarios.rol` →
+   catálogo cerrado `roles_catalogo` (admin/gerencia/operativo) con capacidades.
+2. ✅ **Motor único de roles/permisos** (mismo para Starter/Pro/Enterprise, cambia el cupo —
+   trigger `trg_usuarios_cupo_check`) y **sesión única con aviso/control real** (Regla 5,
+   `routers/session.py` + `SessionGuard.tsx`).
+3. ⬜ Integrar CopilotKit/AG-UI para que el Agente nativo navegue la interfaz — **Objetivo 5
+   del roadmap, depende del rediseño visual (Fase 2.A)**.
+4. ⬜ Ajustar el Agente de Parámetros para que nunca entregue una cotización incompleta en
+   silencio (regla 8) — pendiente, va con el Objetivo 5.
+5. ⬜ Generación automática de cliente TypeScript desde el schema OpenAPI de FastAPI — nota:
+   hoy `web/src/api/*.ts` están alineados a mano con el backend nuevo.
+
+### Frente activo ahora mismo
+- **B8:** prueba en vivo de la Fase 2.A (necesita `.env` del fundador — ver arriba), luego
+  fusionar `goal/fase-2a-multitenant-auth` a `master`.
+- **Después:** rediseño visual del producto (Objetivo 1 / Fase 2.A del roadmap) — el fundador
+  lo pidió como el siguiente frente tras la Fase 2.A.
 
 ### Prototipo ya construido — pendientes menores
 - `GEMINI_API_KEY` en `backend/.env` está vencida/inválida — el chat de Parámetros responde con error controlado hasta que se renueve.

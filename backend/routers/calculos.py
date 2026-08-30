@@ -2,8 +2,10 @@ from fastapi import APIRouter, Depends
 from backend.models.cotizacion import TotalesPiezasIn, MermaIn
 from backend.services.cotizacion_service import calcular_totales, calcular_merma
 from backend.middleware.auth import get_current_user
+from backend.db.deps import verificar_dispositivo
 
-router = APIRouter(prefix="/api/calculos", tags=["calculos"])
+router = APIRouter(prefix="/api/calculos", tags=["calculos"],
+                   dependencies=[Depends(verificar_dispositivo)])
 
 
 @router.post("/totales")

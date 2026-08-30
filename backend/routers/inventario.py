@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from backend.db.client import db_conn
+from backend.db.client import db_rls
 from backend.middleware.auth import get_current_user
+from backend.db.deps import verificar_dispositivo
 
-router = APIRouter(prefix="/api/inventario", tags=["inventario"])
+router = APIRouter(prefix="/api/inventario", tags=["inventario"],
+                   dependencies=[Depends(verificar_dispositivo)])
 
 _COLS = (
     "id,material_categoria,referencia,cantidad_laminas,ancho_cm,alto_cm,espesor_cm,"
@@ -58,7 +60,7 @@ class LaminaUpdate(BaseModel):
 
 
 @router.get("")
-def listar_inventario(conn=Depends(db_conn), _usuario=Depends(get_current_user)):
+def listar_inventario(conn=Depends(db_rls), _usuario=Depends(get_current_user)):
     cur = conn.cursor()
     cur.execute(
         f"SELECT {_COLS} FROM inventario_laminas "
@@ -70,15 +72,16 @@ def listar_inventario(conn=Depends(db_conn), _usuario=Depends(get_current_user))
 
 
 @router.post("", status_code=201)
-def crear_lamina(body: LaminaIn, conn=Depends(db_conn), usuario=Depends(get_current_user)):
+def crear_lamina(body: LaminaIn, conn=Depends(db_rls), usuario=Depends(get_current_user)):
     cur = conn.cursor()
     cur.execute(
         """INSERT INTO inventario_laminas
-        (material_categoria, referencia, cantidad_laminas, ancho_cm, alto_cm, espesor_cm,
+        (empresa_id, material_categoria, referencia, cantidad_laminas, ancho_cm, alto_cm, espesor_cm,
          costo_unitario, stock_minimo, proveedor, ubicacion, notas, usuario_id)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
         RETURNING id""",
         (
+            usuario["empresa_id"],
             body.material_categoria, body.referencia, body.cantidad_laminas,
             body.ancho_cm, body.alto_cm, body.espesor_cm,
             body.costo_unitario, body.stock_minimo,
@@ -87,7 +90,6 @@ def crear_lamina(body: LaminaIn, conn=Depends(db_conn), usuario=Depends(get_curr
         ),
     )
     new_id = cur.fetchone()[0]
-    conn.commit()
     cur.close()
     return {"id": new_id, "ok": True}
 
@@ -96,7 +98,7 @@ def crear_lamina(body: LaminaIn, conn=Depends(db_conn), usuario=Depends(get_curr
 def actualizar_lamina(
     lamina_id: int,
     body: LaminaUpdate,
-    conn=Depends(db_conn),
+    conn=Depends(db_rls),
     _usuario=Depends(get_current_user),
 ):
     campos = ["actualizado_en = NOW()"]
@@ -114,7 +116,6 @@ def actualizar_lamina(
         f"UPDATE inventario_laminas SET {', '.join(campos)} WHERE id = %s",
         vals,
     )
-    conn.commit()
     cur.close()
     return {"ok": True}
 
@@ -122,11 +123,10 @@ def actualizar_lamina(
 @router.delete("/{lamina_id}")
 def eliminar_lamina(
     lamina_id: int,
-    conn=Depends(db_conn),
+    conn=Depends(db_rls),
     _usuario=Depends(get_current_user),
 ):
     cur = conn.cursor()
     cur.execute("UPDATE inventario_laminas SET activo = FALSE WHERE id = %s", (lamina_id,))
-    conn.commit()
     cur.close()
     return {"ok": True}

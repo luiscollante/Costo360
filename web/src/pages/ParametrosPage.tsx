@@ -292,7 +292,7 @@ function AdicionalesTab({ adicionales, canEdit, onChange, onAddRow, onRemoveRow 
 
 export default function ParametrosPage() {
   const usuario = useAuthStore((s) => s.usuario)
-  const canEdit = usuario?.rol === 'Admin' || usuario?.rol === 'Gerente'
+  const canEdit = usuario?.puede_ver_dashboard ?? false
 
   const [activeTab, setActiveTab] = useState<MainTab>('Tarifas')
   const [data, setData] = useState<ParametrosData | null>(null)

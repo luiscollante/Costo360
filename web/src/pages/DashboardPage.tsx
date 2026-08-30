@@ -130,7 +130,7 @@ export default function DashboardPage() {
       {/* ── Header ────────────────────────────────────────────────────────── */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-brand-text" style={{ textWrap: 'balance' } as React.CSSProperties}>
-          {greeting}, {usuario?.nombre_completo?.split(' ')[0] ?? usuario?.username}
+          {greeting}, {usuario?.nombre_completo?.split(' ')[0] ?? ''}
         </h1>
         <p className="text-brand-muted text-sm mt-1">Resumen del mes en curso</p>
       </div>
