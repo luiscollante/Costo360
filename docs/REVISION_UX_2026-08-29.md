@@ -67,12 +67,27 @@ mínimo, hover/focus `brand-primary`.
 
 **Corrección (unánime):** **eliminar el modo oscuro por completo.** Borrar `useTheme.ts` y toda
 referencia (`theme`, `cm-theme`, `data-theme`); quitar los dos botones sol/luna de `AppLayout`;
-en `Sidebar.tsx` reemplazar `sidebarBg`/`activeNav`/`inactiveNav` por valores fijos sobre
-tokens: fondo `--color-brand-surface` (o crema un punto más claro, `#FBF3E4`), separador
-`--color-brand-border`, ítem inactivo `text-brand-muted` con hover `bg-brand-primary/[0.06]`,
-ítem activo `bg-brand-primary/10 text-brand-primary`. Una sola barra lateral clara y cálida.
-(Con la barra lateral clara, el problema del logo se resuelve con **una** variante en vez de
-dos.)
+en `Sidebar.tsx` reemplazar `sidebarBg`/`activeNav`/`inactiveNav` por valores fijos. **Una sola
+barra lateral, sin interruptor.**
+
+**Decisión del fundador (2026-08-29) — tratamiento de la barra lateral:** NO va en crema. Va en
+**verde esmeralda del isotipo de Costo360 con efecto glassmorphism** (traslúcido + `backdrop-blur`).
+Color muestreado de los archivos del logo (`Logo principal.png`, `favicon.png`): verde principal
+del isotipo **`#156850`** (RGB 21,104,80), tono de sombra **`#075343`**. Propuesta concreta:
+- Fondo: gradiente sutil `#156850 → #0F5A44` a ~`88%` de opacidad + `backdrop-blur(20px)` +
+  borde derecho `1px rgba(255,255,255,0.10)` (glass).
+- **Texto del menú en claro** (requisito de contraste — era el bug real de la barra oscura):
+  ítem inactivo `rgba(245,232,210,0.72)` (crema al 72%, ≈4.6:1 sobre `#156850`), hover
+  `rgba(255,255,255,0.10)` de fondo; ítem **activo** `#FFFFFF` sobre `rgba(255,255,255,0.14)`
+  (≈8:1). Encabezados de grupo ("CREAR/CONSULTAR/…") en crema al 60%, 11px/600.
+- Logo: variante con "Costo" y "360" en claro (el símbolo del isotipo ya funciona sobre verde).
+- Nada de `#07100D` (casi negro) ni `#F0F4F8` (gris frío).
+
+> **Pendiente:** actualizar `ARQUITECTURA_MAESTRA.md` §6 cuando aterrice el rediseño — la frase
+> "light-mode estricto" sigue vigente para el **contenido** (crema), pero la barra lateral pasa
+> a ser una superficie de marca deliberada (verde esmeralda glass), no crema.
+
+(El logo sigue necesitando **una** variante clara para landing/login/header sobre crema — punto C.)
 
 ### C. Logo — severidad **Alta** · UI + Marca + Accesibilidad
 
@@ -254,7 +269,7 @@ colores + leyenda.
 | # | Qué | Por qué primero | Tema |
 |---|---|---|---|
 | 1 | **Contraste global**: token de texto secundario → `#5F5F5F`, prohibir opacidad en texto, micro-labels 9→11px/600, dorado nunca como texto sobre claro | Es lo que más ensucia **todas** las pantallas; corrige cientos de instancias de una vez | A |
-| 2 | **Eliminar el modo oscuro**: borrar `useTheme.ts`, el toggle, el gradiente `#07100D` y la rama `#F0F4F8`; una sola barra lateral clara con tokens de marca | Es lo primero que se ve; incumple la regla de marca más enfática; duplica el QA visual de cada pantalla | B |
+| 2 | **Eliminar el modo oscuro**: borrar `useTheme.ts`, el toggle, el gradiente `#07100D` y la rama `#F0F4F8`. **Una sola barra lateral: verde esmeralda del isotipo (`#156850`) con glassmorphism + texto claro a contraste AA** (decisión del fundador, ver §B) | Es lo primero que se ve; el sistema de tema roto duplica el QA visual de cada pantalla | B |
 | 3 | **Logo legible sobre crema**: variante con wordmark oscuro/verde, misma en sidebar/login/header/navbar | Sin él, en login y landing la marca literalmente no se lee | C |
 | 4 | **Purga de colores fuera de marca** (morado, cian, naranja, `amber-400` suelto) + definir 3 colores de estado documentados | Aparecen en pantallas centrales (Panel Admin, Parámetros, estados de cotización); varios además fallan contraste | D |
 | 5 | **Purgar datos del piloto**: `manifest.json`, "Gramar", "Barranquilla" ×3, dirección del footer | Riesgo de confianza en el aislamiento multi-empresa; bloqueante para mostrar a un cliente | E |
