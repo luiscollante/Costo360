@@ -5,7 +5,14 @@ import Toast from '@/components/Toast'
 import { getParametros, setParametros } from '@/api/parametros'
 import type { ParametrosData, TarifaItem, AdicionalItem } from '@/api/parametros'
 import { useAuthStore } from '@/store/auth'
-import { Settings2, Save, AlertCircle, Loader2, Plus, Trash2 } from 'lucide-react'
+import {
+  Save, AlertCircle, Loader2, Plus, Trash2,
+  Ruler, Hammer, Square, CalendarDays, Percent, AlignHorizontalJustifyStart, Scissors,
+  type LucideIcon,
+} from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { SegmentedControl } from '@/components/ui/SegmentedControl'
+import { Badge } from '@/components/ui/Badge'
 import { formatCOP } from '@/lib/utils'
 
 const MATERIALES = ['Mármol', 'Granito', 'Sinterizado', 'Quarztone', 'Quarzita'] as const
@@ -14,14 +21,15 @@ type Material = (typeof MATERIALES)[number]
 const MAIN_TABS = ['Tarifas', 'Adicionales'] as const
 type MainTab = (typeof MAIN_TABS)[number]
 
-const INDUCTOR_BADGE: Record<string, { label: string; cls: string }> = {
-  por_ml:                { label: 'por ml',       cls: 'bg-brand-primary/15 text-brand-text border border-brand-primary/30' },
-  por_m2_mano_obra:      { label: 'por m² (M.O.)', cls: 'bg-[#22D3A5]/15 text-[#22D3A5] border border-[#22D3A5]/30' },
-  por_m2:                { label: 'por m²',       cls: 'bg-[#2DD4BF]/15 text-[#2DD4BF] border border-[#2DD4BF]/30' },
-  por_dia:               { label: 'por día',      cls: 'bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30' },
-  porcentaje_material:   { label: '% material',   cls: 'bg-purple-500/15 text-purple-300 border border-purple-500/30' },
-  por_ml_zocalo:         { label: 'por ml zócalo', cls: 'bg-orange-500/15 text-orange-300 border border-orange-500/30' },
-  merma_pct:             { label: '% merma',      cls: 'bg-rose-500/15 text-rose-300 border border-rose-500/30' },
+// Los inductores se distinguen por ÍCONO + TEXTO (no por 7 matices de color).
+const INDUCTOR_BADGE: Record<string, { label: string; Icon: LucideIcon }> = {
+  por_ml:              { label: 'por ml',        Icon: Ruler },
+  por_m2_mano_obra:    { label: 'por m² (M.O.)', Icon: Hammer },
+  por_m2:              { label: 'por m²',        Icon: Square },
+  por_dia:             { label: 'por día',       Icon: CalendarDays },
+  porcentaje_material: { label: '% material',    Icon: Percent },
+  por_ml_zocalo:       { label: 'por ml zócalo', Icon: AlignHorizontalJustifyStart },
+  merma_pct:           { label: '% merma',       Icon: Scissors },
 }
 
 // Catálogo cerrado de tipos de cálculo que una empresa puede elegir al agregar una fila nueva.
@@ -39,18 +47,16 @@ const INDUCTORES_DISPONIBLES: { value: string; label: string; bucketDefault: str
 ]
 
 function InductorBadge({ inductor }: { inductor: string }) {
-  const info = INDUCTOR_BADGE[inductor] ?? { label: inductor, cls: 'bg-brand-surface text-brand-muted border border-brand-border' }
-  return (
-    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap ${info.cls}`}>
-      {info.label}
-    </span>
-  )
+  const info = INDUCTOR_BADGE[inductor]
+  if (!info) return <Badge tono="neutral">{inductor}</Badge>
+  const { label, Icon } = info
+  return <Badge tono="neutral" icon={<Icon size={11} />}>{label}</Badge>
 }
 
 // ─── Shared input classes ──────────────────────────────────────────────────────
 
 const inputBase =
-  'px-3 py-2 rounded-lg bg-brand-input border border-brand-border text-sm text-brand-text placeholder:text-brand-muted/40 focus:outline-none focus:border-brand-primary focus:shadow-[0_0_0_1px_#1F6F5440,0_0_12px_#1F6F5418] transition-all text-right tabular-nums'
+  'px-3 py-2 rounded-lg bg-brand-input border border-brand-border text-sm text-brand-text placeholder:text-brand-text-secondary focus:outline-none focus:border-brand-primary focus:shadow-[0_0_0_1px_#1F6F5440,0_0_12px_#1F6F5418] transition-all text-right tabular-nums'
 
 
 // ─── Tab: Tarifas ─────────────────────────────────────────────────────────────
@@ -85,7 +91,7 @@ function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRo
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer
               ${activeMat === m
                 ? 'bg-brand-primary/20 text-brand-text border border-brand-primary/40'
-                : 'bg-brand-surface/60 text-brand-muted border border-brand-border hover:text-brand-text hover:bg-brand-surface'
+                : 'bg-brand-surface/60 text-brand-text-secondary border border-brand-border hover:text-brand-text hover:bg-brand-surface'
               }`}
           >
             {m}
@@ -96,7 +102,7 @@ function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRo
       {/* Filas — layout flex compatible con todos los anchos */}
       <div className="glass rounded-xl border border-brand-border divide-y divide-brand-border/50">
         {filas.length === 0 ? (
-          <p className="px-5 py-8 text-center text-sm text-brand-muted">Sin tarifas para este material.</p>
+          <p className="px-5 py-8 text-center text-sm text-brand-text-secondary">Sin tarifas para este material.</p>
         ) : filas.map((item, idx) => {
           const esPorcentaje = esPorcentajeInductor(item.inductor)
           return (
@@ -117,7 +123,7 @@ function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRo
               </div>
               {canEdit ? (
                 <div className="flex items-center gap-1.5 shrink-0">
-                  {!esPorcentaje && <span className="text-[10px] text-brand-muted/50">COP</span>}
+                  {!esPorcentaje && <span className="text-[10px] text-brand-text-secondary">COP</span>}
                   <input
                     type="number"
                     value={esPorcentaje ? Math.round(item.valor * 1000) / 10 : item.valor}
@@ -130,10 +136,10 @@ function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRo
                     }}
                     className={`${inputBase} w-28`}
                   />
-                  {esPorcentaje && <span className="text-[10px] text-brand-muted/50">%</span>}
+                  {esPorcentaje && <span className="text-[10px] text-brand-text-secondary">%</span>}
                   <button
                     onClick={() => onRemoveRow(activeMat, idx)}
-                    className="p-1.5 rounded-md text-brand-muted/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    className="p-1.5 rounded-md text-brand-text-secondary hover:text-brand-danger hover:bg-red-500/10 transition-colors"
                     title="Eliminar este costo"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -162,7 +168,7 @@ function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRo
           </select>
           <button
             onClick={() => onAddRow(activeMat, nuevoInductor)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-brand-border text-sm text-brand-muted hover:text-brand-text hover:border-brand-primary/50 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-brand-border text-sm text-brand-text-secondary hover:text-brand-text hover:border-brand-primary/50 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             Agregar costo para {activeMat}
@@ -194,7 +200,7 @@ interface AdicionalesTabProps {
 function AdicionalesTab({ adicionales, canEdit, onChange, onAddRow, onRemoveRow }: AdicionalesTabProps) {
   return (
     <div className="space-y-3">
-      <p className="text-xs text-brand-muted/70 pl-1">
+      <p className="text-xs text-brand-text-secondary pl-1">
         Servicios extras disponibles al cotizar (fregadero, impermeabilizante, acceso elevación, etc.)
         — precio varía según etapa de la obra.
       </p>
@@ -203,10 +209,10 @@ function AdicionalesTab({ adicionales, canEdit, onChange, onAddRow, onRemoveRow 
         <table className="w-full text-sm min-w-[700px]">
           <thead>
             <tr className="border-b border-brand-border bg-brand-surface/40">
-              <th className="px-4 py-3 text-left text-[11px] font-bold text-brand-muted/60 uppercase tracking-wider w-[35%]">Concepto</th>
-              <th className="px-3 py-3 text-left text-[11px] font-bold text-brand-muted/60 uppercase tracking-wider w-[8%]">Unidad</th>
+              <th className="px-4 py-3 text-left text-[11px] font-bold text-brand-text-secondary uppercase tracking-wider w-[35%]">Concepto</th>
+              <th className="px-3 py-3 text-left text-[11px] font-bold text-brand-text-secondary uppercase tracking-wider w-[8%]">Unidad</th>
               {ETAPAS_COLS.map(({ label }) => (
-                <th key={label} className="px-3 py-3 text-right text-[11px] font-bold text-brand-muted/60 uppercase tracking-wider">
+                <th key={label} className="px-3 py-3 text-right text-[11px] font-bold text-brand-text-secondary uppercase tracking-wider">
                   {label}
                 </th>
               ))}
@@ -239,7 +245,7 @@ function AdicionalesTab({ adicionales, canEdit, onChange, onAddRow, onRemoveRow 
                       {UNIDADES_ADD.map((u) => <option key={u} value={u}>{u}</option>)}
                     </select>
                   ) : (
-                    <span className="text-brand-muted">{item.unidad}</span>
+                    <span className="text-brand-text-secondary">{item.unidad}</span>
                   )}
                 </td>
                 {ETAPAS_COLS.map(({ key }) => (
@@ -262,7 +268,7 @@ function AdicionalesTab({ adicionales, canEdit, onChange, onAddRow, onRemoveRow 
                   <td className="px-2 py-2.5">
                     <button
                       onClick={() => onRemoveRow(idx)}
-                      className="p-1.5 rounded-md text-brand-muted/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                      className="p-1.5 rounded-md text-brand-text-secondary hover:text-brand-danger hover:bg-red-500/10 transition-colors"
                       title="Eliminar fila"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -278,7 +284,7 @@ function AdicionalesTab({ adicionales, canEdit, onChange, onAddRow, onRemoveRow 
       {canEdit && (
         <button
           onClick={onAddRow}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-brand-border text-sm text-brand-muted hover:text-brand-text hover:border-brand-primary/50 transition-colors"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-brand-border text-sm text-brand-text-secondary hover:text-brand-text hover:border-brand-primary/50 transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
           Agregar servicio adicional
@@ -404,42 +410,29 @@ export default function ParametrosPage() {
     <AppLayout>
       <div className="max-w-4xl mx-auto">
 
-        {/* ── Header ── */}
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <span className="font-mono text-[10px] text-brand-muted/50 tracking-[0.2em]">CONFIGURACIÓN</span>
-              <div className="w-16 h-px bg-brand-border/40" />
-            </div>
-            <h1 className="text-2xl font-bold text-brand-text tracking-tight flex items-center gap-2">
-              <Settings2 className="w-6 h-6 text-brand-primary" />
-              Parámetros
-            </h1>
-            <p className="text-sm text-brand-muted mt-1">Tarifas, adicionales y AIU del sistema</p>
-          </div>
-
-          <div className="flex items-center gap-3 shrink-0">
-            {!canEdit && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-surface border border-brand-border">
-                <AlertCircle className="w-3.5 h-3.5 text-brand-muted/60 shrink-0" />
-                <span className="text-xs text-brand-muted">Solo Admin o Gerente pueden editar</span>
-              </div>
-            )}
-            {canEdit && (
+        <PageHeader
+          kicker="Sistema"
+          title="Parámetros"
+          subtitle="Tarifas, adicionales y AIU del sistema"
+          actions={
+            !canEdit ? (
+              <span className="flex items-center gap-2 rounded-lg border border-brand-border bg-brand-surface px-3 py-2 text-xs text-brand-text-secondary">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                Solo Admin o Gerente pueden editar
+              </span>
+            ) : (
               <button
+                type="button"
                 onClick={handleSave}
                 disabled={saving || loading}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-brand-primary text-white text-sm font-semibold shadow-[0_0_24px_#1F6F5428,0_0_0_1px_#1F6F5440] hover:shadow-[0_0_40px_#1F6F5445,0_0_0_1px_#1F6F5470] disabled:opacity-60 disabled:shadow-none transition-all duration-200 cursor-pointer"
+                className="flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-primary-light disabled:opacity-50 cursor-pointer"
               >
-                {saving
-                  ? <Loader2 className="w-4 h-4 animate-spin" />
-                  : <Save className="w-4 h-4" />
-                }
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Save className="w-4 h-4" aria-hidden="true" />}
                 {saving ? 'Guardando…' : 'Guardar cambios'}
               </button>
-            )}
-          </div>
-        </div>
+            )
+          }
+        />
 
         {/* ── Loading state ── */}
         {loading ? (
@@ -449,7 +442,7 @@ export default function ParametrosPage() {
               transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}
               className="inline-block w-6 h-6 border-2 border-brand-muted/30 border-t-brand-primary rounded-full mb-3"
             />
-            <p className="text-sm text-brand-muted">Cargando parámetros…</p>
+            <p className="text-sm text-brand-text-secondary">Cargando parámetros…</p>
           </div>
         ) : data ? (
           <motion.div
@@ -458,30 +451,30 @@ export default function ParametrosPage() {
             transition={{ duration: 0.25 }}
           >
             {/* ── Main tabs ── */}
-            <div className="flex gap-1 mb-6 p-1 glass rounded-xl border border-brand-border overflow-x-auto lg:w-fit">
-              {MAIN_TABS.map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer
-                    ${activeTab === tab
-                      ? 'bg-brand-primary text-white shadow-[0_0_16px_#1F6F5435,0_0_0_1px_#1F6F5450]'
-                      : 'text-brand-muted hover:text-brand-text'
-                    }`}
-                >
-                  {tab}
-                </button>
-              ))}
+            <div className="mb-6">
+              <SegmentedControl
+                mode="tabs"
+                ariaLabel="Secciones de parámetros"
+                options={MAIN_TABS.map((t) => ({ value: t, label: t }))}
+                value={activeTab}
+                onChange={setActiveTab}
+                panelIdFor={(v) => `panel-${v}`}
+              />
             </div>
 
             {/* ── Tab content ── */}
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
+                role="tabpanel"
+                id={`panel-${activeTab}`}
+                aria-label={activeTab}
+                tabIndex={0}
                 initial={{ opacity: 0, x: 8 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -8 }}
                 transition={{ duration: 0.18 }}
+                className="focus:outline-none"
               >
                 {activeTab === 'Tarifas' && (
                   <TarifasTab
@@ -508,8 +501,8 @@ export default function ParametrosPage() {
           </motion.div>
         ) : (
           <div className="glass rounded-xl border border-red-500/30 p-8 text-center">
-            <AlertCircle className="w-8 h-8 text-red-400 mx-auto mb-3" />
-            <p className="text-sm text-red-400">No se pudieron cargar los parámetros.</p>
+            <AlertCircle className="w-8 h-8 text-brand-danger mx-auto mb-3" />
+            <p className="text-sm text-brand-danger">No se pudieron cargar los parámetros.</p>
           </div>
         )}
       </div>
