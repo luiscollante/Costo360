@@ -104,9 +104,10 @@ aquí solo el logo y `manifest.json`.
   esmeralda, logo + `manifest`, reconstrucción de la carga inicial, quitar restos del piloto.
   Cada pantalla queda correcta, sin tema roto, sin colores fuera de marca, y arranca rápido.
   Entregable y verificable solo.
-- **CICLO 2 — "sistematizar":** bloques **R3, R6, R9**. Los 12-14 componentes base con
-  accesibilidad real + la pasada pantalla por pantalla + la verificación completa (axe por
-  ruta, teclado, sesión única en 2 ventanas).
+- **CICLO 2 — "sistematizar":** bloques **R3, R6, R10, R9**. Los 12-14 componentes base con
+  accesibilidad real + la pasada pantalla por pantalla + el selector de material como diálogo
+  y el catálogo de materiales por taller (R10, feedback del fundador 2026-08-31) + la
+  verificación completa (axe por ruta, teclado, sesión única en 2 ventanas).
 
 Numeración de bloques conservada del plan original para trazar con las auditorías.
 
@@ -315,6 +316,55 @@ AdminPage. Por cada una:
 - Nombre único para "Nueva Cotización / Cotización Directa / Crear cotización guiada" `[aud]` —
   elegir uno y aplicarlo en sidebar, `<h1>` y CommandPalette.
 - Micro-commit por pantalla.
+
+### R10 — Selector de material + catálogo por taller (feedback del fundador, 2026-08-31)
+
+*Detectado probando "Nueva Cotización" en vivo. El botón "Agregar otra placa" ya se corrigió
+fuera de ciclo (prominencia + `cursor-pointer` + color de marca, commit en `goal/rediseno-visual`).
+Lo de abajo es Ciclo 2.*
+
+**Problema:** el desplegable de `MaterialCombobox` es `position:absolute` dentro de la tarjeta
+de la placa → queda recortado por el `overflow` del contenedor, no se ve el listado completo.
+
+**R10.a — Selector de material como diálogo (frontend).**
+- Reemplazar el desplegable inline de `MaterialCombobox` por una **ventana modal** (usa el
+  primitivo `Dialog` de R3, portalada a `document.body` → no se recorta): buscador arriba,
+  materiales **agrupados por categoría**, precio/m² a la vista, identidad de marca (paleta
+  Costo360, sin morado/cian). Selección con teclado (flechas + Enter), Escape cierra.
+- Opción **"Otro"** dentro del diálogo → cierra el diálogo y muestra el campo de texto libre
+  (ya existe el modo `isCustom`) + el `MoneyInput` de precio/m² al lado.
+
+**R10.b — Guardar el material nuevo en el catálogo del taller.**
+- **Dos momentos de guardado** (decisión del fundador):
+  1. Al terminar de escribir el nombre en "Otro" **y** poner el precio/m², aparece un
+     **modal decorativo y amable** con una pregunta clara: "¿Guardar «<nombre>» a
+     $<precio>/m² en tu catálogo para próximas cotizaciones?" — Sí / Ahora no.
+  2. Al **guardar la cotización**: si se usó un material que no está en el catálogo del
+     taller y no se guardó antes, se agrega automáticamente (sin volver a preguntar).
+- **Se guarda:** nombre + categoría + precio/m². Sin edición desde aquí (ver R10.d).
+- Tras guardar, invalidar `['materiales', categoria]` para que aparezca de inmediato.
+
+**R10.c — Backend: catálogo multi-tenant (migración `0005`).**
+- `catalogo_materiales` gana `empresa_id uuid null references empresas(id)`:
+  `NULL` = fila base de Costo360 (visible para todos), con valor = material propio de ese
+  taller.
+- RLS: `select` sigue visible si `empresa_id is null or empresa_id = empresa_actual()`.
+  Nuevas políticas `insert`/`update`/`delete` **solo** para filas con
+  `empresa_id = empresa_actual()` (nadie toca las filas base ni las de otro taller).
+- Endpoints nuevos en `routers/materiales.py` bajo `db_rls`:
+  `POST /api/materiales` (crear propio; dedupe por `lower(referencia)+categoria+empresa_id`),
+  `PUT /api/materiales/{id}` y `DELETE /api/materiales/{id}` (solo filas propias).
+- **No toca `motor/calculos.py`** (roadmap).
+
+**R10.d — Pantalla "Catálogo de materiales" (nueva, editable).**
+- Sección nueva en la app (menú "Taller" o "Sistema"): tabla con el catálogo base de Costo360
+  **+** los materiales que el taller ha agregado, marcados como propios. Los talleres que no
+  han agregado nada ven solo el catálogo base.
+- Editar/crear/eliminar **solo** los materiales propios, con la interfaz de Costo360 (paleta
+  de marca, `<DataTable>` + `<Field>` de R3, edición en línea o modal). Las filas base son de
+  solo lectura.
+- Rol: probablemente `puede_ver_dashboard` (admin/gerencia), como Parámetros/Configuración —
+  confirmar con el fundador al llegar a este bloque.
 
 ### R9 — Verificación final
 - `tsc -b` + `npm run build` limpios.

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { FileDown, Receipt, Loader2 } from 'lucide-react'
+import { FileDown, Receipt, Loader2, Plus } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, useLocation } from 'react-router-dom'
 import AppLayout from '@/components/AppLayout'
@@ -1142,9 +1142,9 @@ function Step1Material({ dir }: { dir: number }) {
         <button
           type="button"
           onClick={addPlaca}
-          className="w-full py-3.5 rounded border border-dashed border-brand-border/50 text-xs text-brand-muted hover:text-emerald-400 hover:border-brand-primary/30 transition-all duration-200 flex items-center justify-center gap-1.5 font-medium tracking-wide"
+          className="w-full py-3 rounded-lg border border-dashed border-brand-primary/40 bg-brand-primary/[0.04] text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.08] hover:border-brand-primary/60 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
         >
-          <span className="text-sm font-mono leading-none">+</span>
+          <Plus size={16} />
           Agregar otra placa
         </button>
 
@@ -1646,9 +1646,9 @@ function Step2Piezas({ dir }: { dir: number }) {
         <button
           type="button"
           onClick={addPieza}
-          className="mt-4 w-full py-3 rounded border border-dashed border-brand-border/50 text-xs text-brand-muted hover:text-emerald-400 hover:border-brand-primary/40 transition-all duration-200 flex items-center justify-center gap-2"
+          className="mt-4 w-full py-3 rounded-lg border border-dashed border-brand-primary/40 bg-brand-primary/[0.04] text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.08] hover:border-brand-primary/60 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
         >
-          <span className="text-base leading-none">+</span>
+          <Plus size={16} />
           {showTabs
             ? `Agregar pieza a ${placaActiva?.ref ? placaActiva.ref.slice(0, 20) : `Placa ${(placaActivaIdx >= 0 ? placaActivaIdx : 0) + 1}`}`
             : 'Agregar pieza'}
