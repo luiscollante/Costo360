@@ -212,6 +212,8 @@ rowcount), `verificar_dispositivo` (409 `SESSION_SUPERSEDED` / `SESSION_PENDING`
 
 ## 6. Identidad de marca / estándar visual
 
+*Actualizado 2026-08-31 con el Ciclo 1 del rediseño visual (rama `goal/rediseno-visual`).*
+
 Tokens reales extraídos de `web/src/index.css` (verificado en código):
 
 | Token | Valor | Uso |
@@ -221,17 +223,42 @@ Tokens reales extraídos de `web/src/index.css` (verificado en código):
 | `--color-brand-border` | `#E5D5BA` | Bordes |
 | `--color-brand-primary` | `#15612E` | Verde principal (marca) |
 | `--color-brand-primary-light` | `#1A7A3A` | Verde hover/acento |
-| `--color-brand-text` | `#4A4A4A` | Texto secundario |
+| `--color-brand-text` | `#4A4A4A` | Texto (cuerpo) |
+| `--color-brand-text-secondary` | `#5F5F5F` | Texto secundario y micro-labels 11px/600 (≈5,3:1 sobre crema — WCAG AA). **Prohibido bajarle opacidad.** |
+| `--color-brand-text-tertiary` | `#6E6E6E` | Solo texto ≥18px e iconos no esenciales (≈4,2:1) |
 | `--color-brand-text-dark` | `#1A1A1A` | Texto principal |
 | `--color-brand-muted` | `#8A8A8A` | Texto deshabilitado/placeholder |
 | `--color-brand-gold` | `#D4AF37` | Dorado — acentos premium |
 | `--color-brand-gold-light` | `#F0C447` | Dorado claro |
+| `--color-brand-success` / `-soft` | `#15612E` / `#E7F1E9` | Estado OK — texto vs. relleno de badge |
+| `--color-brand-warning-text` / `--color-brand-warning` / `-soft` | `#6E5410` / `#B4820E` / `#F5EBD5` | Advertencia — el tono medio `#B4820E` **solo** para relleno/borde, nunca texto |
+| `--color-brand-danger` / `-soft` | `#B23B3B` / `#F6E5E5` | Error — texto vs. relleno de badge |
+| `--color-brand-emerald` / `-deep` | `#00472B` / `#00311D` | Verde esmeralda **del isotipo real** (muestreado de `assets/marca/isotipo.png`) — barra lateral |
 
-- **Tipografías:** Plus Jakarta Sans (general) + JetBrains Mono (datos numéricos).
+- **Regla de contraste:** prohibido aplicar opacidad/alfa `<100%` a nodos de **texto** — usar
+  siempre el token sólido. Foco visible global: `:focus-visible { outline: 2px solid
+  var(--color-brand-primary); outline-offset: 2px }`.
+- **Tipografías:** Plus Jakarta Sans (general) + JetBrains Mono (datos numéricos). "Inter" ya
+  NO se usa (se quitó en el Ciclo 1).
 - **Modo de color:** light-mode estricto (`html{color-scheme:light}`) — la app NO tiene ni debe
-  tener modo oscuro. Cualquier mockup en oscuro no representa la marca real.
-- **Efecto glass:** `rgba(255,255,255,.6)` blur(20px), borde `rgba(255,255,255,.4)`, sombra
-  `rgba(74,74,74,.05)`. Fondo con textura de ruido sutil (PNG, 3% opacidad).
+  tener modo oscuro. El toggle sol/luna, `useTheme`, `data-theme`/`cm-theme` y el `<script>` de
+  tema en `index.html` se **eliminaron** en el Ciclo 1. `@media (prefers-reduced-motion)` +
+  `<MotionConfig reducedMotion="user">` respetan la preferencia del sistema.
+- **Barra lateral (`.glass-emerald`):** verde esmeralda del isotipo, glassmorphism —
+  `linear-gradient(180deg, rgba(0,71,43,.82), rgba(0,49,29,.88))`, `backdrop-filter: blur(24px)
+  saturate(140%)`, borde `rgba(255,255,255,.12)`, highlight interior + sombra lateral. Texto en
+  **colores sólidos**: inactivo crema `#F5E8D2` (≈5,5:1), activo `#FFFFFF`, encabezados de
+  grupo `#E4D8BF`. Indicador de ítem activo: barra izquierda dorada + `font-medium` + fondo
+  `rgba(255,255,255,.14)` (señal no cromática además del color).
+- **Efecto glass (paneles claros, `.glass`):** `rgba(255,255,255,.6)` blur(20px), borde
+  `rgba(255,255,255,.4)`, sombra `rgba(74,74,74,.05)`. Fondo con textura de ruido sutil (PNG,
+  3% opacidad, `z-index:1` — no tapa modales ni la barra).
+- **Logo:** arte real del fundador. `web/public/logo.png` (wordmark blanco) sobre fondos
+  oscuros (barra esmeralda); `web/public/logo_versiones_oscuras.png` (wordmark de tinta oscura
+  + isotipo verde) sobre fondos claros (login, encabezado, restablecer). Componente
+  `web/src/components/Logo.tsx` (`variant="light"|"dark"`). Favicon + apple-touch-icon =
+  isotipo. Fuentes de marca sin optimizar en `assets/marca/`. Pendiente: un SVG limpio
+  multi-variante (el vectorizado que entregó el fundador salía con el isotipo en negro).
 
 ---
 
