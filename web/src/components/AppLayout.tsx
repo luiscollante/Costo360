@@ -1,17 +1,50 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, Search } from 'lucide-react'
 import Sidebar from './Sidebar'
 import AgenteChat from './AgenteChat'
 import CommandPalette from './CommandPalette'
+import { useAuthStore } from '@/store/auth'
+
+const TITULOS: Record<string, string> = {
+  '/cotizacion': 'Nueva Cotización',
+  '/express': 'Express',
+  '/cotizacion-aiu': 'Cotización AIU',
+  '/dashboard': 'Dashboard',
+  '/historial': 'Historial',
+  '/inventario': 'Inventario',
+  '/retales': 'Retales',
+  '/nesting': 'Nesting',
+  '/parametros': 'Parámetros',
+  '/configuracion': 'Configuración',
+  '/admin': 'Panel Admin',
+}
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { usuario } = useAuthStore()
+  const mainRef = useRef<HTMLElement>(null)
+
+  // Al cambiar de ruta: actualizar el título de la pestaña y mover el foco al
+  // contenido (accesibilidad de teclado / lector de pantalla). El <h1> por
+  // página lo absorbe el primitivo PageHeader en el Ciclo 2.
+  useEffect(() => {
+    const seccion = TITULOS[location.pathname]
+    document.title = seccion ? `${seccion} · Costo360` : 'Costo360'
+    mainRef.current?.focus()
+  }, [location.pathname])
 
   return (
     <div className="flex min-h-screen bg-brand-bg relative">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-brand-primary focus:text-white focus:text-sm"
+      >
+        Saltar al contenido
+      </a>
+
       {/* Mobile header bar */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-brand-bg/95 border-b border-brand-border/40 flex items-center px-4 gap-3 z-30" style={{ backdropFilter: 'blur(12px)' }}>
         <button
@@ -67,26 +100,39 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         )}
       </AnimatePresence>
 
-      {/* Desktop header bar — toggle button, only visible lg+ */}
+      {/* Desktop header bar — solo visible lg+ */}
       <header
-        className="hidden lg:flex h-12 items-center justify-end gap-2.5 px-6 border-b border-brand-border/30 fixed top-0 right-0 bg-brand-bg/80 z-20"
+        className="hidden lg:flex h-12 items-center justify-between gap-4 px-6 border-b border-brand-border/30 fixed top-0 right-0 bg-brand-bg/80 z-20"
         style={{ left: '224px', backdropFilter: 'blur(12px)' }}
       >
+        <div className="flex flex-col leading-tight min-w-0">
+          {usuario?.empresa_nombre && (
+            <span className="text-xs font-semibold text-brand-text-dark truncate">
+              {usuario.empresa_nombre}
+            </span>
+          )}
+          <span className="text-[11px] text-brand-text-secondary truncate">
+            {usuario?.nombre_completo}
+          </span>
+        </div>
         <button
           type="button"
           onClick={() => window.dispatchEvent(new CustomEvent('costo360:open-command-palette'))}
-          className="flex items-center gap-2 px-3 h-9 rounded-lg border border-brand-border text-brand-muted hover:text-brand-text hover:border-brand-primary/40 transition-all cursor-pointer"
+          className="flex items-center gap-2 px-3 h-9 rounded-lg border border-brand-border text-brand-text-secondary hover:text-brand-text hover:border-brand-primary/40 transition-all cursor-pointer shrink-0"
           aria-label="Buscar y navegar (Ctrl+K)"
         >
           <Search size={14} />
           <span className="text-xs">Buscar</span>
-          <kbd className="text-[10px] px-1.5 py-0.5 rounded border border-brand-border/70 text-brand-muted/50 font-mono">Ctrl K</kbd>
+          <kbd className="text-[10px] px-1.5 py-0.5 rounded border border-brand-border/70 text-brand-text-tertiary font-mono">Ctrl K</kbd>
         </button>
       </header>
 
       {/* Main content */}
       <main
-        className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 pt-[calc(3.5rem+1rem)] lg:pt-20 relative min-w-0"
+        id="main"
+        ref={mainRef}
+        tabIndex={-1}
+        className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 pt-[calc(3.5rem+1rem)] lg:pt-20 relative min-w-0 focus:outline-none"
         style={{ zIndex: 1 }}
       >
         <AnimatePresence mode="wait">
