@@ -15,15 +15,17 @@ import {
   type CotizacionResumen,
   type HistorialFiltros,
 } from '@/api/cotizacion'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Dialog } from '@/components/ui/Dialog'
 import { formatCOP, formatNum } from '@/lib/utils'
 
 const ESTADOS = ['Pendiente', 'Aprobada', 'Rechazada']
 
 const estadoConfig: Record<string, { color: string; bg: string; dot: string }> = {
-  Pendiente:  { color: 'text-amber-400',   bg: 'bg-amber-400/10 border-amber-400/20',    dot: 'bg-amber-400'   },
-  Aprobada:   { color: 'text-emerald-400', bg: 'bg-emerald-400/10 border-emerald-400/20', dot: 'bg-emerald-400' },
-  Rechazada:  { color: 'text-red-400',     bg: 'bg-red-400/10 border-red-400/20',         dot: 'bg-red-400'     },
-  Borrador:   { color: 'text-brand-muted', bg: 'bg-brand-surface border-brand-border',    dot: 'bg-brand-muted' },
+  Pendiente:  { color: 'text-brand-warning-text',   bg: 'bg-brand-warning-soft border-brand-warning/30', dot: 'bg-brand-warning' },
+  Aprobada:   { color: 'text-brand-success',        bg: 'bg-brand-success-soft border-brand-success/30', dot: 'bg-brand-success' },
+  Rechazada:  { color: 'text-brand-danger',         bg: 'bg-brand-danger-soft border-brand-danger/30',   dot: 'bg-brand-danger'  },
+  Borrador:   { color: 'text-brand-text-secondary', bg: 'bg-brand-bg border-brand-border',               dot: 'bg-brand-border'  },
 }
 
 function EstadoBadge({ estado, id }: { estado: string; id: number }) {
@@ -78,7 +80,7 @@ function EstadoBadge({ estado, id }: { estado: string; id: number }) {
                 onClick={() => mut.mutate(e)}
                 disabled={mut.isPending}
                 className={`w-full text-left px-3 py-2 text-xs hover:bg-brand-surface/60 transition-colors ${
-                  e === estado ? 'text-brand-text font-semibold' : 'text-brand-muted'
+                  e === estado ? 'text-brand-text font-semibold' : 'text-brand-text-secondary'
                 }`}
               >
                 {e}
@@ -129,59 +131,50 @@ function CCModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 8 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 8 }}
-        transition={{ duration: 0.15 }}
-        className="relative glass rounded-xl border border-brand-border shadow-2xl p-5 w-80 z-10"
-        onClick={e => e.stopPropagation()}
-      >
-        <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-brand-muted/60 mb-4">
-          Cuenta de Cobro
-        </p>
+    <Dialog open onClose={onClose} title="Cuenta de cobro">
+      <div>
         <div className="space-y-3 mb-4">
           <div>
-            <label className="block text-[10px] text-brand-muted mb-1.5">Nombre del pagador *</label>
+            <label className="block text-[10px] text-brand-text-secondary mb-1.5">Nombre del pagador *</label>
             <input
               value={nombre}
               onChange={e => setNombre(e.target.value)}
               placeholder="Constructora XYZ S.A.S"
               autoFocus
-              className="w-full bg-brand-input border border-brand-border rounded px-3 py-2.5 text-sm text-brand-text placeholder-brand-muted/40 outline-none focus:border-brand-primary/50 transition-all"
+              className="w-full bg-brand-input border border-brand-border rounded px-3 py-2.5 text-sm text-brand-text placeholder:text-brand-text-secondary outline-none focus:border-brand-primary/50 transition-all"
             />
           </div>
           <div>
-            <label className="block text-[10px] text-brand-muted mb-1.5">NIT / Cédula</label>
+            <label className="block text-[10px] text-brand-text-secondary mb-1.5">NIT / Cédula</label>
             <input
               value={nit}
               onChange={e => setNit(e.target.value)}
               placeholder="900.123.456-7"
-              className="w-full bg-brand-input border border-brand-border rounded px-3 py-2.5 text-sm text-brand-text placeholder-brand-muted/40 outline-none focus:border-brand-primary/50 transition-all"
+              className="w-full bg-brand-input border border-brand-border rounded px-3 py-2.5 text-sm text-brand-text placeholder:text-brand-text-secondary outline-none focus:border-brand-primary/50 transition-all"
             />
           </div>
         </div>
-        {err && <p className="text-xs text-red-400 mb-3">{err}</p>}
+        {err && <p className="text-xs text-brand-danger mb-3" role="alert">{err}</p>}
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 rounded border border-brand-border text-sm text-brand-muted hover:text-brand-text transition-colors"
+            className="flex-1 py-2.5 rounded-lg border border-brand-border text-sm text-brand-text-secondary hover:text-brand-text transition-colors cursor-pointer"
           >
             Cancelar
           </button>
           <button
+            type="button"
             onClick={handleDownload}
             disabled={loading || !nombre.trim()}
-            className="flex-1 py-2.5 rounded bg-brand-gold/15 border border-brand-gold/40 text-sm font-semibold text-brand-gold hover:bg-brand-gold/25 transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
+            className="flex-1 py-2.5 rounded-lg bg-brand-primary text-white text-sm font-semibold hover:bg-brand-primary-light transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            {loading ? <Loader2 size={13} className="animate-spin" /> : null}
+            {loading ? <Loader2 size={13} className="animate-spin" aria-hidden="true" /> : null}
             {loading ? 'Generando…' : 'Descargar PDF'}
           </button>
         </div>
-      </motion.div>
-    </div>
+      </div>
+    </Dialog>
   )
 }
 
@@ -239,7 +232,7 @@ function HistorialRow({ row, index }: { row: CotizacionResumen; index: number })
         onClick={handleDownload}
         disabled={downloading}
         title={isAIU ? 'Descargar Oferta AIU' : 'Descargar PDF'}
-        className="w-8 h-8 flex items-center justify-center rounded-lg text-brand-muted/40 hover:text-emerald-400 hover:bg-brand-primary/10 transition-all disabled:opacity-40"
+        className="w-8 h-8 flex items-center justify-center rounded-lg text-brand-text-secondary hover:text-brand-primary hover:bg-brand-primary/10 transition-all disabled:opacity-40"
       >
         {downloading ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
       </button>
@@ -247,7 +240,7 @@ function HistorialRow({ row, index }: { row: CotizacionResumen; index: number })
         <button
           onClick={() => setShowCC(v => !v)}
           title="Cuenta de Cobro PDF"
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-brand-muted/40 hover:text-brand-gold hover:bg-brand-gold/10 transition-all"
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-brand-text-secondary hover:text-brand-gold hover:bg-brand-gold/10 transition-all"
         >
           <Receipt size={14} />
         </button>
@@ -260,7 +253,7 @@ function HistorialRow({ row, index }: { row: CotizacionResumen; index: number })
           onClick={handleEdit}
           disabled={editing}
           title="Editar cotización"
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-brand-muted/40 hover:text-emerald-400 hover:bg-emerald-400/10 transition-all disabled:opacity-40"
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-brand-text-secondary hover:text-brand-primary hover:bg-brand-primary/10 transition-all disabled:opacity-40"
         >
           {editing ? <Loader2 size={14} className="animate-spin" /> : <Pencil size={14} />}
         </button>
@@ -281,14 +274,14 @@ function HistorialRow({ row, index }: { row: CotizacionResumen; index: number })
               onClick={() => deleteMut.mutate()}
               disabled={deleteMut.isPending}
               title="Confirmar eliminación"
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-red-400 hover:bg-red-400/15 transition-all disabled:opacity-40"
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-brand-danger hover:bg-brand-danger/15 transition-all disabled:opacity-40"
             >
               {deleteMut.isPending ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
             </button>
             <button
               onClick={() => setConfirmDelete(false)}
               title="Cancelar"
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-brand-muted/60 hover:text-brand-text hover:bg-brand-surface/60 transition-all"
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-brand-text-secondary hover:text-brand-text hover:bg-brand-surface/60 transition-all"
             >
               <X size={12} />
             </button>
@@ -301,7 +294,7 @@ function HistorialRow({ row, index }: { row: CotizacionResumen; index: number })
             exit={{ opacity: 0 }}
             onClick={() => setConfirmDelete(true)}
             title="Eliminar cotización"
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-brand-muted/40 hover:text-red-400 hover:bg-red-400/10 transition-all opacity-0 group-hover:opacity-100"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-brand-text-secondary hover:text-brand-danger hover:bg-brand-danger/10 transition-all opacity-0 group-hover:opacity-100"
           >
             <Trash2 size={14} />
           </motion.button>
@@ -331,7 +324,7 @@ function HistorialRow({ row, index }: { row: CotizacionResumen; index: number })
         <div className="flex items-end justify-between gap-3">
           <div className="min-w-0">
             <p className="text-sm text-brand-text font-medium truncate leading-tight">{row.cliente || '—'}</p>
-            <p className="text-[10px] text-brand-muted/60 truncate mt-0.5">
+            <p className="text-[10px] text-brand-text-secondary truncate mt-0.5">
               {row.material || (isAIU ? 'Obra Pública' : '—')} · {formatFecha(row.fecha)}
             </p>
           </div>
@@ -354,12 +347,12 @@ function HistorialRow({ row, index }: { row: CotizacionResumen; index: number })
         </span>
         <div className="min-w-0 pr-2">
           <p className="text-sm text-brand-text truncate font-medium leading-tight">{row.cliente || '—'}</p>
-          <p className="text-[10px] text-brand-muted/60 truncate mt-0.5">{row.material || (isAIU ? 'Obra Pública' : '—')}</p>
+          <p className="text-[10px] text-brand-text-secondary truncate mt-0.5">{row.material || (isAIU ? 'Obra Pública' : '—')}</p>
         </div>
-        <span className="min-w-0 font-mono text-xs text-brand-muted tabular-nums">{formatFecha(row.fecha)}</span>
+        <span className="min-w-0 font-mono text-xs text-brand-text-secondary tabular-nums">{formatFecha(row.fecha)}</span>
         <div className="min-w-0">
           <p className="font-mono text-sm text-brand-text tabular-nums truncate">{formatCOP(row.precio)}</p>
-          <p className="font-mono text-[10px] text-brand-muted/50 tabular-nums mt-0.5">{row.margen != null ? formatNum(row.margen, 1) : ''}%</p>
+          <p className="font-mono text-[10px] text-brand-text-secondary tabular-nums mt-0.5">{row.margen != null ? formatNum(row.margen, 1) : ''}%</p>
         </div>
         <EstadoBadge estado={row.estado} id={row.id} />
         <div className="ml-3">{acciones}</div>
@@ -407,25 +400,21 @@ export default function HistorialPage() {
   return (
     <AppLayout>
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-1">
-            <span className="font-mono text-[10px] text-brand-muted/50 tracking-[0.2em]">HISTORIAL</span>
-            <div className="flex-1 h-px bg-brand-border/40" />
-          </div>
-          <h1 className="text-2xl font-bold text-brand-text tracking-tight">Cotizaciones</h1>
-          <p className="text-sm text-brand-muted mt-1">Registro completo de proyectos cotizados</p>
-        </div>
+        <PageHeader
+          kicker="Consultar"
+          title="Historial"
+          subtitle="Registro completo de proyectos cotizados"
+        />
 
         {/* Search + filtros */}
         <form onSubmit={handleSearch} className="flex flex-wrap gap-3 mb-6">
           <div className="relative flex-1 min-w-[220px]">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-muted/40 text-sm">⌕</span>
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-text-secondary text-sm">⌕</span>
             <input
               value={busqueda}
               onChange={e => setBusqueda(e.target.value)}
               placeholder="Buscar por cliente, número o material…"
-              className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-brand-surface border border-brand-border text-sm text-brand-text placeholder:text-brand-muted/40 focus:outline-none focus:border-brand-primary/50 transition-colors"
+              className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-brand-surface border border-brand-border text-sm text-brand-text placeholder:text-brand-text-secondary focus:outline-none focus:border-brand-primary/50 transition-colors"
             />
           </div>
 
@@ -465,7 +454,7 @@ export default function HistorialPage() {
               onClick={limpiarFiltros}
               aria-label="Limpiar filtros"
               title="Limpiar filtros"
-              className="px-3 py-2.5 rounded-lg border border-brand-border text-sm text-brand-muted hover:text-brand-text transition-colors"
+              className="px-3 py-2.5 rounded-lg border border-brand-border text-sm text-brand-text-secondary hover:text-brand-text transition-colors"
             >
               ✕
             </button>
@@ -480,16 +469,16 @@ export default function HistorialPage() {
               transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}
               className="inline-block w-6 h-6 border-2 border-brand-muted/30 border-t-brand-primary rounded-full mb-3"
             />
-            <p className="text-sm text-brand-muted">Cargando historial…</p>
+            <p className="text-sm text-brand-text-secondary">Cargando historial…</p>
           </div>
         ) : isError ? (
           <div className="glass rounded-xl border border-red-500/20 p-8 text-center shadow-md transition-shadow hover:shadow-lg">
-            <p className="text-red-400 text-sm">Error al cargar el historial. Recarga la página.</p>
+            <p className="text-brand-danger text-sm">Error al cargar el historial. Recarga la página.</p>
           </div>
         ) : data.length === 0 ? (
           <div className="glass rounded-xl border border-brand-border p-16 text-center shadow-md transition-shadow hover:shadow-lg">
             <div className="text-4xl mb-4 opacity-30">☰</div>
-            <p className="text-brand-muted text-sm">
+            <p className="text-brand-text-secondary text-sm">
               {hayFiltrosActivos ? 'Sin resultados para esos filtros.' : 'Aún no hay cotizaciones guardadas.'}
             </p>
           </div>
@@ -503,7 +492,7 @@ export default function HistorialPage() {
               {/* Header — sólo visible en desktop */}
               <div className="hidden sm:grid grid-cols-[1.6fr_2fr_0.9fr_1.3fr_1.1fr_150px] px-4 py-3 border-b border-brand-border/60 bg-brand-surface/30 sm:min-w-[580px]">
                 {['Número', 'Cliente · Material', 'Fecha', 'Precio · Margen', 'Estado', ''].map((h, i) => (
-                  <span key={i} className="min-w-0 truncate text-[9px] tracking-[0.15em] uppercase text-brand-muted/50 font-semibold">
+                  <span key={i} className="min-w-0 truncate text-[9px] tracking-[0.15em] uppercase text-brand-text-secondary font-semibold">
                     {h}
                   </span>
                 ))}
@@ -519,7 +508,7 @@ export default function HistorialPage() {
 
             {/* Footer */}
             <div className="px-4 py-2.5 border-t border-brand-border/40 bg-brand-surface/20">
-              <span className="text-[10px] text-brand-muted/40 font-mono">
+              <span className="text-[10px] text-brand-text-secondary font-mono">
                 {data.length} cotización{data.length !== 1 ? 'es' : ''}
               </span>
             </div>
