@@ -2,42 +2,56 @@ import { create } from 'zustand'
 import { supabase } from '@/lib/supabaseClient'
 import { getMe, type Usuario } from '@/api/auth'
 
+/**
+ * Estados de la carga inicial (R7). La clave es `profile-pending`: hay sesión de
+ * Supabase confirmada pero el perfil del backend aún carga — la app renderiza el
+ * shell (skeleton) en vez de bloquear o expulsar a /login.
+ */
+export type AuthStatus =
+  | 'authenticating' // getSession() en curso (rápido: storage local)
+  | 'anon'           // sin sesión de Supabase
+  | 'profile-pending'// sesión OK, /api/auth/me en vuelo
+  | 'no-profile'     // sesión OK pero sin perfil (p. ej. OAuth de un no invitado)
+  | 'ready'          // sesión + perfil cargados
+
 interface AuthState {
+  status: AuthStatus
   /** Hay una sesión de Supabase activa. */
   session: boolean
-  /** Perfil del backend (`/api/auth/me`). null si no está aprovisionado o sin sesión. */
+  /** Perfil del backend (`/api/auth/me`). */
   usuario: Usuario | null
-  /** Ya se resolvió el estado inicial (sesión + perfil). */
-  hydrated: boolean
   /** Re-lee la sesión de Supabase y el perfil del backend. */
   refresh: () => Promise<void>
   /** Limpia el estado local (no cierra la sesión de Supabase — eso lo hace signOut). */
   clearSession: () => void
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
+  status: 'authenticating',
   session: false,
   usuario: null,
-  hydrated: false,
 
   refresh: async () => {
     try {
       const { data } = await supabase.auth.getSession()
       if (!data.session) {
-        set({ session: false, usuario: null, hydrated: true })
+        set({ status: 'anon', session: false, usuario: null })
         return
       }
+      // Sesión confirmada: desbloquea el shell YA; el perfil carga detrás.
+      const yaTeniaPerfil = get().usuario != null
+      set({ session: true, status: yaTeniaPerfil ? 'ready' : 'profile-pending' })
       try {
         const u = await getMe()
-        set({ session: true, usuario: u, hydrated: true })
+        set({ status: 'ready', session: true, usuario: u })
       } catch {
-        // Autenticado en Supabase pero sin perfil (p. ej. OAuth de un no invitado).
-        set({ session: true, usuario: null, hydrated: true })
+        // Si ya había perfil, es un blip de red — se conserva y se sigue 'ready'.
+        if (!yaTeniaPerfil) set({ status: 'no-profile', session: true, usuario: null })
       }
     } catch {
-      set({ session: false, usuario: null, hydrated: true })
+      set({ status: 'anon', session: false, usuario: null })
     }
   },
 
-  clearSession: () => set({ session: false, usuario: null }),
+  clearSession: () => set({ status: 'anon', session: false, usuario: null }),
 }))

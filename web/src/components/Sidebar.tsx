@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useAuthStore } from '@/store/auth'
 import { supabase } from '@/lib/supabaseClient'
 import { logoutSession } from '@/api/session'
+import { puedeVerDashboard } from '@/lib/capabilities'
 import Logo from './Logo'
 import {
   LayoutDashboard,
@@ -19,7 +20,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 
-interface NavItem { to: string; label: string; Icon: LucideIcon }
+interface NavItem { to: string; label: string; Icon: LucideIcon; requiereDashboard?: boolean }
 
 const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
@@ -33,7 +34,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: 'Consultar',
     items: [
-      { to: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
+      { to: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard, requiereDashboard: true },
       { to: '/historial', label: 'Historial', Icon: ClipboardList  },
     ],
   },
@@ -48,8 +49,8 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: 'Sistema',
     items: [
-      { to: '/parametros',    label: 'Parámetros',    Icon: SlidersHorizontal },
-      { to: '/configuracion', label: 'Configuración', Icon: Settings2         },
+      { to: '/parametros',    label: 'Parámetros',    Icon: SlidersHorizontal, requiereDashboard: true },
+      { to: '/configuracion', label: 'Configuración', Icon: Settings2,         requiereDashboard: true },
     ],
   },
 ]
@@ -69,6 +70,12 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const inactiveNav = 'text-[#F5E8D2] hover:bg-white/10'
   const activeNav = 'text-white font-medium'
 
+  // Regla 6: el rol operativo no ve Dashboard / Parámetros / Configuración.
+  const verDashboard = puedeVerDashboard(usuario)
+  const grupos = NAV_GROUPS
+    .map((g) => ({ ...g, items: g.items.filter((it) => !it.requiereDashboard || verDashboard) }))
+    .filter((g) => g.items.length > 0)
+
   return (
     <aside className="glass-emerald w-56 shrink-0 flex flex-col h-screen sticky top-0 relative">
       {/* Logo */}
@@ -79,7 +86,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
       {/* Nav */}
       <nav className="flex-1 py-2.5 space-y-2 px-3 relative overflow-y-auto min-h-0">
-        {NAV_GROUPS.map((group) => (
+        {grupos.map((group) => (
           <div key={group.label}>
             <p className="px-3 mb-0.5 text-[11px] font-semibold uppercase tracking-widest text-[#E4D8BF]">
               {group.label}

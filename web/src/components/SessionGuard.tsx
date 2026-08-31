@@ -110,13 +110,28 @@ export default function SessionGuard() {
 
   if (vista.tipo === 'oculto') return null
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="glass rounded-2xl border border-brand-border p-8 w-full max-w-sm text-center">
-        {vista.tipo === 'reclamando' && (
-          <p className="text-sm text-brand-muted py-4">Verificando la sesión…</p>
-        )}
+  // "reclamando" = reclamo inicial en curso. Indicador NO modal: la app se ve y
+  // se usa detrás (R7). Solo los estados que piden una decisión son modales.
+  if (vista.tipo === 'reclamando') {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className="fixed bottom-4 right-4 z-[60] flex items-center gap-2 rounded-lg border border-brand-border bg-brand-surface px-3 py-2 text-xs text-brand-text-secondary shadow-[0_2px_8px_rgba(74,74,74,0.12)]"
+      >
+        <span className="w-3 h-3 border-2 border-brand-muted/30 border-t-brand-primary rounded-full animate-spin" />
+        Verificando sesión…
+      </div>
+    )
+  }
 
+  return (
+    <div
+      role="alertdialog"
+      aria-modal="true"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+    >
+      <div className="glass rounded-2xl border border-brand-border p-8 w-full max-w-sm text-center">
         {vista.tipo === 'esperando' && (
           <>
             <h2 className="text-base font-bold text-brand-text mb-2">Sesión en otro dispositivo</h2>

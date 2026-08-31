@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabaseClient'
 import { getDeviceId } from '@/lib/deviceId'
 import { useAuthStore } from '@/store/auth'
+import { homeDeRol } from '@/lib/capabilities'
 import LoginPage from '@/pages/LoginPage'
 import ResetPasswordPage from '@/pages/ResetPasswordPage'
 import DashboardPage from '@/pages/DashboardPage'
@@ -15,6 +16,8 @@ import InventarioPage from '@/pages/InventarioPage'
 import ConfigPage from '@/pages/ConfigPage'
 import PrivateRoute from '@/components/PrivateRoute'
 import AdminRoute from '@/components/AdminRoute'
+import RoleRoute from '@/components/RoleRoute'
+import AppShellSkeleton from '@/components/AppShellSkeleton'
 import AdminPage from '@/pages/AdminPage'
 import ParametrosPage from '@/pages/ParametrosPage'
 import NestingPage from '@/pages/NestingPage'
@@ -39,8 +42,17 @@ function Private({ children }: { children: React.ReactNode }) {
   )
 }
 
+/** Destino del catch-all: casa según el rol (o login / skeleton si aún carga). */
+function HomeRedirect() {
+  const status = useAuthStore((s) => s.status)
+  const usuario = useAuthStore((s) => s.usuario)
+  if (status === 'authenticating' || status === 'profile-pending') return <AppShellSkeleton />
+  if (status !== 'ready' || !usuario) return <Navigate to="/login" replace />
+  return <Navigate to={homeDeRol(usuario)} replace />
+}
+
 function AuthGate({ children }: { children: React.ReactNode }) {
-  const hydrated = useAuthStore((s) => s.hydrated)
+  const status = useAuthStore((s) => s.status)
 
   useEffect(() => {
     getDeviceId()
@@ -55,7 +67,10 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     return () => data.subscription.unsubscribe()
   }, [])
 
-  if (!hydrated) {
+  // Solo bloquea mientras se resuelve la sesión (getSession, rápido). Una vez
+  // resuelta, el router se monta y PrivateRoute pinta el shell si el perfil
+  // todavía carga (R7).
+  if (status === 'authenticating') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-brand-bg">
         <div className="w-8 h-8 border-2 border-brand-muted/30 border-t-brand-primary rounded-full animate-spin" />
@@ -70,28 +85,28 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <MotionConfig reducedMotion="user">
-      <ToastHost />
-      <AuthGate>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/dashboard" element={<Private><DashboardPage /></Private>} />
-            <Route path="/cotizacion" element={<Private><CotizacionPage /></Private>} />
-            <Route path="/express" element={<Private><CotizacionExpressPage /></Private>} />
-            <Route path="/cotizacion-aiu" element={<Private><CotizacionAIUPage /></Private>} />
-            <Route path="/historial" element={<Private><HistorialPage /></Private>} />
-            <Route path="/retales" element={<Private><RetalesPage /></Private>} />
-            <Route path="/inventario" element={<Private><InventarioPage /></Private>} />
-            <Route path="/nesting" element={<Private><NestingPage /></Private>} />
-            <Route path="/parametros" element={<Private><ParametrosPage /></Private>} />
-            <Route path="/configuracion" element={<Private><ConfigPage /></Private>} />
-            <Route path="/admin" element={<AdminRoute><SessionGuard /><AdminPage /></AdminRoute>} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthGate>
+        <ToastHost />
+        <AuthGate>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/dashboard" element={<Private><RoleRoute><DashboardPage /></RoleRoute></Private>} />
+              <Route path="/cotizacion" element={<Private><CotizacionPage /></Private>} />
+              <Route path="/express" element={<Private><CotizacionExpressPage /></Private>} />
+              <Route path="/cotizacion-aiu" element={<Private><CotizacionAIUPage /></Private>} />
+              <Route path="/historial" element={<Private><HistorialPage /></Private>} />
+              <Route path="/retales" element={<Private><RetalesPage /></Private>} />
+              <Route path="/inventario" element={<Private><InventarioPage /></Private>} />
+              <Route path="/nesting" element={<Private><NestingPage /></Private>} />
+              <Route path="/parametros" element={<Private><RoleRoute><ParametrosPage /></RoleRoute></Private>} />
+              <Route path="/configuracion" element={<Private><RoleRoute><ConfigPage /></RoleRoute></Private>} />
+              <Route path="/admin" element={<AdminRoute><SessionGuard /><AdminPage /></AdminRoute>} />
+              <Route path="*" element={<HomeRedirect />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthGate>
       </MotionConfig>
     </QueryClientProvider>
   )
