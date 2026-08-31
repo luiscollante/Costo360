@@ -20,6 +20,7 @@ import RoleRoute from '@/components/RoleRoute'
 import AppShellSkeleton from '@/components/AppShellSkeleton'
 import AdminPage from '@/pages/AdminPage'
 import ParametrosPage from '@/pages/ParametrosPage'
+import MaterialesPage from '@/pages/MaterialesPage'
 import NestingPage from '@/pages/NestingPage'
 import CotizacionExpressPage from '@/pages/CotizacionExpressPage'
 import CotizacionAIUPage from '@/pages/CotizacionAIUPage'
@@ -105,6 +106,7 @@ export default function App() {
               <Route path="/inventario" element={<Private><InventarioPage /></Private>} />
               <Route path="/nesting" element={<Private><NestingPage /></Private>} />
               <Route path="/parametros" element={<Private><RoleRoute><ParametrosPage /></RoleRoute></Private>} />
+              <Route path="/materiales" element={<Private><RoleRoute><MaterialesPage /></RoleRoute></Private>} />
               <Route path="/configuracion" element={<Private><RoleRoute><ConfigPage /></RoleRoute></Private>} />
               <Route path="/admin" element={<AdminRoute><SessionGuard /><AdminPage /></AdminRoute>} />
               <Route path="*" element={<HomeRedirect />} />

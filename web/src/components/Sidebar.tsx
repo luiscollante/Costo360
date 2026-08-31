@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Zap,
   HardHat,
+  BookMarked,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -50,6 +51,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: 'Sistema',
     items: [
       { to: '/parametros',    label: 'Parámetros',    Icon: SlidersHorizontal, requiereDashboard: true },
+      { to: '/materiales',    label: 'Catálogo',      Icon: BookMarked,        requiereDashboard: true },
       { to: '/configuracion', label: 'Configuración', Icon: Settings2,         requiereDashboard: true },
     ],
   },

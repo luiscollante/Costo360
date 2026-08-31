@@ -8,32 +8,16 @@ import CommandPalette from './CommandPalette'
 import Logo from './Logo'
 import { useAuthStore } from '@/store/auth'
 
-const TITULOS: Record<string, string> = {
-  '/cotizacion': 'Nueva Cotización',
-  '/express': 'Express',
-  '/cotizacion-aiu': 'Cotización AIU',
-  '/dashboard': 'Dashboard',
-  '/historial': 'Historial',
-  '/inventario': 'Inventario',
-  '/retales': 'Retales',
-  '/nesting': 'Nesting',
-  '/parametros': 'Parámetros',
-  '/configuracion': 'Configuración',
-  '/admin': 'Panel Admin',
-}
-
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { usuario } = useAuthStore()
   const mainRef = useRef<HTMLElement>(null)
 
-  // Al cambiar de ruta: actualizar el título de la pestaña y mover el foco al
-  // contenido (accesibilidad de teclado / lector de pantalla). El <h1> por
-  // página lo absorbe el primitivo PageHeader en el Ciclo 2.
+  // Al cambiar de ruta: mover el foco al contenido (accesibilidad de teclado /
+  // lector de pantalla) y resetear el scroll. El `document.title` lo fija
+  // `<PageHeader>` en cada página (R6).
   useEffect(() => {
-    const seccion = TITULOS[location.pathname]
-    document.title = seccion ? `${seccion} · Costo360` : 'Costo360'
     mainRef.current?.focus({ preventScroll: true })
     mainRef.current?.scrollTo(0, 0)
   }, [location.pathname])
