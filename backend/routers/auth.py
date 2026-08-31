@@ -21,6 +21,7 @@ def me(usuario=Depends(get_current_user)):
         rol_codigo=usuario["rol_codigo"],
         nombre_completo=usuario["nombre_completo"],
         cargo_visible=usuario["cargo_visible"],
+        empresa_nombre=usuario["empresa_nombre"],
         puede_ver_dashboard=usuario["puede_ver_dashboard"],
         puede_usar_modo_bi_senior=usuario["puede_usar_modo_bi_senior"],
         puede_pedir_datos_agregados_agente=usuario["puede_pedir_datos_agregados_agente"],

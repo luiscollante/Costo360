@@ -71,9 +71,11 @@ _PERFIL_SQL = """
     select u.empresa_id, u.rol_codigo, u.nombre_completo, u.cargo_visible, u.activo,
            r.puede_ver_dashboard, r.puede_usar_modo_bi_senior,
            r.puede_pedir_datos_agregados_agente, r.puede_gestionar_usuarios,
-           sa.device_actual ->> 'id' as device_actual_id, sa.estado as sesion_estado
+           sa.device_actual ->> 'id' as device_actual_id, sa.estado as sesion_estado,
+           e.nombre as empresa_nombre
     from public.usuarios u
     join public.roles_catalogo r on r.codigo = u.rol_codigo
+    join public.empresas e on e.id = u.empresa_id
     left join public.sesion_activa sa on sa.usuario_id = u.id
     where u.id = %s
 """
@@ -128,4 +130,5 @@ def get_current_user(authorization: str | None = Header(None)):
         # Sesión única (Regla 5) — el dispositivo que hoy tiene la sesión, y su estado.
         "_session_device_id": row[9],
         "_session_estado": row[10],
+        "empresa_nombre": row[11],
     }

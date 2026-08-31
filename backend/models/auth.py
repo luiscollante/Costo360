@@ -8,6 +8,7 @@ class UsuarioOut(BaseModel):
     rol_codigo: str         # 'admin' | 'gerencia' | 'operativo'
     nombre_completo: str
     cargo_visible: str | None = None
+    empresa_nombre: str | None = None
     # Capacidades del catálogo de roles (roles_catalogo)
     puede_ver_dashboard: bool
     puede_usar_modo_bi_senior: bool
