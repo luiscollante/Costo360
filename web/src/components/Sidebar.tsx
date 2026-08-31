@@ -17,7 +17,6 @@ import {
   HardHat,
   type LucideIcon,
 } from 'lucide-react'
-import { useTheme } from '../hooks/useTheme'
 
 interface NavItem { to: string; label: string; Icon: LucideIcon }
 
@@ -57,7 +56,6 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
 export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { usuario, clearSession } = useAuthStore()
   const navigate = useNavigate()
-  const { theme } = useTheme()
 
   async function handleLogout() {
     try { await logoutSession() } catch { /* ignorar */ }
@@ -66,34 +64,23 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     navigate('/login')
   }
 
-  const sidebarBg = theme === 'light'
-    ? '#F0F4F8'
-    : 'linear-gradient(180deg, #07100D 0%, #050B09 50%, #07100D 100%)'
-
-  const inactiveNav = theme === 'light'
-    ? 'text-brand-muted hover:text-brand-text hover:bg-brand-primary/[0.06]'
-    : 'text-brand-muted hover:text-brand-text hover:bg-brand-surface'
-
-  const activeNav = theme === 'light'
-    ? 'bg-brand-primary/[0.10] text-brand-primary font-medium'
-    : 'bg-brand-primary/15 text-brand-text font-medium'
+  // Barra lateral esmeralda-glass — texto en colores SÓLIDOS (sin alfa). Ver R1/R4.
+  const inactiveNav = 'text-[#F5E8D2] hover:bg-white/10'
+  const activeNav = 'text-white font-medium'
 
   return (
-    <aside
-      className="w-56 shrink-0 flex flex-col h-screen sticky top-0 border-r border-brand-border/80 relative"
-      style={{ background: sidebarBg, backdropFilter: theme === 'dark' ? 'blur(20px)' : 'none' }}
-    >
+    <aside className="glass-emerald w-56 shrink-0 flex flex-col h-screen sticky top-0 relative">
       {/* Logo */}
-      <div className="px-4 py-2.5 border-b border-brand-border flex flex-col items-center gap-0.5 shrink-0">
+      <div className="px-4 py-2.5 border-b border-white/15 flex flex-col items-center gap-0.5 shrink-0">
         <img src="/logo.png" alt="Costo360" className="w-[128px] h-auto object-contain" />
-        <p className="text-[8px] text-brand-muted leading-none">Sistema de Cotizaciones</p>
+        <p className="text-[10px] text-[#E4D8BF] leading-none">Sistema de Cotizaciones</p>
       </div>
 
       {/* Nav */}
       <nav className="flex-1 py-2.5 space-y-2 px-3 relative overflow-y-auto min-h-0">
         {NAV_GROUPS.map((group) => (
           <div key={group.label}>
-            <p className="px-3 mb-0.5 text-[9px] font-semibold uppercase tracking-widest text-brand-muted/45">
+            <p className="px-3 mb-0.5 text-[11px] font-semibold uppercase tracking-widest text-[#E4D8BF]">
               {group.label}
             </p>
             <div className="space-y-0.5">
@@ -114,13 +101,12 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                         <>
                           <motion.span
                             layoutId="nav-active"
-                            className="absolute left-0 top-1 bottom-1 w-0.5 bg-brand-primary rounded-full"
-                            style={{ boxShadow: '0 0 8px #1F6F54, 0 0 16px #1F6F5460' }}
+                            className="absolute left-0 top-1 bottom-1 w-0.5 bg-brand-gold rounded-full"
                             transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                           />
                           <motion.span
                             layoutId="nav-active-bg"
-                            className="absolute inset-0 rounded-lg bg-brand-primary/[0.08]"
+                            className="absolute inset-0 rounded-lg bg-white/[0.14]"
                             transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                           />
                         </>
@@ -139,9 +125,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             to="/admin"
             className={({ isActive }) =>
               `relative flex items-center gap-3 px-3 py-1.5 rounded-lg text-[13px] leading-tight transition-colors ${
-                isActive
-                  ? 'bg-purple-500/15 text-purple-300 font-medium'
-                  : inactiveNav
+                isActive ? activeNav : inactiveNav
               }`
             }
           >
@@ -150,7 +134,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                 {isActive && (
                   <motion.span
                     layoutId="nav-active"
-                    className="absolute left-0 top-1 bottom-1 w-0.5 bg-brand-primary rounded-full"
+                    className="absolute left-0 top-1 bottom-1 w-0.5 bg-brand-gold rounded-full"
                     transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                   />
                 )}
@@ -163,12 +147,12 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       {/* Usuario */}
-      <div className="px-4 py-2.5 border-t border-brand-border shrink-0">
-        <p className="text-xs text-brand-text font-medium truncate">{usuario?.nombre_completo}</p>
-        <p className="text-[10px] text-brand-muted capitalize">{usuario?.cargo_visible || usuario?.rol_codigo}</p>
+      <div className="px-4 py-2.5 border-t border-white/15 shrink-0">
+        <p className="text-xs text-white font-medium truncate">{usuario?.nombre_completo}</p>
+        <p className="text-[10px] text-[#E4D8BF] capitalize">{usuario?.cargo_visible || usuario?.rol_codigo}</p>
         <button
           onClick={handleLogout}
-          className="mt-1.5 text-xs text-brand-muted hover:text-red-400 transition-colors cursor-pointer"
+          className="mt-1.5 text-xs text-[#F5E8D2] hover:text-white transition-colors cursor-pointer"
         >
           Cerrar sesión
         </button>

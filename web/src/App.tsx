@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { MotionConfig } from 'framer-motion'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabaseClient'
 import { getDeviceId } from '@/lib/deviceId'
@@ -68,6 +69,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <MotionConfig reducedMotion="user">
       <ToastHost />
       <AuthGate>
         <BrowserRouter>
@@ -90,6 +92,7 @@ export default function App() {
           </Routes>
         </BrowserRouter>
       </AuthGate>
+      </MotionConfig>
     </QueryClientProvider>
   )
 }

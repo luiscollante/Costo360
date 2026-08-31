@@ -6,23 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Costo360</title>
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#07100D" />
+    <meta name="theme-color" content="#156850" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Costo360" />
-    <link rel="apple-touch-icon" href="/favicon.png" />
-    <script>
-      (function () {
-        try {
-          var s = localStorage.getItem('cm-theme');
-          var d = s || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-          document.documentElement.setAttribute('data-theme', d);
-          var m = document.querySelector('meta[name="theme-color"]');
-          if (m) m.setAttribute('content', d === 'light' ? '#FFFFFF' : '#07100D');
-        } catch (e) {}
-      })();
-    </script>
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   </head>
   <body>
     <div id="root"></div>
