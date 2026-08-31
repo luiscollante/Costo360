@@ -66,14 +66,14 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-brand-bg p-4">
       <div className="glass rounded-2xl border border-brand-border p-8 w-full max-w-sm">
         <Logo variant="dark" className="w-[170px] h-auto mx-auto mb-6" />
-        <h1 className="text-base font-bold text-brand-text text-center mb-1">Define tu contraseña</h1>
-        <p className="text-xs text-brand-muted text-center mb-6">
+        <h1 className="text-lg font-bold text-brand-text-dark text-center mb-1">Define tu contraseña</h1>
+        <p className="text-xs text-brand-text-secondary text-center mb-6">
           Elige una contraseña para entrar a Costo360.
         </p>
 
         {sinEnlace && !listo ? (
           <div className="text-center py-4">
-            <p className="text-sm text-brand-muted mb-4">
+            <p className="text-sm text-brand-text-secondary mb-4">
               El enlace no es válido o expiró. Pide uno nuevo desde «¿Olvidaste tu contraseña?».
             </p>
             <button
@@ -84,13 +84,14 @@ export default function ResetPasswordPage() {
             </button>
           </div>
         ) : !listo ? (
-          <p className="text-sm text-brand-muted text-center py-6">Validando el enlace…</p>
+          <p className="text-sm text-brand-text-secondary text-center py-6">Validando el enlace…</p>
         ) : (
           <form onSubmit={submit} className="space-y-4">
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              aria-label="Nueva contraseña"
               placeholder="Nueva contraseña"
               autoComplete="new-password"
               className="w-full bg-brand-input/80 border border-brand-border rounded-lg px-4 py-2.5 text-brand-text text-sm outline-none focus:border-brand-primary transition-all"
@@ -100,12 +101,13 @@ export default function ResetPasswordPage() {
               type="password"
               value={password2}
               onChange={(e) => setPassword2(e.target.value)}
+              aria-label="Repite la contraseña"
               placeholder="Repite la contraseña"
               autoComplete="new-password"
               className="w-full bg-brand-input/80 border border-brand-border rounded-lg px-4 py-2.5 text-brand-text text-sm outline-none focus:border-brand-primary transition-all"
               required
             />
-            {error && <p role="alert" className="text-red-400 text-xs text-center">{error}</p>}
+            {error && <p role="alert" className="text-brand-danger text-xs text-center">{error}</p>}
             <button
               type="submit"
               disabled={loading}
