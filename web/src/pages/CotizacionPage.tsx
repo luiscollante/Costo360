@@ -956,6 +956,7 @@ function PlacaCard({
                   <MaterialCombobox
                     categoria={placa.cat}
                     value={placa.ref}
+                    precioM2Actual={placa.precio_m2}
                     onChange={(newRef, precio, dims) => {
                       onUpdate('ref', newRef)
                       if (precio > 0) onUpdate('precio_m2', precio)
@@ -964,7 +965,7 @@ function PlacaCard({
                         onUpdate('ancho', dims.ancho)
                       }
                     }}
-                    placeholder="Buscar en catálogo…"
+                    placeholder="Buscar en el catálogo…"
                   />
                 </div>
                 <div>

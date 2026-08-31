@@ -586,6 +586,7 @@ export default function CotizacionExpressPage() {
                   <MaterialCombobox
                     categoria={cat}
                     value={ref}
+                    precioM2Actual={parseFloat(precioM2) || 0}
                     onChange={(newRef, precio, dims) => {
                       setRef(newRef)
                       if (precio > 0) setPrecioM2(String(precio))

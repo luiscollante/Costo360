@@ -1,27 +1,41 @@
-import { useState, useRef, useEffect, useId } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { ChevronDown, Search, X, PenLine, ArrowLeft } from 'lucide-react'
-import { getMaterialesPorCategoria, type MaterialCatalogo } from '@/api/materiales'
+import { useMemo, useRef, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ChevronDown, Search, X, PenLine, ArrowLeft, BookmarkPlus, Check } from 'lucide-react'
+import {
+  getMaterialesPorCategoria,
+  crearMaterial,
+  type MaterialCatalogo,
+} from '@/api/materiales'
 import { formatCOP } from '@/lib/utils'
+import { showToast } from '@/lib/toast'
+import { Dialog } from '@/components/ui/Dialog'
 
 interface Props {
   categoria: string
   value: string
   onChange: (ref: string, precioM2: number, dims?: { largo: number; ancho: number }) => void
   placeholder?: string
+  /** Precio/m² que el usuario ya escribió — habilita "guardar en mi catálogo". */
+  precioM2Actual?: number
 }
 
-const DISCLAIMER = 'Precios de lista 2024. Confirmar precios actuales y disponibilidad con proveedores antes de cotizar.'
+const DISCLAIMER =
+  'Precios de lista 2024. Confirma precio y disponibilidad con el proveedor antes de cotizar.'
 
-export default function MaterialCombobox({ categoria, value, onChange, placeholder }: Props) {
-  const id = useId()
+export default function MaterialCombobox({
+  categoria,
+  value,
+  onChange,
+  placeholder,
+  precioM2Actual = 0,
+}: Props) {
+  const qc = useQueryClient()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [isCustom, setIsCustom] = useState(false)
   const [customValue, setCustomValue] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [confirmGuardar, setConfirmGuardar] = useState(false)
   const customInputRef = useRef<HTMLInputElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
 
   const { data: materiales = [], isLoading } = useQuery<MaterialCatalogo[]>({
     queryKey: ['materiales', categoria],
@@ -29,33 +43,33 @@ export default function MaterialCombobox({ categoria, value, onChange, placehold
     staleTime: 1000 * 60 * 30,
   })
 
-  const filtered = query.trim()
-    ? materiales.filter((m) => m.referencia.toLowerCase().includes(query.toLowerCase()))
-    : materiales
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return q ? materiales.filter((m) => m.referencia.toLowerCase().includes(q)) : materiales
+  }, [materiales, query])
 
-  useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false)
-        setQuery('')
-      }
-    }
-    document.addEventListener('mousedown', onClickOutside)
-    return () => document.removeEventListener('mousedown', onClickOutside)
-  }, [])
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') { setOpen(false); setQuery('') }
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [])
+  const guardarMut = useMutation({
+    mutationFn: () =>
+      crearMaterial({ categoria, referencia: customValue.trim(), precio_m2: precioM2Actual }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['materiales', categoria] })
+      showToast('success', `«${customValue.trim()}» se agregó a tu catálogo`)
+      setConfirmGuardar(false)
+      setIsCustom(false)
+      onChange(customValue.trim(), precioM2Actual)
+      setCustomValue('')
+    },
+    onError: () => {
+      setConfirmGuardar(false)
+      showToast('error', 'No se pudo guardar el material. Intenta de nuevo.')
+    },
+  })
 
   function handleSelect(m: MaterialCatalogo) {
-    const dims = m.ancho_lamina_cm && m.alto_lamina_cm
-      ? { largo: m.alto_lamina_cm / 100, ancho: m.ancho_lamina_cm / 100 }
-      : undefined
+    const dims =
+      m.ancho_lamina_cm && m.alto_lamina_cm
+        ? { largo: m.alto_lamina_cm / 100, ancho: m.ancho_lamina_cm / 100 }
+        : undefined
     onChange(m.referencia, m.precio_m2, dims)
     setIsCustom(false)
     setCustomValue('')
@@ -74,7 +88,7 @@ export default function MaterialCombobox({ categoria, value, onChange, placehold
 
   function handleCustomChange(val: string) {
     setCustomValue(val)
-    onChange(val, 0, undefined)
+    onChange(val, precioM2Actual > 0 ? precioM2Actual : 0, undefined)
   }
 
   function handleBackToCatalog() {
@@ -83,150 +97,178 @@ export default function MaterialCombobox({ categoria, value, onChange, placehold
     onChange('', 0, undefined)
   }
 
-  function handleClear(e: React.MouseEvent) {
-    e.stopPropagation()
-    setIsCustom(false)
+  function handleClearCustom() {
     setCustomValue('')
     onChange('', 0, undefined)
-    setQuery('')
   }
 
-  // Modo texto libre (Otro)
+  const puedeGuardar = customValue.trim().length > 0 && precioM2Actual > 0
+
+  // ── Modo texto libre ("Otro") ─────────────────────────────────────────────
   if (isCustom) {
     return (
       <div className="space-y-1.5">
         <div className="relative flex items-center">
-          <PenLine size={13} className="absolute left-3 text-brand-gold/60 pointer-events-none" />
+          <PenLine size={13} className="pointer-events-none absolute left-3 text-brand-gold" aria-hidden="true" />
           <input
             ref={customInputRef}
             type="text"
             value={customValue}
             onChange={(e) => handleCustomChange(e.target.value)}
-            placeholder="Escribe el nombre de la referencia…"
-            className="w-full bg-brand-input border border-brand-gold/40 rounded px-3 py-2.5 pl-8 text-sm text-brand-text placeholder-brand-muted/40 outline-none focus:border-brand-gold focus:shadow-[0_0_0_1px_#C9A22730]"
+            placeholder="Escribe el nombre del material…"
+            aria-label="Nombre del material"
+            className="w-full rounded-lg border border-brand-gold/50 bg-brand-input px-3 py-2.5 pl-8 text-sm text-brand-text placeholder:text-brand-text-secondary outline-none focus-visible:border-brand-gold"
           />
           {customValue && (
-            <button type="button" onClick={handleClear} className="absolute right-3 text-brand-muted/40 hover:text-red-400">
+            <button type="button" onClick={handleClearCustom} aria-label="Limpiar"
+              className="absolute right-3 text-brand-text-secondary hover:text-brand-danger cursor-pointer">
               <X size={13} />
             </button>
           )}
         </div>
-        <button
-          type="button"
-          onClick={handleBackToCatalog}
-          className="flex items-center gap-1 text-[11px] text-brand-muted/50 hover:text-brand-primary transition-colors"
+
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={handleBackToCatalog}
+            className="flex items-center gap-1 text-[11px] text-brand-text-secondary hover:text-brand-primary transition-colors cursor-pointer"
+          >
+            <ArrowLeft size={11} aria-hidden="true" />
+            Volver al catálogo
+          </button>
+
+          {puedeGuardar && (
+            <button
+              type="button"
+              onClick={() => setConfirmGuardar(true)}
+              className="flex items-center gap-1 text-[11px] font-semibold text-brand-primary hover:underline cursor-pointer"
+            >
+              <BookmarkPlus size={12} aria-hidden="true" />
+              Guardar en mi catálogo
+            </button>
+          )}
+        </div>
+
+        <Dialog
+          open={confirmGuardar}
+          onClose={() => setConfirmGuardar(false)}
+          role="alertdialog"
+          title="Guardar en tu catálogo"
         >
-          <ArrowLeft size={11} />
-          Volver al catálogo
-        </button>
+          <p className="mb-5 text-sm text-brand-text-secondary">
+            ¿Guardar <span className="font-semibold text-brand-text-dark">«{customValue.trim()}»</span> a{' '}
+            <span className="font-mono font-semibold text-brand-text-dark">{formatCOP(precioM2Actual)}/m²</span>{' '}
+            para tenerlo disponible en próximas cotizaciones?
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setConfirmGuardar(false)}
+              className="flex-1 rounded-lg border border-brand-border py-2.5 text-sm text-brand-text-secondary hover:text-brand-text transition-colors cursor-pointer"
+            >
+              Ahora no
+            </button>
+            <button
+              type="button"
+              onClick={() => guardarMut.mutate()}
+              disabled={guardarMut.isPending}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand-primary py-2.5 text-sm font-semibold text-white hover:bg-brand-primary-light transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              <Check size={14} aria-hidden="true" />
+              {guardarMut.isPending ? 'Guardando…' : 'Sí, guardar'}
+            </button>
+          </div>
+        </Dialog>
       </div>
     )
   }
 
+  // ── Trigger + diálogo de selección ────────────────────────────────────────
   return (
-    <div ref={containerRef} className="relative">
-      {/* Trigger */}
-      <div
-        role="combobox"
-        aria-expanded={open}
-        aria-haspopup="listbox"
-        aria-controls={`${id}-list`}
-        onClick={() => { setOpen(true); setTimeout(() => inputRef.current?.focus(), 10) }}
-        className={[
-          'w-full flex items-center gap-2 bg-brand-input border rounded px-3 py-2.5 cursor-pointer transition-all duration-200',
-          open
-            ? 'border-brand-primary shadow-[0_0_0_1px_#1F6F5440,0_0_12px_#1F6F5418]'
-            : 'border-brand-border hover:border-brand-border/80',
-        ].join(' ')}
+    <>
+      <button
+        type="button"
+        onClick={() => { setOpen(true); setQuery('') }}
+        aria-haspopup="dialog"
+        className="flex w-full items-center gap-2 rounded-lg border border-brand-border bg-brand-input px-3 py-2.5 text-left transition-colors hover:border-brand-primary/40 cursor-pointer"
       >
-        {open ? (
-          <>
-            <Search size={13} className="text-brand-muted/60 shrink-0" />
-            <input
-              ref={inputRef}
-              id={id}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={`Buscar en ${categoria}…`}
-              className="flex-1 bg-transparent text-sm text-brand-text placeholder-brand-muted/40 outline-none min-w-0"
-              aria-autocomplete="list"
-              aria-controls={`${id}-list`}
-            />
-          </>
-        ) : (
-          <>
-            <span className={`flex-1 text-sm truncate ${value ? 'text-brand-text' : 'text-brand-muted/40'}`}>
-              {value || placeholder || `Seleccionar ${categoria}…`}
-            </span>
-            {value && (
-              <button type="button" onClick={handleClear} className="text-brand-muted/40 hover:text-red-400 transition-colors" aria-label="Limpiar">
-                <X size={13} />
-              </button>
-            )}
-            <ChevronDown size={14} className={`text-brand-muted/50 transition-transform duration-200 shrink-0 ${open ? 'rotate-180' : ''}`} />
-          </>
+        <span className={`flex-1 truncate text-sm ${value ? 'text-brand-text' : 'text-brand-text-secondary'}`}>
+          {value || placeholder || `Seleccionar ${categoria}…`}
+        </span>
+        {value && (
+          <span
+            role="button"
+            tabIndex={0}
+            aria-label="Limpiar"
+            onClick={(e) => { e.stopPropagation(); onChange('', 0, undefined) }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onChange('', 0, undefined) } }}
+            className="text-brand-text-secondary hover:text-brand-danger cursor-pointer"
+          >
+            <X size={13} />
+          </span>
         )}
-      </div>
+        <ChevronDown size={14} className="shrink-0 text-brand-text-tertiary" aria-hidden="true" />
+      </button>
 
-      {/* Dropdown */}
-      {open && (
-        <div
-          id={`${id}-list`}
-          role="listbox"
-          aria-label={`Materiales de ${categoria}`}
-          className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-xl border border-brand-border/80 bg-brand-input-deep shadow-[0_8px_32px_rgba(0,0,0,0.5),0_0_0_1px_rgba(30,127,255,0.08)] overflow-hidden flex flex-col material-dropdown"
-          style={{ maxHeight: '300px' }}
-        >
-          {/* Scrollable list */}
-          <div className="overflow-y-auto flex-1">
-            {isLoading ? (
-              <div className="px-4 py-8 text-center text-xs text-brand-muted/50">Cargando catálogo…</div>
-            ) : (
-              <ul>
-                {filtered.map((m) => (
-                  <li key={m.id}>
-                    <button
-                      type="button"
-                      role="option"
-                      aria-selected={value === m.referencia}
-                      onClick={() => handleSelect(m)}
-                      className={[
-                        'w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors duration-150',
-                        value === m.referencia
-                          ? 'bg-brand-primary/15 text-brand-text'
-                          : 'hover:bg-brand-primary/8 text-brand-text',
-                      ].join(' ')}
-                    >
-                      <span className="text-sm font-medium truncate mr-3">{m.referencia}</span>
-                      <span className="text-xs font-mono text-brand-gold-light shrink-0">
-                        {formatCOP(m.precio_m2)}/m²
-                      </span>
-                    </button>
-                  </li>
-                ))}
-                {/* Opción Otro */}
-                <li>
-                  <button
-                    type="button"
-                    onClick={handleSelectOtro}
-                    className="w-full flex items-center gap-2 px-4 py-2.5 text-left border-t border-brand-border/30 hover:bg-brand-gold/8 text-brand-muted/70 hover:text-brand-gold transition-colors duration-150"
-                  >
-                    <PenLine size={13} />
-                    <span className="text-sm">Otro (escribir manualmente)</span>
-                  </button>
-                </li>
-              </ul>
-            )}
-          </div>
-
-          {/* Footer con aviso de precios */}
-          <div className="px-4 py-2.5 border-t border-brand-border/40 bg-brand-bg/80 shrink-0">
-            <p className="text-[10px] text-brand-muted/40 leading-relaxed">
-              {filtered.length} {filtered.length === 1 ? 'material' : 'materiales'} · {DISCLAIMER}
-            </p>
-          </div>
+      <Dialog open={open} onClose={() => { setOpen(false); setQuery('') }} title={`Elegir material — ${categoria}`}>
+        <div className="relative mb-3">
+          <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-text-tertiary" aria-hidden="true" />
+          <input
+            type="text"
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={`Buscar en ${categoria}…`}
+            aria-label={`Buscar material de ${categoria}`}
+            className="w-full rounded-lg border border-brand-border bg-brand-input py-2.5 pl-9 pr-3 text-sm text-brand-text placeholder:text-brand-text-secondary outline-none focus-visible:border-brand-primary"
+          />
         </div>
-      )}
-    </div>
+
+        <ul className="max-h-[45vh] overflow-y-auto rounded-lg border border-brand-border divide-y divide-brand-border">
+          {isLoading ? (
+            <li className="px-4 py-8 text-center text-xs text-brand-text-secondary" role="status">Cargando catálogo…</li>
+          ) : filtered.length === 0 ? (
+            <li className="px-4 py-8 text-center text-xs text-brand-text-secondary">Sin resultados. Usa «Otro» abajo.</li>
+          ) : (
+            filtered.map((m) => (
+              <li key={m.id}>
+                <button
+                  type="button"
+                  onClick={() => handleSelect(m)}
+                  className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors hover:bg-brand-primary/[0.06] ${
+                    value === m.referencia ? 'bg-brand-primary/10' : ''
+                  }`}
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="truncate text-sm font-medium text-brand-text-dark">{m.referencia}</span>
+                    {m.es_propio && (
+                      <span className="shrink-0 rounded bg-brand-gold/15 px-1.5 py-0.5 text-[9px] font-semibold text-brand-warning-text">
+                        de tu taller
+                      </span>
+                    )}
+                  </span>
+                  <span className="shrink-0 font-mono text-xs text-brand-text-secondary num">
+                    {formatCOP(m.precio_m2)}/m²
+                  </span>
+                </button>
+              </li>
+            ))
+          )}
+        </ul>
+
+        <button
+          type="button"
+          onClick={handleSelectOtro}
+          className="mt-3 flex w-full items-center gap-2 rounded-lg border border-dashed border-brand-gold/50 bg-brand-gold/[0.05] px-4 py-2.5 text-left text-sm font-semibold text-brand-warning-text hover:bg-brand-gold/[0.1] transition-colors cursor-pointer"
+        >
+          <PenLine size={14} aria-hidden="true" />
+          Otro (escribir el nombre a mano)
+        </button>
+
+        <p className="mt-3 text-[10px] leading-relaxed text-brand-text-tertiary">
+          {filtered.length} {filtered.length === 1 ? 'material' : 'materiales'} · {DISCLAIMER}
+        </p>
+      </Dialog>
+    </>
   )
 }

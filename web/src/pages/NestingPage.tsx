@@ -173,7 +173,7 @@ function MetricCard({
   const s: Record<CardColor, { border: string; text: string; line: string; bg: string }> = {
     blue:    { border: 'border-brand-primary/25',  text: 'text-brand-primary', line: 'via-brand-primary/60',   bg: 'bg-brand-primary/[0.04] group-hover:bg-brand-primary/[0.07]'   },
     gold:    { border: 'border-brand-gold/25',  text: 'text-brand-gold-light', line: 'via-brand-gold/60',   bg: 'bg-brand-gold/[0.04] group-hover:bg-brand-gold/[0.07]'   },
-    emerald: { border: 'border-emerald-500/25', text: 'text-brand-primary',      line: 'via-emerald-500/60',  bg: 'bg-brand-primary/[0.04] group-hover:bg-brand-primary/[0.07]' },
+    emerald: { border: 'border-brand-primary/25', text: 'text-brand-primary',      line: 'via-brand-primary/60',  bg: 'bg-brand-primary/[0.04] group-hover:bg-brand-primary/[0.07]' },
     default: { border: 'border-brand-border/60',text: 'text-brand-text',       line: 'via-brand-border/60', bg: '' },
   }
   const c = s[color]
@@ -203,6 +203,7 @@ function FormPanel({
   setCategoria,
   materialRef,
   setMaterialRef,
+  materialPrecioM2,
   setMaterialPrecioM2,
 }: {
   laminaLargo: string
@@ -217,6 +218,7 @@ function FormPanel({
   setCategoria: (v: string) => void
   materialRef: string
   setMaterialRef: (v: string) => void
+  materialPrecioM2: number
   setMaterialPrecioM2: (v: number) => void
 }) {
   const largo = parseFloat(laminaLargo) || 0
@@ -275,6 +277,7 @@ function FormPanel({
             <MaterialCombobox
               categoria={categoria}
               value={materialRef}
+              precioM2Actual={materialPrecioM2}
               onChange={(ref, precioM2) => { setMaterialRef(ref); setMaterialPrecioM2(precioM2) }}
             />
           </div>
@@ -820,6 +823,7 @@ export default function NestingPage() {
             setCategoria={setCategoria}
             materialRef={materialRef}
             setMaterialRef={setMaterialRef}
+            materialPrecioM2={materialPrecioM2}
             setMaterialPrecioM2={setMaterialPrecioM2}
           />
 
