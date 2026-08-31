@@ -5,6 +5,7 @@ import { Menu, X, Search } from 'lucide-react'
 import Sidebar from './Sidebar'
 import AgenteChat from './AgenteChat'
 import CommandPalette from './CommandPalette'
+import Logo from './Logo'
 import { useAuthStore } from '@/store/auth'
 
 const TITULOS: Record<string, string> = {
@@ -55,7 +56,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         >
           <Menu size={18} />
         </button>
-        <img src="/logo.png" alt="Costo360" className="h-7 w-auto object-contain flex-1" />
+        <Logo variant="dark" className="text-lg ml-1" />
       </header>
 
       {/* Mobile overlay */}

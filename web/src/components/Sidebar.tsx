@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useAuthStore } from '@/store/auth'
 import { supabase } from '@/lib/supabaseClient'
 import { logoutSession } from '@/api/session'
+import Logo from './Logo'
 import {
   LayoutDashboard,
   PlusCircle,
@@ -72,7 +73,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     <aside className="glass-emerald w-56 shrink-0 flex flex-col h-screen sticky top-0 relative">
       {/* Logo */}
       <div className="px-4 py-2.5 border-b border-white/15 flex flex-col items-center gap-0.5 shrink-0">
-        <img src="/logo.png" alt="Costo360" className="w-[128px] h-auto object-contain" />
+        <Logo variant="light" className="text-2xl" />
         <p className="text-[10px] text-[#E4D8BF] leading-none">Sistema de Cotizaciones</p>
       </div>
 

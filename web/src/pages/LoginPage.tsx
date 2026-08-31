@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { Eye, EyeOff } from 'lucide-react'
+import Logo from '@/components/Logo'
 
 type Modo = 'login' | 'recuperar'
 
@@ -72,7 +73,7 @@ export default function LoginPage() {
 
           <div className="p-10">
             <div className="text-center mb-8">
-              <img src="/logo.png" alt="Costo360" className="w-[220px] h-auto mx-auto mb-3 object-contain" />
+              <Logo variant="dark" className="text-3xl mb-3" />
               <div className="h-px bg-gradient-to-r from-transparent via-brand-border to-transparent mb-3" />
               <p className="text-[10px] tracking-[0.22em] uppercase text-brand-muted/60 font-medium">
                 Sistema de cotizaciones · piedra natural
