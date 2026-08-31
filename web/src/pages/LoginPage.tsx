@@ -74,15 +74,16 @@ export default function LoginPage() {
           <div className="p-10">
             <div className="text-center mb-8">
               <Logo variant="dark" className="w-[200px] h-auto mx-auto mb-3" />
+              <h1 className="sr-only">Costo360 — iniciar sesión</h1>
               <div className="h-px bg-gradient-to-r from-transparent via-brand-border to-transparent mb-3" />
-              <p className="text-[10px] tracking-[0.22em] uppercase text-brand-muted/60 font-medium">
+              <p className="text-[11px] tracking-[0.22em] uppercase text-brand-text-secondary font-medium">
                 Sistema de cotizaciones · piedra natural
               </p>
             </div>
 
             <form onSubmit={modo === 'login' ? handleLogin : handleRecuperar} className="space-y-4">
               <div>
-                <label htmlFor="email" className="block text-[10px] font-semibold tracking-[0.15em] uppercase text-brand-muted mb-1.5">
+                <label htmlFor="email" className="block text-[11px] font-semibold tracking-[0.15em] uppercase text-brand-text-secondary mb-1.5">
                   Correo
                 </label>
                 <input
@@ -98,7 +99,7 @@ export default function LoginPage() {
 
               {modo === 'login' && (
                 <div>
-                  <label htmlFor="password" className="block text-[10px] font-semibold tracking-[0.15em] uppercase text-brand-muted mb-1.5">
+                  <label htmlFor="password" className="block text-[11px] font-semibold tracking-[0.15em] uppercase text-brand-text-secondary mb-1.5">
                     Contraseña
                   </label>
                   <div className="relative">
@@ -114,7 +115,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-brand-muted hover:text-brand-text transition-colors cursor-pointer"
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-brand-text-secondary hover:text-brand-text transition-colors cursor-pointer"
                       aria-label="Mostrar u ocultar contraseña"
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -123,7 +124,7 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {error && <p role="alert" className="text-red-400 text-xs text-center py-1">{error}</p>}
+              {error && <p role="alert" className="text-brand-danger text-xs text-center py-1">{error}</p>}
               {info && <p className="text-brand-primary text-xs text-center py-1">{info}</p>}
 
               <button
@@ -139,7 +140,7 @@ export default function LoginPage() {
               <>
                 <div className="my-4 flex items-center gap-3">
                   <div className="h-px flex-1 bg-brand-border/50" />
-                  <span className="text-[10px] text-brand-muted/50 uppercase tracking-widest">o</span>
+                  <span className="text-[10px] text-brand-text-secondary uppercase tracking-widest">o</span>
                   <div className="h-px flex-1 bg-brand-border/50" />
                 </div>
                 <button
@@ -160,7 +161,7 @@ export default function LoginPage() {
                   setInfo('')
                   setModo(modo === 'login' ? 'recuperar' : 'login')
                 }}
-                className="text-[11px] text-brand-muted hover:text-brand-text transition-colors cursor-pointer"
+                className="text-[11px] text-brand-text-secondary hover:text-brand-text transition-colors cursor-pointer"
               >
                 {modo === 'login' ? '¿Olvidaste tu contraseña?' : '← Volver a ingresar'}
               </button>
@@ -168,7 +169,7 @@ export default function LoginPage() {
           </div>
 
           <div className="px-10 pb-5 text-center">
-            <p className="text-[9px] text-brand-muted/30 tracking-widest uppercase">Costo360</p>
+            <p className="text-[9px] text-brand-text-secondary tracking-widest uppercase">Costo360</p>
           </div>
         </div>
       </div>
