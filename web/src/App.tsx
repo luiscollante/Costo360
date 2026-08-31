@@ -72,8 +72,12 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   // todavía carga (R7).
   if (status === 'authenticating') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-brand-bg">
-        <div className="w-8 h-8 border-2 border-brand-muted/30 border-t-brand-primary rounded-full animate-spin" />
+      <div role="status" className="min-h-screen flex items-center justify-center bg-brand-bg">
+        <span className="sr-only">Verificando la sesión…</span>
+        <div
+          className="w-8 h-8 border-2 border-brand-muted/30 border-t-brand-primary rounded-full animate-spin"
+          aria-hidden="true"
+        />
       </div>
     )
   }

@@ -302,6 +302,9 @@ AdminPage. Por cada una:
 - Números por `utils.ts` + `font-mono` + `tabular-nums`; `$` como prefijo, una sola convención.
 - Encabezado → `<PageHeader>`; jerarquía fija (página 28-30/700, sección 18-20/600); `<h1>`
   real en Login/Reset; `aria-current="step"` en el paso activo del wizard.
+- **Login:** mensaje propio para el estado `no-profile` (sesión de Supabase viva pero
+  `/api/auth/me` 403 — hoy rebota a `/login` sin explicación; deuda anotada en la Fase 5 del
+  Ciclo 1, no es regresión).
 - Formularios → `<Field>` + `<FormSection>` en Cotización Directa/AIU/Express y Configuración.
 - Historial → `<DataTable>`; filtros con `<DateRangeField>` + `<SelectField>` etiquetados;
   iconos de acción con `aria-label`, visibles en `:focus-within`.

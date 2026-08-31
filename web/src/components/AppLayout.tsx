@@ -34,7 +34,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const seccion = TITULOS[location.pathname]
     document.title = seccion ? `${seccion} · Costo360` : 'Costo360'
-    mainRef.current?.focus()
+    mainRef.current?.focus({ preventScroll: true })
+    mainRef.current?.scrollTo(0, 0)
   }, [location.pathname])
 
   return (
@@ -124,7 +125,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         >
           <Search size={14} />
           <span className="text-xs">Buscar</span>
-          <kbd className="text-[10px] px-1.5 py-0.5 rounded border border-brand-border/70 text-brand-text-tertiary font-mono">Ctrl K</kbd>
+          <kbd className="text-[10px] px-1.5 py-0.5 rounded border border-brand-border/70 text-brand-text-secondary font-mono">Ctrl K</kbd>
         </button>
       </header>
 

@@ -316,7 +316,7 @@ function Step0Items({
             type="button" onClick={addItem}
             className="w-full mt-3 py-3 rounded-lg border border-dashed border-brand-primary/40 bg-brand-primary/[0.04] text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.08] hover:border-brand-primary/60 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
           >
-            <PlusCircle size={16} />
+            <PlusCircle size={16} aria-hidden="true" />
             Agregar otro ítem
           </button>
 

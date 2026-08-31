@@ -67,7 +67,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   }
 
   // Barra lateral esmeralda-glass — texto en colores SÓLIDOS (sin alfa). Ver R1/R4.
-  const inactiveNav = 'text-[#F5E8D2] hover:bg-white/10'
+  const inactiveNav = 'text-[#F5E8D2] hover:bg-white/[0.08]'
   const activeNav = 'text-white font-medium'
 
   // Regla 6: el rol operativo no ve Dashboard / Parámetros / Configuración.
@@ -140,11 +140,18 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             {({ isActive }) => (
               <>
                 {isActive && (
-                  <motion.span
-                    layoutId="nav-active"
-                    className="absolute left-0 top-1 bottom-1 w-0.5 bg-brand-gold rounded-full"
-                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                  />
+                  <>
+                    <motion.span
+                      layoutId="nav-active"
+                      className="absolute left-0 top-1 bottom-1 w-0.5 bg-brand-gold rounded-full"
+                      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                    />
+                    <motion.span
+                      layoutId="nav-active-bg"
+                      className="absolute inset-0 rounded-lg bg-white/[0.14]"
+                      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                    />
+                  </>
                 )}
                 <ShieldCheck className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                 Panel Admin

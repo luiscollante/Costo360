@@ -1144,7 +1144,7 @@ function Step1Material({ dir }: { dir: number }) {
           onClick={addPlaca}
           className="w-full py-3 rounded-lg border border-dashed border-brand-primary/40 bg-brand-primary/[0.04] text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.08] hover:border-brand-primary/60 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
         >
-          <Plus size={16} />
+          <Plus size={16} aria-hidden="true" />
           Agregar otra placa
         </button>
 
@@ -1648,7 +1648,7 @@ function Step2Piezas({ dir }: { dir: number }) {
           onClick={addPieza}
           className="mt-4 w-full py-3 rounded-lg border border-dashed border-brand-primary/40 bg-brand-primary/[0.04] text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.08] hover:border-brand-primary/60 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
         >
-          <Plus size={16} />
+          <Plus size={16} aria-hidden="true" />
           {showTabs
             ? `Agregar pieza a ${placaActiva?.ref ? placaActiva.ref.slice(0, 20) : `Placa ${(placaActivaIdx >= 0 ? placaActivaIdx : 0) + 1}`}`
             : 'Agregar pieza'}

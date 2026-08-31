@@ -87,7 +87,7 @@ async function descargarBlob(
 
 export async function descargarPDF(id: number): Promise<void> {
   await descargarBlob(
-    () => api.get(`/api/cotizacion/${id}/pdf`, { responseType: 'blob' }),
+    () => api.get(`/api/cotizacion/${id}/pdf`, { responseType: 'blob', timeout: 60_000 }),
     `cotizacion-${id}.pdf`,
     'application/pdf'
   )
@@ -104,7 +104,7 @@ export async function descargarCuentaCobro(
       api.post(
         `/api/cotizacion/${id}/cuenta-cobro`,
         { nombre_pagador: nombrePagador, nit_pagador: nitPagador, numero_cc: numeroCc ?? '' },
-        { responseType: 'blob' }
+        { responseType: 'blob', timeout: 60_000 }
       ),
     `cuenta-cobro-${id}.pdf`,
     'application/pdf'
@@ -133,7 +133,7 @@ export async function guardarAIU(
 
 export async function descargarPDFAiu(id: number): Promise<void> {
   await descargarBlob(
-    () => api.get(`/api/cotizacion/${id}/aiu-pdf`, { responseType: 'blob' }),
+    () => api.get(`/api/cotizacion/${id}/aiu-pdf`, { responseType: 'blob', timeout: 60_000 }),
     `oferta-aiu-${id}.pdf`,
     'application/pdf'
   )

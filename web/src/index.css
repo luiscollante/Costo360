@@ -86,6 +86,11 @@ body::before {
   outline-offset: 2px;
 }
 
+/* Sobre la barra esmeralda, el outline verde no contrasta (1.1:1) — usar crema */
+.glass-emerald :focus-visible {
+  outline-color: var(--color-brand-bg);
+}
+
 /* Respeta la preferencia del sistema de reducir movimiento. El movimiento en JS
    se corta aparte con <MotionConfig reducedMotion="user"> y matchMedia en
    useCountUp (ver R2). */
