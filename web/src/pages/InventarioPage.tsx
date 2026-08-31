@@ -13,6 +13,8 @@ import {
 } from '@/api/inventario'
 import { formatCOP } from '@/lib/utils'
 import { Plus, Pencil, Trash2, X, Boxes, Minus, AlertTriangle } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Badge } from '@/components/ui/Badge'
 
 const CATEGORIAS = ['Mármol', 'Granito', 'Sinterizado', 'Quartzstone', 'Quartzita']
 
@@ -113,57 +115,49 @@ export default function InventarioPage() {
   const isPending = createMut.isPending || updateMut.isPending
   const bajoStockCount = data.filter((l) => l.cantidad_laminas <= l.stock_minimo).length
 
-  const inputClass = 'w-full px-3 py-2.5 rounded-lg bg-brand-input border border-brand-border text-sm text-brand-text placeholder:text-brand-muted/40 focus:outline-none focus:border-brand-primary focus:shadow-[0_0_0_1px_#1F6F5440,0_0_12px_#1F6F5418] transition-all'
+  const inputClass = 'w-full px-3 py-2.5 rounded-lg bg-brand-input border border-brand-border text-sm text-brand-text placeholder:text-brand-text-secondary focus:outline-none focus:border-brand-primary focus:shadow-[0_0_0_1px_#1F6F5440,0_0_12px_#1F6F5418] transition-all'
 
   return (
     <AppLayout>
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <span className="font-mono text-[10px] text-brand-muted/50 tracking-[0.2em]">INVENTARIO</span>
-              <div className="w-16 h-px bg-brand-border/40" />
-            </div>
-            <h1 className="text-2xl font-bold text-brand-text tracking-tight">Láminas en bodega</h1>
-            <p className="text-sm text-brand-muted mt-1">
-              Stock físico de láminas por material y referencia
+        <PageHeader
+          kicker="Taller"
+          title="Inventario"
+          subtitle="Stock físico de láminas por material y referencia"
+          actions={
+            <>
               {bajoStockCount > 0 && (
-                <span className="ml-2 inline-flex items-center gap-1 text-amber-400">
-                  <AlertTriangle className="w-3 h-3" />
+                <Badge tono="warning" icon={<AlertTriangle size={11} />}>
                   {bajoStockCount} en stock bajo
-                </span>
+                </Badge>
               )}
-            </p>
-          </div>
-          <button
-            onClick={openCreate}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-brand-primary text-white text-sm font-semibold whitespace-nowrap shadow-[0_0_24px_#1F6F5428,0_0_0_1px_#1F6F5440] hover:shadow-[0_0_40px_#1F6F5445,0_0_0_1px_#1F6F5470] transition-all duration-200 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Agregar lámina
-          </button>
-        </div>
+              <button
+                type="button"
+                onClick={openCreate}
+                className="flex items-center gap-2 whitespace-nowrap rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-primary-light cursor-pointer"
+              >
+                <Plus className="w-4 h-4" aria-hidden="true" />
+                Agregar lámina
+              </button>
+            </>
+          }
+        />
 
         {/* Table */}
         {isPendingQuery ? (
-          <div className="glass rounded-xl border border-brand-border p-12 text-center shadow-md transition-shadow hover:shadow-lg">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}
-              className="inline-block w-6 h-6 border-2 border-brand-muted/30 border-t-brand-primary rounded-full mb-3"
-            />
-            <p className="text-sm text-brand-muted">Cargando inventario…</p>
+          <div role="status" className="rounded-xl border border-brand-border bg-brand-surface p-12 text-center">
+            <span className="mx-auto mb-3 inline-block h-6 w-6 animate-spin rounded-full border-2 border-brand-border border-t-brand-primary" aria-hidden="true" />
+            <p className="text-sm text-brand-text-secondary">Cargando inventario…</p>
           </div>
         ) : isError ? (
-          <div className="glass rounded-xl border border-red-500/20 p-8 text-center shadow-md transition-shadow hover:shadow-lg">
-            <p className="text-red-400 text-sm">Error al cargar el inventario. Recarga la página.</p>
+          <div className="glass rounded-xl border border-brand-danger/30 p-8 text-center shadow-md transition-shadow hover:shadow-lg">
+            <p className="text-brand-danger text-sm">Error al cargar el inventario. Recarga la página.</p>
           </div>
         ) : data.length === 0 ? (
           <div className="glass rounded-xl border border-brand-border p-16 text-center shadow-md transition-shadow hover:shadow-lg">
-            <Boxes className="w-10 h-10 text-brand-muted/20 mx-auto mb-4" />
-            <p className="text-brand-muted text-sm mb-2">No hay láminas registradas</p>
-            <button onClick={openCreate} className="text-brand-muted hover:text-emerald-400 text-sm hover:underline cursor-pointer">
+            <Boxes className="w-10 h-10 text-brand-text-secondary mx-auto mb-4" />
+            <p className="text-brand-text-secondary text-sm mb-2">No hay láminas registradas</p>
+            <button onClick={openCreate} className="text-brand-text-secondary hover:text-brand-primary text-sm hover:underline cursor-pointer">
               Agregar la primera lámina →
             </button>
           </div>
@@ -177,7 +171,7 @@ export default function InventarioPage() {
               {/* Header — solo desktop */}
               <div className="hidden sm:grid grid-cols-[1.3fr_1.3fr_1fr_1fr_1fr_1fr_100px] px-4 py-3 border-b border-brand-border/60 bg-brand-surface/30 sm:min-w-[640px]">
                 {['Material', 'Referencia', 'Stock', 'Costo/lámina', 'Ubicación', 'Proveedor', ''].map((h) => (
-                  <span key={h} className="text-[9px] tracking-[0.15em] uppercase text-brand-muted/50 font-semibold">{h}</span>
+                  <span key={h} className="text-[9px] tracking-[0.15em] uppercase text-brand-text-secondary font-semibold">{h}</span>
                 ))}
               </div>
 
@@ -187,23 +181,23 @@ export default function InventarioPage() {
                   const acciones = (
                     <div className="flex items-center gap-0.5">
                       <button onClick={() => openEdit(l)} title="Editar"
-                        className="w-9 h-9 flex items-center justify-center rounded-lg text-brand-muted hover:text-brand-text hover:bg-brand-surface/60 transition-colors cursor-pointer">
+                        className="w-9 h-9 flex items-center justify-center rounded-lg text-brand-text-secondary hover:text-brand-text hover:bg-brand-surface/60 transition-colors cursor-pointer">
                         <Pencil className="w-4 h-4" />
                       </button>
                       {deleteId === l.id ? (
                         <div className="flex items-center gap-1">
                           <button onClick={() => deleteMut.mutate(l.id)} disabled={deleteMut.isPending}
-                            className="px-2 py-1 rounded text-[10px] bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors cursor-pointer disabled:opacity-60">
+                            className="px-2 py-1 rounded text-[10px] bg-red-500/20 text-brand-danger border border-brand-danger/30 hover:bg-red-500/30 transition-colors cursor-pointer disabled:opacity-60">
                             {deleteMut.isPending ? '…' : 'Confirmar'}
                           </button>
                           <button onClick={() => setDeleteId(null)}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg text-brand-muted cursor-pointer">
+                            className="w-8 h-8 flex items-center justify-center rounded-lg text-brand-text-secondary cursor-pointer">
                             <X className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       ) : (
                         <button onClick={() => setDeleteId(l.id)} title="Eliminar"
-                          className="w-9 h-9 flex items-center justify-center rounded-lg text-brand-muted hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer">
+                          className="w-9 h-9 flex items-center justify-center rounded-lg text-brand-text-secondary hover:text-brand-danger hover:bg-red-500/10 transition-colors cursor-pointer">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       )}
@@ -214,17 +208,17 @@ export default function InventarioPage() {
                       <button
                         onClick={() => ajustarStock(l, -1)}
                         disabled={stockMut.isPending || l.cantidad_laminas <= 0}
-                        className="w-6 h-6 flex items-center justify-center rounded-md border border-brand-border text-brand-muted hover:text-brand-text hover:bg-brand-surface/60 disabled:opacity-40 transition-colors cursor-pointer"
+                        className="w-6 h-6 flex items-center justify-center rounded-md border border-brand-border text-brand-text-secondary hover:text-brand-text hover:bg-brand-surface/60 disabled:opacity-40 transition-colors cursor-pointer"
                       >
                         <Minus className="w-3 h-3" />
                       </button>
-                      <span className={`font-mono text-sm w-6 text-center ${bajoStock ? 'text-amber-400 font-semibold' : 'text-brand-text'}`}>
+                      <span className={`font-mono text-sm w-6 text-center ${bajoStock ? 'text-brand-warning-text font-semibold' : 'text-brand-text'}`}>
                         {l.cantidad_laminas}
                       </span>
                       <button
                         onClick={() => ajustarStock(l, 1)}
                         disabled={stockMut.isPending}
-                        className="w-6 h-6 flex items-center justify-center rounded-md border border-brand-border text-brand-muted hover:text-brand-text hover:bg-brand-surface/60 transition-colors cursor-pointer"
+                        className="w-6 h-6 flex items-center justify-center rounded-md border border-brand-border text-brand-text-secondary hover:text-brand-text hover:bg-brand-surface/60 transition-colors cursor-pointer"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
@@ -242,20 +236,20 @@ export default function InventarioPage() {
                         <div className="flex items-start justify-between gap-2 mb-2.5">
                           <div className="min-w-0">
                             <p className="text-sm text-brand-text font-medium leading-tight">{l.material_categoria}</p>
-                            <p className="text-[10px] text-brand-muted/60 mt-0.5">{l.referencia || '—'}</p>
+                            <p className="text-[10px] text-brand-text-secondary mt-0.5">{l.referencia || '—'}</p>
                           </div>
                           {bajoStock && (
-                            <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-amber-400/10 border-amber-400/20 text-amber-400">
+                            <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-amber-400/10 border-amber-400/20 text-brand-warning-text">
                               <AlertTriangle className="w-2.5 h-2.5" />
                               Bajo
                             </span>
                           )}
                         </div>
                         <div className="flex items-end justify-between gap-2">
-                          <div className="text-[11px] space-y-1 text-brand-muted/70">
+                          <div className="text-[11px] space-y-1 text-brand-text-secondary">
                             {stockControl}
-                            {l.costo_unitario > 0 && <p><span className="text-brand-muted/40">Costo: </span><span className="font-mono">{formatCOP(l.costo_unitario)}</span></p>}
-                            {l.ubicacion && <p><span className="text-brand-muted/40">Ubicación: </span>{l.ubicacion}</p>}
+                            {l.costo_unitario > 0 && <p><span className="text-brand-text-secondary">Costo: </span><span className="font-mono">{formatCOP(l.costo_unitario)}</span></p>}
+                            {l.ubicacion && <p><span className="text-brand-text-secondary">Ubicación: </span>{l.ubicacion}</p>}
                           </div>
                           {acciones}
                         </div>
@@ -265,13 +259,13 @@ export default function InventarioPage() {
                       <div className="hidden sm:grid grid-cols-[1.3fr_1.3fr_1fr_1fr_1fr_1fr_100px] px-4 py-3.5 items-center hover:bg-brand-surface/20 transition-colors sm:min-w-[640px]">
                         <span className="text-sm text-brand-text font-medium truncate flex items-center gap-1.5">
                           {l.material_categoria}
-                          {bajoStock && <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />}
+                          {bajoStock && <AlertTriangle className="w-3 h-3 text-brand-warning-text shrink-0" />}
                         </span>
-                        <span className="text-sm text-brand-muted truncate">{l.referencia || '—'}</span>
+                        <span className="text-sm text-brand-text-secondary truncate">{l.referencia || '—'}</span>
                         {stockControl}
-                        <span className="font-mono text-xs text-brand-muted">{l.costo_unitario > 0 ? formatCOP(l.costo_unitario) : '—'}</span>
-                        <span className="text-xs text-brand-muted truncate">{l.ubicacion || '—'}</span>
-                        <span className="text-xs text-brand-muted truncate">{l.proveedor || '—'}</span>
+                        <span className="font-mono text-xs text-brand-text-secondary">{l.costo_unitario > 0 ? formatCOP(l.costo_unitario) : '—'}</span>
+                        <span className="text-xs text-brand-text-secondary truncate">{l.ubicacion || '—'}</span>
+                        <span className="text-xs text-brand-text-secondary truncate">{l.proveedor || '—'}</span>
                         {acciones}
                       </div>
                     </motion.div>
@@ -282,7 +276,7 @@ export default function InventarioPage() {
 
             {/* Footer */}
             <div className="px-4 py-2.5 border-t border-brand-border/40 bg-brand-surface/20">
-              <span className="text-[10px] text-brand-muted/40 font-mono">
+              <span className="text-[10px] text-brand-text-secondary font-mono">
                 {data.length} referencia{data.length !== 1 ? 's' : ''} · {data.reduce((s, l) => s + l.cantidad_laminas, 0)} láminas en total
               </span>
             </div>
@@ -313,7 +307,7 @@ export default function InventarioPage() {
                 </h2>
                 <button
                   onClick={closeModal}
-                  className="p-1.5 rounded-lg text-brand-muted hover:text-brand-text transition-colors cursor-pointer"
+                  className="p-1.5 rounded-lg text-brand-text-secondary hover:text-brand-text transition-colors cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -322,7 +316,7 @@ export default function InventarioPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Material</label>
+                    <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Material</label>
                     <select
                       value={form.material_categoria}
                       onChange={(e) => setForm((f) => ({ ...f, material_categoria: e.target.value }))}
@@ -332,7 +326,7 @@ export default function InventarioPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Referencia</label>
+                    <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Referencia</label>
                     <input
                       type="text"
                       value={form.referencia}
@@ -345,7 +339,7 @@ export default function InventarioPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Cantidad de láminas</label>
+                    <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Cantidad de láminas</label>
                     <input
                       type="number"
                       min="0"
@@ -356,7 +350,7 @@ export default function InventarioPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Stock mínimo (alerta)</label>
+                    <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Stock mínimo (alerta)</label>
                     <input
                       type="number"
                       min="0"
@@ -370,7 +364,7 @@ export default function InventarioPage() {
 
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Ancho (cm)</label>
+                    <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Ancho (cm)</label>
                     <input
                       type="number" min="0" step="0.1"
                       value={form.ancho_cm ?? ''}
@@ -379,7 +373,7 @@ export default function InventarioPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Alto (cm)</label>
+                    <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Alto (cm)</label>
                     <input
                       type="number" min="0" step="0.1"
                       value={form.alto_cm ?? ''}
@@ -388,7 +382,7 @@ export default function InventarioPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Espesor (cm)</label>
+                    <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Espesor (cm)</label>
                     <input
                       type="number" min="0" step="0.1"
                       value={form.espesor_cm ?? ''}
@@ -399,7 +393,7 @@ export default function InventarioPage() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Costo por lámina</label>
+                  <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Costo por lámina</label>
                   <input
                     type="number" min="0"
                     value={form.costo_unitario}
@@ -410,7 +404,7 @@ export default function InventarioPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Ubicación en bodega</label>
+                    <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Ubicación en bodega</label>
                     <input
                       type="text"
                       value={form.ubicacion}
@@ -420,7 +414,7 @@ export default function InventarioPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Proveedor</label>
+                    <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Proveedor</label>
                     <input
                       type="text"
                       value={form.proveedor}
@@ -431,7 +425,7 @@ export default function InventarioPage() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Notas</label>
+                  <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Notas</label>
                   <textarea
                     value={form.notas}
                     onChange={(e) => setForm((f) => ({ ...f, notas: e.target.value }))}
@@ -445,7 +439,7 @@ export default function InventarioPage() {
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="px-4 py-2 rounded-lg border border-brand-border text-sm text-brand-muted hover:text-brand-text transition-colors cursor-pointer"
+                    className="px-4 py-2 rounded-lg border border-brand-border text-sm text-brand-text-secondary hover:text-brand-text transition-colors cursor-pointer"
                   >
                     Cancelar
                   </button>
