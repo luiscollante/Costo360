@@ -56,7 +56,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         >
           <Menu size={18} />
         </button>
-        <Logo variant="dark" className="text-lg ml-1" />
+        <Logo variant="dark" className="h-6 w-auto ml-1" />
       </header>
 
       {/* Mobile overlay */}

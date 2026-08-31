@@ -65,9 +65,7 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-brand-bg p-4">
       <div className="glass rounded-2xl border border-brand-border p-8 w-full max-w-sm">
-        <div className="flex justify-center mb-6">
-          <Logo variant="dark" className="text-2xl" />
-        </div>
+        <Logo variant="dark" className="w-[170px] h-auto mx-auto mb-6" />
         <h1 className="text-base font-bold text-brand-text text-center mb-1">Define tu contraseña</h1>
         <p className="text-xs text-brand-muted text-center mb-6">
           Elige una contraseña para entrar a Costo360.
