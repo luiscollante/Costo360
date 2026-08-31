@@ -7,7 +7,8 @@ import { useWizardStore } from '@/store/wizard'
 import { calcularCotizacionDirecta, guardarCotizacion, descargarPDF, descargarCuentaCobro } from '@/api/cotizacion'
 import type { MaterialItem, PiezaItem } from '@/types/cotizacion'
 import MaterialCombobox from '@/components/MaterialCombobox'
-import { formatCOP, formatNum } from '@/lib/utils'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { formatCOP, formatNum, formatPct } from '@/lib/utils'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -199,7 +200,7 @@ function StepMotion({
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <label className="block text-[10px] font-semibold tracking-[0.18em] uppercase text-brand-muted mb-1.5">
+    <label className="block text-[10px] font-semibold tracking-[0.18em] uppercase text-brand-text-secondary mb-1.5">
       {children}
     </label>
   )
@@ -274,7 +275,7 @@ function MonoInput({
           className={baseClass}
         />
         {suffix && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-brand-muted font-mono pointer-events-none">
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-brand-text-secondary font-mono pointer-events-none">
             {suffix}
           </span>
         )}
@@ -295,7 +296,7 @@ function MonoInput({
         className={baseClass}
       />
       {suffix && (
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-brand-muted font-mono pointer-events-none">
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-brand-text-secondary font-mono pointer-events-none">
           {suffix}
         </span>
       )}
@@ -393,7 +394,7 @@ function MoneyInput({
 
   return (
     <div className="relative group">
-      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-brand-muted/60 font-mono pointer-events-none">$</span>
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-brand-text-secondary font-mono pointer-events-none">$</span>
       <input
         ref={inputRef}
         type="text"
@@ -443,7 +444,7 @@ function Toggle({
     >
       <div className="text-left">
         <p className="text-sm text-brand-text font-medium">{label}</p>
-        {sublabel && <p className="text-xs text-brand-muted mt-0.5">{sublabel}</p>}
+        {sublabel && <p className="text-xs text-brand-text-secondary mt-0.5">{sublabel}</p>}
       </div>
       <div
         className={[
@@ -502,7 +503,7 @@ function AlcancePanel({
           {label}
         </span>
         {items.length > 0 && (
-          <span className="ml-auto font-mono text-[9px] text-brand-muted/50">{items.length} ítem{items.length !== 1 ? 's' : ''}</span>
+          <span className="ml-auto font-mono text-[9px] text-brand-text-secondary">{items.length} ítem{items.length !== 1 ? 's' : ''}</span>
         )}
       </div>
 
@@ -534,7 +535,7 @@ function AlcancePanel({
               key={s}
               type="button"
               onClick={() => addItem(s)}
-              className="px-2 py-0.5 rounded-full text-[11px] border border-dashed border-brand-border/50 text-brand-muted hover:border-brand-border hover:text-brand-text transition-all"
+              className="px-2 py-0.5 rounded-full text-[11px] border border-dashed border-brand-border/50 text-brand-text-secondary hover:border-brand-border hover:text-brand-text transition-all"
             >
               + {s}
             </button>
@@ -557,7 +558,7 @@ function AlcancePanel({
           type="button"
           onClick={() => { addItem(inputVal); setInputVal('') }}
           disabled={!inputVal.trim()}
-          className="px-2.5 py-1.5 rounded border border-brand-border/50 text-xs text-brand-muted hover:text-brand-text hover:border-brand-border transition-colors disabled:opacity-30"
+          className="px-2.5 py-1.5 rounded border border-brand-border/50 text-xs text-brand-text-secondary hover:text-brand-text hover:border-brand-border transition-colors disabled:opacity-30"
         >
           +
         </button>
@@ -570,7 +571,7 @@ function SectionDivider({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-3 my-6">
       <div className="flex-1 h-px bg-brand-border" />
-      <span className="text-[9px] tracking-[0.2em] uppercase text-brand-muted/60 font-semibold">
+      <span className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold">
         {label}
       </span>
       <div className="flex-1 h-px bg-brand-border" />
@@ -599,7 +600,7 @@ function StepNav({
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-2 text-sm text-brand-muted hover:text-brand-text transition-colors"
+          className="flex items-center gap-2 text-sm text-brand-text-secondary hover:text-brand-text transition-colors"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M9 2L4 7L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -636,11 +637,11 @@ function StepNav({
 
 function StepIndicator({ paso }: { paso: number }) {
   return (
-    <>
+    <nav aria-label="Progreso de la cotización">
       {/* Mobile: barra de progreso compacta */}
       <div className="sm:hidden mb-6">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[10px] uppercase tracking-widest text-brand-muted/60 font-semibold">
+          <span className="text-[10px] uppercase tracking-widest text-brand-text-secondary font-semibold">
             Paso {paso + 1} / {STEP_LABELS.length}
           </span>
           <span className="text-[10px] font-semibold text-brand-primary-light uppercase tracking-widest">
@@ -674,7 +675,7 @@ function StepIndicator({ paso }: { paso: number }) {
                 />
               </div>
             )}
-            <div className="flex flex-col items-center gap-1.5">
+            <div className="flex flex-col items-center gap-1.5" aria-current={active ? 'step' : undefined}>
               <div className="relative">
                 <motion.div
                   className={[
@@ -694,7 +695,7 @@ function StepIndicator({ paso }: { paso: number }) {
                     <span
                       className={[
                         'font-mono text-[10px] font-bold',
-                        active ? 'text-brand-primary' : 'text-brand-muted',
+                        active ? 'text-brand-primary' : 'text-brand-text-secondary',
                       ].join(' ')}
                     >
                       {String(i + 1).padStart(2, '0')}
@@ -711,8 +712,8 @@ function StepIndicator({ paso }: { paso: number }) {
               </div>
               <span
                 className={[
-                  'text-[9px] tracking-[0.12em] uppercase font-semibold whitespace-nowrap',
-                  active ? 'text-brand-primary-light' : done ? 'text-brand-muted' : 'text-brand-muted/40',
+                  'text-[10px] tracking-[0.12em] uppercase font-semibold whitespace-nowrap',
+                  active ? 'text-brand-primary' : 'text-brand-text-secondary',
                 ].join(' ')}
               >
                 {label}
@@ -722,7 +723,7 @@ function StepIndicator({ paso }: { paso: number }) {
         )
       })}
       </div>
-    </>
+    </nav>
   )
 }
 
@@ -757,7 +758,7 @@ function LaminasSelector({ value, onChange }: { value: number; onChange: (v: num
               'w-9 h-9 rounded font-mono text-sm font-bold border transition-all duration-150',
               !showOtro && value === n
                 ? 'bg-brand-primary/15 border-brand-primary/50 text-brand-primary-light shadow-[0_0_8px_#1F6F5420]'
-                : 'bg-brand-input border-brand-border text-brand-muted hover:border-brand-primary/30 hover:text-brand-text',
+                : 'bg-brand-input border-brand-border text-brand-text-secondary hover:border-brand-primary/30 hover:text-brand-text',
             ].join(' ')}
           >
             {n}
@@ -770,7 +771,7 @@ function LaminasSelector({ value, onChange }: { value: number; onChange: (v: num
             'px-3 h-9 rounded text-xs font-semibold border transition-all duration-150',
             showOtro
               ? 'bg-brand-primary/15 border-brand-primary/50 text-brand-primary-light'
-              : 'bg-brand-input border-brand-border text-brand-muted hover:border-brand-primary/30 hover:text-brand-text',
+              : 'bg-brand-input border-brand-border text-brand-text-secondary hover:border-brand-primary/30 hover:text-brand-text',
           ].join(' ')}
         >
           Otro
@@ -859,7 +860,7 @@ function PlacaCard({
         </div>
 
         {isComplete && (
-          <span className="font-mono text-[10px] text-brand-muted/50 shrink-0">
+          <span className="font-mono text-[10px] text-brand-text-secondary shrink-0">
             {formatNum(areaTotal)} m²
           </span>
         )}
@@ -873,7 +874,7 @@ function PlacaCard({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); setConfirmDelete(true) }}
-            className="text-brand-muted/30 hover:text-red-400/70 transition-colors text-lg leading-none shrink-0 ml-1"
+            className="text-brand-text-secondary hover:text-brand-danger/70 transition-colors text-lg leading-none shrink-0 ml-1"
             aria-label="Eliminar placa"
           >
             ×
@@ -882,7 +883,7 @@ function PlacaCard({
 
         <svg
           width="12" height="12" viewBox="0 0 12 12" fill="none"
-          className={`shrink-0 text-brand-muted/40 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+          className={`shrink-0 text-brand-text-secondary transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
         >
           <path d="M2 4L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
@@ -898,7 +899,7 @@ function PlacaCard({
             transition={{ duration: 0.15 }}
             className="px-4 pb-3 border-t border-red-500/20 bg-red-500/5 overflow-hidden"
           >
-            <p className="text-xs text-red-400 mt-3 mb-2.5">
+            <p className="text-xs text-brand-danger mt-3 mb-2.5">
               {piezaCount > 0
                 ? `Esta placa tiene ${piezaCount} pieza${piezaCount !== 1 ? 's' : ''} asignada${piezaCount !== 1 ? 's' : ''} que se eliminarán.`
                 : '¿Eliminar esta placa?'}
@@ -907,14 +908,14 @@ function PlacaCard({
               <button
                 type="button"
                 onClick={() => setConfirmDelete(false)}
-                className="flex-1 py-1.5 rounded border border-brand-border text-xs text-brand-muted hover:text-brand-text transition-colors"
+                className="flex-1 py-1.5 rounded border border-brand-border text-xs text-brand-text-secondary hover:text-brand-text transition-colors"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={() => { setConfirmDelete(false); onRemove() }}
-                className="flex-1 py-1.5 rounded border border-red-500/40 bg-red-500/10 text-xs text-red-400 hover:bg-red-500/20 transition-colors"
+                className="flex-1 py-1.5 rounded border border-red-500/40 bg-red-500/10 text-xs text-brand-danger hover:bg-red-500/20 transition-colors"
               >
                 Eliminar
               </button>
@@ -1115,7 +1116,7 @@ function Step1Material({ dir }: { dir: number }) {
   return (
     <StepMotion stepKey={0} dir={dir}>
       <div className="max-w-2xl mx-auto">
-        <PageHeader
+        <StepHeader
           step="01"
           title="Material"
           subtitle="Define los materiales y láminas del proyecto"
@@ -1151,10 +1152,10 @@ function Step1Material({ dir }: { dir: number }) {
         {placas.length > 1 && totalArea > 0 && (
           <div className="mt-4 glass rounded-lg px-5 py-4 border border-brand-border/60">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-[9px] tracking-[0.2em] uppercase font-semibold text-brand-muted/60">
+              <span className="text-[9px] tracking-[0.2em] uppercase font-semibold text-brand-text-secondary">
                 Resumen total
               </span>
-              <span className="font-mono text-[10px] text-brand-muted/40">
+              <span className="font-mono text-[10px] text-brand-text-secondary">
                 {placas.length} placas
               </span>
             </div>
@@ -1202,7 +1203,7 @@ function ConsumoIndicador({
   return (
     <div className="glass rounded-lg border border-brand-border/60 p-4">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[9px] tracking-[0.15em] uppercase font-semibold text-brand-muted/60">
+        <span className="text-[9px] tracking-[0.15em] uppercase font-semibold text-brand-text-secondary">
           Consumo Placa {placaIdx + 1}
           {placa.ref ? ` — ${placa.ref.slice(0, 20)}` : ''}
         </span>
@@ -1219,7 +1220,7 @@ function ConsumoIndicador({
             className="font-mono text-sm font-bold"
             style={{ color: isWarning ? '#C9A227' : '#1F6F54' }}
           >
-            {formatNum(pct, 1)}%
+            {formatPct(pct, 1)}
           </span>
         </div>
       </div>
@@ -1238,7 +1239,7 @@ function ConsumoIndicador({
         />
       </div>
 
-      <div className="flex items-center justify-between text-[10px] font-mono text-brand-muted/60 mb-2">
+      <div className="flex items-center justify-between text-[10px] font-mono text-brand-text-secondary mb-2">
         <span>{formatNum(areaConsumida)} m² usados</span>
         <span>de {formatNum(areaDisponible)} m² disponibles</span>
       </div>
@@ -1246,9 +1247,9 @@ function ConsumoIndicador({
       {adicionales.length > 0 && (
         <div className="border-t border-brand-border/30 pt-2 mt-1">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="text-[9px] text-brand-muted/50">Adicionales aprox.:</span>
+            <span className="text-[9px] text-brand-text-secondary">Adicionales aprox.:</span>
             {adicionales.map((a) => (
-              <span key={a.tipo} className="text-[10px] text-brand-muted/70">
+              <span key={a.tipo} className="text-[10px] text-brand-text-secondary">
                 {a.tipo.split(' / ')[0]}{' '}
                 <span className="font-mono font-semibold" style={{ color: '#6AAEFF' }}>
                   ×{a.cantidad}
@@ -1258,7 +1259,7 @@ function ConsumoIndicador({
             <button
               type="button"
               onClick={() => setShowAprox((v) => !v)}
-              className="text-[9px] text-brand-muted/40 hover:text-emerald-400 transition-colors"
+              className="text-[9px] text-brand-text-secondary hover:text-brand-primary transition-colors"
             >
               {showAprox ? '▲' : '▼'} ¿Qué es esto?
             </button>
@@ -1270,7 +1271,7 @@ function ConsumoIndicador({
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.15 }}
-                className="text-[9px] text-brand-muted/60 border-l border-brand-border/40 pl-2 overflow-hidden"
+                className="text-[9px] text-brand-text-secondary border-l border-brand-border/40 pl-2 overflow-hidden"
               >
                 Estimación basada en área disponible sin considerar geometría de corte.
                 El resultado real puede variar según la forma y orientación de las piezas.
@@ -1302,7 +1303,7 @@ function ResumenGlobal({
         className="px-5 py-3 border-b border-brand-border/40"
         style={{ background: 'linear-gradient(180deg, rgba(30,127,255,0.04) 0%, transparent 100%)' }}
       >
-        <span className="text-[9px] tracking-[0.2em] uppercase font-semibold text-brand-muted/60">
+        <span className="text-[9px] tracking-[0.2em] uppercase font-semibold text-brand-text-secondary">
           Consumo por placa
         </span>
       </div>
@@ -1324,7 +1325,7 @@ function ResumenGlobal({
               <span className="font-mono text-[10px] font-bold shrink-0 w-5" style={{ color: color.hex }}>
                 P{idx + 1}
               </span>
-              <span className="text-[10px] text-brand-muted truncate flex-[2] min-w-0">
+              <span className="text-[10px] text-brand-text-secondary truncate flex-[2] min-w-0">
                 {label}
               </span>
               <div className="flex-1 min-w-16 max-w-28 h-1 bg-brand-border/60 rounded-full overflow-hidden">
@@ -1340,8 +1341,8 @@ function ResumenGlobal({
                   }}
                 />
               </div>
-              <span className="font-mono text-[10px] text-brand-muted/70 shrink-0 w-28 text-right">
-                {formatNum(pct, 0)}% · {formatNum(consumido)}/{formatNum(disponible)} m²
+              <span className="font-mono text-[10px] text-brand-text-secondary shrink-0 w-28 text-right">
+                {formatPct(pct, 0)} · {formatNum(consumido)}/{formatNum(disponible)} m²
               </span>
             </div>
           )
@@ -1350,16 +1351,16 @@ function ResumenGlobal({
 
       <div className="px-5 py-3 border-t border-brand-border/40 bg-brand-surface/20">
         <div className="flex items-center justify-between">
-          <span className="text-[9px] tracking-[0.15em] uppercase text-brand-muted/50 font-semibold">
+          <span className="text-[9px] tracking-[0.15em] uppercase text-brand-text-secondary font-semibold">
             Total proyecto
           </span>
           <div className="flex items-center gap-3 font-mono text-xs">
-            <span className="text-brand-muted">
+            <span className="text-brand-text-secondary">
               {totalPiezas} pieza{totalPiezas !== 1 ? 's' : ''}
             </span>
             <span className="w-px h-3 bg-brand-border/60 inline-block" />
             <span className="text-brand-text font-semibold">{formatNum(totalConsumido)} m²</span>
-            <span className="text-brand-muted/50">de {formatNum(totalDisponible)} m²</span>
+            <span className="text-brand-text-secondary">de {formatNum(totalDisponible)} m²</span>
           </div>
         </div>
       </div>
@@ -1441,7 +1442,7 @@ function Step2Piezas({ dir }: { dir: number }) {
   return (
     <StepMotion stepKey={1} dir={dir}>
       <div className="max-w-3xl mx-auto">
-        <PageHeader
+        <StepHeader
           step="02"
           title="Piezas"
           subtitle={showTabs ? 'Dimensiona cada pieza y asígnala a su placa' : 'Dimensiona cada pieza del proyecto'}
@@ -1469,7 +1470,7 @@ function Step2Piezas({ dir }: { dir: number }) {
                       'flex items-center gap-1.5 px-3 py-2 rounded text-xs font-semibold transition-all duration-200 whitespace-nowrap shrink-0',
                       isActive
                         ? 'bg-brand-surface/80 text-brand-text shadow-sm'
-                        : 'text-brand-muted hover:text-brand-text hover:bg-brand-surface/30',
+                        : 'text-brand-text-secondary hover:text-brand-text hover:bg-brand-surface/30',
                     ].join(' ')}
                     style={isActive ? {
                       borderBottom: `2px solid ${color.hex}`,
@@ -1478,7 +1479,7 @@ function Step2Piezas({ dir }: { dir: number }) {
                   >
                     <span style={{ color: isActive ? color.hex : undefined }}>{shortLbl}</span>
                     {count > 0 && (
-                      <span className="font-mono text-[9px] px-1.5 py-0.5 rounded-full bg-brand-border/40 text-brand-muted/70">
+                      <span className="font-mono text-[9px] px-1.5 py-0.5 rounded-full bg-brand-border/40 text-brand-text-secondary">
                         {count}
                       </span>
                     )}
@@ -1505,17 +1506,17 @@ function Step2Piezas({ dir }: { dir: number }) {
                   animate={{ opacity: 1, y: 0 }}
                   className="glass rounded-lg p-12 text-center border border-dashed border-brand-border"
                 >
-                  <div className="text-brand-muted/30 text-4xl mb-4">⊕</div>
-                  <p className="text-sm text-brand-muted mb-2">
+                  <div className="text-brand-text-secondary text-4xl mb-4">⊕</div>
+                  <p className="text-sm text-brand-text-secondary mb-2">
                     {showTabs ? `Sin piezas para ${placaActiva?.ref || `Placa ${placaActivaIdx + 1}`}` : 'Sin piezas aún'}
                   </p>
-                  <p className="text-xs text-brand-muted/50 mb-6">
+                  <p className="text-xs text-brand-text-secondary mb-6">
                     Agrega las piezas que componen el proyecto
                   </p>
                   <button
                     type="button"
                     onClick={addPieza}
-                    className="text-xs text-brand-muted hover:text-emerald-400 transition-colors"
+                    className="text-xs text-brand-text-secondary hover:text-brand-primary transition-colors"
                   >
                     + Agregar primera pieza
                   </button>
@@ -1540,14 +1541,14 @@ function Step2Piezas({ dir }: { dir: number }) {
                         style={showTabs ? { borderLeft: `2px solid ${color.hex}30` } : undefined}
                       >
                         <div className="absolute top-4 left-5">
-                          <span className="font-mono text-[9px] text-brand-muted/40 tracking-widest">
+                          <span className="font-mono text-[9px] text-brand-text-secondary tracking-widest">
                             P{String(idx + 1).padStart(2, '0')}
                           </span>
                         </div>
                         <button
                           type="button"
                           onClick={() => removePieza(pieza.id)}
-                          className="absolute top-3.5 right-4 text-brand-muted/30 hover:text-red-400/70 transition-colors text-lg leading-none"
+                          className="absolute top-3.5 right-4 text-brand-text-secondary hover:text-brand-danger/70 transition-colors text-lg leading-none"
                         >
                           ×
                         </button>
@@ -1609,13 +1610,13 @@ function Step2Piezas({ dir }: { dir: number }) {
 
                         <div className="mt-3 flex justify-end">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] text-brand-muted/50 uppercase tracking-widest">
+                            <span className="text-[9px] text-brand-text-secondary uppercase tracking-widest">
                               Área
                             </span>
                             <span
                               className={[
                                 'font-mono text-sm font-bold transition-colors',
-                                m2 > 0 ? 'text-brand-gold' : 'text-brand-muted/30',
+                                m2 > 0 ? 'text-brand-gold' : 'text-brand-text-secondary',
                               ].join(' ')}
                             >
                               {formatNum(m2)} m²
@@ -1665,12 +1666,12 @@ function Step2Piezas({ dir }: { dir: number }) {
         {/* Total */}
         {piezas.length > 0 && (
           <div className="mt-6 glass rounded-lg px-5 py-4 flex items-center justify-between border border-brand-border/60">
-            <span className="text-[9px] tracking-[0.2em] uppercase text-brand-muted/60 font-semibold">
+            <span className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold">
               Total proyecto
             </span>
             <span className="font-mono text-xl font-bold text-brand-text">
               {formatNum(totalM2)}{' '}
-              <span className="text-sm text-brand-muted font-normal">m²</span>
+              <span className="text-sm text-brand-text-secondary font-normal">m²</span>
             </span>
           </div>
         )}
@@ -1722,7 +1723,7 @@ function Step3Proyecto({ dir }: { dir: number }) {
   return (
     <StepMotion stepKey={2} dir={dir}>
       <div className="max-w-4xl mx-auto">
-        <PageHeader
+        <StepHeader
           step="03"
           title="Proyecto"
           subtitle="Parámetros del cliente y la obra"
@@ -1750,7 +1751,7 @@ function Step3Proyecto({ dir }: { dir: number }) {
                     'px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide border transition-all duration-200',
                     tipoProyecto === t
                       ? 'bg-brand-primary/15 border-brand-primary/50 text-brand-primary-light shadow-[0_0_8px_#1F6F5418]'
-                      : 'bg-transparent border-brand-border text-brand-muted hover:border-brand-border/80 hover:text-brand-text',
+                      : 'bg-transparent border-brand-border text-brand-text-secondary hover:border-brand-border/80 hover:text-brand-text',
                   ].join(' ')}
                 >
                   {t}
@@ -1804,7 +1805,7 @@ function Step3Proyecto({ dir }: { dir: number }) {
                   max={80}
                   className="w-14 bg-brand-input border border-brand-border rounded px-2 py-1 font-mono text-sm text-brand-primary-light text-center outline-none focus:border-brand-primary"
                 />
-                <span className="text-xs text-brand-muted">%</span>
+                <span className="text-xs text-brand-text-secondary">%</span>
               </div>
             </div>
             <div className="relative h-1.5 bg-brand-border rounded-full overflow-hidden">
@@ -1822,7 +1823,7 @@ function Step3Proyecto({ dir }: { dir: number }) {
               onChange={(e) => setMargen(parseInt(e.target.value))}
               className="w-full mt-1 h-1.5 appearance-none bg-transparent cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-brand-primary [&::-webkit-slider-thumb]:shadow-[0_0_8px_#1F6F5460]"
             />
-            <div className="flex justify-between text-[9px] text-brand-muted/40 font-mono mt-1">
+            <div className="flex justify-between text-[9px] text-brand-text-secondary font-mono mt-1">
               <span>5%</span>
               <span>80%</span>
             </div>
@@ -1923,24 +1924,24 @@ function CCModalResultado({ cotId, onClose }: { cotId: number; onClose: () => vo
         className="relative glass rounded-xl border border-brand-border shadow-2xl p-5 w-80 z-10"
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-brand-muted/60 mb-4">Cuenta de Cobro</p>
+        <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-brand-text-secondary mb-4">Cuenta de Cobro</p>
         <div className="space-y-3 mb-4">
           <div>
-            <label className="block text-[10px] text-brand-muted mb-1.5">Nombre del pagador *</label>
+            <label className="block text-[10px] text-brand-text-secondary mb-1.5">Nombre del pagador *</label>
             <input autoFocus value={nombre} onChange={(e) => setNombre(e.target.value)}
               placeholder="Constructora XYZ S.A.S"
               className="w-full bg-brand-input border border-brand-border rounded px-3 py-2.5 text-sm text-brand-text placeholder-brand-muted/40 outline-none focus:border-brand-primary/50 transition-all" />
           </div>
           <div>
-            <label className="block text-[10px] text-brand-muted mb-1.5">NIT / Cédula</label>
+            <label className="block text-[10px] text-brand-text-secondary mb-1.5">NIT / Cédula</label>
             <input value={nit} onChange={(e) => setNit(e.target.value)}
               placeholder="900.123.456-7"
               className="w-full bg-brand-input border border-brand-border rounded px-3 py-2.5 text-sm text-brand-text placeholder-brand-muted/40 outline-none focus:border-brand-primary/50 transition-all" />
           </div>
         </div>
-        {err && <p className="text-xs text-red-400 mb-3">{err}</p>}
+        {err && <p className="text-xs text-brand-danger mb-3">{err}</p>}
         <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded border border-brand-border text-sm text-brand-muted hover:text-brand-text transition-colors">Cancelar</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded border border-brand-border text-sm text-brand-text-secondary hover:text-brand-text transition-colors">Cancelar</button>
           <button onClick={handleDownload} disabled={loading || !nombre.trim()}
             className="flex-1 py-2.5 rounded bg-brand-gold/15 border border-brand-gold/40 text-sm font-semibold text-brand-gold hover:bg-brand-gold/25 transition-all disabled:opacity-40 flex items-center justify-center gap-1.5">
             {loading ? <Loader2 size={13} className="animate-spin" /> : null}
@@ -2080,7 +2081,7 @@ function Step4Resultado({ dir }: { dir: number }) {
   return (
     <StepMotion stepKey={4} dir={dir}>
       <div className="max-w-2xl mx-auto">
-        <PageHeader
+        <StepHeader
           step="04"
           title="Resultado"
           subtitle="Cotización final del proyecto"
@@ -2089,7 +2090,7 @@ function Step4Resultado({ dir }: { dir: number }) {
         {!resultado ? (
           <div className="text-center">
             <div className="glass rounded-lg p-6 mb-8 text-left border border-brand-border/60">
-              <p className="text-[9px] tracking-[0.2em] uppercase text-brand-muted/50 mb-4 font-semibold">
+              <p className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary mb-4 font-semibold">
                 Resumen del proyecto
               </p>
               <div className="grid grid-cols-2 gap-y-3 gap-x-8">
@@ -2113,7 +2114,7 @@ function Step4Resultado({ dir }: { dir: number }) {
               <motion.div
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-6 p-4 rounded border border-red-500/30 bg-red-500/5 text-red-400 text-sm"
+                className="mb-6 p-4 rounded border border-red-500/30 bg-red-500/5 text-brand-danger text-sm"
               >
                 {error}
               </motion.div>
@@ -2163,7 +2164,7 @@ function Step4Resultado({ dir }: { dir: number }) {
               <div className="absolute bottom-3 left-3 w-6 h-6 border-b border-l border-brand-primary/30" />
               <div className="absolute bottom-3 right-3 w-6 h-6 border-b border-r border-brand-primary/30" />
 
-              <p className="text-[9px] tracking-[0.25em] uppercase text-brand-muted/60 mb-3 font-semibold">
+              <p className="text-[9px] tracking-[0.25em] uppercase text-brand-text-secondary mb-3 font-semibold">
                 {proyecto.incluir_iva ? 'Total con IVA' : 'Precio sugerido al cliente'}
               </p>
 
@@ -2178,11 +2179,11 @@ function Step4Resultado({ dir }: { dir: number }) {
                   transition={{ delay: 1 }}
                   className="mt-3 space-y-1"
                 >
-                  <div className="flex justify-center gap-3 text-xs text-brand-muted">
+                  <div className="flex justify-center gap-3 text-xs text-brand-text-secondary">
                     <span>Subtotal:</span>
                     <span className="font-mono">{formatCOP(precioBaseAnimado)}</span>
                   </div>
-                  <div className="flex justify-center gap-3 text-xs text-brand-muted">
+                  <div className="flex justify-center gap-3 text-xs text-brand-text-secondary">
                     <span>+ IVA 19%:</span>
                     <span className="font-mono">{formatCOP(iva)}</span>
                   </div>
@@ -2194,7 +2195,7 @@ function Step4Resultado({ dir }: { dir: number }) {
                   <div className="font-mono text-sm text-brand-gold font-bold">
                     {formatNum(resultado.margen_pct, 1)}%
                   </div>
-                  <div className="text-[9px] uppercase tracking-widest text-brand-muted/50 mt-0.5">
+                  <div className="text-[9px] uppercase tracking-widest text-brand-text-secondary mt-0.5">
                     Margen
                   </div>
                 </div>
@@ -2203,7 +2204,7 @@ function Step4Resultado({ dir }: { dir: number }) {
                   <div className="font-mono text-sm text-brand-gold font-bold">
                     {formatCOP(resultado.utilidad)}
                   </div>
-                  <div className="text-[9px] uppercase tracking-widest text-brand-muted/50 mt-0.5">
+                  <div className="text-[9px] uppercase tracking-widest text-brand-text-secondary mt-0.5">
                     Utilidad
                   </div>
                 </div>
@@ -2212,7 +2213,7 @@ function Step4Resultado({ dir }: { dir: number }) {
                   <div className="font-mono text-sm text-brand-gold font-bold">
                     {formatNum(resultado.aprovechamiento, 1)}%
                   </div>
-                  <div className="text-[9px] uppercase tracking-widest text-brand-muted/50 mt-0.5">
+                  <div className="text-[9px] uppercase tracking-widest text-brand-text-secondary mt-0.5">
                     Aprovech.
                   </div>
                 </div>
@@ -2226,7 +2227,7 @@ function Step4Resultado({ dir }: { dir: number }) {
               className="glass rounded-lg border border-brand-border/60 overflow-hidden mb-4"
             >
               <div className="px-5 py-3 border-b border-brand-border/50">
-                <span className="text-[9px] tracking-[0.2em] uppercase text-brand-muted/60 font-semibold">
+                <span className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold">
                   Desglose de costos
                 </span>
               </div>
@@ -2243,10 +2244,10 @@ function Step4Resultado({ dir }: { dir: number }) {
                       className="flex items-center justify-between px-5 py-3"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="font-mono text-[9px] text-brand-muted/30 w-4">
+                        <span className="font-mono text-[9px] text-brand-text-secondary w-4">
                           {String(idx + 1).padStart(2, '0')}
                         </span>
-                        <span className="text-sm text-brand-muted">{COST_LABELS[key]}</span>
+                        <span className="text-sm text-brand-text-secondary">{COST_LABELS[key]}</span>
                       </div>
                       <span className="font-mono text-sm text-brand-text">
                         {formatCOP(val)}
@@ -2255,7 +2256,7 @@ function Step4Resultado({ dir }: { dir: number }) {
                   )
                 })}
                 <div className="flex items-center justify-between px-5 py-3 bg-brand-surface/20">
-                  <span className="text-sm text-brand-muted">Subtotal (sin IVA)</span>
+                  <span className="text-sm text-brand-text-secondary">Subtotal (sin IVA)</span>
                   <span className="font-mono text-sm text-brand-text">
                     {formatCOP(resultado.costo_total)}
                   </span>
@@ -2265,13 +2266,13 @@ function Step4Resultado({ dir }: { dir: number }) {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.6 }}
-                    className="flex items-center justify-between px-5 py-3 bg-amber-400/5"
+                    className="flex items-center justify-between px-5 py-3 bg-brand-warning/5"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="font-mono text-[9px] text-amber-400/50 w-4">IVA</span>
-                      <span className="text-sm text-amber-400/80">IVA 19% (Art. 468 E.T.)</span>
+                      <span className="font-mono text-[9px] text-brand-warning-text/50 w-4">IVA</span>
+                      <span className="text-sm text-brand-warning-text/80">IVA 19% (Art. 468 E.T.)</span>
                     </div>
-                    <span className="font-mono text-sm text-amber-400">
+                    <span className="font-mono text-sm text-brand-warning-text">
                       {formatCOP(iva)}
                     </span>
                   </motion.div>
@@ -2306,18 +2307,18 @@ function Step4Resultado({ dir }: { dir: number }) {
             >
               {saved ? (
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between px-5 py-3.5 rounded-lg border border-emerald-500/30 bg-emerald-500/5">
+                  <div className="flex items-center justify-between px-5 py-3.5 rounded-lg border border-brand-primary/40/30 bg-brand-primary/5">
                     <div className="flex items-center gap-3">
-                      <span className="text-emerald-400 text-lg">✓</span>
+                      <span className="text-brand-primary text-lg">✓</span>
                       <div>
-                        <p className="text-sm font-semibold text-emerald-400">Cotización guardada</p>
-                        <p className="text-[10px] text-brand-muted font-mono">{saved.numero}</p>
+                        <p className="text-sm font-semibold text-brand-primary">Cotización guardada</p>
+                        <p className="text-[10px] text-brand-text-secondary font-mono">{saved.numero}</p>
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => navigate('/historial')}
-                      className="text-xs text-brand-muted hover:text-emerald-400 transition-colors"
+                      className="text-xs text-brand-text-secondary hover:text-brand-primary transition-colors"
                     >
                       Ver historial →
                     </button>
@@ -2331,7 +2332,7 @@ function Step4Resultado({ dir }: { dir: number }) {
                         setDlPDF(true)
                         try { await descargarPDF(saved.id) } finally { setDlPDF(false) }
                       }}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border border-brand-border text-sm text-brand-muted hover:text-emerald-400 hover:border-emerald-400/40 transition-all disabled:opacity-40"
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border border-brand-border text-sm text-brand-text-secondary hover:text-brand-primary hover:border-brand-primary/40/40 transition-all disabled:opacity-40"
                     >
                       {dlPDF ? <Loader2 size={13} className="animate-spin" /> : <FileDown size={13} />}
                       Descargar PDF
@@ -2352,7 +2353,7 @@ function Step4Resultado({ dir }: { dir: number }) {
               ) : (
                 <>
                   {saveError && (
-                    <p className="text-xs text-red-400 mb-2 text-center">{saveError}</p>
+                    <p className="text-xs text-brand-danger mb-2 text-center">{saveError}</p>
                   )}
                   <button
                     type="button"
@@ -2373,7 +2374,7 @@ function Step4Resultado({ dir }: { dir: number }) {
                   setPaso(3)
                   setResultado(null)
                 }}
-                className="flex-1 py-3 rounded border border-brand-border text-sm text-brand-muted hover:text-brand-text hover:border-brand-border/80 transition-colors"
+                className="flex-1 py-3 rounded border border-brand-border text-sm text-brand-text-secondary hover:text-brand-text hover:border-brand-border/80 transition-colors"
               >
                 Ajustar parámetros
               </button>
@@ -2404,7 +2405,7 @@ function Step4Resultado({ dir }: { dir: number }) {
 
 // ─── Shared sub-components ────────────────────────────────────────────────────
 
-function PageHeader({
+function StepHeader({
   step,
   title,
   subtitle,
@@ -2416,12 +2417,12 @@ function PageHeader({
   return (
     <div className="mb-8">
       <div className="flex items-baseline gap-3 mb-1">
-        <span className="font-mono text-[11px] text-brand-muted/40 tracking-[0.2em]">
+        <span className="font-mono text-[11px] text-brand-text-secondary tracking-[0.2em]">
           {step}
         </span>
         <h2 className="text-2xl font-bold text-brand-text tracking-tight">{title}</h2>
       </div>
-      <p className="text-sm text-brand-muted ml-9">{subtitle}</p>
+      <p className="text-sm text-brand-text-secondary ml-9">{subtitle}</p>
       <div className="mt-4 h-px bg-gradient-to-r from-brand-primary/40 via-brand-border to-transparent" />
     </div>
   )
@@ -2440,7 +2441,7 @@ function MetricCell({
 }) {
   return (
     <div>
-      <p className="text-[9px] uppercase tracking-[0.15em] text-brand-muted/50 mb-1.5 font-semibold">
+      <p className="text-[9px] uppercase tracking-[0.15em] text-brand-text-secondary mb-1.5 font-semibold">
         {label}
       </p>
       <p
@@ -2451,7 +2452,7 @@ function MetricCell({
       >
         {value}
         {unit && (
-          <span className="text-xs text-brand-muted font-normal ml-1">{unit}</span>
+          <span className="text-xs text-brand-text-secondary font-normal ml-1">{unit}</span>
         )}
       </p>
     </div>
@@ -2461,7 +2462,7 @@ function MetricCell({
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="glass rounded-lg p-4 border border-brand-border/50 text-center">
-      <p className="text-[9px] uppercase tracking-[0.15em] text-brand-muted/50 mb-2 font-semibold">
+      <p className="text-[9px] uppercase tracking-[0.15em] text-brand-text-secondary mb-2 font-semibold">
         {label}
       </p>
       <p className="font-mono text-sm font-bold text-brand-text">{value}</p>
@@ -2480,7 +2481,7 @@ function SummaryRow({
 }) {
   return (
     <div>
-      <p className="text-[9px] uppercase tracking-[0.12em] text-brand-muted/50 mb-0.5 font-semibold">
+      <p className="text-[9px] uppercase tracking-[0.12em] text-brand-text-secondary mb-0.5 font-semibold">
         {label}
       </p>
       <p className={['text-sm text-brand-text', mono ? 'font-mono' : ''].join(' ')}>
@@ -2525,17 +2526,11 @@ export default function CotizacionPage() {
   return (
     <AppLayout>
       <div className="max-w-4xl mx-auto py-6 px-2">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-1 h-6 bg-brand-primary rounded-full" />
-            <h1 className="text-lg font-bold text-brand-text tracking-tight">
-              Cotización Directa
-            </h1>
-          </div>
-          <p className="text-xs text-brand-muted ml-4 pl-0.5">
-            Calcula el precio de venta óptimo para tu proyecto
-          </p>
-        </div>
+        <PageHeader
+          kicker="Crear"
+          title="Nueva cotización"
+          subtitle="Calcula el precio de venta óptimo para tu proyecto"
+        />
 
         <StepIndicator paso={paso} />
 
