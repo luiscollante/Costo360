@@ -597,7 +597,7 @@ export default function CotizacionExpressPage() {
                       if (precio > 0) setPrecioM2(String(precio))
                       if (dims) { setLargo(String(dims.largo)); setAncho(String(dims.ancho)) }
                     }}
-                    placeholder="Buscar en catálogo Gramar…"
+                    placeholder="Buscar en el catálogo…"
                   />
                 </div>
 

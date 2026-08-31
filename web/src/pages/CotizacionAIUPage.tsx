@@ -248,7 +248,7 @@ function Step0Items({
             </div>
             <div>
               <FieldLabel>Ciudad</FieldLabel>
-              <TextInput value={ciudad} onChange={setCiudad} placeholder="Barranquilla" />
+              <TextInput value={ciudad} onChange={setCiudad} placeholder="Ciudad" />
             </div>
             <div>
               <FieldLabel>Teléfono</FieldLabel>

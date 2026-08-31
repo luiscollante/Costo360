@@ -122,7 +122,7 @@ export default function ConfigPage() {
                     type="text"
                     value={form.ciudad}
                     onChange={(e) => set('ciudad', e.target.value)}
-                    placeholder="Barranquilla"
+                    placeholder="Ciudad"
                     className={inputBase}
                   />
                 </div>
