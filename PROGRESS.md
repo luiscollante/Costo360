@@ -4,6 +4,53 @@
 
 ## ✅ Hecho
 
+- **Rediseño visual del producto — CICLO 1 completado (2026-08-30/31):** rama
+  `goal/rediseno-visual` (sobre `master`, Fase 2.A ya fusionada). Ciclo `/goal` completo:
+  plan → auditoría Fase 2 (UX Architect + Frontend Developer, ambos "aprueba con cambios",
+  ambos pidieron partir en 2 ciclos) → ejecución → **Fase 5 (Code Reviewer + Accessibility
+  Auditor, ambos "aprueba con cambios", guardarraíles confirmados: motor intacto,
+  `SessionGuard` sin cambios de lógica, RLS sin tocar)**. Plan vivo: `docs/PLAN_REDISENO_VISUAL.md`.
+  - **7 bloques (R0, R1, R2, R4, R5, R7, R8) + correcciones del fundador y de la Fase 5**,
+    ~22 commits (`a5292cf`…`441af59`), `tsc -b` + `vite build` limpios en cada uno.
+  - **R0** backend (único cambio, aditivo): `empresa_nombre` en `/api/auth/me`;
+    `Depends(require_dashboard)` en `GET /api/parametros`, `/api/config/empresa`,
+    `/api/config/logo` (el rol operativo ya no los lee; verificado que no rompe cotizar).
+  - **R1** capa de tokens con contrastes recalculados a WCAG AA (`text-secondary #5F5F5F`,
+    `-tertiary #6E6E6E`, estados con token de texto vs. relleno, esmeralda). `Inter` fuera.
+    `:focus-visible` global. `@media (prefers-reduced-motion)`. `formatPct` + clase `.num`.
+  - **R2** modo oscuro ELIMINADO (hook `useTheme`, botones, `<script>` de `index.html`,
+    orbes). Barra lateral `.glass-emerald` (verde real del isotipo `#00472B`, glassmorphism,
+    texto crema/blanco sólido). `<MotionConfig reducedMotion="user">` + `useCountUp` con
+    `matchMedia`.
+  - **R4** shell: skip-link, foco al `<main>` + `document.title` por ruta, nombre de empresa
+    en la barra superior.
+  - **R5** componente `Logo` con el arte real del fundador (`logo.png` blanco para fondos
+    oscuros, `logo_versiones_oscuras.png` tinta oscura para fondos claros). `manifest.json`
+    reescrito (adiós "Costomarmol"). Favicon/apple-touch = isotipo, optimizados.
+  - **R7** carga inicial reconstruida: `store/auth.ts` con estados
+    `authenticating/anon/profile-pending/no-profile/ready`; shell con `<AppShellSkeleton>`
+    inmediato (sin rebotar a `/login` a un usuario logueado); `SessionGuard` estado
+    `reclamando` → indicador NO modal (su máquina de estados intacta); `RoleRoute` +
+    `lib/capabilities.ts` ocultan y redirigen Dashboard/Parámetros/Configuración para el
+    operativo; `HomeRedirect` rol-aware; `axios` con `timeout` (10 s default, 60 s en PDF y
+    agente).
+  - **R8** fuera "Gramar"/"Barranquilla" de los campos.
+  - **Verificado en vivo** (navegador, extensión de Chrome) con cuenta de dueña Y de
+    operativo: 13 rutas, barra esmeralda legible, títulos de pestaña, redirecciones del
+    operativo sin bucles, `SessionGuard` no bloqueante, logo legible en login.
+  - **Fase 5 — arreglos aplicados** (`441af59`): `git rm` de 6,6 MB de binarios de
+    hero/landing que un `git add -A` arrastró por error; foco de teclado visible sobre la
+    barra esmeralda (`.glass-emerald :focus-visible` en crema); `timeout` por-llamada en
+    agente/PDF; `focus({preventScroll})`; semántica del spinner de `AuthGate`; `aria-hidden`
+    en iconos; `theme-color` a crema; hover de la barra y estado activo de "Panel Admin".
+  - `ARQUITECTURA_MAESTRA.md` §6 actualizado con todo lo anterior.
+  - **Próxima tarea lógica:** CICLO 2 del rediseño — bloques **R3** (12-14 primitivos
+    accesibles), **R6** (pasada pantalla por pantalla: contraste de contenido, formato de
+    números, colores de gráficos, `<h1>` por página), **R10** (selector de material como
+    diálogo + catálogo de materiales por taller, migración `0005`), **R9** (verificación
+    final). Detalle en `docs/PLAN_REDISENO_VISUAL.md`. Falta fusionar `goal/rediseno-visual`
+    a `master` (¿al terminar el Ciclo 2, o antes?).
+
 - **Fase 2.A ejecutada — migración a Supabase Auth + aislamiento real + sesión única (2026-08-27):**
   Ciclo `/goal` completo (Fases 0-6) en una sola sesión. 10 micro-commits en la rama
   `goal/fase-2a-multitenant-auth` (aún NO fusionada a `master`). Detalle vivo en

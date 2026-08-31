@@ -2,6 +2,87 @@
 
 ---
 
+## Sesión: 2026-08-30/31 — Rediseño visual del producto: CICLO 1 completo
+
+### Qué se hizo
+Ciclo `/goal` completo para el **Objetivo 1** (rediseño de la interfaz del producto), partido
+en 2 ciclos por recomendación de los auditores. **Este trabajo cubre el Ciclo 1.** Rama
+`goal/rediseno-visual` (sobre `master`, con la Fase 2.A ya fusionada). Plan vivo:
+`docs/PLAN_REDISENO_VISUAL.md`.
+
+- **Fase 0-1 (plan):** se reescribió `PLAN_REDISENO_VISUAL.md` incorporando la revisión de UX
+  previa (`docs/REVISION_UX_2026-08-29.md`) y 5 decisiones del fundador.
+- **Fase 2 (auditoría del plan):** UX Architect + Frontend Developer, ambos "APRUEBA CON
+  CAMBIOS", ambos pidieron **partir en 2 ciclos**. Se incorporaron todas las correcciones
+  (marcadas `[aud]`) y el corte. Ciclo 1 = R0, R1, R2, R4, R5, R7, R8. Ciclo 2 = R3, R6,
+  R10, R9.
+- **Fase 3:** el fundador aprobó el Ciclo 1 y resolvió las 5 decisiones (nombre de empresa
+  SÍ; rol operativo → bloqueo real de backend donde no rompa cotizar; landing fuera de
+  alcance; R7 alcance completo; auditar el plan SÍ).
+- **Fase 4 (ejecución):** ~22 commits (`a5292cf`…`441af59`). Detalle bloque por bloque en
+  `PROGRESS.md`. Aparte del plan, el fundador entregó su arte de logo/isotipo nuevo
+  (favicon + wordmark claro + wordmark de tinta oscura) y dio feedback en vivo (verde real
+  del isotipo `#00472B` en vez del `#156850` de una decisión previa; glassmorphism no se
+  veía → opacidad al 82%; logo del sidebar era un lockup tipográfico → arte real; botones
+  "Agregar placa/ítem" no se notaban → color de marca + `cursor-pointer`).
+- **Verificación en vivo:** navegación por la extensión de Chrome con cuenta de dueña (Ana,
+  admin) Y de operativo (Beto). Las 13 rutas, títulos de pestaña, barra esmeralda legible,
+  redirecciones del operativo (Dashboard/Parámetros/Configuración → Nueva Cotización) sin
+  bucles, `SessionGuard` no bloqueante, logo legible en login.
+- **Fase 5 (auditoría del resultado):** Code Reviewer + Accessibility Auditor, ambos "APRUEBA
+  CON CAMBIOS". Confirmaron los guardarraíles (motor intacto, `SessionGuard` sin cambios de
+  lógica —comparado byte a byte—, RLS sin tocar). Arreglos aplicados en `441af59`: `git rm`
+  de 6,6 MB de binarios de hero/landing que un `git add -A` arrastró por error; foco de
+  teclado invisible sobre la barra esmeralda → override a crema; `timeout` de axios global de
+  10 s rompía el chat del agente y la generación de PDF → override por-llamada a 60 s;
+  `focus({preventScroll})` + `scrollTo`; spinner de `AuthGate` con `role="status"` + sr-only;
+  `aria-hidden` en iconos; `theme-color` a crema; hover de la barra y estado activo de "Panel
+  Admin".
+- **Fase 6:** `ARQUITECTURA_MAESTRA.md` §6 y `docs/ROADMAP_COSTO360.md` actualizados;
+  `PROGRESS.md`/`SESSION.md` (este archivo); memoria persistente.
+
+### Archivos modificados/creados (rama `goal/rediseno-visual`)
+- **Frontend nuevos:** `components/Logo.tsx`, `components/AppShellSkeleton.tsx`,
+  `components/RoleRoute.tsx`, `lib/capabilities.ts`.
+- **Frontend modificados:** `index.css`, `App.tsx`, `store/auth.ts`, `components/AppLayout.tsx`,
+  `components/Sidebar.tsx`, `components/PrivateRoute.tsx`, `components/AdminRoute.tsx`,
+  `components/SessionGuard.tsx` (solo render/ARIA), `hooks/useCountUp.ts`, `api/client.ts`,
+  `api/auth.ts`, `api/agente.ts`, `api/cotizacion.ts`, `lib/utils.ts`, `pages/LoginPage.tsx`,
+  `pages/ResetPasswordPage.tsx`, `pages/CotizacionPage.tsx`, `pages/CotizacionAIUPage.tsx`,
+  `pages/CotizacionExpressPage.tsx`, `pages/ConfigPage.tsx`, `index.html`, `public/manifest.json`.
+- **Frontend borrados:** `hooks/useTheme.ts`.
+- **Backend modificados:** `middleware/auth.py`, `models/auth.py`, `routers/auth.py`,
+  `routers/config.py`, `routers/parametros.py`.
+- **Assets:** `web/public/{favicon,apple-touch-icon,logo,logo_versiones_oscuras}.png`
+  (optimizados); originales en `assets/marca/`. `git rm` de binarios de hero/landing e
+  `isotipo.png` muerto.
+- **Docs:** `docs/PLAN_REDISENO_VISUAL.md` (reescrito + bloque R10), `ARQUITECTURA_MAESTRA.md` §6.
+
+### Decisiones tomadas
+- Rediseño partido en **2 ciclos**: Ciclo 1 = fundamento (tokens, shell, barra, carga, logo);
+  Ciclo 2 = primitivos + pasada pantalla por pantalla + catálogo de materiales.
+- Verde esmeralda de la barra = `#00472B` (muestreado del isotipo real), NO el `#156850` de
+  la decisión previa del 2026-08-29.
+- Rol operativo: bloqueo real de backend en `GET /api/parametros`, `/api/config/empresa`,
+  `/api/config/logo` (`require_dashboard`) + ocultamiento/redirección en el frontend.
+- Logo: dos variantes de arte del fundador (claro/oscuro) vía componente `Logo`. El SVG
+  vectorizado que entregó salía con el isotipo en negro → descartado; pendiente un SVG limpio.
+- R7 con alcance completo (reconstrucción del flujo de carga), no solo el arreglo mínimo.
+- `finanzas`/OCR de facturas ya estaba fuera del prototipo (no se tocó).
+
+### Primera tarea de la próxima sesión
+1. Arrancar el **CICLO 2** del rediseño (`docs/PLAN_REDISENO_VISUAL.md`): normalmente **R3**
+   (los 12-14 primitivos accesibles: `Dialog`, `Card`, `Field`, `DataTable`, `Badge` con
+   icono, `SegmentedControl` con 2 semánticas, `Button`/`IconButton`, `PageHeader`,
+   `AsyncBoundary`, `EmptyState`, `SelectField`/`DateField` como envoltorios de nativo),
+   salvo que el fundador quiera priorizar **R10** (selector de material + catálogo por taller,
+   migración `0005`) o el pago visible de **R6** (contraste de contenido, formato de números,
+   colores de gráficos).
+2. En algún punto: fusionar `goal/rediseno-visual` a `master` (¿al cerrar el Ciclo 2?).
+3. Reindexar el grafo del proyecto (`codebase-memory-mcp`) — quedó pendiente de esta sesión.
+
+---
+
 ## Sesión: 2026-08-27 — Fase 2.A completa: migración a Supabase Auth + aislamiento real + sesión única
 
 > Nota: SESSION.md venía sin actualizar desde el 2026-08-23/24. Entre medias hubo sesiones el
