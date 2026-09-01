@@ -240,7 +240,7 @@ function HistorialRow({ row, index }: { row: CotizacionResumen; index: number })
         <button
           onClick={() => setShowCC(v => !v)}
           title="Cuenta de Cobro PDF"
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-brand-text-secondary hover:text-brand-gold hover:bg-brand-gold/10 transition-all"
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-brand-text-secondary hover:text-brand-primary hover:bg-brand-primary/10 transition-all"
         >
           <Receipt size={14} />
         </button>
@@ -315,7 +315,7 @@ function HistorialRow({ row, index }: { row: CotizacionResumen; index: number })
         <div className="flex items-start justify-between gap-2 mb-2.5">
           <span className="font-mono text-xs text-brand-text flex items-center gap-1.5 min-w-0 pt-0.5">
             {isAIU && (
-              <span className="shrink-0 px-1 py-0.5 rounded text-[8px] font-bold bg-brand-gold/15 text-brand-gold border border-brand-gold/30 leading-none">AIU</span>
+              <span className="shrink-0 px-1 py-0.5 rounded text-[8px] font-bold bg-brand-gold/15 text-brand-warning-text border border-brand-gold/40 leading-none">AIU</span>
             )}
             <span className="truncate">{row.numero}</span>
           </span>
@@ -341,7 +341,7 @@ function HistorialRow({ row, index }: { row: CotizacionResumen; index: number })
       <div className="hidden sm:grid grid-cols-[1.6fr_2fr_0.9fr_1.3fr_1.1fr_150px] px-4 py-3 items-center hover:bg-brand-surface/20 transition-colors sm:min-w-[580px]">
         <span className="font-mono text-xs text-brand-text flex items-center gap-1.5 min-w-0">
           {isAIU && (
-            <span className="shrink-0 px-1 py-0.5 rounded text-[8px] font-bold bg-brand-gold/15 text-brand-gold border border-brand-gold/30 leading-none">AIU</span>
+            <span className="shrink-0 px-1 py-0.5 rounded text-[8px] font-bold bg-brand-gold/15 text-brand-warning-text border border-brand-gold/40 leading-none">AIU</span>
           )}
           <span className="truncate">{row.numero}</span>
         </span>

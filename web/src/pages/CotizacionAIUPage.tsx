@@ -461,7 +461,7 @@ function CCModalAIU({ cotId, onClose }: { cotId: number; onClose: () => void }) 
         <div className="flex gap-2">
           <button onClick={onClose} className="flex-1 py-2.5 rounded border border-brand-border text-sm text-brand-text-secondary hover:text-brand-text transition-colors">Cancelar</button>
           <button onClick={handleDownload} disabled={loading || !nombre.trim()}
-            className="flex-1 py-2.5 rounded bg-brand-gold/15 border border-brand-gold/40 text-sm font-semibold text-brand-gold hover:bg-brand-gold/25 transition-all disabled:opacity-40 flex items-center justify-center gap-2">
+            className="flex-1 py-2.5 rounded border border-brand-primary/40 bg-brand-primary/[0.06] text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.12] transition-all disabled:opacity-40 flex items-center justify-center gap-2">
             {loading && <Loader2 size={14} className="animate-spin" />}
             {loading ? 'Generando…' : 'Descargar PDF'}
           </button>
@@ -582,7 +582,7 @@ function Step2Resultado({
             {saved && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button onClick={handlePDF} disabled={pdfLoading}
-                  className="py-3 rounded-lg border border-brand-gold/40 bg-brand-gold/10 text-sm font-semibold text-brand-gold hover:bg-brand-gold/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                  className="py-3 rounded-lg border border-brand-primary/40 bg-brand-primary/[0.06] text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.12] transition-all disabled:opacity-50 flex items-center justify-center gap-2">
                   {pdfLoading && <Loader2 size={14} className="animate-spin" />}
                   {pdfLoading ? 'Generando…' : 'Descargar Oferta AIU'}
                 </button>

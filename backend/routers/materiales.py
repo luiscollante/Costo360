@@ -115,7 +115,7 @@ def crear_material(
         "DO UPDATE SET precio_m2 = EXCLUDED.precio_m2, "
         "  proveedor = EXCLUDED.proveedor, activo = TRUE "
         f"RETURNING {_COLS}",
-        (emp, body.categoria, body.referencia.strip(), body.precio_m2,
+        (emp, body.categoria.strip(), body.referencia.strip(), body.precio_m2,
          body.precio_lamina, body.ancho_lamina_cm, body.alto_lamina_cm,
          body.proveedor.strip()),
     )

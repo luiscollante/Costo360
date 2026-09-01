@@ -186,29 +186,29 @@ export default function MaterialCombobox({
   // ── Trigger + diálogo de selección ────────────────────────────────────────
   return (
     <>
-      <button
-        type="button"
-        onClick={() => { setOpen(true); setQuery('') }}
-        aria-haspopup="dialog"
-        className="flex w-full items-center gap-2 rounded-lg border border-brand-border bg-brand-input px-3 py-2.5 text-left transition-colors hover:border-brand-primary/40 cursor-pointer"
-      >
-        <span className={`flex-1 truncate text-sm ${value ? 'text-brand-text' : 'text-brand-text-secondary'}`}>
-          {value || placeholder || `Seleccionar ${categoria}…`}
-        </span>
-        {value && (
-          <span
-            role="button"
-            tabIndex={0}
-            aria-label="Limpiar"
-            onClick={(e) => { e.stopPropagation(); onChange('', 0, undefined) }}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onChange('', 0, undefined) } }}
-            className="text-brand-text-secondary hover:text-brand-danger cursor-pointer"
-          >
-            <X size={13} />
+      <div className="flex items-stretch gap-1.5">
+        <button
+          type="button"
+          onClick={() => { setOpen(true); setQuery('') }}
+          aria-haspopup="dialog"
+          className="flex flex-1 items-center gap-2 rounded-lg border border-brand-border bg-brand-input px-3 py-2.5 text-left transition-colors hover:border-brand-primary/40 cursor-pointer"
+        >
+          <span className={`flex-1 truncate text-sm ${value ? 'text-brand-text' : 'text-brand-text-secondary'}`}>
+            {value || placeholder || `Seleccionar ${categoria}…`}
           </span>
+          <ChevronDown size={14} className="shrink-0 text-brand-text-secondary" aria-hidden="true" />
+        </button>
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange('', 0, undefined)}
+            aria-label="Quitar material seleccionado"
+            className="flex w-9 shrink-0 items-center justify-center rounded-lg border border-brand-border text-brand-text-secondary hover:border-brand-danger/40 hover:text-brand-danger transition-colors cursor-pointer"
+          >
+            <X size={14} />
+          </button>
         )}
-        <ChevronDown size={14} className="shrink-0 text-brand-text-tertiary" aria-hidden="true" />
-      </button>
+      </div>
 
       <Dialog open={open} onClose={() => { setOpen(false); setQuery('') }} title={`Elegir material — ${categoria}`}>
         <div className="relative mb-3">
@@ -228,31 +228,40 @@ export default function MaterialCombobox({
           {isLoading ? (
             <li className="px-4 py-8 text-center text-xs text-brand-text-secondary" role="status">Cargando catálogo…</li>
           ) : filtered.length === 0 ? (
-            <li className="px-4 py-8 text-center text-xs text-brand-text-secondary">Sin resultados. Usa «Otro» abajo.</li>
+            <li role="status" className="px-4 py-8 text-center text-xs text-brand-text-secondary">Sin resultados. Usa «Otro» abajo.</li>
           ) : (
-            filtered.map((m) => (
-              <li key={m.id}>
-                <button
-                  type="button"
-                  onClick={() => handleSelect(m)}
-                  className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors hover:bg-brand-primary/[0.06] ${
-                    value === m.referencia ? 'bg-brand-primary/10' : ''
-                  }`}
-                >
-                  <span className="flex min-w-0 items-center gap-2">
-                    <span className="truncate text-sm font-medium text-brand-text-dark">{m.referencia}</span>
-                    {m.es_propio && (
-                      <span className="shrink-0 rounded bg-brand-gold/15 px-1.5 py-0.5 text-[9px] font-semibold text-brand-warning-text">
-                        de tu taller
-                      </span>
-                    )}
-                  </span>
-                  <span className="shrink-0 font-mono text-xs text-brand-text-secondary num">
-                    {formatCOP(m.precio_m2)}/m²
-                  </span>
-                </button>
-              </li>
-            ))
+            filtered.map((m) => {
+              const sel = value === m.referencia
+              return (
+                <li key={m.id}>
+                  <button
+                    type="button"
+                    onClick={() => handleSelect(m)}
+                    aria-current={sel ? 'true' : undefined}
+                    className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-brand-primary/[0.06] ${
+                      sel ? 'bg-brand-primary/10' : ''
+                    }`}
+                  >
+                    <Check
+                      size={14}
+                      aria-hidden="true"
+                      className={`shrink-0 text-brand-primary ${sel ? '' : 'invisible'}`}
+                    />
+                    <span className="flex min-w-0 flex-1 items-center gap-2">
+                      <span className="truncate text-sm font-medium text-brand-text-dark">{m.referencia}</span>
+                      {m.es_propio && (
+                        <span className="shrink-0 rounded bg-brand-gold/15 px-1.5 py-0.5 text-[10px] font-semibold text-brand-warning-text">
+                          de tu taller
+                        </span>
+                      )}
+                    </span>
+                    <span className="shrink-0 font-mono text-xs text-brand-text-secondary num">
+                      {formatCOP(m.precio_m2)}/m²
+                    </span>
+                  </button>
+                </li>
+              )
+            })
           )}
         </ul>
 
@@ -265,7 +274,7 @@ export default function MaterialCombobox({
           Otro (escribir el nombre a mano)
         </button>
 
-        <p className="mt-3 text-[10px] leading-relaxed text-brand-text-tertiary">
+        <p className="mt-3 text-[10px] leading-relaxed text-brand-text-secondary">
           {filtered.length} {filtered.length === 1 ? 'material' : 'materiales'} · {DISCLAIMER}
         </p>
       </Dialog>

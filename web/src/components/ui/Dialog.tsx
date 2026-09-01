@@ -20,6 +20,7 @@ export function Dialog({
   title,
   role = 'dialog',
   labelledBy,
+  describedBy,
   children,
   className = '',
 }: {
@@ -28,6 +29,7 @@ export function Dialog({
   title?: string
   role?: 'dialog' | 'alertdialog'
   labelledBy?: string
+  describedBy?: string
   children: ReactNode
   className?: string
 }) {
@@ -43,7 +45,17 @@ export function Dialog({
 
     const root = document.getElementById('root')
     root?.setAttribute('inert', '')
-    panelRef.current?.focus()
+
+    // Foco al primer control (respeta un autoFocus del consumidor); si no hay,
+    // al panel. Para alertdialog (sin campos) suele caer en el panel.
+    const primero = panelRef.current?.querySelector<HTMLElement>(FOCUSABLES)
+    if (document.activeElement && panelRef.current?.contains(document.activeElement)) {
+      /* el consumidor ya movió el foco con autoFocus — respetarlo */
+    } else if (primero) {
+      primero.focus()
+    } else {
+      panelRef.current?.focus()
+    }
 
     return () => {
       root?.removeAttribute('inert')
@@ -86,6 +98,7 @@ export function Dialog({
         role={role}
         aria-modal="true"
         aria-labelledby={titleId}
+        aria-describedby={describedBy}
         tabIndex={-1}
         onKeyDown={onKeyDown}
         onClick={(e) => e.stopPropagation()}

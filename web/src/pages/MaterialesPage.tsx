@@ -185,7 +185,7 @@ export default function MaterialesPage() {
                               </button>
                             </>
                           ) : (
-                            <span className="text-[11px] text-brand-text-tertiary">solo lectura</span>
+                            <span className="text-[11px] text-brand-text-secondary">solo lectura</span>
                           )}
                         </div>
                       </td>

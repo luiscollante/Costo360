@@ -4,6 +4,7 @@ interface ControlA11y {
   id: string
   'aria-invalid'?: boolean
   'aria-describedby'?: string
+  'aria-required'?: boolean
 }
 
 /**
@@ -28,7 +29,8 @@ export function Field({
   const id = useId()
   const hintId = `${id}-hint`
   const errId = `${id}-err`
-  const describedBy = [hint ? hintId : null, error ? errId : null].filter(Boolean).join(' ') || undefined
+  const showHint = !!hint && !error
+  const describedBy = [showHint ? hintId : null, error ? errId : null].filter(Boolean).join(' ') || undefined
 
   return (
     <div className="space-y-1.5">
@@ -48,10 +50,11 @@ export function Field({
         id,
         'aria-invalid': error ? true : undefined,
         'aria-describedby': describedBy,
+        'aria-required': required || undefined,
       })}
 
-      {hint && !error && (
-        <p id={hintId} className="text-[11px] text-brand-text-tertiary">
+      {showHint && (
+        <p id={hintId} className="text-[11px] text-brand-text-secondary">
           {hint}
         </p>
       )}

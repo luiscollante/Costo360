@@ -1944,7 +1944,7 @@ function CCModalResultado({ cotId, onClose }: { cotId: number; onClose: () => vo
         <div className="flex gap-2">
           <button onClick={onClose} className="flex-1 py-2.5 rounded border border-brand-border text-sm text-brand-text-secondary hover:text-brand-text transition-colors">Cancelar</button>
           <button onClick={handleDownload} disabled={loading || !nombre.trim()}
-            className="flex-1 py-2.5 rounded bg-brand-gold/15 border border-brand-gold/40 text-sm font-semibold text-brand-gold hover:bg-brand-gold/25 transition-all disabled:opacity-40 flex items-center justify-center gap-1.5">
+            className="flex-1 py-2.5 rounded border border-brand-primary/40 bg-brand-primary/[0.06] text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.12] transition-all disabled:opacity-40 flex items-center justify-center gap-1.5">
             {loading ? <Loader2 size={13} className="animate-spin" /> : null}
             {loading ? 'Generando…' : 'Descargar PDF'}
           </button>
@@ -2212,7 +2212,7 @@ function Step4Resultado({ dir }: { dir: number }) {
                 <div className="w-px bg-brand-border" />
                 <div className="text-center">
                   <div className="font-mono text-sm text-brand-gold font-bold">
-                    {formatNum(resultado.aprovechamiento, 1)}%
+                    {formatPct(resultado.aprovechamiento, 1)}
                   </div>
                   <div className="text-[9px] uppercase tracking-widest text-brand-text-secondary mt-0.5">
                     Aprovech.
@@ -2341,7 +2341,7 @@ function Step4Resultado({ dir }: { dir: number }) {
                     <button
                       type="button"
                       onClick={() => setShowCCModal(true)}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border border-brand-gold/30 bg-brand-gold/5 text-sm text-brand-gold hover:bg-brand-gold/10 hover:border-brand-gold/50 transition-all"
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border border-brand-border text-sm text-brand-text-secondary hover:border-brand-primary/40 hover:text-brand-primary transition-all"
                     >
                       <Receipt size={13} />
                       Cuenta de Cobro

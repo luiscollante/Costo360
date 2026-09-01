@@ -34,10 +34,13 @@ export function SegmentedControl<T extends string>({
   const refs = useRef<(HTMLButtonElement | null)[]>([])
 
   function onKeyDown(e: KeyboardEvent, i: number) {
-    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return
+    let next = i
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % options.length
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (i - 1 + options.length) % options.length
+    else if (e.key === 'Home') next = 0
+    else if (e.key === 'End') next = options.length - 1
+    else return
     e.preventDefault()
-    const delta = e.key === 'ArrowRight' ? 1 : -1
-    const next = (i + delta + options.length) % options.length
     onChange(options[next].value)
     refs.current[next]?.focus()
   }
@@ -61,7 +64,7 @@ export function SegmentedControl<T extends string>({
             aria-selected={mode === 'tabs' ? selected : undefined}
             aria-checked={mode === 'buttons' ? selected : undefined}
             aria-controls={mode === 'tabs' && panelIdFor ? panelIdFor(o.value) : undefined}
-            tabIndex={mode === 'tabs' ? (selected ? 0 : -1) : 0}
+            tabIndex={selected ? 0 : -1}
             onClick={() => onChange(o.value)}
             onKeyDown={(e) => onKeyDown(e, i)}
             className={cn(

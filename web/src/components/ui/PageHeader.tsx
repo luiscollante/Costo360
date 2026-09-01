@@ -30,7 +30,7 @@ export function PageHeader({
     <div className="mb-6 flex items-start justify-between gap-4">
       <div className="min-w-0">
         {kicker && (
-          <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-brand-text-tertiary">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-brand-text-secondary">
             {kicker}
           </p>
         )}
