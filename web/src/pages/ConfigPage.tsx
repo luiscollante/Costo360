@@ -73,7 +73,7 @@ export default function ConfigPage() {
     <AppLayout>
       <div className="max-w-2xl mx-auto">
         <PageHeader
-          kicker="Sistema"
+          kicker="Ajustes"
           title="Configuración"
           subtitle="Datos de tu empresa que aparecen en los PDFs de cotización"
         />

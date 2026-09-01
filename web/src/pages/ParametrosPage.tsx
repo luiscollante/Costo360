@@ -411,7 +411,7 @@ export default function ParametrosPage() {
       <div className="max-w-4xl mx-auto">
 
         <PageHeader
-          kicker="Sistema"
+          kicker="Ajustes"
           title="Parámetros"
           subtitle="Tarifas, adicionales y AIU del sistema"
           actions={

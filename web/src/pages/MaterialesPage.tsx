@@ -115,7 +115,7 @@ export default function MaterialesPage() {
   return (
     <AppLayout>
       <PageHeader
-        kicker="Sistema"
+        kicker="Taller"
         title="Catálogo de materiales"
         subtitle="Toca una fila para ajustar categoría, nombre o precio. Los cambios valen solo para tu taller y todos sus usuarios los ven en vivo."
         actions={
@@ -187,23 +187,23 @@ export default function MaterialesPage() {
                   {filtrados.map((m) => (
                     <tr
                       key={m.id}
+                      onClick={() => abrirEditar(m)}
                       className="cursor-pointer border-b border-brand-border/60 last:border-0 hover:bg-brand-primary/[0.05] focus-within:bg-brand-primary/[0.05]"
                     >
                       <td className="px-4 py-3 text-brand-text-secondary">{m.categoria}</td>
                       <td className="px-4 py-3">
+                        {/* Botón real: da acceso por teclado (Tab + Enter). El clic
+                            en cualquier parte de la fila también abre el modal. */}
                         <button
                           type="button"
-                          onClick={() => abrirEditar(m)}
+                          onClick={(e) => { e.stopPropagation(); abrirEditar(m) }}
                           className="text-left font-medium text-brand-text-dark hover:text-brand-primary hover:underline cursor-pointer"
                           aria-label={`Editar ${m.referencia}`}
                         >
                           {m.referencia}
                         </button>
                       </td>
-                      <td
-                        className="px-4 py-3 text-right font-mono text-brand-text-dark num cursor-pointer"
-                        onClick={() => abrirEditar(m)}
-                      >
+                      <td className="px-4 py-3 text-right font-mono text-brand-text-dark num">
                         {formatCOP(m.precio_m2)}
                       </td>
                     </tr>

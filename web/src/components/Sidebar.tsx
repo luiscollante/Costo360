@@ -23,39 +23,80 @@ import {
 
 interface NavItem { to: string; label: string; Icon: LucideIcon; requiereDashboard?: boolean }
 
+// Estructura "por área del negocio" (decisión del fundador 2026-08-31):
+//  · Dashboard suelto arriba (resumen — solo roles con acceso a BI).
+//  · Cotizaciones: crear + Historial (la lista de lo cotizado).
+//  · Taller: todo lo de materiales y piso, incluido el Catálogo.
+//  · Ajustes: parámetros de costo y datos de la empresa.
+//  · Panel Admin va aparte, abajo.
+const DASHBOARD_ITEM: NavItem = { to: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard, requiereDashboard: true }
+
 const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
-    label: 'Crear',
+    label: 'Cotizaciones',
     items: [
-      { to: '/cotizacion',     label: 'Nueva Cotización', Icon: PlusCircle },
-      { to: '/express',        label: 'Express',          Icon: Zap        },
-      { to: '/cotizacion-aiu', label: 'Cotización AIU',   Icon: HardHat    },
-    ],
-  },
-  {
-    label: 'Consultar',
-    items: [
-      { to: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard, requiereDashboard: true },
-      { to: '/historial', label: 'Historial', Icon: ClipboardList  },
+      { to: '/cotizacion',     label: 'Nueva Cotización', Icon: PlusCircle    },
+      { to: '/express',        label: 'Express',          Icon: Zap           },
+      { to: '/cotizacion-aiu', label: 'Cotización AIU',   Icon: HardHat       },
+      { to: '/historial',      label: 'Historial',        Icon: ClipboardList },
     ],
   },
   {
     label: 'Taller',
     items: [
-      { to: '/inventario', label: 'Inventario', Icon: Boxes    },
-      { to: '/retales',    label: 'Retales',    Icon: Layers   },
-      { to: '/nesting',    label: 'Nesting',     Icon: Grid3X3  },
+      { to: '/materiales', label: 'Catálogo',   Icon: BookMarked },
+      { to: '/inventario', label: 'Inventario', Icon: Boxes      },
+      { to: '/retales',    label: 'Retales',    Icon: Layers     },
+      { to: '/nesting',    label: 'Nesting',    Icon: Grid3X3    },
     ],
   },
   {
-    label: 'Sistema',
+    label: 'Ajustes',
     items: [
       { to: '/parametros',    label: 'Parámetros',    Icon: SlidersHorizontal, requiereDashboard: true },
-      { to: '/materiales',    label: 'Catálogo',      Icon: BookMarked },
       { to: '/configuracion', label: 'Configuración', Icon: Settings2,         requiereDashboard: true },
     ],
   },
 ]
+
+// Texto en colores SÓLIDOS (sin alfa) sobre la barra esmeralda-glass. Ver R1/R4.
+const inactiveNav = 'text-[#F5E8D2] hover:bg-white/[0.08]'
+const activeNav = 'text-white font-medium'
+
+function NavRow({ to, label, Icon, onNavigate }: NavItem & { onNavigate?: () => void }) {
+  return (
+    <NavLink
+      to={to}
+      onClick={onNavigate}
+      className={({ isActive }) =>
+        `relative flex items-center gap-3 px-3 py-1.5 rounded-lg text-[13px] leading-tight transition-colors ${
+          isActive ? activeNav : inactiveNav
+        }`
+      }
+    >
+      {({ isActive }) => (
+        <>
+          {isActive && (
+            <>
+              <motion.span
+                layoutId="nav-active"
+                className="absolute left-0 top-1 bottom-1 w-0.5 bg-brand-gold rounded-full"
+                transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+              />
+              <motion.span
+                layoutId="nav-active-bg"
+                className="absolute inset-0 rounded-lg bg-white/[0.14]"
+                transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+              />
+            </>
+          )}
+          <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+          {label}
+        </>
+      )}
+    </NavLink>
+  )
+}
 
 export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { usuario, clearSession } = useAuthStore()
@@ -67,10 +108,6 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     clearSession()
     navigate('/login')
   }
-
-  // Barra lateral esmeralda-glass — texto en colores SÓLIDOS (sin alfa). Ver R1/R4.
-  const inactiveNav = 'text-[#F5E8D2] hover:bg-white/[0.08]'
-  const activeNav = 'text-white font-medium'
 
   // Regla 6: el rol operativo no ve Dashboard / Parámetros / Configuración.
   const verDashboard = puedeVerDashboard(usuario)
@@ -90,79 +127,30 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-2.5 space-y-2 px-3 relative overflow-y-auto min-h-0">
+      <nav className="flex-1 py-3 space-y-3 px-3 relative overflow-y-auto min-h-0">
+        {verDashboard && (
+          <div className="space-y-0.5">
+            <NavRow {...DASHBOARD_ITEM} onNavigate={onNavigate} />
+          </div>
+        )}
+
         {grupos.map((group) => (
           <div key={group.label}>
-            <p className="px-3 mb-0.5 text-[11px] font-semibold uppercase tracking-widest text-[#E4D8BF]">
+            <p className="px-3 mb-1 text-[11px] font-semibold uppercase tracking-widest text-[#E4D8BF]">
               {group.label}
             </p>
             <div className="space-y-0.5">
-              {group.items.map(({ to, label, Icon }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  onClick={onNavigate}
-                  className={({ isActive }) =>
-                    `relative flex items-center gap-3 px-3 py-1.5 rounded-lg text-[13px] leading-tight transition-colors ${
-                      isActive ? activeNav : inactiveNav
-                    }`
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      {isActive && (
-                        <>
-                          <motion.span
-                            layoutId="nav-active"
-                            className="absolute left-0 top-1 bottom-1 w-0.5 bg-brand-gold rounded-full"
-                            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                          />
-                          <motion.span
-                            layoutId="nav-active-bg"
-                            className="absolute inset-0 rounded-lg bg-white/[0.14]"
-                            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                          />
-                        </>
-                      )}
-                      <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                      {label}
-                    </>
-                  )}
-                </NavLink>
+              {group.items.map((it) => (
+                <NavRow key={it.to} {...it} onNavigate={onNavigate} />
               ))}
             </div>
           </div>
         ))}
+
         {usuario?.puede_gestionar_usuarios && (
-          <NavLink
-            to="/admin"
-            className={({ isActive }) =>
-              `relative flex items-center gap-3 px-3 py-1.5 rounded-lg text-[13px] leading-tight transition-colors ${
-                isActive ? activeNav : inactiveNav
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                {isActive && (
-                  <>
-                    <motion.span
-                      layoutId="nav-active"
-                      className="absolute left-0 top-1 bottom-1 w-0.5 bg-brand-gold rounded-full"
-                      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                    />
-                    <motion.span
-                      layoutId="nav-active-bg"
-                      className="absolute inset-0 rounded-lg bg-white/[0.14]"
-                      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                    />
-                  </>
-                )}
-                <ShieldCheck className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                Panel Admin
-              </>
-            )}
-          </NavLink>
+          <div className="mt-1 border-t border-white/10 pt-3">
+            <NavRow to="/admin" label="Panel Admin" Icon={ShieldCheck} onNavigate={onNavigate} />
+          </div>
         )}
       </nav>
 
