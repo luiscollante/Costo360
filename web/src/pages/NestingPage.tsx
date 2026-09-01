@@ -321,7 +321,7 @@ function FormPanel({
           <span className="text-[9px] uppercase tracking-[0.18em] text-brand-text-secondary font-semibold">
             Área lámina
           </span>
-          <span className="font-mono text-sm font-bold text-brand-gold">
+          <span className="font-mono text-sm font-bold text-brand-gold-text">
             {formatNum(areaLamina)} m²
           </span>
         </div>

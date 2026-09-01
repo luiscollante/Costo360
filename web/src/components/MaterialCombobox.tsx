@@ -109,7 +109,7 @@ export default function MaterialCombobox({
     return (
       <div className="space-y-1.5">
         <div className="relative flex items-center">
-          <PenLine size={13} className="pointer-events-none absolute left-3 text-brand-gold" aria-hidden="true" />
+          <PenLine size={13} className="pointer-events-none absolute left-3 text-brand-gold-text" aria-hidden="true" />
           <input
             ref={customInputRef}
             type="text"

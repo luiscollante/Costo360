@@ -311,15 +311,15 @@ export default function ConfigPage() {
                   <p className="text-xs text-brand-text-secondary mb-4">Comparte este código QR con los operarios para que abran la app desde su celular sin escribir la URL.</p>
                   <div className="space-y-2.5">
                     <div className="flex items-start gap-2.5">
-                      <span className="text-[10px] font-bold text-brand-gold bg-brand-gold/10 border border-brand-gold/20 rounded px-1.5 py-0.5 shrink-0 mt-0.5">Android</span>
+                      <span className="text-[10px] font-bold text-brand-gold-text bg-brand-gold/10 border border-brand-gold/20 rounded px-1.5 py-0.5 shrink-0 mt-0.5">Android</span>
                       <span className="text-xs text-brand-text-secondary">Chrome → menú <span className="font-mono">⋮</span> → «Agregar a pantalla de inicio»</span>
                     </div>
                     <div className="flex items-start gap-2.5">
-                      <span className="text-[10px] font-bold text-brand-gold bg-brand-gold/10 border border-brand-gold/20 rounded px-1.5 py-0.5 shrink-0 mt-0.5">iPhone</span>
+                      <span className="text-[10px] font-bold text-brand-gold-text bg-brand-gold/10 border border-brand-gold/20 rounded px-1.5 py-0.5 shrink-0 mt-0.5">iPhone</span>
                       <span className="text-xs text-brand-text-secondary">Safari → botón compartir <span className="font-mono">⎙</span> → «Añadir a la pantalla de inicio»</span>
                     </div>
                     <div className="flex items-start gap-2.5">
-                      <span className="text-[10px] font-bold text-brand-gold bg-brand-gold/10 border border-brand-gold/20 rounded px-1.5 py-0.5 shrink-0 mt-0.5">PC</span>
+                      <span className="text-[10px] font-bold text-brand-gold-text bg-brand-gold/10 border border-brand-gold/20 rounded px-1.5 py-0.5 shrink-0 mt-0.5">PC</span>
                       <span className="text-xs text-brand-text-secondary">Chrome → icono <span className="font-mono">⊕</span> en la barra de dirección → «Instalar»</span>
                     </div>
                   </div>

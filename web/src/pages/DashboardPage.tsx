@@ -122,13 +122,16 @@ export default function DashboardPage() {
 
   // El dashboard es una foto EN VIVO: cada vez que se entra a la pantalla (o se
   // vuelve a ella tras guardar cotizaciones o cambiar estados) debe releer.
-  const { data, isPending, isError, refetch } = useQuery<DashboardResumen>({
+  const { data, isPending, isError, isFetching, refetch } = useQuery<DashboardResumen>({
     queryKey: ['dashboard', granularidad],
     queryFn: () => getDashboardResumen(granularidad),
     staleTime: 0,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
   })
+  // Muestra "Actualizando…" cuando refresca en segundo plano (ya hay datos en
+  // pantalla) — así una recarga de 1-2 s se lee como "está al día", no como lentitud.
+  const refrescando = isFetching && !isPending
 
   const cotizacionesCount = useCountUp(data?.cotizaciones_mes ?? 0)
   const facturacionCount  = useCountUp(data?.facturacion_mes ?? 0)
@@ -155,6 +158,17 @@ export default function DashboardPage() {
         kicker="Panel"
         title="Dashboard"
         subtitle={`${greeting}, ${nombre} — resumen del mes en curso`}
+        actions={
+          refrescando ? (
+            <span
+              className="flex items-center gap-1.5 rounded-full border border-brand-border bg-brand-surface px-2.5 py-1 text-[11px] font-medium text-brand-text-secondary"
+              role="status"
+            >
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-brand-border border-t-brand-primary" aria-hidden="true" />
+              Actualizando…
+            </span>
+          ) : undefined
+        }
       />
 
       <AsyncBoundary isPending={isPending} isError={isError} onRetry={() => refetch()} skeleton={<DashSkeleton />}>

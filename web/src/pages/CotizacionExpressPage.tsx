@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Zap, ChevronDown, ChevronUp, Save, ArrowRight, RotateCcw, FileDown, Receipt, Loader2 } from 'lucide-react'
+import { Zap, ChevronDown, ChevronUp, Save, ArrowRight, RotateCcw, FileDown, Receipt, Loader2, AlertCircle } from 'lucide-react'
 import AppLayout from '@/components/AppLayout'
 import { calcularCotizacionDirecta, guardarCotizacion, descargarPDF, descargarCuentaCobro } from '@/api/cotizacion'
 import type { CotizacionResult } from '@/types/cotizacion'
@@ -291,7 +291,7 @@ function ResultPanel({
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: 'Costo total',      value: formatCOP(Math.round(result.costo_total)), color: 'text-brand-text' },
-          { label: 'Utilidad neta',    value: formatCOP(utilidad),                       color: 'text-brand-gold' },
+          { label: 'Utilidad neta',    value: formatCOP(utilidad),                       color: 'text-brand-gold-text' },
           { label: 'Aprovechamiento',  value: formatPct(result.aprovechamiento, 1),   color: 'text-brand-text' },
         ].map(({ label, value, color }) => (
           <div key={label} className="glass rounded-xl border border-brand-border p-3 text-center">
@@ -460,8 +460,14 @@ export default function CotizacionExpressPage() {
     ? (parseFloat(metros) || 0) * anchoFinal
     : (parseFloat(metros) || 0)
 
-  // Sincroniza anchoCustom cuando cambia el tipo de proyecto
+  // Sincroniza anchoCustom / limpia metros al CAMBIAR el tipo de proyecto — pero
+  // NO en el montaje inicial, para no descartar lo que el usuario dejó guardado.
+  const montado = useRef(false)
   useEffect(() => {
+    if (!montado.current) {
+      montado.current = true
+      return
+    }
     const stdAncho = tipo.ancho
     setAnchoCustom(stdAncho !== null ? String(stdAncho) : '')
     setMetros('')
@@ -628,7 +634,7 @@ export default function CotizacionExpressPage() {
                   </div>
                   {areaPlaca > 0 && (
                     <p className="text-[10px] text-brand-text-secondary mt-1.5 font-mono pl-0.5">
-                      Área lámina: <span className="text-brand-gold font-semibold">{formatNum(areaPlaca)} m²</span>
+                      Área lámina: <span className="text-brand-gold-text font-semibold">{formatNum(areaPlaca)} m²</span>
                     </p>
                   )}
                 </div>
@@ -669,7 +675,7 @@ export default function CotizacionExpressPage() {
                         type="number"
                         value={metros}
                         onChange={(e) => setMetros(e.target.value)}
-                        placeholder={esMl ? '3.50' : '12.00'}
+                        placeholder={esMl ? 'Ej. 3.50' : 'Ej. 12.00'}
                         step={0.01}
                         min={0}
                         className={inputCls + ' pr-10 font-mono'}
@@ -690,7 +696,7 @@ export default function CotizacionExpressPage() {
                           type="number"
                           value={anchoCustom}
                           onChange={(e) => setAnchoCustom(e.target.value)}
-                          placeholder="0.60"
+                          placeholder="Ej. 0.60"
                           step={0.01}
                           min={0}
                           className={inputCls + ' pr-7 font-mono'}
@@ -703,7 +709,7 @@ export default function CotizacionExpressPage() {
 
                 {m2Pieza > 0 && (
                   <p className="text-[10px] text-brand-text-secondary font-mono">
-                    Área proyecto: <span className="text-brand-gold font-semibold">{formatNum(m2Pieza)} m²</span>
+                    Área proyecto: <span className="text-brand-gold-text font-semibold">{formatNum(m2Pieza)} m²</span>
                   </p>
                 )}
               </div>
@@ -728,7 +734,7 @@ export default function CotizacionExpressPage() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <Label>Margen de utilidad</Label>
-                    <span className="font-mono text-sm font-bold text-brand-gold">{margen}%</span>
+                    <span className="font-mono text-sm font-bold text-brand-gold-text">{margen}%</span>
                   </div>
                   <input
                     type="range"
@@ -796,8 +802,9 @@ export default function CotizacionExpressPage() {
               )}
             </div>
             {!canCalc && !loading && missingFields.length > 0 && (
-              <p className="text-[11px] text-brand-warning-text/80 px-0.5">
-                Falta completar: {missingFields.join(', ')}
+              <p className="flex items-start gap-1.5 px-0.5 text-[12px] font-medium text-brand-warning-text">
+                <AlertCircle size={13} className="mt-px shrink-0" aria-hidden="true" />
+                <span>Falta completar: {missingFields.join(', ')}</span>
               </p>
             )}
           </div>

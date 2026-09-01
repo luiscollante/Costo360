@@ -104,7 +104,7 @@ function PctPills({ label, value, onChange, presets }: {
           className={[
             'px-3 py-1.5 rounded text-xs font-semibold border transition-all duration-200',
             showCustom
-              ? 'bg-brand-gold/20 text-brand-gold border-brand-gold/50'
+              ? 'bg-brand-gold/20 text-brand-gold-text border-brand-gold/50'
               : 'border-brand-border text-brand-text-secondary hover:border-brand-gold/40 hover:text-brand-text',
           ].join(' ')}
         >
@@ -308,7 +308,7 @@ function Step0Items({
 
                 <div className="mt-3 pt-3 border-t border-brand-border/40 flex items-center justify-between">
                   <span className="text-xs text-brand-text-secondary">Subtotal de este ítem</span>
-                  <span className="font-mono text-sm font-bold text-brand-gold">{formatCOP(item.cant * item.punit)}</span>
+                  <span className="font-mono text-sm font-bold text-brand-gold-text">{formatCOP(item.cant * item.punit)}</span>
                 </div>
               </div>
             ))}
@@ -328,7 +328,7 @@ function Step0Items({
               <p className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold">Costo Directo (CD)</p>
               <p className="text-[10px] text-brand-text-secondary mt-0.5">Base de cálculo AIU — Decreto 1372/92</p>
             </div>
-            <span className="font-mono text-xl font-bold text-brand-gold">{formatCOP(cd)}</span>
+            <span className="font-mono text-xl font-bold text-brand-gold-text">{formatCOP(cd)}</span>
           </div>
         </div>
 
@@ -363,7 +363,7 @@ function Step1AIU({
     return (
       <div className={['flex items-center justify-between py-2', muted ? 'opacity-60' : ''].join(' ')}>
         <span className="text-xs text-brand-text-secondary">{label}</span>
-        <span className={['font-mono text-sm font-semibold', accent ? 'text-brand-gold' : 'text-brand-text'].join(' ')}>
+        <span className={['font-mono text-sm font-semibold', accent ? 'text-brand-gold-text' : 'text-brand-text'].join(' ')}>
           {formatCOP(value)}
         </span>
       </div>
@@ -408,7 +408,7 @@ function Step1AIU({
             <div className="mt-3 pt-3 border-t-2 border-brand-primary/30">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-brand-text">Estimado</span>
-                <span className="font-mono text-base font-bold text-brand-gold">{formatCOP(estimado)}</span>
+                <span className="font-mono text-base font-bold text-brand-gold-text">{formatCOP(estimado)}</span>
               </div>
             </div>
           </div>
@@ -523,12 +523,12 @@ function Step2Resultado({
 
             <div className="flex justify-center gap-6">
               <div className="text-center">
-                <div className="font-mono text-sm text-brand-gold font-bold">{formatPct(resultado.pct_u, 1)}</div>
+                <div className="font-mono text-sm text-brand-gold-text font-bold">{formatPct(resultado.pct_u, 1)}</div>
                 <div className="text-[9px] uppercase tracking-widest text-brand-text-secondary mt-0.5">Utilidad</div>
               </div>
               <div className="w-px bg-brand-border" />
               <div className="text-center">
-                <div className="font-mono text-sm text-brand-gold font-bold">{formatPct(resultado.margen_pct, 1)}</div>
+                <div className="font-mono text-sm text-brand-gold-text font-bold">{formatPct(resultado.margen_pct, 1)}</div>
                 <div className="text-[9px] uppercase tracking-widest text-brand-text-secondary mt-0.5">Margen efectivo</div>
               </div>
             </div>
@@ -551,7 +551,7 @@ function Step2Resultado({
               ))}
               <div className="flex items-center justify-between px-5 py-3.5 bg-brand-input-deep/60">
                 <span className="text-sm font-bold text-white">PRECIO TOTAL DEL CONTRATO</span>
-                <span className="font-mono text-base font-bold text-brand-gold">{formatCOP(resultado.precio_total)}</span>
+                <span className="font-mono text-base font-bold text-brand-gold-text">{formatCOP(resultado.precio_total)}</span>
               </div>
             </div>
           </motion.div>

@@ -11,8 +11,9 @@
   --color-brand-text: #4A4A4A;
   --color-brand-text-dark: #1A1A1A;
   --color-brand-muted: #8A8A8A;
-  --color-brand-gold: #D4AF37;
+  --color-brand-gold: #D4AF37;        /* SOLO relleno/borde/icono/gráfico — NO texto sobre crema */
   --color-brand-gold-light: #F0C447;
+  --color-brand-gold-text: #6E5410;   /* dorado oscuro para TEXTO (5.9:1 sobre crema — WCAG AA) */
   --color-brand-input: #FFFFFF;
   --color-brand-input-deep: #FDFBF7;
 
@@ -127,32 +128,27 @@ body::before {
   box-shadow: 0 8px 32px rgba(212, 175, 55, 0.1);
 }
 
-/* Barra lateral esmeralda-glass (R4). Verde del isotipo real (#00472B). El efecto
-   de vidrio se consigue con 3 pistas visibles aunque el fondo sea plano:
-   1) un brillo diagonal (sheen) que cruza el cristal,
-   2) un halo de luz en la esquina superior,
-   3) un borde interior claro + sombra lateral marcada,
-   y el `backdrop-filter` desenfoca la capa `.sidebar-aurora` que va detrás.
+/* Barra lateral — glassmorphism real (R4). Verde del isotipo (#00472B) a baja
+   opacidad para que se vea a través del cristal la capa de color `.sidebar-aurora`
+   que va detrás; el `backdrop-filter` la desenfoca y produce la luz difusa
+   característica del vidrio esmerilado. Sin brillos ni destellos.
    La transparencia va SOLO en el fondo, nunca en el texto (crema/blanco sólido). */
 .glass-emerald {
   position: relative;
   background:
-    linear-gradient(118deg, transparent 38%, rgba(255, 255, 255, 0.07) 47%,
-      rgba(255, 255, 255, 0.13) 50%, rgba(255, 255, 255, 0.05) 53%, transparent 62%),
-    radial-gradient(130% 42% at 6% 0%, rgba(255, 255, 255, 0.16), transparent 60%),
-    linear-gradient(180deg, rgba(0, 71, 43, 0.80) 0%, rgba(0, 49, 29, 0.90) 100%);
-  backdrop-filter: blur(26px) saturate(155%);
-  -webkit-backdrop-filter: blur(26px) saturate(155%);
-  border-right: 1px solid rgba(255, 255, 255, 0.18);
+    radial-gradient(120% 30% at 50% 0%, rgba(255, 255, 255, 0.10), transparent 70%),
+    linear-gradient(180deg, rgba(0, 71, 43, 0.62) 0%, rgba(0, 49, 29, 0.74) 100%);
+  backdrop-filter: blur(30px) saturate(150%);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  border-right: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow:
-    inset 1px 1.5px 0 rgba(255, 255, 255, 0.16),
-    inset -1px 0 0 rgba(255, 255, 255, 0.05),
-    7px 0 34px rgba(0, 0, 0, 0.20);
+    inset 1px 0 0 rgba(255, 255, 255, 0.12),
+    6px 0 30px rgba(0, 0, 0, 0.16);
 }
 
-/* Capa decorativa DETRÁS de la barra: manchas de color suaves que el
-   `backdrop-filter` de `.glass-emerald` convierte en luz difusa (glassmorphism).
-   No lleva texto — no afecta la legibilidad. */
+/* Capa de color DETRÁS del cristal: manchas verdes suaves y difusas. Es lo que
+   se ve —desenfocado— a través de `.glass-emerald` y hace que lea como vidrio y
+   no como pintura plana. No lleva texto: no afecta la legibilidad. */
 .sidebar-aurora {
   position: fixed;
   inset: 0 auto 0 0;
@@ -160,29 +156,30 @@ body::before {
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+  background: #013a24;
 }
 .sidebar-aurora::before,
 .sidebar-aurora::after {
   content: "";
   position: absolute;
   border-radius: 9999px;
-  filter: blur(48px);
+  filter: blur(50px);
 }
 .sidebar-aurora::before {
-  top: -4rem;
-  left: -3rem;
-  width: 16rem;
-  height: 16rem;
-  background: #0C7D4D;
-  opacity: 0.45;
-}
-.sidebar-aurora::after {
-  bottom: -5rem;
+  top: -3rem;
   left: -4rem;
   width: 18rem;
   height: 18rem;
-  background: #00311D;
-  opacity: 0.6;
+  background: #0E8A56;
+  opacity: 0.55;
+}
+.sidebar-aurora::after {
+  bottom: -6rem;
+  right: -6rem;
+  width: 17rem;
+  height: 17rem;
+  background: #00291A;
+  opacity: 0.75;
 }
 
 /* Shimmer animation (Premium shine) */

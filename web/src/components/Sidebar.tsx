@@ -80,10 +80,8 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <>
-    {/* Capa de luz difusa detrás del cristal (glassmorphism) — ver index.css */}
-    <div className="sidebar-aurora hidden lg:block" aria-hidden="true">
-      <span className="absolute left-[-3rem] top-1/3 h-56 w-56 rounded-full bg-brand-gold opacity-[0.10] blur-[52px]" />
-    </div>
+    {/* Capa de color difusa detrás del cristal (glassmorphism) — ver index.css */}
+    <div className="sidebar-aurora hidden lg:block" aria-hidden="true" />
     <aside className="glass-emerald w-56 shrink-0 flex flex-col h-screen sticky top-0 relative z-10">
       {/* Logo */}
       <div className="px-4 py-2.5 border-b border-white/15 flex flex-col items-center gap-0.5 shrink-0">

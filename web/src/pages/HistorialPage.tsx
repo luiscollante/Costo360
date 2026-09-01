@@ -34,10 +34,23 @@ function EstadoBadge({ estado, id }: { estado: string; id: number }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mut = useMutation({
     mutationFn: (nuevoEstado: string) => actualizarEstado(id, nuevoEstado),
-    onSuccess: () => {
+    // Actualización optimista: la fila cambia AL INSTANTE; si el backend falla se
+    // revierte. Evita la sensación de lentitud al cambiar de estado.
+    onMutate: async (nuevoEstado: string) => {
+      setOpen(false)
+      await qc.cancelQueries({ queryKey: ['historial'] })
+      const prev = qc.getQueriesData<CotizacionResumen[]>({ queryKey: ['historial'] })
+      qc.setQueriesData<CotizacionResumen[]>({ queryKey: ['historial'] }, (old) =>
+        old?.map((r) => (r.id === id ? { ...r, estado: nuevoEstado } : r)),
+      )
+      return { prev }
+    },
+    onError: (_e, _v, ctx) => {
+      ctx?.prev?.forEach(([key, data]) => qc.setQueryData(key, data))
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ['historial'] })
       qc.invalidateQueries({ queryKey: ['dashboard'] }) // el dashboard cuenta por estado
-      setOpen(false)
     },
   })
 

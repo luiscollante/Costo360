@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus, Check, X, Trash2 } from 'lucide-react'
+import { Plus, Check, Trash2 } from 'lucide-react'
 import AppLayout from '@/components/AppLayout'
 import {
   getMaterialesTodos,
@@ -8,7 +8,6 @@ import {
   editarMaterial,
   eliminarMaterial,
   type MaterialCatalogo,
-  type MaterialCambios,
 } from '@/api/materiales'
 import { formatCOP } from '@/lib/utils'
 import { showToast } from '@/lib/toast'
@@ -23,8 +22,6 @@ const CATEGORIAS = ['Mármol', 'Granito', 'Sinterizado', 'Quartzstone', 'Quartzi
 
 const inputCls =
   'w-full rounded-lg border border-brand-border bg-brand-input px-3 py-2.5 text-sm text-brand-text placeholder:text-brand-text-secondary outline-none focus-visible:border-brand-primary'
-const cellInputCls =
-  'w-full rounded-md border border-brand-primary/40 bg-brand-input px-2 py-1.5 text-sm text-brand-text outline-none focus-visible:border-brand-primary'
 
 type FormState = { categoria: string; referencia: string; precio_m2: string }
 const EMPTY: FormState = { categoria: 'Mármol', referencia: '', precio_m2: '' }
@@ -38,10 +35,9 @@ export default function MaterialesPage() {
   const qc = useQueryClient()
   const [filtroCat, setFiltroCat] = useState('')
   const [busca, setBusca] = useState('')
-  const [modalCrear, setModalCrear] = useState(false)
+  const [modal, setModal] = useState<'crear' | 'editar' | null>(null)
+  const [editando, setEditando] = useState<MaterialCatalogo | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY)
-  const [editId, setEditId] = useState<number | null>(null)
-  const [editForm, setEditForm] = useState<FormState>(EMPTY)
   const [borrar, setBorrar] = useState<MaterialCatalogo | null>(null)
 
   const { data = [], isPending, isError, refetch } = useQuery({
@@ -49,30 +45,46 @@ export default function MaterialesPage() {
     queryFn: getMaterialesTodos,
   })
 
-  // Espera a que la lista vuelva a leerse ANTES de cerrar la edición / avisar,
-  // para que nunca se vea el valor viejo mientras el toast dice "guardado".
+  // Espera a que la lista vuelva a leerse ANTES de cerrar / avisar, para no
+  // mostrar el valor viejo mientras el toast dice "guardado".
   const invalidar = () =>
     Promise.all([
       qc.invalidateQueries({ queryKey: ['materiales-todos'] }),
       qc.invalidateQueries({ queryKey: ['materiales'] }),
     ])
 
-  const crearMut = useMutation({
-    mutationFn: () =>
-      crearMaterial({ categoria: form.categoria, referencia: form.referencia.trim(), precio_m2: Number(form.precio_m2) || 0 }),
-    onSuccess: async () => { await invalidar(); setModalCrear(false); showToast('success', 'Material agregado a tu catálogo') },
-    onError: (e) => showToast('error', errDetalle(e, 'No se pudo agregar el material')),
-  })
-
-  const editMut = useMutation({
-    mutationFn: (vars: { id: number; body: MaterialCambios }) => editarMaterial(vars.id, vars.body),
-    onSuccess: async () => { await invalidar(); setEditId(null); showToast('success', 'Cambio guardado — solo aplica a tu taller') },
-    onError: (e) => showToast('error', errDetalle(e, 'No se pudo guardar el cambio')),
+  const guardarMut = useMutation({
+    mutationFn: () => {
+      const body = {
+        categoria: form.categoria,
+        referencia: form.referencia.trim(),
+        precio_m2: Number(form.precio_m2) || 0,
+      }
+      return modal === 'crear'
+        ? crearMaterial(body)
+        : editarMaterial(editando!.id, body)
+    },
+    onSuccess: async () => {
+      await invalidar()
+      setModal(null)
+      showToast(
+        'success',
+        modal === 'crear'
+          ? 'Material agregado a tu catálogo'
+          : 'Cambio guardado — solo aplica a tu taller',
+      )
+    },
+    onError: (e) => showToast('error', errDetalle(e, 'No se pudo guardar')),
   })
 
   const delMut = useMutation({
     mutationFn: (id: number) => eliminarMaterial(id),
-    onSuccess: async () => { await invalidar(); setBorrar(null); setEditId(null); showToast('success', 'Material quitado de tu catálogo') },
+    onSuccess: async () => {
+      await invalidar()
+      setBorrar(null)
+      setModal(null)
+      showToast('success', 'Material quitado de tu catálogo')
+    },
     onError: (e) => showToast('error', errDetalle(e, 'No se pudo quitar')),
   })
 
@@ -89,33 +101,23 @@ export default function MaterialesPage() {
 
   function abrirCrear() {
     setForm(EMPTY)
-    setModalCrear(true)
+    setEditando(null)
+    setModal('crear')
   }
-  function iniciarEdicion(m: MaterialCatalogo) {
-    setEditForm({ categoria: m.categoria, referencia: m.referencia, precio_m2: String(m.precio_m2) })
-    setEditId(m.id)
-  }
-  function guardarEdicion() {
-    if (editId == null) return
-    if (!editForm.referencia.trim() || Number(editForm.precio_m2) <= 0) return
-    editMut.mutate({
-      id: editId,
-      body: {
-        categoria: editForm.categoria,
-        referencia: editForm.referencia.trim(),
-        precio_m2: Number(editForm.precio_m2),
-      },
-    })
+  function abrirEditar(m: MaterialCatalogo) {
+    setForm({ categoria: m.categoria, referencia: m.referencia, precio_m2: String(m.precio_m2) })
+    setEditando(m)
+    setModal('editar')
   }
 
-  const crearValido = form.referencia.trim().length > 0 && Number(form.precio_m2) > 0
+  const formValido = form.referencia.trim().length > 0 && Number(form.precio_m2) > 0
 
   return (
     <AppLayout>
       <PageHeader
         kicker="Sistema"
         title="Catálogo de materiales"
-        subtitle="Ajusta categoría, nombre o precio. Los cambios valen solo para tu taller y todos sus usuarios los ven en vivo."
+        subtitle="Toca una fila para ajustar categoría, nombre o precio. Los cambios valen solo para tu taller y todos sus usuarios los ven en vivo."
         actions={
           <button
             type="button"
@@ -182,106 +184,30 @@ export default function MaterialesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtrados.map((m) => {
-                    const enEdicion = editId === m.id
-                    if (enEdicion) {
-                      return (
-                        <tr key={m.id} className="border-b border-brand-border/60 bg-brand-primary/[0.04] last:border-0">
-                          <td className="px-4 py-3 align-top">
-                            <select
-                              value={editForm.categoria}
-                              onChange={(e) => setEditForm((f) => ({ ...f, categoria: e.target.value }))}
-                              aria-label="Categoría"
-                              className={`${cellInputCls} cursor-pointer`}
-                            >
-                              {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
-                            </select>
-                          </td>
-                          <td className="px-4 py-3 align-top">
-                            <input
-                              type="text"
-                              value={editForm.referencia}
-                              autoFocus
-                              onChange={(e) => setEditForm((f) => ({ ...f, referencia: e.target.value }))}
-                              onKeyDown={(e) => { if (e.key === 'Enter') guardarEdicion(); if (e.key === 'Escape') setEditId(null) }}
-                              aria-label="Referencia o nombre"
-                              className={cellInputCls}
-                            />
-                          </td>
-                          <td className="px-4 py-3 align-top">
-                            <div className="flex flex-col items-end gap-2">
-                              <input
-                                type="number"
-                                min={0}
-                                step={1000}
-                                value={editForm.precio_m2}
-                                onChange={(e) => setEditForm((f) => ({ ...f, precio_m2: e.target.value }))}
-                                onKeyDown={(e) => { if (e.key === 'Enter') guardarEdicion(); if (e.key === 'Escape') setEditId(null) }}
-                                aria-label="Precio por metro cuadrado"
-                                className={`${cellInputCls} text-right font-mono`}
-                              />
-                              <div className="flex items-center gap-1.5">
-                                {m.es_propio && (
-                                  <button
-                                    type="button"
-                                    onClick={() => setBorrar(m)}
-                                    aria-label={`Quitar ${m.referencia} de tu catálogo`}
-                                    className="mr-1 flex items-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-medium text-brand-text-secondary hover:bg-brand-danger-soft hover:text-brand-danger transition-colors cursor-pointer"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                                    Quitar
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => setEditId(null)}
-                                  aria-label="Cancelar edición"
-                                  className="rounded-md border border-brand-border p-1.5 text-brand-text-secondary hover:text-brand-text transition-colors cursor-pointer"
-                                >
-                                  <X className="h-4 w-4" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={guardarEdicion}
-                                  disabled={editMut.isPending || !editForm.referencia.trim() || Number(editForm.precio_m2) <= 0}
-                                  aria-label="Guardar cambio"
-                                  className="flex items-center gap-1 rounded-md bg-brand-primary px-2.5 py-1.5 text-[12px] font-semibold text-white hover:bg-brand-primary-light transition-colors disabled:opacity-50 cursor-pointer"
-                                >
-                                  <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                                  {editMut.isPending ? '…' : 'Guardar'}
-                                </button>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    }
-                    return (
-                      <tr key={m.id} className="border-b border-brand-border/60 last:border-0 hover:bg-brand-bg">
-                        <td className="px-4 py-3 text-brand-text-secondary">{m.categoria}</td>
-                        <td className="px-4 py-3">
-                          <button
-                            type="button"
-                            onClick={() => iniciarEdicion(m)}
-                            className="text-left font-medium text-brand-text-dark hover:text-brand-primary hover:underline cursor-pointer"
-                            aria-label={`Editar ${m.referencia}`}
-                          >
-                            {m.referencia}
-                          </button>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button
-                            type="button"
-                            onClick={() => iniciarEdicion(m)}
-                            className="font-mono text-brand-text-dark hover:text-brand-primary cursor-pointer num"
-                            aria-label={`Editar precio de ${m.referencia}`}
-                          >
-                            {formatCOP(m.precio_m2)}
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  })}
+                  {filtrados.map((m) => (
+                    <tr
+                      key={m.id}
+                      className="cursor-pointer border-b border-brand-border/60 last:border-0 hover:bg-brand-primary/[0.05] focus-within:bg-brand-primary/[0.05]"
+                    >
+                      <td className="px-4 py-3 text-brand-text-secondary">{m.categoria}</td>
+                      <td className="px-4 py-3">
+                        <button
+                          type="button"
+                          onClick={() => abrirEditar(m)}
+                          className="text-left font-medium text-brand-text-dark hover:text-brand-primary hover:underline cursor-pointer"
+                          aria-label={`Editar ${m.referencia}`}
+                        >
+                          {m.referencia}
+                        </button>
+                      </td>
+                      <td
+                        className="px-4 py-3 text-right font-mono text-brand-text-dark num cursor-pointer"
+                        onClick={() => abrirEditar(m)}
+                      >
+                        {formatCOP(m.precio_m2)}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -289,8 +215,12 @@ export default function MaterialesPage() {
         )}
       </AsyncBoundary>
 
-      {/* Agregar material nuevo */}
-      <Dialog open={modalCrear} onClose={() => setModalCrear(false)} title="Agregar material a tu catálogo">
+      {/* Crear / Editar — mismo modal, precargado al editar */}
+      <Dialog
+        open={modal !== null}
+        onClose={() => setModal(null)}
+        title={modal === 'crear' ? 'Agregar material a tu catálogo' : 'Editar material'}
+      >
         <div className="space-y-3">
           <div>
             <label htmlFor="mat-cat" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-brand-text-secondary">Categoría</label>
@@ -315,20 +245,37 @@ export default function MaterialesPage() {
               onChange={(e) => setForm((f) => ({ ...f, precio_m2: e.target.value }))}
               placeholder="280000" className={`${inputCls} font-mono`} />
           </div>
+          {modal === 'editar' && editando && !editando.es_propio && (
+            <p className="text-[11px] leading-relaxed text-brand-text-secondary">
+              Este es un material base de Costo360. Al guardar se creará una copia
+              personalizada para tu taller; el material original no se modifica.
+            </p>
+          )}
         </div>
-        <div className="mt-5 flex gap-2">
-          <button type="button" onClick={() => setModalCrear(false)}
-            className="flex-1 rounded-lg border border-brand-border py-2.5 text-sm font-medium text-brand-text-secondary hover:bg-brand-bg hover:text-brand-text transition-colors cursor-pointer">
+
+        <div className="mt-5 flex items-center gap-2">
+          {modal === 'editar' && editando?.es_propio && (
+            <button
+              type="button"
+              onClick={() => setBorrar(editando)}
+              className="mr-auto flex items-center gap-1.5 rounded-lg px-2.5 py-2.5 text-sm font-medium text-brand-text-secondary hover:bg-brand-danger-soft hover:text-brand-danger transition-colors cursor-pointer"
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+              Quitar
+            </button>
+          )}
+          <button type="button" onClick={() => setModal(null)}
+            className="rounded-lg border border-brand-border px-4 py-2.5 text-sm font-medium text-brand-text-secondary hover:bg-brand-bg hover:text-brand-text transition-colors cursor-pointer">
             Cancelar
           </button>
           <button
             type="button"
-            disabled={!crearValido || crearMut.isPending}
-            onClick={() => crearMut.mutate()}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand-primary py-2.5 text-sm font-semibold text-white hover:bg-brand-primary-light transition-colors disabled:opacity-50 cursor-pointer"
+            disabled={!formValido || guardarMut.isPending}
+            onClick={() => guardarMut.mutate()}
+            className="flex items-center justify-center gap-1.5 rounded-lg bg-brand-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-primary-light transition-colors disabled:opacity-50 cursor-pointer"
           >
             <Check size={14} aria-hidden="true" />
-            {crearMut.isPending ? 'Guardando…' : 'Guardar'}
+            {guardarMut.isPending ? 'Guardando…' : 'Guardar'}
           </button>
         </div>
       </Dialog>

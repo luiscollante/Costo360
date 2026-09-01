@@ -1617,7 +1617,7 @@ function Step2Piezas({ dir }: { dir: number }) {
                             <span
                               className={[
                                 'font-mono text-sm font-bold transition-colors',
-                                m2 > 0 ? 'text-brand-gold' : 'text-brand-text-secondary',
+                                m2 > 0 ? 'text-brand-gold-text' : 'text-brand-text-secondary',
                               ].join(' ')}
                             >
                               {formatNum(m2)} m²
@@ -2193,7 +2193,7 @@ function Step4Resultado({ dir }: { dir: number }) {
 
               <div className="mt-4 flex justify-center gap-6">
                 <div className="text-center">
-                  <div className="font-mono text-sm text-brand-gold font-bold">
+                  <div className="font-mono text-sm text-brand-gold-text font-bold">
                     {formatNum(resultado.margen_pct, 1)}%
                   </div>
                   <div className="text-[9px] uppercase tracking-widest text-brand-text-secondary mt-0.5">
@@ -2202,7 +2202,7 @@ function Step4Resultado({ dir }: { dir: number }) {
                 </div>
                 <div className="w-px bg-brand-border" />
                 <div className="text-center">
-                  <div className="font-mono text-sm text-brand-gold font-bold">
+                  <div className="font-mono text-sm text-brand-gold-text font-bold">
                     {formatCOP(resultado.utilidad)}
                   </div>
                   <div className="text-[9px] uppercase tracking-widest text-brand-text-secondary mt-0.5">
@@ -2211,7 +2211,7 @@ function Step4Resultado({ dir }: { dir: number }) {
                 </div>
                 <div className="w-px bg-brand-border" />
                 <div className="text-center">
-                  <div className="font-mono text-sm text-brand-gold font-bold">
+                  <div className="font-mono text-sm text-brand-gold-text font-bold">
                     {formatPct(resultado.aprovechamiento, 1)}
                   </div>
                   <div className="text-[9px] uppercase tracking-widest text-brand-text-secondary mt-0.5">
@@ -2448,7 +2448,7 @@ function MetricCell({
       <p
         className={[
           'font-mono text-base font-bold',
-          highlight ? 'text-brand-gold' : 'text-brand-text',
+          highlight ? 'text-brand-gold-text' : 'text-brand-text',
         ].join(' ')}
       >
         {value}

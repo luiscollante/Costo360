@@ -23,7 +23,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [location.pathname])
 
   return (
-    <div className="flex min-h-screen bg-brand-bg relative">
+    <div className="flex h-screen overflow-hidden bg-brand-bg relative">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-brand-primary focus:text-white focus:text-sm"
