@@ -4,8 +4,9 @@
 
 ## ✅ Hecho
 
-- **Rediseño visual del producto — CICLO 1 completado (2026-08-30/31):** rama
-  `goal/rediseno-visual` (sobre `master`, Fase 2.A ya fusionada). Ciclo `/goal` completo:
+- **Rediseño visual del producto — CICLO 1 + CICLO 2 completados (2026-08-30/31):** rama
+  `goal/rediseno-visual` (sobre `master`, Fase 2.A ya fusionada). Objetivo 1 del roadmap
+  cerrado a falta de la fusión a `master`. Ciclo `/goal` completo:
   plan → auditoría Fase 2 (UX Architect + Frontend Developer, ambos "aprueba con cambios",
   ambos pidieron partir en 2 ciclos) → ejecución → **Fase 5 (Code Reviewer + Accessibility
   Auditor, ambos "aprueba con cambios", guardarraíles confirmados: motor intacto,
@@ -44,12 +45,33 @@
     agente/PDF; `focus({preventScroll})`; semántica del spinner de `AuthGate`; `aria-hidden`
     en iconos; `theme-color` a crema; hover de la barra y estado activo de "Panel Admin".
   - `ARQUITECTURA_MAESTRA.md` §6 actualizado con todo lo anterior.
-  - **Próxima tarea lógica:** CICLO 2 del rediseño — bloques **R3** (12-14 primitivos
-    accesibles), **R6** (pasada pantalla por pantalla: contraste de contenido, formato de
-    números, colores de gráficos, `<h1>` por página), **R10** (selector de material como
-    diálogo + catálogo de materiales por taller, migración `0005`), **R9** (verificación
-    final). Detalle en `docs/PLAN_REDISENO_VISUAL.md`. Falta fusionar `goal/rediseno-visual`
-    a `master` (¿al terminar el Ciclo 2, o antes?).
+  - **CICLO 2 completado (2026-08-31)** — bloques **R3, R6, R10, R9**, un commit por
+    pantalla/bloque (`d19fa0d`…`d573584`), `tsc -b` + `vite build` limpios:
+    - **R3:** 14 primitivos accesibles en `web/src/components/ui/` (`Dialog` portalado con
+      trampa de foco, `Card`, `Field` render-prop, `DataTable`, `Badge`/`StatusBadge`,
+      `SegmentedControl` con 2 semánticas y roving tabindex, `Button`/`IconButton`,
+      `PageHeader` que fija `document.title`, `AsyncBoundary`, `EmptyState`,
+      `SelectField`/`DateField`).
+    - **R6:** las 13 pantallas a `<PageHeader>` + barrido de colores de marca + `formatPct`
+      + spinners a CSS. Dashboard reescrito con `<AsyncBoundary>`/`<Card>` y tabla `sr-only`
+      del gráfico.
+    - **R10:** migración `0005_catalogo_por_empresa.sql` **aplicada** a Supabase
+      `hrmpyhixhbnkkpvxtuit` (4 políticas RLS: filas base `empresa_id IS NULL` inmutables,
+      propias editables). `MaterialCombobox` → `<Dialog>` de marca con "Otro" + modal
+      "¿guardar en tu catálogo?". Pantalla nueva `/materiales` ("Catálogo de materiales",
+      rol dashboard). Verificado en vivo (RLS aisló un material de prueba a Marmolería Demo).
+    - **R9:** eslint sin regresiones (23 errores pre-existentes de `react-hooks`, fuera de
+      alcance). **Fase 5** (Code Reviewer + Accessibility Auditor, ambos "aprueba con
+      cambios", sin bloqueantes de fondo): arreglos en `d573584` — kicker de `PageHeader` a
+      `text-secondary` (12 pantallas), botón "quitar" del selector des-anidado, `aria-current`
+      + check en la fila elegida, `strip()` de categoría en `crear_material`, contraste de
+      los botones dorados "Descargar PDF"/"Cuenta de Cobro", roving tabindex del
+      `SegmentedControl` en ambos modos.
+    - **Diferido** (anotado en el plan): formularios grandes a `<Field>`; Historial a
+      `<DataTable>`; auto-guardar el material al guardar la cotización; calendario/listbox
+      propios; números dorados de acento sobre crema (decisión de marca del fundador).
+  - **Próxima tarea:** decisión del fundador — fusionar `goal/rediseno-visual` → `master`
+    (Ciclo 1 + Ciclo 2). Si se aprueba, reindexar el grafo contra `master`.
 
 - **Fase 2.A ejecutada — migración a Supabase Auth + aislamiento real + sesión única (2026-08-27):**
   Ciclo `/goal` completo (Fases 0-6) en una sola sesión. 10 micro-commits en la rama
@@ -203,4 +225,4 @@
 
 ---
 
-*Última actualización: 2026-08-24*
+*Última actualización: 2026-08-31*

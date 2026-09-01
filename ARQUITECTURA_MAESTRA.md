@@ -212,7 +212,8 @@ rowcount), `verificar_dispositivo` (409 `SESSION_SUPERSEDED` / `SESSION_PENDING`
 
 ## 6. Identidad de marca / estándar visual
 
-*Actualizado 2026-08-31 con el Ciclo 1 del rediseño visual (rama `goal/rediseno-visual`).*
+*Actualizado 2026-08-31 con los Ciclos 1 y 2 del rediseño visual (rama `goal/rediseno-visual`,
+pendiente de fusionar a `master`).*
 
 Tokens reales extraídos de `web/src/index.css` (verificado en código):
 
@@ -228,7 +229,7 @@ Tokens reales extraídos de `web/src/index.css` (verificado en código):
 | `--color-brand-text-tertiary` | `#6E6E6E` | Solo texto ≥18px e iconos no esenciales (≈4,2:1) |
 | `--color-brand-text-dark` | `#1A1A1A` | Texto principal |
 | `--color-brand-muted` | `#8A8A8A` | Texto deshabilitado/placeholder |
-| `--color-brand-gold` | `#D4AF37` | Dorado — acentos premium |
+| `--color-brand-gold` | `#D4AF37` | Dorado — acentos premium (relleno, bordes, iconos). **No válido como texto** sobre crema ni sobre `gold/xx` (≈1,9:1). Para "texto dorado" usar `--color-brand-warning-text` `#6E5410`. |
 | `--color-brand-gold-light` | `#F0C447` | Dorado claro |
 | `--color-brand-success` / `-soft` | `#15612E` / `#E7F1E9` | Estado OK — texto vs. relleno de badge |
 | `--color-brand-warning-text` / `--color-brand-warning` / `-soft` | `#6E5410` / `#B4820E` / `#F5EBD5` | Advertencia — el tono medio `#B4820E` **solo** para relleno/borde, nunca texto |
@@ -259,6 +260,24 @@ Tokens reales extraídos de `web/src/index.css` (verificado en código):
   `web/src/components/Logo.tsx` (`variant="light"|"dark"`). Favicon + apple-touch-icon =
   isotipo. Fuentes de marca sin optimizar en `assets/marca/`. Pendiente: un SVG limpio
   multi-variante (el vectorizado que entregó el fundador salía con el isotipo en negro).
+- **Librería de primitivos (`web/src/components/ui/`, Ciclo 2 R3):** 14 componentes que fijan
+  el estándar visual y de accesibilidad — `Card`, `Badge`/`StatusBadge`, `Button`,
+  `IconButton` (`aria-label` obligatorio por tipo), `EmptyState`, `PageHeader` (kicker + regla
+  verde + `<h1 tabindex=-1>`, fija `document.title`), `Field`/`FormSection`/`SelectField`/
+  `DateField` (envuelven el control nativo con `<label htmlFor>` + error `role="alert"`),
+  `SegmentedControl` (`tabs` con roving tabindex / `buttons` con `radiogroup`; indicador NO
+  cromático: subrayado + fondo + sombra), `Dialog` (portal a `body`, `inert` en `#root`,
+  trampa de foco, Escape, devuelve el foco; `role="alertdialog"` para avisos), `DataTable`
+  (`<caption class=sr-only>` + `<th scope>`), `AsyncBoundary` (loading `role="status"` / error
+  `role="alert"` + reintentar). Las 13 pantallas usan `<PageHeader>` (el mapa `TITULOS` de
+  `AppLayout` se eliminó). Porcentajes vía `formatPct` (escala 0–100, `Intl` es-CO).
+- **Selector de material (`MaterialCombobox`) + catálogo por taller (Ciclo 2 R10):** el picker
+  de referencia es un `<Dialog>` de marca (el dropdown se recortaba dentro de la tarjeta).
+  Opción "Otro" → campo de texto + modal decorativo "¿Guardar «X» a $Y/m² en tu catálogo?".
+  Pantalla `/materiales` ("Catálogo de materiales", rol dashboard): filas base de Costo360
+  (badge "Costo360", solo lectura) + materiales propios del taller (badge "Tu taller",
+  editar/borrar). Backend: `catalogo_materiales.empresa_id` + 4 políticas RLS (migración
+  `0005`, aplicada) — base `NULL` inmutable, propio de cada empresa aislado.
 
 ---
 

@@ -2,6 +2,86 @@
 
 ---
 
+## Sesión: 2026-08-31 — Rediseño visual del producto: CICLO 2 completo
+
+### Qué se hizo
+Ciclo 2 del rediseño (`/goal`, rama `goal/rediseno-visual`). Plan vivo:
+`docs/PLAN_REDISENO_VISUAL.md` (con bloque "Estado — COMPLETADO"). Cierra el Objetivo 1.
+
+- **R3 — 14 primitivos accesibles** en `web/src/components/ui/` (`d19fa0d`, `f01a377`,
+  `0c7b8c7`): `Card`, `Badge`/`StatusBadge`, `Button`, `IconButton`, `EmptyState`,
+  `PageHeader` (fija `document.title`, `<h1 tabindex=-1>`), `Field` (render-prop de a11y),
+  `FormSection`, `SelectField`, `DateField`/`DateRangeField`, `SegmentedControl` (2
+  semánticas: `tabs` con roving tabindex / `buttons` con `radiogroup`), `Dialog` (portal a
+  `body`, `inert` en `#root`, trampa de foco, Escape, devuelve foco), `DataTable`,
+  `AsyncBoundary`.
+- **R6 — pasada pantalla por pantalla** (`3ea085b`…`e1bac62`, un commit por pantalla): las 13
+  rutas migradas a `<PageHeader>`; barrido de colores de marca (muted/emerald/red/amber →
+  tokens `brand-text-*`/`brand-primary`/`brand-danger`/`brand-warning-text`); `formatPct`
+  para porcentajes; spinners a CSS `animate-spin` + `role="status"`. Dashboard reescrito con
+  `<AsyncBoundary>` + `<Card>` + tabla `sr-only` para el gráfico. Colisión de nombre
+  `PageHeader` local (Cotización/AIU) resuelta renombrando a `StepHeader`.
+- **R10 — selector de material + catálogo por taller** (feedback del fundador):
+  - Migración `backend/migrations/0005_catalogo_por_empresa.sql` **aplicada** al proyecto
+    Supabase `hrmpyhixhbnkkpvxtuit` vía MCP `apply_migration`. `catalogo_materiales` gana
+    `empresa_id uuid null`; 4 políticas RLS (SELECT: base `NULL` o propio; INSERT/UPDATE/
+    DELETE: solo propio). Filas base inmutables para todos. Verificado en vivo (se creó y
+    borró "Mármol Verde Guatemala especial" como Ana/admin; RLS lo aisló a Marmolería Demo).
+  - `routers/materiales.py` reescrito: `GET` ordena propios primero; `POST` (cualquier rol,
+    para "Otro" en una cotización) con `ON CONFLICT` = índice parcial; `PUT`/`DELETE`
+    (`require_dashboard`) con 404 cuando RLS filtra.
+  - `MaterialCombobox.tsx` reescrito: dropdown que se recortaba dentro de la tarjeta →
+    `<Dialog>` de marca con búsqueda; opción "Otro" → campo de texto + modal decorativo
+    "¿Guardar «X» a $Y/m² en tu catálogo?" (Sí / Ahora no). Cableado `precioM2Actual` en los
+    3 sitios (Cotización, Express, Nesting — este último exigió pasar la prop por `FormPanel`).
+  - Pantalla nueva `web/src/pages/MaterialesPage.tsx` → ruta `/materiales` ("Catálogo de
+    materiales", `<RoleRoute>` dashboard). Tabla con base de Costo360 (`Badge` "Costo360",
+    solo lectura) + materiales del taller (`Badge` "Tu taller", editar/borrar). Enlace
+    "Catálogo" en el grupo "Sistema" de la barra.
+- **R9 — verificación final.** `tsc -b` limpio, `vite build` OK, eslint sin regresiones (23
+  errores pre-existentes de `react-hooks/set-state-in-effect` y `static-components` en
+  Parámetros/AIU/MoneyInput — fuera de alcance). **Fase 5:** Code Reviewer + Accessibility
+  Auditor, ambos "APRUEBA CON CAMBIOS", **sin bloqueantes de fondo**. Confirmaron
+  guardarraíles: `motor/*`, `db_rls`/`db_service`, `middleware/auth`, `SessionGuard` sin
+  tocar. Arreglos en `d573584`:
+  - kicker de `PageHeader` `text-tertiary` → `text-secondary` (contraste AA, 12 pantallas)
+  - botón "quitar material" del selector des-anidado del `<button>` disparador
+  - fila elegida del selector con `aria-current` + check visible
+  - `crear_material` normaliza `categoria` con `strip()` antes del INSERT
+  - `aprovechamiento` de Cotización con `formatPct` (consistente con Express)
+  - contraste de los botones dorados "Descargar PDF" / "Cuenta de Cobro" (~1.9:1) → borde
+    neutro + verde de marca en hover
+  - `Field` (showHint sin idref colgante, `aria-required`), `SegmentedControl` (roving
+    tabindex + Home/End/flechas en ambos modos), `Dialog` (`aria-describedby`, foco al
+    primer control)
+
+### Archivos (rama `goal/rediseno-visual`, sobre el Ciclo 1)
+- **Nuevos:** `components/ui/` (14 primitivos), `pages/MaterialesPage.tsx`,
+  `backend/migrations/0005_catalogo_por_empresa.sql`.
+- **Modificados:** las 13 pantallas de `pages/*`, `components/MaterialCombobox.tsx`,
+  `components/Sidebar.tsx`, `components/AppLayout.tsx`, `App.tsx`, `api/materiales.ts`,
+  `lib/utils.ts` (`formatPct`), `backend/routers/materiales.py`.
+- **Docs:** `docs/PLAN_REDISENO_VISUAL.md` (bloque "Estado — COMPLETADO"), este archivo,
+  `PROGRESS.md`, memoria `project_costo360_redisenio_visual.md`.
+
+### Diferido (anotado en el plan, los auditores NO deben reportarlo)
+- Migrar los formularios grandes (Cotización Directa/Express/AIU/Configuración) a
+  `<Field>`/`<FormSection>`; filas de Historial a `<DataTable>`.
+- R10.b parte 2: auto-guardar el material al **guardar la cotización** (solo se hizo el modal
+  explícito "¿guardar?").
+- Calendario/listbox propios para `DateField`/`SelectField` (hoy envuelven el nativo).
+- Números de acento dorados (`text-brand-gold` sobre crema) en los paneles de resultado de
+  Cotización/AIU/Express/Nesting — decisión de marca del fundador, no bloqueante.
+
+### Primera tarea de la próxima sesión
+1. **Decisión del fundador:** fusionar `goal/rediseno-visual` → `master` (Ciclo 1 + Ciclo 2
+   juntos). El árbol está limpio, `tsc`/`build` pasan, ambas Fase 5 "APRUEBA CON CAMBIOS".
+2. Si se aprueba la fusión: reindexar el grafo (`codebase-memory-mcp`) contra `master`.
+3. Renovar `GEMINI_API_KEY` en `backend/.env` (el chat de Parámetros sigue en error
+   controlado).
+
+---
+
 ## Sesión: 2026-08-30/31 — Rediseño visual del producto: CICLO 1 completo
 
 ### Qué se hizo

@@ -14,6 +14,34 @@ aquí solo el logo y `manifest.json`.
 
 ---
 
+## Estado — COMPLETADO (2026-08-31)
+
+- **CICLO 1** (R0, R1, R2, R4, R5, R7, R8) — completado 2026-08-30. Fase 5: Code Reviewer +
+  Accessibility Auditor, ambos "APRUEBA CON CAMBIOS", arreglos en `441af59`.
+- **CICLO 2** (R3, R6, R10, R9) — completado 2026-08-31.
+  - **R3:** 14 primitivos en `web/src/components/ui/` (`d19fa0d`, `f01a377`, `0c7b8c7`).
+  - **R6:** 13 pantallas migradas a `<PageHeader>` + barrido de color de marca + `formatPct`
+    (`3ea085b`…`e1bac62`).
+  - **R10:** selector de material como diálogo de marca + "Otro" con modal "¿guardar?" +
+    catálogo por taller. Migración `0005_catalogo_por_empresa.sql` **aplicada** al proyecto
+    Supabase `hrmpyhixhbnkkpvxtuit` (4 políticas RLS: base inmutable, propio editable).
+    Pantalla nueva `/materiales` ("Catálogo de materiales", rol dashboard).
+  - **R9:** `tsc -b` + `vite build` limpios; eslint sin regresiones (23 errores
+    pre-existentes de `react-hooks`, fuera de alcance). Fase 5: Code Reviewer +
+    Accessibility Auditor, ambos "APRUEBA CON CAMBIOS", sin bloqueantes de fondo; arreglos
+    en `d573584` (kicker de PageHeader a `text-secondary` en 12 pantallas; botón "quitar"
+    del selector de material des-anidado; `aria-current` + check visible en la fila elegida;
+    `strip()` de categoría en `crear_material`; contraste de los botones dorados "Descargar
+    PDF" / "Cuenta de Cobro"; roving tabindex del `SegmentedControl` en ambos modos).
+- **Diferido** (anotado, no lo reportan los auditores): migrar los formularios grandes a
+  `<Field>`/`<FormSection>`; filas de Historial a `<DataTable>`; auto-guardado del material
+  al guardar la cotización (solo se hizo el modal explícito "¿guardar?"); calendario/listbox
+  propios para `DateField`/`SelectField`; números dorados de acento (`text-brand-gold` sobre
+  crema) en los paneles de resultado — decisión de marca del fundador, no bloqueante.
+- **Pendiente:** fusionar `goal/rediseno-visual` → `master` (decisión del fundador).
+
+---
+
 ## Estado actual verificado (2026-08-29, ampliado por la auditoría 2026-08-30)
 
 **Tema / tokens**
@@ -398,5 +426,8 @@ de la placa → queda recortado por el `overflow` del contenedor, no se ve el li
 ---
 
 *Auditado en la Fase 2 del ciclo `/goal` (2026-08-30) por UX Architect y Frontend Developer —
-ambos "APRUEBA CON CAMBIOS". Correcciones marcadas `[aud]`. Pendiente: aprobación del fundador
-del Ciclo 1 (Fase 3) antes de ejecutar.*
+ambos "APRUEBA CON CAMBIOS". Correcciones marcadas `[aud]`.*
+
+*Ejecución: Ciclo 1 aprobado por el fundador y ejecutado 2026-08-30; Ciclo 2 ejecutado
+2026-08-31. Fase 5 de ambos ciclos por Code Reviewer + Accessibility Auditor. Ver
+`SESSION.md` para el registro completo.*
