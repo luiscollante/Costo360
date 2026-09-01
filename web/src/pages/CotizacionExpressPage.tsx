@@ -304,7 +304,7 @@ function ResultPanel({
       {/* Retal */}
       {result.retal > 0 && (
         <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-brand-surface/40 border border-brand-border/50">
-          <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+          <div className="w-1.5 h-1.5 rounded-full bg-brand-warning shrink-0" />
           <p className="text-xs text-brand-text-secondary">
             Retal estimado: <span className="font-mono font-semibold text-brand-warning-text">{formatNum(result.retal)} m²</span>
             <span className="text-brand-text-secondary"> sobrante de la lámina</span>
@@ -345,7 +345,7 @@ function ResultPanel({
                   <span className="text-xs font-mono font-bold text-brand-text">{formatCOP(Math.round(result.costo_total))}</span>
                 </div>
                 {incluirIva && (
-                  <div className="flex items-center justify-between py-1 bg-amber-400/5 px-2 rounded">
+                  <div className="flex items-center justify-between py-1 bg-brand-warning/5 px-2 rounded">
                     <span className="text-xs text-brand-warning-text/80">IVA 19% (Art. 468 E.T.)</span>
                     <span className="text-xs font-mono font-bold text-brand-warning-text">{formatCOP(Math.round(iva))}</span>
                   </div>
@@ -391,7 +391,7 @@ function ResultPanel({
                 setDlPDF(true)
                 try { await descargarPDF(savedId) } finally { setDlPDF(false) }
               }}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-brand-border text-sm text-brand-text-secondary hover:text-brand-primary hover:border-brand-primary/40/40 transition-all disabled:opacity-40"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-brand-border text-sm text-brand-text-secondary hover:text-brand-primary hover:border-brand-primary/40 transition-all disabled:opacity-40"
             >
               {dlPDF ? <Loader2 size={13} className="animate-spin" /> : <FileDown size={13} />}
               Descargar PDF

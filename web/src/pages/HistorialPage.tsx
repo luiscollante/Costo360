@@ -472,7 +472,7 @@ export default function HistorialPage() {
             <p className="text-sm text-brand-text-secondary">Cargando historial…</p>
           </div>
         ) : isError ? (
-          <div className="glass rounded-xl border border-red-500/20 p-8 text-center shadow-md transition-shadow hover:shadow-lg">
+          <div className="glass rounded-xl border border-brand-danger/20 p-8 text-center shadow-md transition-shadow hover:shadow-lg">
             <p className="text-brand-danger text-sm">Error al cargar el historial. Recarga la página.</p>
           </div>
         ) : data.length === 0 ? (

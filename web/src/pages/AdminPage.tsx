@@ -170,7 +170,7 @@ export default function AdminPage() {
                           {!esYo && !esAdmin && deleteId === u.id ? (
                             <>
                               <span className="text-xs text-brand-text-secondary mr-1">¿Eliminar?</span>
-                              <button onClick={() => deleteMut.mutate(u.id)} disabled={deleteMut.isPending} aria-label="Confirmar" className="p-1.5 rounded-lg bg-red-500/15 text-brand-danger hover:bg-red-500/25 cursor-pointer disabled:opacity-50">
+                              <button onClick={() => deleteMut.mutate(u.id)} disabled={deleteMut.isPending} aria-label="Confirmar" className="p-1.5 rounded-lg bg-brand-danger/15 text-brand-danger hover:bg-brand-danger/25 cursor-pointer disabled:opacity-50">
                                 <Check className="w-3.5 h-3.5" />
                               </button>
                               <button onClick={() => setDeleteId(null)} aria-label="Cancelar" className="p-1.5 rounded-lg hover:bg-brand-surface text-brand-text-secondary cursor-pointer">
@@ -183,7 +183,7 @@ export default function AdminPage() {
                                 <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg hover:bg-brand-primary/15 text-brand-text-secondary hover:text-brand-primary cursor-pointer" aria-label={`Editar a ${u.nombre_completo || u.email}`}>
                                   <Pencil className="w-3.5 h-3.5" />
                                 </button>
-                                <button onClick={() => setDeleteId(u.id)} className="p-1.5 rounded-lg hover:bg-red-500/15 text-brand-text-secondary hover:text-brand-danger cursor-pointer" aria-label={`Eliminar a ${u.nombre_completo || u.email}`}>
+                                <button onClick={() => setDeleteId(u.id)} className="p-1.5 rounded-lg hover:bg-brand-danger/15 text-brand-text-secondary hover:text-brand-danger cursor-pointer" aria-label={`Eliminar a ${u.nombre_completo || u.email}`}>
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               </>

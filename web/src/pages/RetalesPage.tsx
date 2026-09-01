@@ -19,9 +19,9 @@ const CATEGORIAS = ['Mármol', 'Granito', 'Sinterizado', 'Quartzstone', 'Quartzi
 const ESTADOS_RETAL = ['Disponible', 'Reservado', 'Usado']
 
 const estadoConfig: Record<string, { color: string; dot: string; bg: string }> = {
-  Disponible: { color: 'text-brand-primary', dot: 'bg-emerald-400', bg: 'bg-brand-primary/10 border-emerald-400/20' },
-  Reservado:  { color: 'text-brand-warning-text',   dot: 'bg-amber-400',   bg: 'bg-amber-400/10 border-amber-400/20'   },
-  Usado:      { color: 'text-brand-text-secondary', dot: 'bg-brand-muted', bg: 'bg-brand-surface border-brand-border'  },
+  Disponible: { color: 'text-brand-success',        dot: 'bg-brand-success', bg: 'bg-brand-success-soft border-brand-success/30' },
+  Reservado:  { color: 'text-brand-warning-text',   dot: 'bg-brand-warning', bg: 'bg-brand-warning-soft border-brand-warning/30' },
+  Usado:      { color: 'text-brand-text-secondary', dot: 'bg-brand-border',  bg: 'bg-brand-bg border-brand-border' },
 }
 
 type FormState = RetalIn & { estado: string }
@@ -180,7 +180,7 @@ export default function RetalesPage() {
                     {deleteId === r.id ? (
                       <div className="flex items-center gap-1">
                         <button onClick={() => deleteMut.mutate(r.id)} disabled={deleteMut.isPending}
-                          className="px-2 py-1 rounded text-[10px] bg-red-500/20 text-brand-danger border border-brand-danger/30 hover:bg-red-500/30 transition-colors cursor-pointer disabled:opacity-60">
+                          className="px-2 py-1 rounded text-[10px] bg-brand-danger/20 text-brand-danger border border-brand-danger/30 hover:bg-brand-danger/30 transition-colors cursor-pointer disabled:opacity-60">
                           {deleteMut.isPending ? '…' : 'Confirmar'}
                         </button>
                         <button onClick={() => setDeleteId(null)}
@@ -190,7 +190,7 @@ export default function RetalesPage() {
                       </div>
                     ) : (
                       <button onClick={() => setDeleteId(r.id)} title="Eliminar"
-                        className="w-9 h-9 flex items-center justify-center rounded-lg text-brand-text-secondary hover:text-brand-danger hover:bg-red-500/10 transition-colors cursor-pointer">
+                        className="w-9 h-9 flex items-center justify-center rounded-lg text-brand-text-secondary hover:text-brand-danger hover:bg-brand-danger/10 transition-colors cursor-pointer">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     )}
@@ -244,7 +244,7 @@ export default function RetalesPage() {
                         {deleteId === r.id ? (
                           <div className="flex items-center gap-1">
                             <button onClick={() => deleteMut.mutate(r.id)} disabled={deleteMut.isPending}
-                              className="px-2 py-1 rounded text-[10px] bg-red-500/20 text-brand-danger border border-brand-danger/30 hover:bg-red-500/30 transition-colors cursor-pointer disabled:opacity-60">
+                              className="px-2 py-1 rounded text-[10px] bg-brand-danger/20 text-brand-danger border border-brand-danger/30 hover:bg-brand-danger/30 transition-colors cursor-pointer disabled:opacity-60">
                               {deleteMut.isPending ? '…' : 'Confirmar'}
                             </button>
                             <button onClick={() => setDeleteId(null)}
@@ -254,7 +254,7 @@ export default function RetalesPage() {
                           </div>
                         ) : (
                           <button onClick={() => setDeleteId(r.id)} title="Eliminar"
-                            className="p-1.5 rounded-lg text-brand-text-secondary hover:text-brand-danger hover:bg-red-500/10 transition-colors cursor-pointer">
+                            className="p-1.5 rounded-lg text-brand-text-secondary hover:text-brand-danger hover:bg-brand-danger/10 transition-colors cursor-pointer">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         )}

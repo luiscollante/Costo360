@@ -139,7 +139,7 @@ function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRo
                   {esPorcentaje && <span className="text-[10px] text-brand-text-secondary">%</span>}
                   <button
                     onClick={() => onRemoveRow(activeMat, idx)}
-                    className="p-1.5 rounded-md text-brand-text-secondary hover:text-brand-danger hover:bg-red-500/10 transition-colors"
+                    className="p-1.5 rounded-md text-brand-text-secondary hover:text-brand-danger hover:bg-brand-danger/10 transition-colors"
                     title="Eliminar este costo"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -268,7 +268,7 @@ function AdicionalesTab({ adicionales, canEdit, onChange, onAddRow, onRemoveRow 
                   <td className="px-2 py-2.5">
                     <button
                       onClick={() => onRemoveRow(idx)}
-                      className="p-1.5 rounded-md text-brand-text-secondary hover:text-brand-danger hover:bg-red-500/10 transition-colors"
+                      className="p-1.5 rounded-md text-brand-text-secondary hover:text-brand-danger hover:bg-brand-danger/10 transition-colors"
                       title="Eliminar fila"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -500,7 +500,7 @@ export default function ParametrosPage() {
             </AnimatePresence>
           </motion.div>
         ) : (
-          <div className="glass rounded-xl border border-red-500/30 p-8 text-center">
+          <div className="glass rounded-xl border border-brand-danger/30 p-8 text-center">
             <AlertCircle className="w-8 h-8 text-brand-danger mx-auto mb-3" />
             <p className="text-sm text-brand-danger">No se pudieron cargar los parámetros.</p>
           </div>

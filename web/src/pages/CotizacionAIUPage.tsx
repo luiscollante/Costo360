@@ -272,7 +272,7 @@ function Step0Items({
                   <button
                     type="button" onClick={() => removeItem(item.id)} disabled={items.length <= 1}
                     aria-label="Eliminar este ítem"
-                    className="w-7 h-7 flex items-center justify-center rounded text-brand-text-secondary hover:text-brand-danger hover:bg-red-400/10 transition-colors disabled:opacity-0 disabled:pointer-events-none"
+                    className="w-7 h-7 flex items-center justify-center rounded text-brand-text-secondary hover:text-brand-danger hover:bg-brand-danger/10 transition-colors disabled:opacity-0 disabled:pointer-events-none"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -559,7 +559,7 @@ function Step2Resultado({
           {/* Save + PDF buttons */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="space-y-3 mb-4">
             {saved ? (
-              <div className="flex items-center justify-between px-5 py-3.5 rounded-lg border border-brand-primary/40/30 bg-brand-primary/5">
+              <div className="flex items-center justify-between px-5 py-3.5 rounded-lg border border-brand-primary/30 bg-brand-primary/5">
                 <div className="flex items-center gap-3">
                   <span className="text-brand-primary text-lg">✓</span>
                   <div>
@@ -700,7 +700,7 @@ export default function CotizacionAIUPage() {
 
         {calcError && paso === 1 && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-4 rounded border border-red-500/30 bg-red-500/5 text-brand-danger text-sm">
+            className="mb-6 p-4 rounded border border-brand-danger/30 bg-brand-danger/5 text-brand-danger text-sm">
             {calcError}
           </motion.div>
         )}

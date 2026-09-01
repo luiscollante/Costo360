@@ -374,7 +374,7 @@ function FormPanel({
                     <button
                       type="button"
                       onClick={() => removePieza(pieza.uid)}
-                      className="absolute top-2.5 right-2.5 p-1 rounded text-brand-text-secondary hover:text-brand-danger/70 hover:bg-red-500/10 transition-all"
+                      className="absolute top-2.5 right-2.5 p-1 rounded text-brand-text-secondary hover:text-brand-danger/70 hover:bg-brand-danger/10 transition-all"
                       aria-label="Eliminar pieza"
                     >
                       <X size={13} />
@@ -641,7 +641,7 @@ function ResultPanel({
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="flex flex-col gap-2 px-4 py-3.5 rounded-lg border border-brand-danger/30 bg-red-500/5"
+            className="flex flex-col gap-2 px-4 py-3.5 rounded-lg border border-brand-danger/30 bg-brand-danger/5"
           >
             <div className="flex items-center gap-2">
               <AlertTriangle size={14} className="text-brand-danger shrink-0" />
@@ -790,7 +790,7 @@ export default function NestingPage() {
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className="mb-6 flex items-center gap-3 px-5 py-3.5 rounded-lg border border-brand-danger/30 bg-red-500/5"
+              className="mb-6 flex items-center gap-3 px-5 py-3.5 rounded-lg border border-brand-danger/30 bg-brand-danger/5"
             >
               <AlertTriangle size={15} className="text-brand-danger shrink-0" />
               <p className="text-sm text-brand-danger">{error}</p>

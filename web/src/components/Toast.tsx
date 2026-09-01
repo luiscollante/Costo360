@@ -24,7 +24,7 @@ export default function Toast({ type, message, onDismiss }: ToastProps) {
       className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium shadow-xl
         ${type === 'success'
           ? 'bg-brand-input-deep border-[#22D3A5]/40 text-[#22D3A5]'
-          : 'bg-brand-input-deep border-red-500/40 text-red-400'
+          : 'bg-brand-input-deep border-brand-danger/40 text-brand-danger'
         }`}
       onClick={onDismiss}
     >

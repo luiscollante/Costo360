@@ -187,7 +187,7 @@ export default function InventarioPage() {
                       {deleteId === l.id ? (
                         <div className="flex items-center gap-1">
                           <button onClick={() => deleteMut.mutate(l.id)} disabled={deleteMut.isPending}
-                            className="px-2 py-1 rounded text-[10px] bg-red-500/20 text-brand-danger border border-brand-danger/30 hover:bg-red-500/30 transition-colors cursor-pointer disabled:opacity-60">
+                            className="px-2 py-1 rounded text-[10px] bg-brand-danger/20 text-brand-danger border border-brand-danger/30 hover:bg-brand-danger/30 transition-colors cursor-pointer disabled:opacity-60">
                             {deleteMut.isPending ? '…' : 'Confirmar'}
                           </button>
                           <button onClick={() => setDeleteId(null)}
@@ -197,7 +197,7 @@ export default function InventarioPage() {
                         </div>
                       ) : (
                         <button onClick={() => setDeleteId(l.id)} title="Eliminar"
-                          className="w-9 h-9 flex items-center justify-center rounded-lg text-brand-text-secondary hover:text-brand-danger hover:bg-red-500/10 transition-colors cursor-pointer">
+                          className="w-9 h-9 flex items-center justify-center rounded-lg text-brand-text-secondary hover:text-brand-danger hover:bg-brand-danger/10 transition-colors cursor-pointer">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       )}
@@ -239,7 +239,7 @@ export default function InventarioPage() {
                             <p className="text-[10px] text-brand-text-secondary mt-0.5">{l.referencia || '—'}</p>
                           </div>
                           {bajoStock && (
-                            <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-amber-400/10 border-amber-400/20 text-brand-warning-text">
+                            <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-brand-warning/10 border-brand-warning/20 text-brand-warning-text">
                               <AlertTriangle className="w-2.5 h-2.5" />
                               Bajo
                             </span>

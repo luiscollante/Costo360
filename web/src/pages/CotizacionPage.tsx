@@ -897,7 +897,7 @@ function PlacaCard({
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.15 }}
-            className="px-4 pb-3 border-t border-red-500/20 bg-red-500/5 overflow-hidden"
+            className="px-4 pb-3 border-t border-brand-danger/20 bg-brand-danger/5 overflow-hidden"
           >
             <p className="text-xs text-brand-danger mt-3 mb-2.5">
               {piezaCount > 0
@@ -915,7 +915,7 @@ function PlacaCard({
               <button
                 type="button"
                 onClick={() => { setConfirmDelete(false); onRemove() }}
-                className="flex-1 py-1.5 rounded border border-red-500/40 bg-red-500/10 text-xs text-brand-danger hover:bg-red-500/20 transition-colors"
+                className="flex-1 py-1.5 rounded border border-brand-danger/40 bg-brand-danger/10 text-xs text-brand-danger hover:bg-brand-danger/20 transition-colors"
               >
                 Eliminar
               </button>
@@ -2115,7 +2115,7 @@ function Step4Resultado({ dir }: { dir: number }) {
               <motion.div
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-6 p-4 rounded border border-red-500/30 bg-red-500/5 text-brand-danger text-sm"
+                className="mb-6 p-4 rounded border border-brand-danger/30 bg-brand-danger/5 text-brand-danger text-sm"
               >
                 {error}
               </motion.div>
@@ -2308,7 +2308,7 @@ function Step4Resultado({ dir }: { dir: number }) {
             >
               {saved ? (
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between px-5 py-3.5 rounded-lg border border-brand-primary/40/30 bg-brand-primary/5">
+                  <div className="flex items-center justify-between px-5 py-3.5 rounded-lg border border-brand-primary/30 bg-brand-primary/5">
                     <div className="flex items-center gap-3">
                       <span className="text-brand-primary text-lg">✓</span>
                       <div>
@@ -2333,7 +2333,7 @@ function Step4Resultado({ dir }: { dir: number }) {
                         setDlPDF(true)
                         try { await descargarPDF(saved.id) } finally { setDlPDF(false) }
                       }}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border border-brand-border text-sm text-brand-text-secondary hover:text-brand-primary hover:border-brand-primary/40/40 transition-all disabled:opacity-40"
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border border-brand-border text-sm text-brand-text-secondary hover:text-brand-primary hover:border-brand-primary/40 transition-all disabled:opacity-40"
                     >
                       {dlPDF ? <Loader2 size={13} className="animate-spin" /> : <FileDown size={13} />}
                       Descargar PDF
