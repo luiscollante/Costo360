@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, Query
 
 from backend.db.client import db_rls
@@ -24,7 +26,14 @@ def dashboard_resumen(
     Métricas del mes actual + historial + top materiales + últimas 5 cotizaciones,
     para TODA la empresa. Solo roles con `puede_ver_dashboard` (admin/gerencia) —
     Regla 6. El aislamiento por empresa lo aplica RLS (`db_rls`).
+
+    "Hoy" se toma del reloj del backend (`date.today()`), NO de `CURRENT_DATE` de
+    Postgres: el servidor de Supabase corre en UTC y puede haber cruzado a otro
+    mes/día mientras que las cotizaciones se guardan con la fecha local del
+    negocio (ver routers/cotizacion.py). Usar la misma referencia evita que el
+    dashboard muestre 0 la noche del cambio de mes.
     """
+    hoy = date.today().isoformat()
     cur = conn.cursor()
 
     def _q(sql: str, params: tuple = ()):
@@ -38,25 +47,29 @@ def dashboard_resumen(
     # ── Mes actual ───────────────────────────────────────────────────────────────
     cot_mes = _q(
         """SELECT COUNT(*) FROM cotizaciones
-        WHERE DATE_TRUNC('month', fecha::date) = DATE_TRUNC('month', CURRENT_DATE)"""
+        WHERE DATE_TRUNC('month', fecha::date) = DATE_TRUNC('month', %s::date)""",
+        (hoy,),
     )[0]
 
     fact_mes = _q(
         """SELECT COALESCE(SUM(precio), 0) FROM cotizaciones
-        WHERE DATE_TRUNC('month', fecha::date) = DATE_TRUNC('month', CURRENT_DATE)
-        AND estado = 'Aprobada'"""
+        WHERE DATE_TRUNC('month', fecha::date) = DATE_TRUNC('month', %s::date)
+        AND estado = 'Aprobada'""",
+        (hoy,),
     )[0]
 
     margen_mes = _q(
         """SELECT COALESCE(AVG(margen), 0) FROM cotizaciones
-        WHERE DATE_TRUNC('month', fecha::date) = DATE_TRUNC('month', CURRENT_DATE)"""
+        WHERE DATE_TRUNC('month', fecha::date) = DATE_TRUNC('month', %s::date)""",
+        (hoy,),
     )[0]
 
     # ── Por estado ───────────────────────────────────────────────────────────────
     rows_estado = _qa(
         """SELECT estado, COUNT(*) FROM cotizaciones
-        WHERE DATE_TRUNC('month', fecha::date) = DATE_TRUNC('month', CURRENT_DATE)
-        GROUP BY estado"""
+        WHERE DATE_TRUNC('month', fecha::date) = DATE_TRUNC('month', %s::date)
+        GROUP BY estado""",
+        (hoy,),
     )
     por_estado = {r[0]: r[1] for r in rows_estado}
 
@@ -68,9 +81,10 @@ def dashboard_resumen(
                COALESCE(SUM(CASE WHEN estado='Aprobada' THEN precio ELSE 0 END), 0) AS facturado,
                COALESCE(AVG(margen), 0) AS margen_prom
         FROM cotizaciones
-        WHERE fecha::date >= (CURRENT_DATE - INTERVAL '{gran["ventana"]}')
+        WHERE fecha::date >= (%s::date - INTERVAL '{gran["ventana"]}')
         GROUP BY periodo
-        ORDER BY periodo"""
+        ORDER BY periodo""",
+        (hoy,),
     )
     historial = [
         {
@@ -86,11 +100,12 @@ def dashboard_resumen(
     rows_mat = _qa(
         """SELECT material, COUNT(*) AS cnt, COALESCE(SUM(precio), 0) AS revenue
         FROM cotizaciones
-        WHERE fecha::date >= (CURRENT_DATE - INTERVAL '90 days')
+        WHERE fecha::date >= (%s::date - INTERVAL '90 days')
         AND material != ''
         GROUP BY material
         ORDER BY revenue DESC
-        LIMIT 5"""
+        LIMIT 5""",
+        (hoy,),
     )
     top_materiales = [
         {"material": r[0], "cotizaciones": r[1], "revenue": float(r[2])}

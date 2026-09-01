@@ -34,7 +34,11 @@ function EstadoBadge({ estado, id }: { estado: string; id: number }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mut = useMutation({
     mutationFn: (nuevoEstado: string) => actualizarEstado(id, nuevoEstado),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['historial'] }); setOpen(false) },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['historial'] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] }) // el dashboard cuenta por estado
+      setOpen(false)
+    },
   })
 
   useEffect(() => {
@@ -190,7 +194,10 @@ function HistorialRow({ row, index }: { row: CotizacionResumen; index: number })
 
   const deleteMut = useMutation({
     mutationFn: () => eliminarCotizacion(row.id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['historial'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['historial'] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
+    },
     onError: () => setConfirmDelete(false),
   })
 

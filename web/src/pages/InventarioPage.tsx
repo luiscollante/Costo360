@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import AppLayout from '@/components/AppLayout'
 import {
   listarInventario,
@@ -15,6 +15,7 @@ import { formatCOP } from '@/lib/utils'
 import { Plus, Pencil, Trash2, X, Boxes, Minus, AlertTriangle } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Badge } from '@/components/ui/Badge'
+import { Dialog } from '@/components/ui/Dialog'
 
 const CATEGORIAS = ['Mármol', 'Granito', 'Sinterizado', 'Quartzstone', 'Quartzita']
 
@@ -285,34 +286,12 @@ export default function InventarioPage() {
       </div>
 
       {/* Modal add/edit */}
-      <AnimatePresence>
-        {modalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={(e) => { if (e.target === e.currentTarget) closeModal() }}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 16 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 16 }}
-              transition={{ duration: 0.18 }}
-              className="glass rounded-2xl border border-brand-border w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto"
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-bold text-brand-text">
-                  {editing ? 'Editar lámina' : 'Agregar lámina'}
-                </h2>
-                <button
-                  onClick={closeModal}
-                  className="p-1.5 rounded-lg text-brand-text-secondary hover:text-brand-text transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
+      <Dialog
+        open={modalOpen}
+        onClose={closeModal}
+        title={editing ? 'Editar lámina' : 'Agregar lámina'}
+        className="max-w-lg max-h-[88vh] overflow-y-auto"
+      >
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -435,27 +414,24 @@ export default function InventarioPage() {
                   />
                 </div>
 
-                <div className="flex justify-end gap-3 pt-1">
+                <div className="flex justify-end gap-2 pt-2">
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="px-4 py-2 rounded-lg border border-brand-border text-sm text-brand-text-secondary hover:text-brand-text transition-colors cursor-pointer"
+                    className="px-4 py-2.5 rounded-lg border border-brand-border bg-brand-surface text-sm font-medium text-brand-text-secondary hover:bg-brand-bg hover:text-brand-text transition-colors cursor-pointer"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={isPending}
-                    className="px-5 py-2 rounded-lg bg-brand-primary text-white text-sm font-semibold shadow-[0_0_24px_#1F6F5428,0_0_0_1px_#1F6F5440] hover:shadow-[0_0_40px_#1F6F5445,0_0_0_1px_#1F6F5470] disabled:opacity-60 disabled:shadow-none transition-all duration-200 cursor-pointer"
+                    className="px-5 py-2.5 rounded-lg bg-brand-primary text-white text-sm font-semibold hover:bg-brand-primary-light disabled:opacity-60 transition-colors cursor-pointer"
                   >
                     {isPending ? 'Guardando…' : editing ? 'Guardar cambios' : 'Agregar lámina'}
                   </button>
                 </div>
               </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </Dialog>
     </AppLayout>
   )
 }

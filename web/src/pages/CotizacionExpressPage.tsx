@@ -391,7 +391,7 @@ function ResultPanel({
                 setDlPDF(true)
                 try { await descargarPDF(savedId) } finally { setDlPDF(false) }
               }}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-brand-border text-sm text-brand-text-secondary hover:text-brand-primary hover:border-brand-primary/40 transition-all disabled:opacity-40"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-brand-primary/40 bg-brand-primary/[0.07] text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.14] hover:border-brand-primary/60 transition-all disabled:opacity-40 cursor-pointer"
             >
               {dlPDF ? <Loader2 size={13} className="animate-spin" /> : <FileDown size={13} />}
               Descargar PDF
@@ -399,7 +399,7 @@ function ResultPanel({
             <button
               type="button"
               onClick={() => setShowCC(true)}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-brand-border text-sm text-brand-text-secondary hover:border-brand-primary/40 hover:text-brand-primary transition-all"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-brand-primary/40 bg-brand-primary/[0.07] text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.14] hover:border-brand-primary/60 transition-all cursor-pointer"
             >
               <Receipt size={13} />
               Cuenta de Cobro

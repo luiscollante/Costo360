@@ -147,6 +147,10 @@ app.add_middleware(
         "http://localhost:5173", "http://127.0.0.1:5173",
         "https://localhost",  # WebView de Capacitor en el APK Android
     ],
+    # En desarrollo, Vite puede tomar otro puerto (5174, 5175…) si 5173 está
+    # ocupado. Aceptar cualquier puerto de localhost/127.0.0.1 para no romper
+    # el login cuando eso pasa. En producción rige la lista explícita de arriba.
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1):\d+",
     allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "X-Device-Id"],

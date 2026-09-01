@@ -120,10 +120,14 @@ export default function DashboardPage() {
   const usuario = useAuthStore((s) => s.usuario)
   const [granularidad, setGranularidad] = useState<Granularidad>('mensual')
 
+  // El dashboard es una foto EN VIVO: cada vez que se entra a la pantalla (o se
+  // vuelve a ella tras guardar cotizaciones o cambiar estados) debe releer.
   const { data, isPending, isError, refetch } = useQuery<DashboardResumen>({
     queryKey: ['dashboard', granularidad],
     queryFn: () => getDashboardResumen(granularidad),
-    staleTime: 1000 * 60 * 2,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   })
 
   const cotizacionesCount = useCountUp(data?.cotizaciones_mes ?? 0)

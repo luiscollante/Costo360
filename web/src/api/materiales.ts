@@ -36,19 +36,28 @@ export async function crearMaterial(body: MaterialNuevo): Promise<MaterialCatalo
 }
 
 export interface MaterialCambios {
+  categoria?: string
   referencia?: string
   precio_m2?: number
   proveedor?: string
   activo?: boolean
 }
 
-/** Edita un material propio del taller (solo Admin/Gerencia). */
+/**
+ * Edita un material del catálogo del taller (categoría, nombre o precio).
+ * Si la fila es base de Costo360, el backend crea un "override" propio del
+ * taller — el cambio solo afecta a este taller. Cualquier usuario del taller
+ * puede editar.
+ */
 export async function editarMaterial(id: number, body: MaterialCambios): Promise<MaterialCatalogo> {
   const res = await api.put<MaterialCatalogo>(`/api/materiales/${id}`, body)
   return res.data
 }
 
-/** Elimina un material propio del taller (solo Admin/Gerencia). */
+/**
+ * Quita un material del catálogo del taller. Si era un override de una fila
+ * base, la base vuelve a mostrarse (restablece al valor de Costo360).
+ */
 export async function eliminarMaterial(id: number): Promise<void> {
   await api.delete(`/api/materiales/${id}`)
 }
