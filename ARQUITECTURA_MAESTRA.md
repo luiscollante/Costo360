@@ -212,8 +212,8 @@ rowcount), `verificar_dispositivo` (409 `SESSION_SUPERSEDED` / `SESSION_PENDING`
 
 ## 6. Identidad de marca / estándar visual
 
-*Actualizado 2026-08-31 con los Ciclos 1 y 2 del rediseño visual (rama `goal/rediseno-visual`,
-pendiente de fusionar a `master`).*
+*Actualizado 2026-09-01 con los Ciclos 1 y 2 del rediseño visual + la ronda de revisión en vivo
+del fundador (rama `goal/rediseno-visual`, pendiente de fusionar a `master`).*
 
 Tokens reales extraídos de `web/src/index.css` (verificado en código):
 
@@ -229,8 +229,9 @@ Tokens reales extraídos de `web/src/index.css` (verificado en código):
 | `--color-brand-text-tertiary` | `#6E6E6E` | Solo texto ≥18px e iconos no esenciales (≈4,2:1) |
 | `--color-brand-text-dark` | `#1A1A1A` | Texto principal |
 | `--color-brand-muted` | `#8A8A8A` | Texto deshabilitado/placeholder |
-| `--color-brand-gold` | `#D4AF37` | Dorado — acentos premium (relleno, bordes, iconos). **No válido como texto** sobre crema ni sobre `gold/xx` (≈1,9:1). Para "texto dorado" usar `--color-brand-warning-text` `#6E5410`. |
-| `--color-brand-gold-light` | `#F0C447` | Dorado claro |
+| `--color-brand-gold` | `#D4AF37` | Dorado — **solo** relleno, bordes, iconos, trazos de gráfico. **NUNCA texto** sobre crema ni sobre `gold/xx` (≈1,6-1,9:1). |
+| `--color-brand-gold-text` | `#6E5410` | Dorado oscuro para TEXTO (5,9:1 sobre crema — WCAG AA). Es el que va en los números de acento de Cotización/Express/AIU/Nesting (barrido en la ronda de revisión, 2026-09-01). |
+| `--color-brand-gold-light` | `#F0C447` | Dorado claro (solo sobre fondos oscuros) |
 | `--color-brand-success` / `-soft` | `#15612E` / `#E7F1E9` | Estado OK — texto vs. relleno de badge |
 | `--color-brand-warning-text` / `--color-brand-warning` / `-soft` | `#6E5410` / `#B4820E` / `#F5EBD5` | Advertencia — el tono medio `#B4820E` **solo** para relleno/borde, nunca texto |
 | `--color-brand-danger` / `-soft` | `#B23B3B` / `#F6E5E5` | Error — texto vs. relleno de badge |
@@ -246,11 +247,25 @@ Tokens reales extraídos de `web/src/index.css` (verificado en código):
   tema en `index.html` se **eliminaron** en el Ciclo 1. `@media (prefers-reduced-motion)` +
   `<MotionConfig reducedMotion="user">` respetan la preferencia del sistema.
 - **Barra lateral (`.glass-emerald`):** verde esmeralda del isotipo, glassmorphism —
-  `linear-gradient(180deg, rgba(0,71,43,.82), rgba(0,49,29,.88))`, `backdrop-filter: blur(24px)
-  saturate(140%)`, borde `rgba(255,255,255,.12)`, highlight interior + sombra lateral. Texto en
-  **colores sólidos**: inactivo crema `#F5E8D2` (≈5,5:1), activo `#FFFFFF`, encabezados de
-  grupo `#E4D8BF`. Indicador de ítem activo: barra izquierda dorada + `font-medium` + fondo
-  `rgba(255,255,255,.14)` (señal no cromática además del color).
+  `linear-gradient(180deg, rgba(0,65,40,.68), rgba(0,44,27,.82))` + halo superior claro,
+  `backdrop-filter: blur(26px) saturate(160%)`, borde `rgba(255,255,255,.16)`, highlight
+  interior + sombra lateral. Detrás va `.sidebar-aurora` (capa `fixed` con dos manchas
+  verde-menta muy difuminadas y **estáticas** — sin animación, para no consumir GPU) que el
+  `backdrop-filter` convierte en luz difusa; es lo que hace que lea como cristal y no como
+  pintura plana. Sin brillo diagonal (se probó y el fundador lo rechazó). Texto en **colores
+  sólidos**: inactivo crema `#F5E8D2`, activo `#FFFFFF`, encabezados de grupo `#E4D8BF`.
+  Indicador de ítem activo: barra izquierda dorada + `font-medium` + fondo `rgba(255,255,255,.14)`.
+  Foco de teclado: outline color crema (`.glass-emerald :focus-visible`).
+- **Orden del menú lateral (reorganizado por área del negocio, decisión del fundador
+  2026-09-01):** Dashboard suelto arriba (solo roles con acceso a BI) · grupo **Cotizaciones**
+  (Nueva Cotización, Express, Cotización AIU, Historial) · grupo **Taller** (Catálogo,
+  Inventario, Retales, Nesting) · grupo **Ajustes** (Parámetros, Configuración; ambos ocultos
+  al operativo) · separador · **Panel Admin** (solo `puede_gestionar_usuarios`). El operativo
+  ve solo Cotizaciones + Taller. `Sidebar.tsx` factoriza el enlace en `NavRow`.
+- **Shell de la app (`AppLayout`):** contenedor `flex h-screen overflow-hidden`; **solo
+  `<main>` scrollea** (`overflow-auto`) y la barra lateral queda fija. (Antes era
+  `min-h-screen` y en páginas largas la barra se iba con el scroll — bug corregido en la
+  ronda de revisión.)
 - **Efecto glass (paneles claros, `.glass`):** `rgba(255,255,255,.6)` blur(20px), borde
   `rgba(255,255,255,.4)`, sombra `rgba(74,74,74,.05)`. Fondo con textura de ruido sutil (PNG,
   3% opacidad, `z-index:1` — no tapa modales ni la barra).
@@ -274,10 +289,20 @@ Tokens reales extraídos de `web/src/index.css` (verificado en código):
 - **Selector de material (`MaterialCombobox`) + catálogo por taller (Ciclo 2 R10):** el picker
   de referencia es un `<Dialog>` de marca (el dropdown se recortaba dentro de la tarjeta).
   Opción "Otro" → campo de texto + modal decorativo "¿Guardar «X» a $Y/m² en tu catálogo?".
-  Pantalla `/materiales` ("Catálogo de materiales", rol dashboard): filas base de Costo360
-  (badge "Costo360", solo lectura) + materiales propios del taller (badge "Tu taller",
-  editar/borrar). Backend: `catalogo_materiales.empresa_id` + 4 políticas RLS (migración
-  `0005`, aplicada) — base `NULL` inmutable, propio de cada empresa aislado.
+  Pantalla `/materiales` ("Catálogo de materiales", **visible para operativo y admin** — se
+  quitó el `RoleRoute`). Tabla de 3 columnas (Categoría · Referencia · Precio/m²; se quitaron
+  "Origen" y "Acciones" por decisión del fundador). **Clic en cualquier parte de una fila →
+  abre el mismo modal que "Agregar material", precargado** (categoría/nombre/precio, los tres
+  editables); el modal ofrece "Quitar" para los materiales personalizados.
+- **Catálogo — aislamiento por taller (backend, migraciones `0005` + `0006`, ambas aplicadas):**
+  `catalogo_materiales.empresa_id` (`0005`) → `NULL` = fila base de Costo360, con valor = fila
+  propia del taller; 4 políticas RLS (base inmutable, propio aislado por empresa). `0006`
+  añade `base_id` para **copy-on-write**: editar una fila base NO la modifica — crea (o
+  actualiza) una fila propia del taller que la "sombrea"; `GET` devuelve las propias + las
+  base no sombreadas; borrar el override restaura la base. `POST`/`PUT`/`DELETE` de
+  `routers/materiales.py` bajo `db_rls` con `get_current_user` (cualquier usuario del taller
+  edita; RLS impide tocar otro taller). El dashboard usa `date.today()` del backend como "hoy"
+  (no `CURRENT_DATE` de Postgres, que corre en UTC) para el filtro de "mes en curso".
 
 ---
 
@@ -387,6 +412,10 @@ el cuaderno Notion "Costo360 — Base de Conocimiento Central".
 | 2026-08-26 | Harness completado; roadmap de 5 objetivos formalizado (`docs/ROADMAP_COSTO360.md`) |
 | 2026-08-27 | Ciclo `/goal` rediseñado a 7 fases (0-6); `codebase-memory-mcp` instalado |
 | 2026-08-27 | **Fase 2.A ejecutada** (rama `goal/fase-2a-multitenant-auth`): backend a Supabase Auth (JWKS ES256), `db_rls`/`db_service`, self-test de RLS al arrancar, aprovisionamiento por invitación, sesión única (Regla 5), migraciones `0003`/`0004`. Decisiones: backend long-lived (no serverless), acceso 100% por invitación, Google OAuth para después |
+| 2026-08-27 | Fase 2.A fusionada a `master` |
+| 2026-08-30 | **Rediseño visual — Ciclo 1** (rama `goal/rediseno-visual`): tokens de contraste AA, modo oscuro eliminado, barra lateral esmeralda, logo real, reconstrucción del flujo de carga inicial (`store/auth.ts` con estados) + `RoleRoute`, `empresa_nombre` en `/api/auth/me` |
+| 2026-08-31 | **Rediseño visual — Ciclo 2**: 14 primitivos `ui/`, 13 pantallas a `<PageHeader>`, catálogo de materiales por taller (migración `0005`). Fase 5: Code Reviewer + Accessibility Auditor, ambos "aprueba con cambios" |
+| 2026-09-01 | **Ronda de revisión en vivo del fundador**: bug del sidebar que scrolleaba (shell `h-screen overflow-hidden`); CORS del backend a cualquier puerto de localhost; dashboard usa `date.today()` del backend (no `CURRENT_DATE` UTC); glassmorphism del sidebar sin brillo diagonal + `.sidebar-aurora`; catálogo editable vía modal precargado + copy-on-write (migración `0006` `base_id`), visible para operativo; Express "Calcular precio" (placeholder confuso); Historial con actualización optimista; token `--color-brand-gold-text` `#6E5410` para números de acento; menú lateral reorganizado por área del negocio |
 
 ---
 

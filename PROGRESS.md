@@ -69,13 +69,39 @@
       `SegmentedControl` en ambos modos.
     - **Diferido** (anotado en el plan): formularios grandes a `<Field>`; Historial a
       `<DataTable>`; auto-guardar el material al guardar la cotización; calendario/listbox
-      propios; números dorados de acento sobre crema (decisión de marca del fundador).
+      propios.
+  - **Ronda de revisión en vivo del fundador (2026-09-01)** — 4 rondas de observaciones,
+    todas aplicadas y verificadas con el navegador (commits `6e483a2`, `f7b5a00`, `1478a48`,
+    `34a9af6`). Detalle completo en `SESSION.md`. Resumen:
+    - Bug crítico: la barra lateral se iba con el scroll en páginas largas → shell
+      `h-screen overflow-hidden`, solo `<main>` scrollea.
+    - Login roto: el CORS del backend solo aceptaba el puerto 5173 → `allow_origin_regex`
+      para cualquier puerto de localhost en desarrollo.
+    - Dashboard sin datos en vivo: desfase UTC vs. hora local del negocio → `dashboard.py`
+      usa `date.today()` del backend como "hoy".
+    - Barra lateral: glassmorphism sin brillo diagonal (rechazado por el fundador) +
+      `.sidebar-aurora` estática detrás del cristal.
+    - Catálogo: visible para operativo y admin; sin columnas Origen/Acciones; clic en la
+      fila → modal precargado; **copy-on-write** (migración **`0006`**, aplicada) — editar
+      una fila base crea una copia privada del taller, aislada, en vivo.
+    - Express: "Calcular precio" no se habilitaba porque el placeholder `3.50` parecía un
+      valor → `"Ej. 3.50"`.
+    - Historial: cambio de estado con actualización optimista (instantáneo). Dashboard con
+      indicador "Actualizando…".
+    - `text-brand-gold` → token nuevo `--color-brand-gold-text` `#6E5410` (AA) en los
+      números de acento.
+    - Menú lateral reorganizado "por área del negocio": Dashboard · Cotizaciones (+ Historial)
+      · Taller (+ Catálogo) · Ajustes · Panel Admin.
+    - **Incidente de datos (resuelto):** un `DELETE` filtrado por nombre de cliente borró 2
+      cotizaciones reales del fundador (COT-0003/0004) además de una de prueba. Restauradas
+      el mismo día con datos exactos salvo costo/margen (aproximados, marcados en el
+      registro). El desglose detallado de esas 2 no se recuperó.
   - **Próxima tarea:** decisión del fundador — fusionar `goal/rediseno-visual` → `master`
-    (Ciclo 1 + Ciclo 2). Si se aprueba, reindexar el grafo contra `master`.
+    (Ciclo 1 + Ciclo 2, 44 commits). Si se aprueba, reindexar el grafo contra `master`.
 
 - **Fase 2.A ejecutada — migración a Supabase Auth + aislamiento real + sesión única (2026-08-27):**
   Ciclo `/goal` completo (Fases 0-6) en una sola sesión. 10 micro-commits en la rama
-  `goal/fase-2a-multitenant-auth` (aún NO fusionada a `master`). Detalle vivo en
+  `goal/fase-2a-multitenant-auth`, **fusionada a `master`** (merge `1a95284`). Detalle vivo en
   `docs/PLAN_FASE_2A.md`. Resumen:
   - **Plan** auditado por 2 agentes (Security Engineer + Database Optimizer, "aprueba con
     cambios") y aprobado por el fundador con 3 decisiones: (1) backend = servidor pequeño
@@ -225,4 +251,4 @@
 
 ---
 
-*Última actualización: 2026-08-31*
+*Última actualización: 2026-09-01*

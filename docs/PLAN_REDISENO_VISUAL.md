@@ -14,7 +14,7 @@ aquí solo el logo y `manifest.json`.
 
 ---
 
-## Estado — COMPLETADO (2026-08-31)
+## Estado — COMPLETADO (Ciclo 2: 2026-08-31 · revisión del fundador: 2026-09-01)
 
 - **CICLO 1** (R0, R1, R2, R4, R5, R7, R8) — completado 2026-08-30. Fase 5: Code Reviewer +
   Accessibility Auditor, ambos "APRUEBA CON CAMBIOS", arreglos en `441af59`.
@@ -33,12 +33,41 @@ aquí solo el logo y `manifest.json`.
     del selector de material des-anidado; `aria-current` + check visible en la fila elegida;
     `strip()` de categoría en `crear_material`; contraste de los botones dorados "Descargar
     PDF" / "Cuenta de Cobro"; roving tabindex del `SegmentedControl` en ambos modos).
+- **RONDA DE REVISIÓN EN VIVO DEL FUNDADOR (2026-09-01)** — tras cerrar el Ciclo 2, el
+  fundador revisó la plataforma en el navegador. 4 rondas de observaciones, todas aplicadas
+  y verificadas con la extensión de Chrome (commits `6e483a2`, `f7b5a00`, `1478a48`,
+  `34a9af6`; detalle en `SESSION.md` sesión 2026-09-01):
+  - **Bug crítico:** la barra lateral se iba con el scroll en páginas largas (shell era
+    `min-h-screen`) → `flex h-screen overflow-hidden`, solo `<main>` scrollea.
+  - **Login roto:** el CORS del backend estaba fijo a `:5173` → `allow_origin_regex` para
+    cualquier puerto de localhost (desarrollo).
+  - **Dashboard sin datos en vivo:** desfase de zona horaria (Postgres UTC vs. `date.today()`
+    local) → `dashboard.py` recibe `hoy` del backend y lo pasa a las consultas.
+  - **Barra lateral:** glassmorphism sin el brillo diagonal (rechazado por el fundador) —
+    `.glass-emerald` más transparente + `.sidebar-aurora` estática detrás.
+  - **Catálogo:** visible para operativo y admin (sin `RoleRoute`); columnas "Origen" y
+    "Acciones" quitadas; clic en la fila → mismo modal que "Agregar material", precargado;
+    **copy-on-write** (migración **`0006_catalogo_override_por_taller.sql`**, `base_id`,
+    aplicada) — editar una fila base crea una copia privada del taller, aislada por empresa.
+  - **Express:** "Calcular precio" no se habilitaba porque el placeholder `3.50` parecía un
+    valor real → `"Ej. 3.50"` + aviso "Falta completar" más visible.
+  - **Lentitud al cambiar estados:** Historial con actualización optimista (instantáneo);
+    Dashboard con indicador "Actualizando…".
+  - **`text-brand-gold`** (~1,6:1 sobre crema) → token nuevo **`--color-brand-gold-text`
+    `#6E5410`** (5,9:1, AA), barrido en Cotización/Express/AIU/Nesting/Config/MaterialCombobox.
+  - **Menú lateral reorganizado "por área del negocio"** (elegido por el fundador entre 3
+    opciones): Dashboard suelto · Cotizaciones (+ Historial) · Taller (+ Catálogo) · Ajustes ·
+    Panel Admin.
+  - **Incidente de datos (resuelto):** un `DELETE` filtrado por nombre de cliente borró 2
+    cotizaciones reales del fundador además de una de prueba; restauradas el mismo día con
+    datos exactos salvo costo/margen (aproximados, marcados en `datos_json`).
 - **Diferido** (anotado, no lo reportan los auditores): migrar los formularios grandes a
   `<Field>`/`<FormSection>`; filas de Historial a `<DataTable>`; auto-guardado del material
   al guardar la cotización (solo se hizo el modal explícito "¿guardar?"); calendario/listbox
-  propios para `DateField`/`SelectField`; números dorados de acento (`text-brand-gold` sobre
-  crema) en los paneles de resultado — decisión de marca del fundador, no bloqueante.
-- **Pendiente:** fusionar `goal/rediseno-visual` → `master` (decisión del fundador).
+  propios para `DateField`/`SelectField`; glassmorphism del sidebar más marcado (requeriría
+  que el contenido pase por detrás de la barra — otro cambio de layout).
+- **Pendiente:** fusionar `goal/rediseno-visual` → `master` (decisión del fundador; 44
+  commits de C1+C2) y reindexar el grafo `codebase-memory-mcp` contra `master` tras fusionar.
 
 ---
 
