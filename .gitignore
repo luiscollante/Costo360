@@ -37,3 +37,7 @@ v_cupo
 costo360_loop_hero.mp4
 costo360_gif_hero.gif
 web/public/*.mp4
+
+# Prototipo Base44 del Objetivo 6 (gestión de proyectos) — insumo/especificación,
+# se reimplementa nativo; no va en la historia del repo del producto.
+gestion-inventario-nuevo-modulo.zip

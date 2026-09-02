@@ -18,6 +18,16 @@ actualiza con la siguiente ronda de objetivos — no se reemplaza, se extiende.*
 5. Agente de IA integrado en el producto — asistente personal por usuario, navega la interfaz de
    forma autónoma para maximizar la eficiencia al cotizar.
 
+## Objetivos añadidos después del 2026-08-26
+
+6. **Módulo de gestión de proyectos** (añadido 2026-09-01) — integrar en Costo360 un sistema
+   integral para llevar cada trabajo *después* de cotizarlo: proyectos (tablero Kanban por
+   estado), tareas, hitos con dependencias, registro de horas, comentarios, notificaciones
+   automáticas, un asistente de IA que opera y analiza los datos, y automatizaciones diarias.
+   El fundador lo construyó como prototipo en **Base44** (`gestion-inventario-nuevo-modulo.zip`
+   en la raíz) — hay que **reimplementarlo nativo** en el stack de Costo360 (React 19 +
+   FastAPI + Supabase), no se puede "pegar" tal cual. Análisis completo abajo, en la Fase 2.D.
+
 ---
 
 ## Por qué no se atacan los 5 al mismo tiempo
@@ -80,34 +90,36 @@ por HTTP (B8), que necesita el `.env` del fundador**, y fusionar la rama a `mast
 
 ---
 
-## Fase 2 — Tres frentes en paralelo
+## Fase 2 — Frentes en paralelo
 
-Una vez resuelto el fundamento de la Fase 1, estos tres frentes no se pisan entre sí y pueden
-avanzar en el orden que el fundador prefiera sesión a sesión:
+Una vez resuelto el fundamento de la Fase 1, estos frentes no se pisan entre sí y pueden
+avanzar en el orden que el fundador prefiera sesión a sesión. (2.A ✅ completado; 2.D añadido
+2026-09-01.)
 
-### 2.A — Objetivo 1: Rediseño de la interfaz del producto  ← **frente activo — Ciclo 1 ✅, Ciclo 2 en curso**
+### 2.A — Objetivo 1: Rediseño de la interfaz del producto  ✅ **COMPLETADO (2026-09-01, fusionado a `master`)**
 
 > **Insumos:** `docs/REVISION_UX_2026-08-29.md` (revisión por 3 agentes) + `docs/PLAN_REDISENO_VISUAL.md`
 > (plan de ejecución, auditado en Fase 2 y Fase 5, partido en 2 ciclos).
 
 Sobre la base de datos ya multi-tenant **y el backend ya aislado + con Supabase Auth**: nuevas
 pantallas/componentes para los módulos existentes, aplicando las 8 reglas de arquitectura y la
-identidad de marca real (`ARQUITECTURA_MAESTRA.md`, secciones 6-7). **No se tocan
+identidad de marca real (`ARQUITECTURA_MAESTRA.md`, secciones 6-7). **No se tocaron
 `motor/calculos.py` ni `motor/parametros.py`**.
 
-- **✅ Ciclo 1 completado (2026-08-30/31, rama `goal/rediseno-visual`):** fundamento —
-  capa de tokens con contraste AA, eliminación del modo oscuro, barra lateral esmeralda-glass
-  (verde real del isotipo `#00472B`), shell (skip-link, foco/título por ruta, nombre de
-  empresa), logo real del fundador (variantes claro/oscuro), reconstrucción del flujo de carga
-  inicial (`RoleRoute` — el operativo no ve Dashboard/Parámetros/Configuración), limpieza de
-  restos del piloto. Único cambio de backend: `empresa_nombre` en `/api/auth/me` +
-  `require_dashboard` en 3 GET. Ciclo `/goal` completo con auditoría en Fase 2 y Fase 5.
-- **⬜ Ciclo 2 (siguiente):** `R3` los 12-14 primitivos accesibles; `R6` pasada pantalla por
-  pantalla (contraste de contenido, formato de números `es-CO`, colores de gráficos, `<h1>`
-  por página, tablas semánticas); `R10` selector de material como diálogo + **catálogo de
-  materiales editable por taller** (migración `0005`: `empresa_id` en `catalogo_materiales` +
-  RLS + CRUD); `R9` verificación final. Detalle: `docs/PLAN_REDISENO_VISUAL.md`.
-- **Pendiente:** fusionar `goal/rediseno-visual` a `master` (probablemente al cerrar el Ciclo 2).
+- **✅ Ciclo 1 (2026-08-30):** fundamento — capa de tokens con contraste AA, eliminación del
+  modo oscuro, barra lateral esmeralda, shell (skip-link, foco/título por ruta, nombre de
+  empresa), logo real del fundador, reconstrucción del flujo de carga inicial + `RoleRoute`,
+  limpieza del piloto. Backend aditivo: `empresa_nombre` en `/api/auth/me` + `require_dashboard`
+  en 3 GET.
+- **✅ Ciclo 2 (2026-08-31):** `R3` 14 primitivos accesibles en `web/src/components/ui/`; `R6`
+  las 13 pantallas a `<PageHeader>` + barrido de color de marca + `formatPct`; `R10` selector
+  de material como diálogo + **catálogo de materiales editable por taller** (migración `0005`
+  + `0006` copy-on-write); `R9` verificación. Fase 5: Code Reviewer + Accessibility Auditor.
+- **✅ Ronda de revisión en vivo del fundador (2026-09-01):** bug de scroll del sidebar, CORS
+  por puerto, dashboard por zona horaria, glassmorphism, catálogo por modal, Express, Historial
+  optimista, dorado más oscuro, menú reorganizado "por área del negocio". Detalle en `SESSION.md`.
+- **✅ Fusionado a `master`** (merge `f5fb7f4`); ramas `goal/rediseno-visual` y
+  `goal/fase-2a-multitenant-auth` borradas; grafo `codebase-memory` reindexado contra `master`.
 
 ### 2.B — Objetivo 4: Infraestructura gratuita para los agentes de operación
 Montar la versión gratuita del diseño ya definido en `docs/ARQUITECTURA_AGENTES_OPERACION.md`:
@@ -121,6 +133,72 @@ migra a cuál servicio de pago cuando llegue la inversión.
 Con la infraestructura de 2.B lista, construir el primer agente (Atención al Cliente, ya elegido
 como el primero en `docs/ARQUITECTURA_AGENTES_OPERACION.md` sección 0) en `agentes-operacion/`. Los
 otros 6 agentes se construyen uno a la vez después, reutilizando la misma base.
+
+### 2.D — Objetivo 6: Módulo de gestión de proyectos  (añadido 2026-09-01, prototipo en Base44)
+
+**Qué es.** Un sistema completo para gestionar cada trabajo *después* de cotizarlo. El fundador
+lo construyó con otra IA como app **Base44** — `gestion-inventario-nuevo-modulo.zip` en la raíz
+(≈135 archivos, ≈8.500 líneas; el nombre del zip dice "inventario" pero el contenido es
+**gestión de proyectos**, no el módulo de Inventario/láminas que ya existe).
+
+**Funcionalidades del prototipo:**
+- **Proyectos** — tablero Kanban por estado (planificación → activo → en revisión → completado
+  → pausado/cancelado/archivado). Campos `client` y `material` (enlazan con el dominio de
+  Costo360). % de avance, marca de riesgo, 3 vistas (Operativa / Cierre / Archivo), filtros,
+  paginación en el backend.
+- **Tareas** — Kanban por proyecto (bloqueada / por hacer / en progreso / revisión /
+  completada), prioridad, responsable, fecha límite, horas estimadas, dependencia de un hito,
+  orden por arrastre.
+- **Hitos** — línea de tiempo por proyecto; al completar un hito se desbloquean sus tareas.
+- **Registro de horas** — por tarea (horas, fecha, nota); vista de parte de horas; análisis
+  estimado vs. registrado.
+- **Comentarios** — por tarea.
+- **Notificaciones automáticas** — tarea desbloqueada, plazo próximo/vencido, hito en riesgo,
+  proyecto en riesgo.
+- **Asistente de IA** ("asistente_costo360") — conversacional: **opera** los datos (crear/
+  editar/borrar proyectos, tareas, hitos, comentarios, horas por lenguaje natural, con
+  confirmación antes de borrar) y **asesora** (resúmenes ejecutivos, análisis de avance,
+  cuellos de botella, riesgos, recomendaciones priorizadas). Con memoria. Página propia +
+  widget flotante en toda la app.
+- **Automatizaciones** — barrido diario 7:00 (America/Bogotá): desbloqueos, alertas de plazo/
+  riesgo, archivado de completados > 30 días; y recálculo del % del proyecto al cambiar tareas.
+- **Tour de bienvenida** guiado.
+
+**Por qué NO se puede "pegar" tal cual.** Es una app Base44: entidades (= tablas), auth, el
+agente de IA, las funciones de servidor y los workflows programados **corren en la plataforma
+Base44**, no son código portable. La carpeta `base44/` es una especificación declarativa que
+Base44 interpreta; el frontend habla con ella vía `@base44/sdk`. Integrarlo en Costo360 =
+**reimplementarlo nativo**:
+- **Datos** → 6 tablas nuevas en Supabase (`projects`, `tasks`, `milestones`, `time_entries`,
+  `comments`, `notifications`) con `empresa_id` + RLS en todas (Regla 1) → migración `0007`.
+- **CRUD** → routers FastAPI nuevos bajo `db_rls` (patrón `materiales.py` / `cotizacion.py`).
+  Las consultas `$regex`/`$or` de Base44 se reescriben como SQL parametrizado.
+- **3 funciones de servidor** → endpoints FastAPI + un planificador (el backend es
+  long-lived, no serverless: `apscheduler` o un `/cron/*` disparado desde fuera).
+  `recalcProjectProgress` puede vivir dentro del propio endpoint de tareas.
+- **Realtime** (suscripciones de Base44) → Costo360 no tiene realtime; empezar con
+  refetch/polling de react-query (las actualizaciones optimistas del tablero ya funcionan sin
+  realtime), y evaluar Supabase Realtime más adelante.
+- **Asistente de IA** → es la pieza mayor y **se solapa con el Objetivo 5** (agente en el
+  producto). Costo360 ya tiene un agente (`api/agente.ts`, chat de Parámetros, Gemini). Este
+  asistente ("operar entidades + consultoría") es justo hacia donde iba el Objetivo 5 — puede
+  **ser su base** o construirse primero acotado a proyectos. **Decisión de la Fase 0 del
+  ciclo `/goal`.**
+- **Auth** → se descarta toda la del módulo (Login/Register/OAuth/AuthContext); Costo360 ya
+  tiene Supabase Auth + roles + RLS.
+- **UI** → las pantallas (Panel, tablero de Proyectos, detalle, línea de tiempo, parte de
+  horas, chat, notificaciones) se **reconstruyen con los primitivos `ui/` y los tokens de
+  marca de Costo360** (el prototipo usa otro verde `#1F6F54`/`#C9A45C` y otro set shadcn).
+- **Menú** → sección nueva en la barra lateral (encaja con la estructura "por área del
+  negocio": un grupo "Proyectos", o dentro de uno existente).
+- **Seguridad del prototipo:** escaneado — sin secretos ni patrones maliciosos. Solo se quita
+  el plugin de Vite de Base44 (`visualEditAgent`, `analyticsTracker`) y el acoplamiento al SDK.
+
+**Tamaño.** Es un objetivo **grande** — dominio funcional nuevo + su propio agente +
+automatizaciones + 6 tablas con RLS. Ciclo `/goal` **multi-ciclo**, como el rediseño.
+
+**Insumo vivo:** el zip extraído sirve de **prototipo/especificación detallada** — funciona,
+está bien pensado, y define el comportamiento exacto a replicar.
 
 ---
 
