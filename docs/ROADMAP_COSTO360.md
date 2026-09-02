@@ -85,18 +85,29 @@ por HTTP (B8), que necesita el `.env` del fundador**, y fusionar la rama a `mast
 Una vez resuelto el fundamento de la Fase 1, estos tres frentes no se pisan entre sí y pueden
 avanzar en el orden que el fundador prefiera sesión a sesión:
 
-### 2.A — Objetivo 1: Rediseño de la interfaz del producto  ← **frente activo tras cerrar B8**
+### 2.A — Objetivo 1: Rediseño de la interfaz del producto  ← **frente activo — Ciclo 1 ✅, Ciclo 2 en curso**
 
-> **Insumo:** `docs/REVISION_UX_2026-08-29.md` — revisión de UI/UX/Accesibilidad/Marca del
-> prototipo en vivo por 3 agentes de diseño, con las 12 correcciones priorizadas para arrancar.
+> **Insumos:** `docs/REVISION_UX_2026-08-29.md` (revisión por 3 agentes) + `docs/PLAN_REDISENO_VISUAL.md`
+> (plan de ejecución, auditado en Fase 2 y Fase 5, partido en 2 ciclos).
 
 Sobre la base de datos ya multi-tenant **y el backend ya aislado + con Supabase Auth**: nuevas
-pantallas/componentes para los módulos existentes (Cotización Directa/Express/AIU, Dashboard,
-Historial, Inventario, Retales, Nesting, Parámetros, Configuración, Panel Admin), aplicando las 8
-reglas de arquitectura y la identidad de marca real (`ARQUITECTURA_MAESTRA.md`, secciones 6-7).
-**No se tocan `motor/calculos.py` ni `motor/parametros.py`** — la lógica de cálculo ya está
-validada. Nota: el `AdminPage` ya se reescribió al modelo de invitación en la Fase 2.A (base
-funcional, sin pulido visual); `LoginPage`/`ResetPasswordPage` ya usan la paleta de marca.
+pantallas/componentes para los módulos existentes, aplicando las 8 reglas de arquitectura y la
+identidad de marca real (`ARQUITECTURA_MAESTRA.md`, secciones 6-7). **No se tocan
+`motor/calculos.py` ni `motor/parametros.py`**.
+
+- **✅ Ciclo 1 completado (2026-08-30/31, rama `goal/rediseno-visual`):** fundamento —
+  capa de tokens con contraste AA, eliminación del modo oscuro, barra lateral esmeralda-glass
+  (verde real del isotipo `#00472B`), shell (skip-link, foco/título por ruta, nombre de
+  empresa), logo real del fundador (variantes claro/oscuro), reconstrucción del flujo de carga
+  inicial (`RoleRoute` — el operativo no ve Dashboard/Parámetros/Configuración), limpieza de
+  restos del piloto. Único cambio de backend: `empresa_nombre` en `/api/auth/me` +
+  `require_dashboard` en 3 GET. Ciclo `/goal` completo con auditoría en Fase 2 y Fase 5.
+- **⬜ Ciclo 2 (siguiente):** `R3` los 12-14 primitivos accesibles; `R6` pasada pantalla por
+  pantalla (contraste de contenido, formato de números `es-CO`, colores de gráficos, `<h1>`
+  por página, tablas semánticas); `R10` selector de material como diálogo + **catálogo de
+  materiales editable por taller** (migración `0005`: `empresa_id` en `catalogo_materiales` +
+  RLS + CRUD); `R9` verificación final. Detalle: `docs/PLAN_REDISENO_VISUAL.md`.
+- **Pendiente:** fusionar `goal/rediseno-visual` a `master` (probablemente al cerrar el Ciclo 2).
 
 ### 2.B — Objetivo 4: Infraestructura gratuita para los agentes de operación
 Montar la versión gratuita del diseño ya definido en `docs/ARQUITECTURA_AGENTES_OPERACION.md`:

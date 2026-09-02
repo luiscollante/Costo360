@@ -27,3 +27,13 @@ Thumbs.db
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Basura de redirects de shell (0 bytes, ver PROGRESS.md)
+(CURRENT_DATE
+NOW()
+v_cupo
+
+# Assets de hero/landing (Objetivo 2) — no van en el repo del producto
+costo360_loop_hero.mp4
+costo360_gif_hero.gif
+web/public/*.mp4

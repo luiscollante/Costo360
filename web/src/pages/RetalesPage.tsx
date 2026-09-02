@@ -13,14 +13,15 @@ import {
 } from '@/api/retales'
 import { formatCOP, formatNum } from '@/lib/utils'
 import { Plus, Pencil, Trash2, X, Layers } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 const CATEGORIAS = ['Mármol', 'Granito', 'Sinterizado', 'Quartzstone', 'Quartzita']
 const ESTADOS_RETAL = ['Disponible', 'Reservado', 'Usado']
 
 const estadoConfig: Record<string, { color: string; dot: string; bg: string }> = {
-  Disponible: { color: 'text-emerald-400', dot: 'bg-emerald-400', bg: 'bg-emerald-400/10 border-emerald-400/20' },
-  Reservado:  { color: 'text-amber-400',   dot: 'bg-amber-400',   bg: 'bg-amber-400/10 border-amber-400/20'   },
-  Usado:      { color: 'text-brand-muted', dot: 'bg-brand-muted', bg: 'bg-brand-surface border-brand-border'  },
+  Disponible: { color: 'text-brand-success',        dot: 'bg-brand-success', bg: 'bg-brand-success-soft border-brand-success/30' },
+  Reservado:  { color: 'text-brand-warning-text',   dot: 'bg-brand-warning', bg: 'bg-brand-warning-soft border-brand-warning/30' },
+  Usado:      { color: 'text-brand-text-secondary', dot: 'bg-brand-border',  bg: 'bg-brand-bg border-brand-border' },
 }
 
 type FormState = RetalIn & { estado: string }
@@ -113,49 +114,42 @@ export default function RetalesPage() {
 
   const isPending = createMut.isPending || updateMut.isPending
 
-  const inputClass = 'w-full px-3 py-2.5 rounded-lg bg-brand-input border border-brand-border text-sm text-brand-text placeholder:text-brand-muted/40 focus:outline-none focus:border-brand-primary focus:shadow-[0_0_0_1px_#1F6F5440,0_0_12px_#1F6F5418] transition-all'
+  const inputClass = 'w-full px-3 py-2.5 rounded-lg bg-brand-input border border-brand-border text-sm text-brand-text placeholder:text-brand-text-secondary focus:outline-none focus:border-brand-primary focus:shadow-[0_0_0_1px_#1F6F5440,0_0_12px_#1F6F5418] transition-all'
 
   return (
     <AppLayout>
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-8">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <span className="font-mono text-[10px] text-brand-muted/50 tracking-[0.2em]">INVENTARIO</span>
-              <div className="w-16 h-px bg-brand-border/40" />
-            </div>
-            <h1 className="text-2xl font-bold text-brand-text tracking-tight">Retales</h1>
-            <p className="text-sm text-brand-muted mt-1">Sobrantes de losas disponibles para reutilización</p>
-          </div>
-          <button
-            onClick={openCreate}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-brand-primary text-white text-sm font-semibold whitespace-nowrap shadow-[0_0_24px_#1F6F5428,0_0_0_1px_#1F6F5440] hover:shadow-[0_0_40px_#1F6F5445,0_0_0_1px_#1F6F5470] transition-all duration-200 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Agregar retal
-          </button>
-        </div>
+        <PageHeader
+          kicker="Taller"
+          title="Retales"
+          subtitle="Sobrantes de losas disponibles para reutilización"
+          actions={
+            <button
+              type="button"
+              onClick={openCreate}
+              className="flex items-center gap-2 whitespace-nowrap rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-primary-light cursor-pointer"
+            >
+              <Plus className="w-4 h-4" aria-hidden="true" />
+              Agregar retal
+            </button>
+          }
+        />
 
         {/* Table */}
         {isPendingQuery ? (
-          <div className="glass rounded-xl border border-brand-border p-12 text-center shadow-md transition-shadow hover:shadow-lg">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}
-              className="inline-block w-6 h-6 border-2 border-brand-muted/30 border-t-brand-primary rounded-full mb-3"
-            />
-            <p className="text-sm text-brand-muted">Cargando retales…</p>
+          <div role="status" className="rounded-xl border border-brand-border bg-brand-surface p-12 text-center">
+            <span className="mx-auto mb-3 inline-block h-6 w-6 animate-spin rounded-full border-2 border-brand-border border-t-brand-primary" aria-hidden="true" />
+            <p className="text-sm text-brand-text-secondary">Cargando retales…</p>
           </div>
         ) : isError ? (
-          <div className="glass rounded-xl border border-red-500/20 p-8 text-center shadow-md transition-shadow hover:shadow-lg">
-            <p className="text-red-400 text-sm">Error al cargar los retales. Recarga la página.</p>
+          <div className="glass rounded-xl border border-brand-danger/30 p-8 text-center shadow-md transition-shadow hover:shadow-lg">
+            <p className="text-brand-danger text-sm">Error al cargar los retales. Recarga la página.</p>
           </div>
         ) : data.length === 0 ? (
           <div className="glass rounded-xl border border-brand-border p-16 text-center shadow-md transition-shadow hover:shadow-lg">
-            <Layers className="w-10 h-10 text-brand-muted/20 mx-auto mb-4" />
-            <p className="text-brand-muted text-sm mb-2">No hay retales registrados</p>
-            <button onClick={openCreate} className="text-brand-muted hover:text-emerald-400 text-sm hover:underline cursor-pointer">
+            <Layers className="w-10 h-10 text-brand-text-secondary mx-auto mb-4" />
+            <p className="text-brand-text-secondary text-sm mb-2">No hay retales registrados</p>
+            <button onClick={openCreate} className="text-brand-text-secondary hover:text-brand-primary text-sm hover:underline cursor-pointer">
               Agregar el primer retal →
             </button>
           </div>
@@ -169,7 +163,7 @@ export default function RetalesPage() {
               {/* Header — solo desktop */}
               <div className="hidden sm:grid grid-cols-[1.5fr_1.5fr_1fr_0.9fr_1fr_1fr_80px] px-4 py-3 border-b border-brand-border/60 bg-brand-surface/30 sm:min-w-[520px]">
                 {['Material', 'Referencia', 'M² disponibles', 'Estado', 'Valor recuperado', 'Precio de mercado', ''].map((h) => (
-                  <span key={h} className="text-[9px] tracking-[0.15em] uppercase text-brand-muted/50 font-semibold">{h}</span>
+                  <span key={h} className="text-[9px] tracking-[0.15em] uppercase text-brand-text-secondary font-semibold">{h}</span>
                 ))}
               </div>
 
@@ -180,23 +174,23 @@ export default function RetalesPage() {
                 const acciones = (
                   <div className="flex items-center gap-0.5">
                     <button onClick={() => openEdit(r)} title="Editar"
-                      className="w-9 h-9 flex items-center justify-center rounded-lg text-brand-muted hover:text-brand-text hover:bg-brand-surface/60 transition-colors cursor-pointer">
+                      className="w-9 h-9 flex items-center justify-center rounded-lg text-brand-text-secondary hover:text-brand-text hover:bg-brand-surface/60 transition-colors cursor-pointer">
                       <Pencil className="w-4 h-4" />
                     </button>
                     {deleteId === r.id ? (
                       <div className="flex items-center gap-1">
                         <button onClick={() => deleteMut.mutate(r.id)} disabled={deleteMut.isPending}
-                          className="px-2 py-1 rounded text-[10px] bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors cursor-pointer disabled:opacity-60">
+                          className="px-2 py-1 rounded text-[10px] bg-brand-danger/20 text-brand-danger border border-brand-danger/30 hover:bg-brand-danger/30 transition-colors cursor-pointer disabled:opacity-60">
                           {deleteMut.isPending ? '…' : 'Confirmar'}
                         </button>
                         <button onClick={() => setDeleteId(null)}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg text-brand-muted cursor-pointer">
+                          className="w-8 h-8 flex items-center justify-center rounded-lg text-brand-text-secondary cursor-pointer">
                           <X className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     ) : (
                       <button onClick={() => setDeleteId(r.id)} title="Eliminar"
-                        className="w-9 h-9 flex items-center justify-center rounded-lg text-brand-muted hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer">
+                        className="w-9 h-9 flex items-center justify-center rounded-lg text-brand-text-secondary hover:text-brand-danger hover:bg-brand-danger/10 transition-colors cursor-pointer">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     )}
@@ -214,7 +208,7 @@ export default function RetalesPage() {
                       <div className="flex items-start justify-between gap-2 mb-2.5">
                         <div className="min-w-0">
                           <p className="text-sm text-brand-text font-medium leading-tight">{r.material_categoria}</p>
-                          <p className="text-[10px] text-brand-muted/60 mt-0.5">{r.referencia || '—'}</p>
+                          <p className="text-[10px] text-brand-text-secondary mt-0.5">{r.referencia || '—'}</p>
                         </div>
                         <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${cfg.bg} ${cfg.color}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
@@ -222,10 +216,10 @@ export default function RetalesPage() {
                         </span>
                       </div>
                       <div className="flex items-end justify-between gap-2">
-                        <div className="text-[11px] space-y-0.5 text-brand-muted/70">
-                          <p><span className="text-brand-muted/40">M² disponibles: </span><span className="font-mono text-brand-text">{formatNum(r.m2_disponibles)}</span></p>
-                          {r.precio_recuperacion > 0 && <p><span className="text-brand-muted/40">Valor recuperado: </span><span className="font-mono">{formatCOP(r.precio_recuperacion)}</span></p>}
-                          {r.precio_mercado_m2 > 0 && <p><span className="text-brand-muted/40">Precio de mercado: </span><span className="font-mono">{formatCOP(r.precio_mercado_m2)}/m²</span></p>}
+                        <div className="text-[11px] space-y-0.5 text-brand-text-secondary">
+                          <p><span className="text-brand-text-secondary">M² disponibles: </span><span className="font-mono text-brand-text">{formatNum(r.m2_disponibles)}</span></p>
+                          {r.precio_recuperacion > 0 && <p><span className="text-brand-text-secondary">Valor recuperado: </span><span className="font-mono">{formatCOP(r.precio_recuperacion)}</span></p>}
+                          {r.precio_mercado_m2 > 0 && <p><span className="text-brand-text-secondary">Precio de mercado: </span><span className="font-mono">{formatCOP(r.precio_mercado_m2)}/m²</span></p>}
                         </div>
                         {acciones}
                       </div>
@@ -234,33 +228,33 @@ export default function RetalesPage() {
                     {/* Fila desktop */}
                     <div className="hidden sm:grid grid-cols-[1.5fr_1.5fr_1fr_0.9fr_1fr_1fr_80px] px-4 py-3.5 items-center hover:bg-brand-surface/20 transition-colors sm:min-w-[520px]">
                       <span className="text-sm text-brand-text font-medium truncate">{r.material_categoria}</span>
-                      <span className="text-sm text-brand-muted truncate">{r.referencia || '—'}</span>
+                      <span className="text-sm text-brand-text-secondary truncate">{r.referencia || '—'}</span>
                       <span className="font-mono text-sm text-brand-text">{formatNum(r.m2_disponibles)}</span>
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border w-fit ${cfg.bg} ${cfg.color}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
                         {r.estado}
                       </span>
-                      <span className="font-mono text-xs text-brand-muted">{r.precio_recuperacion > 0 ? formatCOP(r.precio_recuperacion) : '—'}</span>
-                      <span className="font-mono text-xs text-brand-muted">{r.precio_mercado_m2 > 0 ? `${formatCOP(r.precio_mercado_m2)}/m²` : '—'}</span>
+                      <span className="font-mono text-xs text-brand-text-secondary">{r.precio_recuperacion > 0 ? formatCOP(r.precio_recuperacion) : '—'}</span>
+                      <span className="font-mono text-xs text-brand-text-secondary">{r.precio_mercado_m2 > 0 ? `${formatCOP(r.precio_mercado_m2)}/m²` : '—'}</span>
                       <div className="flex items-center gap-1">
                         <button onClick={() => openEdit(r)} title="Editar"
-                          className="p-1.5 rounded-lg text-brand-muted hover:text-brand-text hover:bg-brand-surface/60 transition-colors cursor-pointer">
+                          className="p-1.5 rounded-lg text-brand-text-secondary hover:text-brand-text hover:bg-brand-surface/60 transition-colors cursor-pointer">
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                         {deleteId === r.id ? (
                           <div className="flex items-center gap-1">
                             <button onClick={() => deleteMut.mutate(r.id)} disabled={deleteMut.isPending}
-                              className="px-2 py-1 rounded text-[10px] bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors cursor-pointer disabled:opacity-60">
+                              className="px-2 py-1 rounded text-[10px] bg-brand-danger/20 text-brand-danger border border-brand-danger/30 hover:bg-brand-danger/30 transition-colors cursor-pointer disabled:opacity-60">
                               {deleteMut.isPending ? '…' : 'Confirmar'}
                             </button>
                             <button onClick={() => setDeleteId(null)}
-                              className="p-1 rounded text-brand-muted hover:text-brand-text cursor-pointer">
+                              className="p-1 rounded text-brand-text-secondary hover:text-brand-text cursor-pointer">
                               <X className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         ) : (
                           <button onClick={() => setDeleteId(r.id)} title="Eliminar"
-                            className="p-1.5 rounded-lg text-brand-muted hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer">
+                            className="p-1.5 rounded-lg text-brand-text-secondary hover:text-brand-danger hover:bg-brand-danger/10 transition-colors cursor-pointer">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         )}
@@ -274,7 +268,7 @@ export default function RetalesPage() {
 
             {/* Footer */}
             <div className="px-4 py-2.5 border-t border-brand-border/40 bg-brand-surface/20">
-              <span className="text-[10px] text-brand-muted/40 font-mono">
+              <span className="text-[10px] text-brand-text-secondary font-mono">
                 {data.length} retal{data.length !== 1 ? 'es' : ''}
               </span>
             </div>
@@ -306,7 +300,7 @@ export default function RetalesPage() {
                 </h2>
                 <button
                   onClick={closeModal}
-                  className="p-1.5 rounded-lg text-brand-muted hover:text-brand-text transition-colors cursor-pointer"
+                  className="p-1.5 rounded-lg text-brand-text-secondary hover:text-brand-text transition-colors cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -317,7 +311,7 @@ export default function RetalesPage() {
                 {!editingRetal && (
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Material</label>
+                      <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Material</label>
                       <select
                         value={form.material_categoria}
                         onChange={(e) => setForm((f) => ({ ...f, material_categoria: e.target.value }))}
@@ -327,7 +321,7 @@ export default function RetalesPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Referencia</label>
+                      <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Referencia</label>
                       <input
                         type="text"
                         value={form.referencia ?? ''}
@@ -341,7 +335,7 @@ export default function RetalesPage() {
 
                 {/* m² disponibles */}
                 <div>
-                  <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">m² disponibles</label>
+                  <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">m² disponibles</label>
                   <input
                     type="number"
                     min="0"
@@ -356,7 +350,7 @@ export default function RetalesPage() {
                 {/* Precios */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Valor recuperado (total)</label>
+                    <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Valor recuperado (total)</label>
                     <input
                       type="number"
                       min="0"
@@ -364,10 +358,10 @@ export default function RetalesPage() {
                       onChange={(e) => setForm((f) => ({ ...f, precio_recuperacion: parseFloat(e.target.value) || 0 }))}
                       className={inputClass + ' font-mono'}
                     />
-                    <p className="text-[10px] text-brand-muted/50 mt-1 leading-snug">Cuánto vale este retal en total para tus registros de costos (no es por m²).</p>
+                    <p className="text-[10px] text-brand-text-secondary mt-1 leading-snug">Cuánto vale este retal en total para tus registros de costos (no es por m²).</p>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Precio de mercado (por m²)</label>
+                    <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Precio de mercado (por m²)</label>
                     <input
                       type="number"
                       min="0"
@@ -375,14 +369,14 @@ export default function RetalesPage() {
                       onChange={(e) => setForm((f) => ({ ...f, precio_mercado_m2: parseFloat(e.target.value) || 0 }))}
                       className={inputClass + ' font-mono'}
                     />
-                    <p className="text-[10px] text-brand-muted/50 mt-1 leading-snug">Precio de referencia del material por m², para decidir si conviene venderlo.</p>
+                    <p className="text-[10px] text-brand-text-secondary mt-1 leading-snug">Precio de referencia del material por m², para decidir si conviene venderlo.</p>
                   </div>
                 </div>
 
                 {/* Estado: solo en edición */}
                 {editingRetal && (
                   <div>
-                    <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Estado</label>
+                    <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Estado</label>
                     <select
                       value={form.estado}
                       onChange={(e) => setForm((f) => ({ ...f, estado: e.target.value }))}
@@ -395,7 +389,7 @@ export default function RetalesPage() {
 
                 {/* Notas */}
                 <div>
-                  <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Notas</label>
+                  <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Notas</label>
                   <textarea
                     value={form.notas ?? ''}
                     onChange={(e) => setForm((f) => ({ ...f, notas: e.target.value }))}
@@ -410,7 +404,7 @@ export default function RetalesPage() {
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="px-4 py-2 rounded-lg border border-brand-border text-sm text-brand-muted hover:text-brand-text transition-colors cursor-pointer"
+                    className="px-4 py-2 rounded-lg border border-brand-border text-sm text-brand-text-secondary hover:text-brand-text transition-colors cursor-pointer"
                   >
                     Cancelar
                   </button>

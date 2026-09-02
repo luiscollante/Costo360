@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from backend.db.client import db_rls
 from backend.db.config_helpers import cfg_get, cfg_set
-from backend.db.deps import verificar_dispositivo
+from backend.db.deps import require_dashboard, verificar_dispositivo
 from backend.middleware.auth import get_current_user
 
 from parametros import TARIFAS, ADICIONALES
@@ -12,8 +12,10 @@ router = APIRouter(prefix="/api/parametros", tags=["parametros"],
 
 
 @router.get("")
-def get_parametros(conn=Depends(db_rls), usuario=Depends(get_current_user)):
-    """Parámetros activos: overrides de la empresa (app_config) fusionados con los defaults del motor."""
+def get_parametros(conn=Depends(db_rls), usuario=Depends(require_dashboard)):
+    """Parámetros activos: overrides de la empresa (app_config) fusionados con los defaults del motor.
+    Requiere acceso de Admin/Gerencia — el rol operativo no ve Parámetros y no lo consume
+    para cotizar (el motor lee las tarifas de la BD directamente en routers/cotizacion.py)."""
     emp = usuario["empresa_id"]
     return {
         "tarifas":     cfg_get(conn, emp, "tarifas")     or TARIFAS,

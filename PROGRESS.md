@@ -4,9 +4,104 @@
 
 ## ✅ Hecho
 
+- **Rediseño visual del producto — CICLO 1 + CICLO 2 completados (2026-08-30/31):** rama
+  `goal/rediseno-visual` (sobre `master`, Fase 2.A ya fusionada). Objetivo 1 del roadmap
+  cerrado a falta de la fusión a `master`. Ciclo `/goal` completo:
+  plan → auditoría Fase 2 (UX Architect + Frontend Developer, ambos "aprueba con cambios",
+  ambos pidieron partir en 2 ciclos) → ejecución → **Fase 5 (Code Reviewer + Accessibility
+  Auditor, ambos "aprueba con cambios", guardarraíles confirmados: motor intacto,
+  `SessionGuard` sin cambios de lógica, RLS sin tocar)**. Plan vivo: `docs/PLAN_REDISENO_VISUAL.md`.
+  - **7 bloques (R0, R1, R2, R4, R5, R7, R8) + correcciones del fundador y de la Fase 5**,
+    ~22 commits (`a5292cf`…`441af59`), `tsc -b` + `vite build` limpios en cada uno.
+  - **R0** backend (único cambio, aditivo): `empresa_nombre` en `/api/auth/me`;
+    `Depends(require_dashboard)` en `GET /api/parametros`, `/api/config/empresa`,
+    `/api/config/logo` (el rol operativo ya no los lee; verificado que no rompe cotizar).
+  - **R1** capa de tokens con contrastes recalculados a WCAG AA (`text-secondary #5F5F5F`,
+    `-tertiary #6E6E6E`, estados con token de texto vs. relleno, esmeralda). `Inter` fuera.
+    `:focus-visible` global. `@media (prefers-reduced-motion)`. `formatPct` + clase `.num`.
+  - **R2** modo oscuro ELIMINADO (hook `useTheme`, botones, `<script>` de `index.html`,
+    orbes). Barra lateral `.glass-emerald` (verde real del isotipo `#00472B`, glassmorphism,
+    texto crema/blanco sólido). `<MotionConfig reducedMotion="user">` + `useCountUp` con
+    `matchMedia`.
+  - **R4** shell: skip-link, foco al `<main>` + `document.title` por ruta, nombre de empresa
+    en la barra superior.
+  - **R5** componente `Logo` con el arte real del fundador (`logo.png` blanco para fondos
+    oscuros, `logo_versiones_oscuras.png` tinta oscura para fondos claros). `manifest.json`
+    reescrito (adiós "Costomarmol"). Favicon/apple-touch = isotipo, optimizados.
+  - **R7** carga inicial reconstruida: `store/auth.ts` con estados
+    `authenticating/anon/profile-pending/no-profile/ready`; shell con `<AppShellSkeleton>`
+    inmediato (sin rebotar a `/login` a un usuario logueado); `SessionGuard` estado
+    `reclamando` → indicador NO modal (su máquina de estados intacta); `RoleRoute` +
+    `lib/capabilities.ts` ocultan y redirigen Dashboard/Parámetros/Configuración para el
+    operativo; `HomeRedirect` rol-aware; `axios` con `timeout` (10 s default, 60 s en PDF y
+    agente).
+  - **R8** fuera "Gramar"/"Barranquilla" de los campos.
+  - **Verificado en vivo** (navegador, extensión de Chrome) con cuenta de dueña Y de
+    operativo: 13 rutas, barra esmeralda legible, títulos de pestaña, redirecciones del
+    operativo sin bucles, `SessionGuard` no bloqueante, logo legible en login.
+  - **Fase 5 — arreglos aplicados** (`441af59`): `git rm` de 6,6 MB de binarios de
+    hero/landing que un `git add -A` arrastró por error; foco de teclado visible sobre la
+    barra esmeralda (`.glass-emerald :focus-visible` en crema); `timeout` por-llamada en
+    agente/PDF; `focus({preventScroll})`; semántica del spinner de `AuthGate`; `aria-hidden`
+    en iconos; `theme-color` a crema; hover de la barra y estado activo de "Panel Admin".
+  - `ARQUITECTURA_MAESTRA.md` §6 actualizado con todo lo anterior.
+  - **CICLO 2 completado (2026-08-31)** — bloques **R3, R6, R10, R9**, un commit por
+    pantalla/bloque (`d19fa0d`…`d573584`), `tsc -b` + `vite build` limpios:
+    - **R3:** 14 primitivos accesibles en `web/src/components/ui/` (`Dialog` portalado con
+      trampa de foco, `Card`, `Field` render-prop, `DataTable`, `Badge`/`StatusBadge`,
+      `SegmentedControl` con 2 semánticas y roving tabindex, `Button`/`IconButton`,
+      `PageHeader` que fija `document.title`, `AsyncBoundary`, `EmptyState`,
+      `SelectField`/`DateField`).
+    - **R6:** las 13 pantallas a `<PageHeader>` + barrido de colores de marca + `formatPct`
+      + spinners a CSS. Dashboard reescrito con `<AsyncBoundary>`/`<Card>` y tabla `sr-only`
+      del gráfico.
+    - **R10:** migración `0005_catalogo_por_empresa.sql` **aplicada** a Supabase
+      `hrmpyhixhbnkkpvxtuit` (4 políticas RLS: filas base `empresa_id IS NULL` inmutables,
+      propias editables). `MaterialCombobox` → `<Dialog>` de marca con "Otro" + modal
+      "¿guardar en tu catálogo?". Pantalla nueva `/materiales` ("Catálogo de materiales",
+      rol dashboard). Verificado en vivo (RLS aisló un material de prueba a Marmolería Demo).
+    - **R9:** eslint sin regresiones (23 errores pre-existentes de `react-hooks`, fuera de
+      alcance). **Fase 5** (Code Reviewer + Accessibility Auditor, ambos "aprueba con
+      cambios", sin bloqueantes de fondo): arreglos en `d573584` — kicker de `PageHeader` a
+      `text-secondary` (12 pantallas), botón "quitar" del selector des-anidado, `aria-current`
+      + check en la fila elegida, `strip()` de categoría en `crear_material`, contraste de
+      los botones dorados "Descargar PDF"/"Cuenta de Cobro", roving tabindex del
+      `SegmentedControl` en ambos modos.
+    - **Diferido** (anotado en el plan): formularios grandes a `<Field>`; Historial a
+      `<DataTable>`; auto-guardar el material al guardar la cotización; calendario/listbox
+      propios.
+  - **Ronda de revisión en vivo del fundador (2026-09-01)** — 4 rondas de observaciones,
+    todas aplicadas y verificadas con el navegador (commits `6e483a2`, `f7b5a00`, `1478a48`,
+    `34a9af6`). Detalle completo en `SESSION.md`. Resumen:
+    - Bug crítico: la barra lateral se iba con el scroll en páginas largas → shell
+      `h-screen overflow-hidden`, solo `<main>` scrollea.
+    - Login roto: el CORS del backend solo aceptaba el puerto 5173 → `allow_origin_regex`
+      para cualquier puerto de localhost en desarrollo.
+    - Dashboard sin datos en vivo: desfase UTC vs. hora local del negocio → `dashboard.py`
+      usa `date.today()` del backend como "hoy".
+    - Barra lateral: glassmorphism sin brillo diagonal (rechazado por el fundador) +
+      `.sidebar-aurora` estática detrás del cristal.
+    - Catálogo: visible para operativo y admin; sin columnas Origen/Acciones; clic en la
+      fila → modal precargado; **copy-on-write** (migración **`0006`**, aplicada) — editar
+      una fila base crea una copia privada del taller, aislada, en vivo.
+    - Express: "Calcular precio" no se habilitaba porque el placeholder `3.50` parecía un
+      valor → `"Ej. 3.50"`.
+    - Historial: cambio de estado con actualización optimista (instantáneo). Dashboard con
+      indicador "Actualizando…".
+    - `text-brand-gold` → token nuevo `--color-brand-gold-text` `#6E5410` (AA) en los
+      números de acento.
+    - Menú lateral reorganizado "por área del negocio": Dashboard · Cotizaciones (+ Historial)
+      · Taller (+ Catálogo) · Ajustes · Panel Admin.
+    - **Incidente de datos (resuelto):** un `DELETE` filtrado por nombre de cliente borró 2
+      cotizaciones reales del fundador (COT-0003/0004) además de una de prueba. Restauradas
+      el mismo día con datos exactos salvo costo/margen (aproximados, marcados en el
+      registro). El desglose detallado de esas 2 no se recuperó.
+  - **Próxima tarea:** decisión del fundador — fusionar `goal/rediseno-visual` → `master`
+    (Ciclo 1 + Ciclo 2, 44 commits). Si se aprueba, reindexar el grafo contra `master`.
+
 - **Fase 2.A ejecutada — migración a Supabase Auth + aislamiento real + sesión única (2026-08-27):**
   Ciclo `/goal` completo (Fases 0-6) en una sola sesión. 10 micro-commits en la rama
-  `goal/fase-2a-multitenant-auth` (aún NO fusionada a `master`). Detalle vivo en
+  `goal/fase-2a-multitenant-auth`, **fusionada a `master`** (merge `1a95284`). Detalle vivo en
   `docs/PLAN_FASE_2A.md`. Resumen:
   - **Plan** auditado por 2 agentes (Security Engineer + Database Optimizer, "aprueba con
     cambios") y aprobado por el fundador con 3 decisiones: (1) backend = servidor pequeño
@@ -156,4 +251,4 @@
 
 ---
 
-*Última actualización: 2026-08-24*
+*Última actualización: 2026-09-01*

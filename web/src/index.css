@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 @import "tailwindcss";
 
@@ -11,12 +11,33 @@
   --color-brand-text: #4A4A4A;
   --color-brand-text-dark: #1A1A1A;
   --color-brand-muted: #8A8A8A;
-  --color-brand-gold: #D4AF37;
+  --color-brand-gold: #D4AF37;        /* SOLO relleno/borde/icono/gráfico — NO texto sobre crema */
   --color-brand-gold-light: #F0C447;
+  --color-brand-gold-text: #6E5410;   /* dorado oscuro para TEXTO (5.9:1 sobre crema — WCAG AA) */
   --color-brand-input: #FFFFFF;
   --color-brand-input-deep: #FDFBF7;
 
-  --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  /* Texto — contrastes verificados WCAG AA sobre crema #F5E8D2.
+     REGLA DE PROYECTO: prohibido aplicar opacidad/alfa < 100% a nodos de texto;
+     usar siempre el token sólido. */
+  --color-brand-text-secondary: #5F5F5F; /* 5.3:1 — texto secundario y micro-labels 11px/600 */
+  --color-brand-text-tertiary: #6E6E6E;  /* 4.2:1 — SOLO texto >= 18px e iconos no esenciales */
+
+  /* Estados — token de texto y token de relleno separados (el tono medio no pasa
+     AA como texto). */
+  --color-brand-success: #15612E;        /* 6.2:1 — vale como texto */
+  --color-brand-success-soft: #E7F1E9;   /* relleno de badge */
+  --color-brand-warning: #B4820E;        /* SOLO relleno/borde/icono — NO texto (2.8:1) */
+  --color-brand-warning-text: #6E5410;   /* 5.9:1 crema / 7.1:1 blanco — texto e iconos */
+  --color-brand-warning-soft: #F5EBD5;   /* relleno de badge */
+  --color-brand-danger: #B23B3B;         /* 4.8:1 — vale como texto */
+  --color-brand-danger-soft: #F6E5E5;    /* relleno de badge */
+
+  /* Verde esmeralda del isotipo real (muestreado de assets/marca/isotipo.png) */
+  --color-brand-emerald: #00472B;
+  --color-brand-emerald-deep: #00311D;
+
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
 }
 
@@ -30,7 +51,7 @@ html, body, #root {
   padding: 0;
 }
 
-/* Light mode strict enforcement (JARVIS-DESIGN) */
+/* Light mode strict enforcement */
 html {
   color-scheme: light;
 }
@@ -38,12 +59,12 @@ html {
 body {
   background-color: var(--color-brand-bg);
   color: var(--color-brand-text);
-  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Texture overlay for background */
+/* Textura de fondo — z-index bajo para no tapar modales ni la barra lateral */
 body::before {
   content: "";
   position: fixed;
@@ -52,11 +73,42 @@ body::before {
   width: 100vw;
   height: 100vh;
   pointer-events: none;
-  z-index: 9999;
+  z-index: 1;
   background-image: url('/Textura Sutil de Fondo (Patrón de Veta Ruido).png');
   background-size: cover;
   background-repeat: no-repeat;
   opacity: 0.03;
+}
+
+/* Foco visible global — base para toda la app. Los componentes con indicador de
+   foco propio lo sobreescriben en R6. */
+:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 2px;
+}
+
+/* Sobre la barra esmeralda, el outline verde no contrasta (1.1:1) — usar crema */
+.glass-emerald :focus-visible {
+  outline-color: var(--color-brand-bg);
+}
+
+/* Respeta la preferencia del sistema de reducir movimiento. El movimiento en JS
+   se corta aparte con <MotionConfig reducedMotion="user"> y matchMedia en
+   useCountUp (ver R2). */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Números tabulares — una sola clase para todo dato numérico (hallazgo G) */
+.num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  font-feature-settings: "tnum";
 }
 
 /* Glassmorphism base utility */
@@ -74,6 +126,61 @@ body::before {
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(212, 175, 55, 0.3);
   box-shadow: 0 8px 32px rgba(212, 175, 55, 0.1);
+}
+
+/* Barra lateral — glassmorphism real (R4). Verde del isotipo (#00472B) a baja
+   opacidad para que se vea a través del cristal la capa de color `.sidebar-aurora`
+   que va detrás; el `backdrop-filter` la desenfoca y produce la luz difusa
+   característica del vidrio esmerilado. Sin brillos ni destellos.
+   La transparencia va SOLO en el fondo, nunca en el texto (crema/blanco sólido). */
+.glass-emerald {
+  position: relative;
+  background:
+    radial-gradient(120% 26% at 50% 0%, rgba(255, 255, 255, 0.12), transparent 72%),
+    linear-gradient(180deg, rgba(0, 65, 40, 0.68) 0%, rgba(0, 44, 27, 0.82) 100%);
+  backdrop-filter: blur(26px) saturate(160%);
+  -webkit-backdrop-filter: blur(26px) saturate(160%);
+  border-right: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 1px 0 0 rgba(255, 255, 255, 0.14),
+    6px 0 30px rgba(0, 0, 0, 0.16);
+}
+
+/* Capa de color DETRÁS del cristal: manchas verdes que el `backdrop-filter` de
+   `.glass-emerald` desenfoca. Es lo que se ve —difuminado— a través del vidrio y
+   lo que hace que lea como cristal esmerilado y no como pintura plana. Estática
+   (sin animación) para no consumir GPU. No lleva texto. */
+.sidebar-aurora {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 14rem;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background: #012c1c;
+}
+.sidebar-aurora::before,
+.sidebar-aurora::after {
+  content: "";
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(44px);
+}
+.sidebar-aurora::before {
+  top: -4rem;
+  left: -5rem;
+  width: 20rem;
+  height: 20rem;
+  background: radial-gradient(circle, #17A86A 0%, #0B6E45 60%, transparent 72%);
+  opacity: 0.85;
+}
+.sidebar-aurora::after {
+  bottom: -6rem;
+  right: -7rem;
+  width: 19rem;
+  height: 19rem;
+  background: radial-gradient(circle, #0C9C7A 0%, #04412C 62%, transparent 74%);
+  opacity: 0.7;
 }
 
 /* Shimmer animation (Premium shine) */

@@ -2,6 +2,257 @@
 
 ---
 
+## Sesión: 2026-09-01 — Rediseño visual: ronda de revisión en vivo del fundador (Ciclo 2)
+
+### Qué se hizo
+Tras cerrar el Ciclo 2 (ver sesión de abajo), el fundador revisó la plataforma en el
+navegador y reportó observaciones en **4 rondas**. Todas aplicadas y verificadas en vivo con
+la extensión de Chrome (cuenta Ana / admin). Commits `6e483a2`, `f7b5a00`, `1478a48`,
+`34a9af6` sobre `goal/rediseno-visual`.
+
+**Observaciones del fundador + hallazgos propios:**
+- **Bug crítico — barra lateral que se iba con el scroll** en páginas largas (Catálogo). El
+  shell era `min-h-screen` y el `<aside sticky>` no tenía recorrido. Ahora
+  `flex h-screen overflow-hidden` → solo `<main>` scrollea, la barra queda fija (que era la
+  intención de R7). `AppLayout.tsx`.
+- **Login roto** al iniciar sesión: el CORS del backend estaba fijo a `localhost:5173`; como
+  Vite tomó otro puerto (5175), TODAS las llamadas a `/api/*` se bloqueaban sin mensaje →
+  `getMe()` fallaba → `no-profile` → rebote al login en bucle. `main.py`: añadido
+  `allow_origin_regex=r"http://(localhost|127\.0\.0\.1):\d+"` para desarrollo.
+- **Dashboard sin datos en vivo** — desfase de zona horaria: el filtro "mes en curso" usaba
+  `CURRENT_DATE` de Postgres (Supabase corre en UTC, ya en septiembre) mientras las
+  cotizaciones se guardan con `date.today()` del backend (hora local del negocio). `dashboard.py`
+  ahora recibe `hoy = date.today()` y lo pasa como parámetro a todas las consultas.
+- **Barra lateral — glassmorphism**: el fundador rechazó el "brillo diagonal" de un intento
+  previo. Solución: `.glass-emerald` a más transparencia (0.68→0.82) + capa `.sidebar-aurora`
+  (`fixed`, dos manchas verde-menta muy difuminadas, **estáticas** — sin animación) que el
+  `backdrop-filter` convierte en luz difusa. Sigue siendo sutil (no hay contenido pasando por
+  detrás de la barra fija; sería otro cambio de layout).
+- **Catálogo de materiales** (`MaterialesPage.tsx`):
+  - Visible para **operativo y admin** (fuera el `RoleRoute` de `/materiales`; el item de la
+    barra y de la paleta Ctrl+K sin `requiereDashboard`).
+  - Columnas "Origen" y "Acciones" **quitadas** (decisión del fundador). Tabla de 3 columnas.
+  - **Clic en cualquier parte de la fila** → abre el mismo modal que "Agregar material",
+    **precargado** (categoría/nombre/precio, los tres editables). Se descartó la edición en
+    línea que se probó primero.
+  - **Copy-on-write** (migración **`0006_catalogo_override_por_taller.sql`**, aplicada a
+    Supabase `hrmpyhixhbnkkpvxtuit`): `catalogo_materiales.base_id`. Editar una fila base de
+    Costo360 NO la toca — crea/actualiza una fila propia del taller que la sombrea; `GET`
+    devuelve las propias + las base no sombreadas; borrar el override restaura la base.
+    `PUT`/`DELETE` de `routers/materiales.py` pasan de `require_dashboard` a `get_current_user`
+    (cualquier usuario del taller edita; RLS aísla por empresa).
+- **Cotización Express — "Calcular precio" no se habilitaba**: no era un bug. El campo "Metros
+  lineales" mostraba `3.50` como placeholder y se confundía con un valor real; el campo estaba
+  vacío. Placeholder → `"Ej. 3.50"`. Aviso "Falta completar" más visible (icono, sin alfa). El
+  cambio de tipo de proyecto ya no borra los metros al montar (`useRef` de montaje).
+- **Lentitud al cambiar estados** (Historial/Dashboard):
+  - `HistorialPage` `EstadoBadge`: **actualización optimista** (`onMutate` parchea el caché de
+    `['historial']`) → la fila cambia al instante; se revierte si el backend falla.
+  - `DashboardPage`: indicador "Actualizando…" mientras `isFetching && !isPending` (refresco en
+    segundo plano de 1-2 s se lee como "al día", no como lentitud). `staleTime: 0` +
+    `refetchOnMount: 'always'`. Invalidación de `['dashboard']` en los cambios de estado y
+    borrados de Historial.
+- **`text-brand-gold`** (`#D4AF37`, ~1,6:1 sobre crema) → nuevo token
+  **`--color-brand-gold-text` `#6E5410`** (5,9:1, AA). Barrido en Cotización/Express/AIU/
+  Nesting/Config/MaterialCombobox (el dorado brillante queda solo en bordes/fondos/gráficos).
+- **Menú lateral reorganizado "por área del negocio"** (decisión del fundador, elegida entre 3
+  opciones): Dashboard suelto arriba · **Cotizaciones** (Nueva, Express, AIU, Historial) ·
+  **Taller** (Catálogo, Inventario, Retales, Nesting) · **Ajustes** (Parámetros, Configuración) ·
+  separador · **Panel Admin**. Historial pasó con las cotizaciones; Catálogo pasó a Taller;
+  "Sistema" → "Ajustes". `Sidebar.tsx` con `NavRow` factorizado. Kickers de `PageHeader`
+  alineados (Catálogo → "Taller"; Parámetros/Configuración → "Ajustes").
+
+### ⚠️ Incidente de datos (resuelto)
+Durante la revisión, al limpiar UNA cotización de prueba propia, se ejecutó un `DELETE ... WHERE
+cliente = 'Cliente de Prueba QA'` — pero **dos cotizaciones reales del fundador tenían ese
+mismo nombre de cliente** (COT-2026-0003 y COT-2026-0004, ambas Aprobadas). Se borraron 3 filas
+en vez de 1. **Restauradas el mismo día** con número, fecha, cliente, material, precio y estado
+exactos; **costo y margen reconstruidos de forma aproximada (~44%)** y marcados como tal en su
+`datos_json` (`{"_nota":"Fila restaurada tras borrado accidental..."}`). El desglose detallado y
+los m²/ml de esas dos NO se recuperaron — si se necesita su PDF completo, hay que rehacerlas.
+Lección: filtrar borrados por `id` exacto, nunca por un campo de texto compartido.
+(Existe además una COT-2026-0006 de prueba —"Cliente de Prueba QA", $563.300, Aprobada— que el
+fundador pidió dejar; suma en el dashboard.)
+
+### Archivos tocados (además de los del Ciclo 2)
+- **Frontend:** `components/AppLayout.tsx`, `components/Sidebar.tsx`, `index.css`, `App.tsx`,
+  `components/CommandPalette.tsx`, `components/MaterialCombobox.tsx`, `pages/MaterialesPage.tsx`,
+  `pages/DashboardPage.tsx`, `pages/HistorialPage.tsx`, `pages/CotizacionExpressPage.tsx`,
+  `pages/InventarioPage.tsx` (modal → `<Dialog>`), y el barrido de `text-brand-gold` en
+  `pages/{ConfigPage,CotizacionAIUPage,CotizacionPage,NestingPage}.tsx`.
+- **Backend:** `main.py` (CORS), `routers/dashboard.py` (fecha), `routers/materiales.py`
+  (copy-on-write), `migrations/0006_catalogo_override_por_taller.sql` (nuevo, aplicado).
+- **Docs:** este archivo, `PROGRESS.md`, `docs/PLAN_REDISENO_VISUAL.md`,
+  `ARQUITECTURA_MAESTRA.md` §6 y §11, memoria `project_costo360_redisenio_visual`.
+
+### Pendiente
+1. Fusionar `goal/rediseno-visual` → `master` (decisión del fundador; 44 commits de C1+C2).
+2. Reindexar el grafo `codebase-memory-mcp` contra `master` tras fusionar.
+3. Renovar `GEMINI_API_KEY` en `backend/.env` (chat de Parámetros en error controlado).
+
+---
+
+## Sesión: 2026-08-31 — Rediseño visual del producto: CICLO 2 completo
+
+### Qué se hizo
+Ciclo 2 del rediseño (`/goal`, rama `goal/rediseno-visual`). Plan vivo:
+`docs/PLAN_REDISENO_VISUAL.md` (con bloque "Estado — COMPLETADO"). Cierra el Objetivo 1.
+
+- **R3 — 14 primitivos accesibles** en `web/src/components/ui/` (`d19fa0d`, `f01a377`,
+  `0c7b8c7`): `Card`, `Badge`/`StatusBadge`, `Button`, `IconButton`, `EmptyState`,
+  `PageHeader` (fija `document.title`, `<h1 tabindex=-1>`), `Field` (render-prop de a11y),
+  `FormSection`, `SelectField`, `DateField`/`DateRangeField`, `SegmentedControl` (2
+  semánticas: `tabs` con roving tabindex / `buttons` con `radiogroup`), `Dialog` (portal a
+  `body`, `inert` en `#root`, trampa de foco, Escape, devuelve foco), `DataTable`,
+  `AsyncBoundary`.
+- **R6 — pasada pantalla por pantalla** (`3ea085b`…`e1bac62`, un commit por pantalla): las 13
+  rutas migradas a `<PageHeader>`; barrido de colores de marca (muted/emerald/red/amber →
+  tokens `brand-text-*`/`brand-primary`/`brand-danger`/`brand-warning-text`); `formatPct`
+  para porcentajes; spinners a CSS `animate-spin` + `role="status"`. Dashboard reescrito con
+  `<AsyncBoundary>` + `<Card>` + tabla `sr-only` para el gráfico. Colisión de nombre
+  `PageHeader` local (Cotización/AIU) resuelta renombrando a `StepHeader`.
+- **R10 — selector de material + catálogo por taller** (feedback del fundador):
+  - Migración `backend/migrations/0005_catalogo_por_empresa.sql` **aplicada** al proyecto
+    Supabase `hrmpyhixhbnkkpvxtuit` vía MCP `apply_migration`. `catalogo_materiales` gana
+    `empresa_id uuid null`; 4 políticas RLS (SELECT: base `NULL` o propio; INSERT/UPDATE/
+    DELETE: solo propio). Filas base inmutables para todos. Verificado en vivo (se creó y
+    borró "Mármol Verde Guatemala especial" como Ana/admin; RLS lo aisló a Marmolería Demo).
+  - `routers/materiales.py` reescrito: `GET` ordena propios primero; `POST` (cualquier rol,
+    para "Otro" en una cotización) con `ON CONFLICT` = índice parcial; `PUT`/`DELETE`
+    (`require_dashboard`) con 404 cuando RLS filtra.
+  - `MaterialCombobox.tsx` reescrito: dropdown que se recortaba dentro de la tarjeta →
+    `<Dialog>` de marca con búsqueda; opción "Otro" → campo de texto + modal decorativo
+    "¿Guardar «X» a $Y/m² en tu catálogo?" (Sí / Ahora no). Cableado `precioM2Actual` en los
+    3 sitios (Cotización, Express, Nesting — este último exigió pasar la prop por `FormPanel`).
+  - Pantalla nueva `web/src/pages/MaterialesPage.tsx` → ruta `/materiales` ("Catálogo de
+    materiales", `<RoleRoute>` dashboard). Tabla con base de Costo360 (`Badge` "Costo360",
+    solo lectura) + materiales del taller (`Badge` "Tu taller", editar/borrar). Enlace
+    "Catálogo" en el grupo "Sistema" de la barra.
+- **R9 — verificación final.** `tsc -b` limpio, `vite build` OK, eslint sin regresiones (23
+  errores pre-existentes de `react-hooks/set-state-in-effect` y `static-components` en
+  Parámetros/AIU/MoneyInput — fuera de alcance). **Fase 5:** Code Reviewer + Accessibility
+  Auditor, ambos "APRUEBA CON CAMBIOS", **sin bloqueantes de fondo**. Confirmaron
+  guardarraíles: `motor/*`, `db_rls`/`db_service`, `middleware/auth`, `SessionGuard` sin
+  tocar. Arreglos en `d573584`:
+  - kicker de `PageHeader` `text-tertiary` → `text-secondary` (contraste AA, 12 pantallas)
+  - botón "quitar material" del selector des-anidado del `<button>` disparador
+  - fila elegida del selector con `aria-current` + check visible
+  - `crear_material` normaliza `categoria` con `strip()` antes del INSERT
+  - `aprovechamiento` de Cotización con `formatPct` (consistente con Express)
+  - contraste de los botones dorados "Descargar PDF" / "Cuenta de Cobro" (~1.9:1) → borde
+    neutro + verde de marca en hover
+  - `Field` (showHint sin idref colgante, `aria-required`), `SegmentedControl` (roving
+    tabindex + Home/End/flechas en ambos modos), `Dialog` (`aria-describedby`, foco al
+    primer control)
+
+### Archivos (rama `goal/rediseno-visual`, sobre el Ciclo 1)
+- **Nuevos:** `components/ui/` (14 primitivos), `pages/MaterialesPage.tsx`,
+  `backend/migrations/0005_catalogo_por_empresa.sql`.
+- **Modificados:** las 13 pantallas de `pages/*`, `components/MaterialCombobox.tsx`,
+  `components/Sidebar.tsx`, `components/AppLayout.tsx`, `App.tsx`, `api/materiales.ts`,
+  `lib/utils.ts` (`formatPct`), `backend/routers/materiales.py`.
+- **Docs:** `docs/PLAN_REDISENO_VISUAL.md` (bloque "Estado — COMPLETADO"), este archivo,
+  `PROGRESS.md`, memoria `project_costo360_redisenio_visual.md`.
+
+### Diferido (anotado en el plan, los auditores NO deben reportarlo)
+- Migrar los formularios grandes (Cotización Directa/Express/AIU/Configuración) a
+  `<Field>`/`<FormSection>`; filas de Historial a `<DataTable>`.
+- R10.b parte 2: auto-guardar el material al **guardar la cotización** (solo se hizo el modal
+  explícito "¿guardar?").
+- Calendario/listbox propios para `DateField`/`SelectField` (hoy envuelven el nativo).
+- Números de acento dorados (`text-brand-gold` sobre crema) en los paneles de resultado de
+  Cotización/AIU/Express/Nesting — decisión de marca del fundador, no bloqueante.
+
+### Primera tarea de la próxima sesión
+1. **Decisión del fundador:** fusionar `goal/rediseno-visual` → `master` (Ciclo 1 + Ciclo 2
+   juntos). El árbol está limpio, `tsc`/`build` pasan, ambas Fase 5 "APRUEBA CON CAMBIOS".
+2. Si se aprueba la fusión: reindexar el grafo (`codebase-memory-mcp`) contra `master`.
+3. Renovar `GEMINI_API_KEY` en `backend/.env` (el chat de Parámetros sigue en error
+   controlado).
+
+---
+
+## Sesión: 2026-08-30/31 — Rediseño visual del producto: CICLO 1 completo
+
+### Qué se hizo
+Ciclo `/goal` completo para el **Objetivo 1** (rediseño de la interfaz del producto), partido
+en 2 ciclos por recomendación de los auditores. **Este trabajo cubre el Ciclo 1.** Rama
+`goal/rediseno-visual` (sobre `master`, con la Fase 2.A ya fusionada). Plan vivo:
+`docs/PLAN_REDISENO_VISUAL.md`.
+
+- **Fase 0-1 (plan):** se reescribió `PLAN_REDISENO_VISUAL.md` incorporando la revisión de UX
+  previa (`docs/REVISION_UX_2026-08-29.md`) y 5 decisiones del fundador.
+- **Fase 2 (auditoría del plan):** UX Architect + Frontend Developer, ambos "APRUEBA CON
+  CAMBIOS", ambos pidieron **partir en 2 ciclos**. Se incorporaron todas las correcciones
+  (marcadas `[aud]`) y el corte. Ciclo 1 = R0, R1, R2, R4, R5, R7, R8. Ciclo 2 = R3, R6,
+  R10, R9.
+- **Fase 3:** el fundador aprobó el Ciclo 1 y resolvió las 5 decisiones (nombre de empresa
+  SÍ; rol operativo → bloqueo real de backend donde no rompa cotizar; landing fuera de
+  alcance; R7 alcance completo; auditar el plan SÍ).
+- **Fase 4 (ejecución):** ~22 commits (`a5292cf`…`441af59`). Detalle bloque por bloque en
+  `PROGRESS.md`. Aparte del plan, el fundador entregó su arte de logo/isotipo nuevo
+  (favicon + wordmark claro + wordmark de tinta oscura) y dio feedback en vivo (verde real
+  del isotipo `#00472B` en vez del `#156850` de una decisión previa; glassmorphism no se
+  veía → opacidad al 82%; logo del sidebar era un lockup tipográfico → arte real; botones
+  "Agregar placa/ítem" no se notaban → color de marca + `cursor-pointer`).
+- **Verificación en vivo:** navegación por la extensión de Chrome con cuenta de dueña (Ana,
+  admin) Y de operativo (Beto). Las 13 rutas, títulos de pestaña, barra esmeralda legible,
+  redirecciones del operativo (Dashboard/Parámetros/Configuración → Nueva Cotización) sin
+  bucles, `SessionGuard` no bloqueante, logo legible en login.
+- **Fase 5 (auditoría del resultado):** Code Reviewer + Accessibility Auditor, ambos "APRUEBA
+  CON CAMBIOS". Confirmaron los guardarraíles (motor intacto, `SessionGuard` sin cambios de
+  lógica —comparado byte a byte—, RLS sin tocar). Arreglos aplicados en `441af59`: `git rm`
+  de 6,6 MB de binarios de hero/landing que un `git add -A` arrastró por error; foco de
+  teclado invisible sobre la barra esmeralda → override a crema; `timeout` de axios global de
+  10 s rompía el chat del agente y la generación de PDF → override por-llamada a 60 s;
+  `focus({preventScroll})` + `scrollTo`; spinner de `AuthGate` con `role="status"` + sr-only;
+  `aria-hidden` en iconos; `theme-color` a crema; hover de la barra y estado activo de "Panel
+  Admin".
+- **Fase 6:** `ARQUITECTURA_MAESTRA.md` §6 y `docs/ROADMAP_COSTO360.md` actualizados;
+  `PROGRESS.md`/`SESSION.md` (este archivo); memoria persistente.
+
+### Archivos modificados/creados (rama `goal/rediseno-visual`)
+- **Frontend nuevos:** `components/Logo.tsx`, `components/AppShellSkeleton.tsx`,
+  `components/RoleRoute.tsx`, `lib/capabilities.ts`.
+- **Frontend modificados:** `index.css`, `App.tsx`, `store/auth.ts`, `components/AppLayout.tsx`,
+  `components/Sidebar.tsx`, `components/PrivateRoute.tsx`, `components/AdminRoute.tsx`,
+  `components/SessionGuard.tsx` (solo render/ARIA), `hooks/useCountUp.ts`, `api/client.ts`,
+  `api/auth.ts`, `api/agente.ts`, `api/cotizacion.ts`, `lib/utils.ts`, `pages/LoginPage.tsx`,
+  `pages/ResetPasswordPage.tsx`, `pages/CotizacionPage.tsx`, `pages/CotizacionAIUPage.tsx`,
+  `pages/CotizacionExpressPage.tsx`, `pages/ConfigPage.tsx`, `index.html`, `public/manifest.json`.
+- **Frontend borrados:** `hooks/useTheme.ts`.
+- **Backend modificados:** `middleware/auth.py`, `models/auth.py`, `routers/auth.py`,
+  `routers/config.py`, `routers/parametros.py`.
+- **Assets:** `web/public/{favicon,apple-touch-icon,logo,logo_versiones_oscuras}.png`
+  (optimizados); originales en `assets/marca/`. `git rm` de binarios de hero/landing e
+  `isotipo.png` muerto.
+- **Docs:** `docs/PLAN_REDISENO_VISUAL.md` (reescrito + bloque R10), `ARQUITECTURA_MAESTRA.md` §6.
+
+### Decisiones tomadas
+- Rediseño partido en **2 ciclos**: Ciclo 1 = fundamento (tokens, shell, barra, carga, logo);
+  Ciclo 2 = primitivos + pasada pantalla por pantalla + catálogo de materiales.
+- Verde esmeralda de la barra = `#00472B` (muestreado del isotipo real), NO el `#156850` de
+  la decisión previa del 2026-08-29.
+- Rol operativo: bloqueo real de backend en `GET /api/parametros`, `/api/config/empresa`,
+  `/api/config/logo` (`require_dashboard`) + ocultamiento/redirección en el frontend.
+- Logo: dos variantes de arte del fundador (claro/oscuro) vía componente `Logo`. El SVG
+  vectorizado que entregó salía con el isotipo en negro → descartado; pendiente un SVG limpio.
+- R7 con alcance completo (reconstrucción del flujo de carga), no solo el arreglo mínimo.
+- `finanzas`/OCR de facturas ya estaba fuera del prototipo (no se tocó).
+
+### Primera tarea de la próxima sesión
+1. Arrancar el **CICLO 2** del rediseño (`docs/PLAN_REDISENO_VISUAL.md`): normalmente **R3**
+   (los 12-14 primitivos accesibles: `Dialog`, `Card`, `Field`, `DataTable`, `Badge` con
+   icono, `SegmentedControl` con 2 semánticas, `Button`/`IconButton`, `PageHeader`,
+   `AsyncBoundary`, `EmptyState`, `SelectField`/`DateField` como envoltorios de nativo),
+   salvo que el fundador quiera priorizar **R10** (selector de material + catálogo por taller,
+   migración `0005`) o el pago visible de **R6** (contraste de contenido, formato de números,
+   colores de gráficos).
+2. En algún punto: fusionar `goal/rediseno-visual` a `master` (¿al cerrar el Ciclo 2?).
+3. Reindexar el grafo del proyecto (`codebase-memory-mcp`) — quedó pendiente de esta sesión.
+
+---
+
 ## Sesión: 2026-08-27 — Fase 2.A completa: migración a Supabase Auth + aislamiento real + sesión única
 
 > Nota: SESSION.md venía sin actualizar desde el 2026-08-23/24. Entre medias hubo sesiones el

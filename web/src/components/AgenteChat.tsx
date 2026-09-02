@@ -126,7 +126,7 @@ export default function AgenteChat() {
                 </div>
               )}
               {error && (
-                <p className="text-[11px] text-red-400 text-center">{error}</p>
+                <p className="text-[11px] text-brand-danger text-center">{error}</p>
               )}
               {mensajes.length === 1 && !loading && (
                 <div className="pt-1 space-y-1.5">

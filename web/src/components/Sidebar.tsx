@@ -3,6 +3,8 @@ import { motion } from 'framer-motion'
 import { useAuthStore } from '@/store/auth'
 import { supabase } from '@/lib/supabaseClient'
 import { logoutSession } from '@/api/session'
+import { puedeVerDashboard } from '@/lib/capabilities'
+import Logo from './Logo'
 import {
   LayoutDashboard,
   PlusCircle,
@@ -15,49 +17,90 @@ import {
   ShieldCheck,
   Zap,
   HardHat,
+  BookMarked,
   type LucideIcon,
 } from 'lucide-react'
-import { useTheme } from '../hooks/useTheme'
 
-interface NavItem { to: string; label: string; Icon: LucideIcon }
+interface NavItem { to: string; label: string; Icon: LucideIcon; requiereDashboard?: boolean }
+
+// Estructura "por área del negocio" (decisión del fundador 2026-08-31):
+//  · Dashboard suelto arriba (resumen — solo roles con acceso a BI).
+//  · Cotizaciones: crear + Historial (la lista de lo cotizado).
+//  · Taller: todo lo de materiales y piso, incluido el Catálogo.
+//  · Ajustes: parámetros de costo y datos de la empresa.
+//  · Panel Admin va aparte, abajo.
+const DASHBOARD_ITEM: NavItem = { to: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard, requiereDashboard: true }
 
 const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
-    label: 'Crear',
+    label: 'Cotizaciones',
     items: [
-      { to: '/cotizacion',     label: 'Nueva Cotización', Icon: PlusCircle },
-      { to: '/express',        label: 'Express',          Icon: Zap        },
-      { to: '/cotizacion-aiu', label: 'Cotización AIU',   Icon: HardHat    },
-    ],
-  },
-  {
-    label: 'Consultar',
-    items: [
-      { to: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
-      { to: '/historial', label: 'Historial', Icon: ClipboardList  },
+      { to: '/cotizacion',     label: 'Nueva Cotización', Icon: PlusCircle    },
+      { to: '/express',        label: 'Express',          Icon: Zap           },
+      { to: '/cotizacion-aiu', label: 'Cotización AIU',   Icon: HardHat       },
+      { to: '/historial',      label: 'Historial',        Icon: ClipboardList },
     ],
   },
   {
     label: 'Taller',
     items: [
-      { to: '/inventario', label: 'Inventario', Icon: Boxes    },
-      { to: '/retales',    label: 'Retales',    Icon: Layers   },
-      { to: '/nesting',    label: 'Nesting',     Icon: Grid3X3  },
+      { to: '/materiales', label: 'Catálogo',   Icon: BookMarked },
+      { to: '/inventario', label: 'Inventario', Icon: Boxes      },
+      { to: '/retales',    label: 'Retales',    Icon: Layers     },
+      { to: '/nesting',    label: 'Nesting',    Icon: Grid3X3    },
     ],
   },
   {
-    label: 'Sistema',
+    label: 'Ajustes',
     items: [
-      { to: '/parametros',    label: 'Parámetros',    Icon: SlidersHorizontal },
-      { to: '/configuracion', label: 'Configuración', Icon: Settings2         },
+      { to: '/parametros',    label: 'Parámetros',    Icon: SlidersHorizontal, requiereDashboard: true },
+      { to: '/configuracion', label: 'Configuración', Icon: Settings2,         requiereDashboard: true },
     ],
   },
 ]
 
+// Texto en colores SÓLIDOS (sin alfa) sobre la barra esmeralda-glass. Ver R1/R4.
+const inactiveNav = 'text-[#F5E8D2] hover:bg-white/[0.08]'
+const activeNav = 'text-white font-medium'
+
+function NavRow({ to, label, Icon, onNavigate }: NavItem & { onNavigate?: () => void }) {
+  return (
+    <NavLink
+      to={to}
+      onClick={onNavigate}
+      className={({ isActive }) =>
+        `relative flex items-center gap-3 px-3 py-1.5 rounded-lg text-[13px] leading-tight transition-colors ${
+          isActive ? activeNav : inactiveNav
+        }`
+      }
+    >
+      {({ isActive }) => (
+        <>
+          {isActive && (
+            <>
+              <motion.span
+                layoutId="nav-active"
+                className="absolute left-0 top-1 bottom-1 w-0.5 bg-brand-gold rounded-full"
+                transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+              />
+              <motion.span
+                layoutId="nav-active-bg"
+                className="absolute inset-0 rounded-lg bg-white/[0.14]"
+                transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+              />
+            </>
+          )}
+          <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+          {label}
+        </>
+      )}
+    </NavLink>
+  )
+}
+
 export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { usuario, clearSession } = useAuthStore()
   const navigate = useNavigate()
-  const { theme } = useTheme()
 
   async function handleLogout() {
     try { await logoutSession() } catch { /* ignorar */ }
@@ -66,113 +109,63 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     navigate('/login')
   }
 
-  const sidebarBg = theme === 'light'
-    ? '#F0F4F8'
-    : 'linear-gradient(180deg, #07100D 0%, #050B09 50%, #07100D 100%)'
-
-  const inactiveNav = theme === 'light'
-    ? 'text-brand-muted hover:text-brand-text hover:bg-brand-primary/[0.06]'
-    : 'text-brand-muted hover:text-brand-text hover:bg-brand-surface'
-
-  const activeNav = theme === 'light'
-    ? 'bg-brand-primary/[0.10] text-brand-primary font-medium'
-    : 'bg-brand-primary/15 text-brand-text font-medium'
+  // Regla 6: el rol operativo no ve Dashboard / Parámetros / Configuración.
+  const verDashboard = puedeVerDashboard(usuario)
+  const grupos = NAV_GROUPS
+    .map((g) => ({ ...g, items: g.items.filter((it) => !it.requiereDashboard || verDashboard) }))
+    .filter((g) => g.items.length > 0)
 
   return (
-    <aside
-      className="w-56 shrink-0 flex flex-col h-screen sticky top-0 border-r border-brand-border/80 relative"
-      style={{ background: sidebarBg, backdropFilter: theme === 'dark' ? 'blur(20px)' : 'none' }}
-    >
+    <>
+    {/* Capa de color difusa detrás del cristal (glassmorphism) — ver index.css */}
+    <div className="sidebar-aurora hidden lg:block" aria-hidden="true" />
+    <aside className="glass-emerald w-56 shrink-0 flex flex-col h-screen sticky top-0 relative z-10">
       {/* Logo */}
-      <div className="px-4 py-2.5 border-b border-brand-border flex flex-col items-center gap-0.5 shrink-0">
-        <img src="/logo.png" alt="Costo360" className="w-[128px] h-auto object-contain" />
-        <p className="text-[8px] text-brand-muted leading-none">Sistema de Cotizaciones</p>
+      <div className="px-4 py-2.5 border-b border-white/15 flex flex-col items-center gap-0.5 shrink-0">
+        <Logo variant="light" className="w-[132px] h-auto object-contain" />
+        <p className="text-[10px] text-[#E4D8BF] leading-none">Sistema de Cotizaciones</p>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-2.5 space-y-2 px-3 relative overflow-y-auto min-h-0">
-        {NAV_GROUPS.map((group) => (
+      <nav className="flex-1 py-3 space-y-3 px-3 relative overflow-y-auto min-h-0">
+        {verDashboard && (
+          <div className="space-y-0.5">
+            <NavRow {...DASHBOARD_ITEM} onNavigate={onNavigate} />
+          </div>
+        )}
+
+        {grupos.map((group) => (
           <div key={group.label}>
-            <p className="px-3 mb-0.5 text-[9px] font-semibold uppercase tracking-widest text-brand-muted/45">
+            <p className="px-3 mb-1 text-[11px] font-semibold uppercase tracking-widest text-[#E4D8BF]">
               {group.label}
             </p>
             <div className="space-y-0.5">
-              {group.items.map(({ to, label, Icon }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  onClick={onNavigate}
-                  className={({ isActive }) =>
-                    `relative flex items-center gap-3 px-3 py-1.5 rounded-lg text-[13px] leading-tight transition-colors ${
-                      isActive ? activeNav : inactiveNav
-                    }`
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      {isActive && (
-                        <>
-                          <motion.span
-                            layoutId="nav-active"
-                            className="absolute left-0 top-1 bottom-1 w-0.5 bg-brand-primary rounded-full"
-                            style={{ boxShadow: '0 0 8px #1F6F54, 0 0 16px #1F6F5460' }}
-                            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                          />
-                          <motion.span
-                            layoutId="nav-active-bg"
-                            className="absolute inset-0 rounded-lg bg-brand-primary/[0.08]"
-                            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                          />
-                        </>
-                      )}
-                      <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                      {label}
-                    </>
-                  )}
-                </NavLink>
+              {group.items.map((it) => (
+                <NavRow key={it.to} {...it} onNavigate={onNavigate} />
               ))}
             </div>
           </div>
         ))}
+
         {usuario?.puede_gestionar_usuarios && (
-          <NavLink
-            to="/admin"
-            className={({ isActive }) =>
-              `relative flex items-center gap-3 px-3 py-1.5 rounded-lg text-[13px] leading-tight transition-colors ${
-                isActive
-                  ? 'bg-purple-500/15 text-purple-300 font-medium'
-                  : inactiveNav
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                {isActive && (
-                  <motion.span
-                    layoutId="nav-active"
-                    className="absolute left-0 top-1 bottom-1 w-0.5 bg-brand-primary rounded-full"
-                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                  />
-                )}
-                <ShieldCheck className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                Panel Admin
-              </>
-            )}
-          </NavLink>
+          <div className="mt-1 border-t border-white/10 pt-3">
+            <NavRow to="/admin" label="Panel Admin" Icon={ShieldCheck} onNavigate={onNavigate} />
+          </div>
         )}
       </nav>
 
       {/* Usuario */}
-      <div className="px-4 py-2.5 border-t border-brand-border shrink-0">
-        <p className="text-xs text-brand-text font-medium truncate">{usuario?.nombre_completo}</p>
-        <p className="text-[10px] text-brand-muted capitalize">{usuario?.cargo_visible || usuario?.rol_codigo}</p>
+      <div className="px-4 py-2.5 border-t border-white/15 shrink-0">
+        <p className="text-xs text-white font-medium truncate">{usuario?.nombre_completo}</p>
+        <p className="text-[10px] text-[#E4D8BF] capitalize">{usuario?.cargo_visible || usuario?.rol_codigo}</p>
         <button
           onClick={handleLogout}
-          className="mt-1.5 text-xs text-brand-muted hover:text-red-400 transition-colors cursor-pointer"
+          className="mt-1.5 text-xs text-[#F5E8D2] hover:text-white transition-colors cursor-pointer"
         >
           Cerrar sesión
         </button>
       </div>
     </aside>
+    </>
   )
 }

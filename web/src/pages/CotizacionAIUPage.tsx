@@ -5,7 +5,9 @@ import { Loader2, Trash2, PlusCircle } from 'lucide-react'
 import AppLayout from '@/components/AppLayout'
 import { calcularAIU, guardarAIU, descargarPDFAiu, descargarCuentaCobro } from '@/api/cotizacion'
 import type { ItemAIU, ResultadoAIU } from '@/types/cotizacion'
-import { formatCOP, formatNum } from '@/lib/utils'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Badge } from '@/components/ui/Badge'
+import { formatCOP, formatPct } from '@/lib/utils'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -32,7 +34,7 @@ const slideVariants = {
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <label className="block text-[10px] font-semibold tracking-[0.18em] uppercase text-brand-muted mb-1.5">
+    <label className="block text-[10px] font-semibold tracking-[0.18em] uppercase text-brand-text-secondary mb-1.5">
       {children}
     </label>
   )
@@ -46,7 +48,7 @@ function TextInput({ value, onChange, placeholder, className = '' }: {
       type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
       className={[
         'w-full bg-brand-input border border-brand-border rounded px-3 py-2.5',
-        'text-sm text-brand-text placeholder-brand-muted/40',
+        'text-sm text-brand-text placeholder:text-brand-text-secondary',
         'outline-none transition-all duration-200 focus:border-brand-primary focus:shadow-[0_0_0_1px_#1F6F5440]',
         className,
       ].join(' ')}
@@ -61,7 +63,7 @@ function Toggle({ checked, onChange, label, sublabel }: {
     <button type="button" onClick={() => onChange(!checked)} className="flex items-center justify-between w-full py-3 group">
       <div className="text-left">
         <p className="text-sm text-brand-text font-medium">{label}</p>
-        {sublabel && <p className="text-xs text-brand-muted mt-0.5">{sublabel}</p>}
+        {sublabel && <p className="text-xs text-brand-text-secondary mt-0.5">{sublabel}</p>}
       </div>
       <div className={['relative w-10 h-5 rounded-full transition-all duration-200 shrink-0 ml-4', checked ? 'bg-brand-primary' : 'bg-brand-border'].join(' ')}>
         <div className={['absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-200 shadow-sm', checked ? 'left-5' : 'left-0.5'].join(' ')} />
@@ -90,7 +92,7 @@ function PctPills({ label, value, onChange, presets }: {
               'px-3 py-1.5 rounded text-xs font-semibold border transition-all duration-200',
               !showCustom && value === p
                 ? 'bg-brand-primary text-white border-brand-primary shadow-[0_0_8px_#1F6F5430]'
-                : 'border-brand-border text-brand-muted hover:border-brand-primary/40 hover:text-brand-text',
+                : 'border-brand-border text-brand-text-secondary hover:border-brand-primary/40 hover:text-brand-text',
             ].join(' ')}
           >
             {p}%
@@ -102,8 +104,8 @@ function PctPills({ label, value, onChange, presets }: {
           className={[
             'px-3 py-1.5 rounded text-xs font-semibold border transition-all duration-200',
             showCustom
-              ? 'bg-brand-gold/20 text-brand-gold border-brand-gold/50'
-              : 'border-brand-border text-brand-muted hover:border-brand-gold/40 hover:text-brand-text',
+              ? 'bg-brand-gold/20 text-brand-gold-text border-brand-gold/50'
+              : 'border-brand-border text-brand-text-secondary hover:border-brand-gold/40 hover:text-brand-text',
           ].join(' ')}
         >
           Otro
@@ -120,7 +122,7 @@ function PctPills({ label, value, onChange, presets }: {
                 className="w-full bg-brand-input border border-brand-gold/40 rounded px-3 py-1.5 font-mono text-sm text-brand-text outline-none focus:border-brand-gold pr-8 transition-all"
                 autoFocus
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-brand-muted">%</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-brand-text-secondary">%</span>
             </div>
           </motion.div>
         )}
@@ -133,7 +135,7 @@ function PctPills({ label, value, onChange, presets }: {
 
 function StepIndicator({ paso }: { paso: number }) {
   return (
-    <div className="flex items-center justify-center mb-10">
+    <nav aria-label="Progreso de la oferta AIU" className="flex items-center justify-center mb-10">
       {STEP_LABELS.map((label, i) => {
         const done = i < paso; const active = i === paso
         return (
@@ -144,20 +146,20 @@ function StepIndicator({ paso }: { paso: number }) {
                 <motion.div className="absolute inset-y-0 left-0 bg-brand-primary" initial={{ width: '0%' }} animate={{ width: done ? '100%' : '0%' }} transition={{ duration: 0.4 }} />
               </div>
             )}
-            <div className="flex flex-col items-center gap-1.5">
-              <motion.div className={['w-7 h-7 rounded-full border flex items-center justify-center transition-all duration-300', active ? 'border-brand-primary bg-brand-primary/10 shadow-[0_0_12px_#1F6F5440]' : done ? 'border-brand-primary bg-brand-primary' : 'border-brand-border bg-brand-bg'].join(' ')}>
+            <div className="flex flex-col items-center gap-1.5" aria-current={active ? 'step' : undefined}>
+              <motion.div className={['w-7 h-7 rounded-full border flex items-center justify-center transition-all duration-300', active ? 'border-brand-primary bg-brand-primary/10' : done ? 'border-brand-primary bg-brand-primary' : 'border-brand-border bg-brand-bg'].join(' ')}>
                 {done ? (
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 ) : (
-                  <span className={['font-mono text-[10px] font-bold', active ? 'text-emerald-400' : 'text-brand-muted'].join(' ')}>{String(i + 1).padStart(2, '0')}</span>
+                  <span className={['font-mono text-[10px] font-bold', active ? 'text-brand-primary' : 'text-brand-text-secondary'].join(' ')}>{String(i + 1).padStart(2, '0')}</span>
                 )}
               </motion.div>
-              <span className={['text-[9px] tracking-[0.12em] uppercase font-semibold whitespace-nowrap', active ? 'text-brand-gold' : done ? 'text-brand-muted' : 'text-brand-muted/40'].join(' ')}>{label}</span>
+              <span className={['text-[10px] tracking-[0.12em] uppercase font-semibold whitespace-nowrap', active ? 'text-brand-warning-text' : 'text-brand-text-secondary'].join(' ')}>{label}</span>
             </div>
           </React.Fragment>
         )
       })}
-    </div>
+    </nav>
   )
 }
 
@@ -167,7 +169,7 @@ function StepNav({ onBack, onNext, nextLabel = 'Siguiente', nextDisabled = false
   return (
     <div className="flex items-center justify-between mt-10 pt-6 border-t border-brand-border">
       {onBack ? (
-        <button type="button" onClick={onBack} className="flex items-center gap-2 text-sm text-brand-muted hover:text-brand-text transition-colors">
+        <button type="button" onClick={onBack} className="flex items-center gap-2 text-sm text-brand-text-secondary hover:text-brand-text transition-colors">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
           Anterior
         </button>
@@ -190,14 +192,14 @@ function StepNav({ onBack, onNext, nextLabel = 'Siguiente', nextDisabled = false
   )
 }
 
-function PageHeader({ step, title, subtitle }: { step: string; title: string; subtitle: string }) {
+function StepHeader({ step, title, subtitle }: { step: string; title: string; subtitle: string }) {
   return (
     <div className="mb-8">
       <div className="flex items-baseline gap-3 mb-1">
-        <span className="font-mono text-[11px] text-brand-muted/40 tracking-[0.2em]">{step}</span>
+        <span className="font-mono text-[11px] text-brand-text-secondary tracking-[0.2em]">{step}</span>
         <h2 className="text-2xl font-bold text-brand-text tracking-tight">{title}</h2>
       </div>
-      <p className="text-sm text-brand-muted ml-9">{subtitle}</p>
+      <p className="text-sm text-brand-text-secondary ml-9">{subtitle}</p>
       <div className="mt-4 h-px bg-gradient-to-r from-brand-gold/40 via-brand-border to-transparent" />
     </div>
   )
@@ -236,11 +238,11 @@ function Step0Items({
     <motion.div key={0} custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit"
       transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }} className="w-full">
       <div className="max-w-3xl mx-auto">
-        <PageHeader step="01" title="Ítems del Contrato" subtitle="Define el cliente y los ítems del Costo Directo" />
+        <StepHeader step="01" title="Ítems del Contrato" subtitle="Define el cliente y los ítems del Costo Directo" />
 
         {/* Client info */}
         <div className="glass rounded-lg border border-brand-border/60 p-5 mb-6">
-          <p className="text-[9px] tracking-[0.2em] uppercase text-brand-muted/50 font-semibold mb-4">Datos del Contratante</p>
+          <p className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold mb-4">Datos del Contratante</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
               <FieldLabel>Nombre / Empresa *</FieldLabel>
@@ -248,7 +250,7 @@ function Step0Items({
             </div>
             <div>
               <FieldLabel>Ciudad</FieldLabel>
-              <TextInput value={ciudad} onChange={setCiudad} placeholder="Barranquilla" />
+              <TextInput value={ciudad} onChange={setCiudad} placeholder="Ciudad" />
             </div>
             <div>
               <FieldLabel>Teléfono</FieldLabel>
@@ -259,18 +261,18 @@ function Step0Items({
 
         {/* Items del Costo Directo — una tarjeta clara por ítem, igual en celular y escritorio */}
         <div className="glass rounded-lg border border-brand-border/60 p-5 mb-4">
-          <span className="text-[9px] tracking-[0.2em] uppercase text-brand-muted/50 font-semibold">Ítems del Costo Directo</span>
-          <p className="text-xs text-brand-muted/60 mt-1 mb-4">Agrega cada material o actividad por separado. El subtotal se calcula solo.</p>
+          <span className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold">Ítems del Costo Directo</span>
+          <p className="text-xs text-brand-text-secondary mt-1 mb-4">Agrega cada material o actividad por separado. El subtotal se calcula solo.</p>
 
           <div className="space-y-3">
             {items.map((item, idx) => (
               <div key={item.id} className="rounded-lg border border-brand-border/50 bg-brand-surface/20 p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-bold text-brand-muted/50 uppercase tracking-widest">Ítem {idx + 1}</span>
+                  <span className="text-[10px] font-bold text-brand-text-secondary uppercase tracking-widest">Ítem {idx + 1}</span>
                   <button
                     type="button" onClick={() => removeItem(item.id)} disabled={items.length <= 1}
                     aria-label="Eliminar este ítem"
-                    className="w-7 h-7 flex items-center justify-center rounded text-brand-muted/40 hover:text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-0 disabled:pointer-events-none"
+                    className="w-7 h-7 flex items-center justify-center rounded text-brand-text-secondary hover:text-brand-danger hover:bg-brand-danger/10 transition-colors disabled:opacity-0 disabled:pointer-events-none"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -305,8 +307,8 @@ function Step0Items({
                 </div>
 
                 <div className="mt-3 pt-3 border-t border-brand-border/40 flex items-center justify-between">
-                  <span className="text-xs text-brand-muted">Subtotal de este ítem</span>
-                  <span className="font-mono text-sm font-bold text-brand-gold">{formatCOP(item.cant * item.punit)}</span>
+                  <span className="text-xs text-brand-text-secondary">Subtotal de este ítem</span>
+                  <span className="font-mono text-sm font-bold text-brand-gold-text">{formatCOP(item.cant * item.punit)}</span>
                 </div>
               </div>
             ))}
@@ -314,19 +316,19 @@ function Step0Items({
 
           <button
             type="button" onClick={addItem}
-            className="w-full mt-3 py-3 rounded-lg border-2 border-dashed border-brand-border/60 text-sm text-brand-muted hover:border-brand-primary/50 hover:text-emerald-400 hover:bg-brand-primary/[0.03] transition-all flex items-center justify-center gap-2"
+            className="w-full mt-3 py-3 rounded-lg border border-dashed border-brand-primary/40 bg-brand-primary/[0.04] text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.08] hover:border-brand-primary/60 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
           >
-            <PlusCircle size={16} />
+            <PlusCircle size={16} aria-hidden="true" />
             Agregar otro ítem
           </button>
 
           {/* CD Total */}
           <div className="mt-4 p-4 rounded-lg bg-brand-primary/[0.06] border border-brand-primary/20 flex items-center justify-between">
             <div>
-              <p className="text-[9px] tracking-[0.2em] uppercase text-brand-muted/50 font-semibold">Costo Directo (CD)</p>
-              <p className="text-[10px] text-brand-muted/50 mt-0.5">Base de cálculo AIU — Decreto 1372/92</p>
+              <p className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold">Costo Directo (CD)</p>
+              <p className="text-[10px] text-brand-text-secondary mt-0.5">Base de cálculo AIU — Decreto 1372/92</p>
             </div>
-            <span className="font-mono text-xl font-bold text-brand-gold">{formatCOP(cd)}</span>
+            <span className="font-mono text-xl font-bold text-brand-gold-text">{formatCOP(cd)}</span>
           </div>
         </div>
 
@@ -360,8 +362,8 @@ function Step1AIU({
   function PreviewRow({ label, value, muted = false, accent = false }: { label: string; value: number; muted?: boolean; accent?: boolean }) {
     return (
       <div className={['flex items-center justify-between py-2', muted ? 'opacity-60' : ''].join(' ')}>
-        <span className="text-xs text-brand-muted">{label}</span>
-        <span className={['font-mono text-sm font-semibold', accent ? 'text-brand-gold' : 'text-brand-text'].join(' ')}>
+        <span className="text-xs text-brand-text-secondary">{label}</span>
+        <span className={['font-mono text-sm font-semibold', accent ? 'text-brand-gold-text' : 'text-brand-text'].join(' ')}>
           {formatCOP(value)}
         </span>
       </div>
@@ -372,7 +374,7 @@ function Step1AIU({
     <motion.div key={1} custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit"
       transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }} className="w-full">
       <div className="max-w-3xl mx-auto">
-        <PageHeader step="02" title="AIU" subtitle="Define los porcentajes de Administración, Imprevistos y Utilidad" />
+        <StepHeader step="02" title="AIU" subtitle="Define los porcentajes de Administración, Imprevistos y Utilidad" />
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
           {/* Left: inputs */}
@@ -395,18 +397,18 @@ function Step1AIU({
 
           {/* Right: live preview */}
           <div className="glass rounded-xl border border-brand-border/60 p-5 h-fit sticky top-6">
-            <p className="text-[9px] tracking-[0.2em] uppercase text-brand-muted/50 font-semibold mb-4">Preview AIU</p>
+            <p className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold mb-4">Preview AIU</p>
             <div className="divide-y divide-brand-border/30">
               <PreviewRow label={`CD (Base)`} value={cd} />
-              <PreviewRow label={`+ A (${formatNum(pctA, 1)}%)`} value={valA} />
-              <PreviewRow label={`+ I (${formatNum(pctI, 1)}%)`} value={valI} />
-              <PreviewRow label={`+ U (${formatNum(pctU, 1)}%)`} value={valU} />
+              <PreviewRow label={`+ A (${formatPct(pctA, 1)})`} value={valA} />
+              <PreviewRow label={`+ I (${formatPct(pctI, 1)})`} value={valI} />
+              <PreviewRow label={`+ U (${formatPct(pctU, 1)})`} value={valU} />
               {incluirIva && <PreviewRow label="+ IVA 19% sobre U" value={valIva} />}
             </div>
             <div className="mt-3 pt-3 border-t-2 border-brand-primary/30">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-brand-text">Estimado</span>
-                <span className="font-mono text-base font-bold text-brand-gold">{formatCOP(estimado)}</span>
+                <span className="font-mono text-base font-bold text-brand-gold-text">{formatCOP(estimado)}</span>
               </div>
             </div>
           </div>
@@ -444,7 +446,7 @@ function CCModalAIU({ cotId, onClose }: { cotId: number; onClose: () => void }) 
         className="relative glass rounded-xl border border-brand-border shadow-2xl p-6 w-80 z-10"
         onClick={e => e.stopPropagation()}
       >
-        <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-brand-muted/60 mb-4">Cuenta de Cobro</p>
+        <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-brand-text-secondary mb-4">Cuenta de Cobro</p>
         <div className="space-y-3 mb-4">
           <div>
             <FieldLabel>Nombre del pagador *</FieldLabel>
@@ -455,11 +457,11 @@ function CCModalAIU({ cotId, onClose }: { cotId: number; onClose: () => void }) 
             <TextInput value={nit} onChange={setNit} placeholder="900.123.456-7" />
           </div>
         </div>
-        {err && <p className="text-xs text-red-400 mb-3">{err}</p>}
+        {err && <p className="text-xs text-brand-danger mb-3">{err}</p>}
         <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded border border-brand-border text-sm text-brand-muted hover:text-brand-text transition-colors">Cancelar</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded border border-brand-border text-sm text-brand-text-secondary hover:text-brand-text transition-colors">Cancelar</button>
           <button onClick={handleDownload} disabled={loading || !nombre.trim()}
-            className="flex-1 py-2.5 rounded bg-brand-gold/15 border border-brand-gold/40 text-sm font-semibold text-brand-gold hover:bg-brand-gold/25 transition-all disabled:opacity-40 flex items-center justify-center gap-2">
+            className="flex-1 py-2.5 rounded border border-brand-primary/40 bg-brand-primary/[0.06] text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.12] transition-all disabled:opacity-40 flex items-center justify-center gap-2">
             {loading && <Loader2 size={14} className="animate-spin" />}
             {loading ? 'Generando…' : 'Descargar PDF'}
           </button>
@@ -494,9 +496,9 @@ function Step2Resultado({
 
   const rows: { label: string; value: number; sub?: boolean; bold?: boolean; accent?: string }[] = [
     { label: 'Costo Directo (CD)', value: resultado.cd, bold: true },
-    { label: `+ Administración (A ${formatNum(resultado.pct_a, 1)}%)`, value: resultado.val_a, sub: true },
-    { label: `+ Imprevistos (I ${formatNum(resultado.pct_i, 1)}%)`, value: resultado.val_i, sub: true },
-    { label: `+ Utilidad (U ${formatNum(resultado.pct_u, 1)}%)`, value: resultado.val_u, sub: true },
+    { label: `+ Administración (A ${formatPct(resultado.pct_a, 1)})`, value: resultado.val_a, sub: true },
+    { label: `+ Imprevistos (I ${formatPct(resultado.pct_i, 1)})`, value: resultado.val_i, sub: true },
+    { label: `+ Utilidad (U ${formatPct(resultado.pct_u, 1)})`, value: resultado.val_u, sub: true },
     ...(resultado.val_iva > 0 ? [{ label: '+ IVA 19% sobre U (Decreto 1372/92)', value: resultado.val_iva, sub: true }] : []),
   ]
 
@@ -505,7 +507,7 @@ function Step2Resultado({
       <motion.div key={2} custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit"
         transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }} className="w-full">
         <div className="max-w-2xl mx-auto">
-          <PageHeader step="03" title="Resultado AIU" subtitle="Propuesta comercial calculada según Decreto 1372/92" />
+          <StepHeader step="03" title="Resultado AIU" subtitle="Propuesta comercial calculada según Decreto 1372/92" />
 
           {/* Hero price card */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}
@@ -516,18 +518,18 @@ function Step2Resultado({
             <div className="absolute bottom-3 left-3 w-6 h-6 border-b border-l border-brand-gold/30" />
             <div className="absolute bottom-3 right-3 w-6 h-6 border-b border-r border-brand-gold/30" />
 
-            <p className="text-[9px] tracking-[0.25em] uppercase text-brand-muted/60 mb-3 font-semibold">Precio Total del Contrato AIU</p>
+            <p className="text-[9px] tracking-[0.25em] uppercase text-brand-text-secondary mb-3 font-semibold">Precio Total del Contrato AIU</p>
             <div className="font-mono text-3xl sm:text-5xl font-bold text-brand-text mb-4 tabular-nums break-words">{formatCOP(resultado.precio_total)}</div>
 
             <div className="flex justify-center gap-6">
               <div className="text-center">
-                <div className="font-mono text-sm text-brand-gold font-bold">{formatNum(resultado.pct_u, 1)}%</div>
-                <div className="text-[9px] uppercase tracking-widest text-brand-muted/50 mt-0.5">Utilidad</div>
+                <div className="font-mono text-sm text-brand-gold-text font-bold">{formatPct(resultado.pct_u, 1)}</div>
+                <div className="text-[9px] uppercase tracking-widest text-brand-text-secondary mt-0.5">Utilidad</div>
               </div>
               <div className="w-px bg-brand-border" />
               <div className="text-center">
-                <div className="font-mono text-sm text-brand-gold font-bold">{formatNum(resultado.margen_pct, 1)}%</div>
-                <div className="text-[9px] uppercase tracking-widest text-brand-muted/50 mt-0.5">Margen efectivo</div>
+                <div className="font-mono text-sm text-brand-gold-text font-bold">{formatPct(resultado.margen_pct, 1)}</div>
+                <div className="text-[9px] uppercase tracking-widest text-brand-text-secondary mt-0.5">Margen efectivo</div>
               </div>
             </div>
           </motion.div>
@@ -536,20 +538,20 @@ function Step2Resultado({
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}
             className="glass rounded-lg border border-brand-border/60 overflow-hidden mb-4">
             <div className="px-5 py-3 border-b border-brand-border/50">
-              <span className="text-[9px] tracking-[0.2em] uppercase text-brand-muted/60 font-semibold">Desglose AIU</span>
+              <span className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold">Desglose AIU</span>
             </div>
             <div className="divide-y divide-brand-border/30">
               {rows.map((row, i) => (
                 <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 + i * 0.05 }}
                   className={['flex items-center justify-between px-5 py-3', row.sub ? 'pl-9' : ''].join(' ')}>
-                  <span className={['text-sm', row.bold ? 'font-semibold text-brand-text' : 'text-brand-muted'].join(' ')}>{row.label}</span>
+                  <span className={['text-sm', row.bold ? 'font-semibold text-brand-text' : 'text-brand-text-secondary'].join(' ')}>{row.label}</span>
                   <span className={['font-mono text-sm', row.bold ? 'font-bold text-brand-text' : 'text-brand-text'].join(' ')}>{formatCOP(row.value)}</span>
                 </motion.div>
               ))}
               <div className="flex items-center justify-between px-5 py-3.5 bg-brand-input-deep/60">
                 <span className="text-sm font-bold text-white">PRECIO TOTAL DEL CONTRATO</span>
-                <span className="font-mono text-base font-bold text-brand-gold">{formatCOP(resultado.precio_total)}</span>
+                <span className="font-mono text-base font-bold text-brand-gold-text">{formatCOP(resultado.precio_total)}</span>
               </div>
             </div>
           </motion.div>
@@ -557,15 +559,15 @@ function Step2Resultado({
           {/* Save + PDF buttons */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="space-y-3 mb-4">
             {saved ? (
-              <div className="flex items-center justify-between px-5 py-3.5 rounded-lg border border-emerald-500/30 bg-emerald-500/5">
+              <div className="flex items-center justify-between px-5 py-3.5 rounded-lg border border-brand-primary/30 bg-brand-primary/5">
                 <div className="flex items-center gap-3">
-                  <span className="text-emerald-400 text-lg">✓</span>
+                  <span className="text-brand-primary text-lg">✓</span>
                   <div>
-                    <p className="text-sm font-semibold text-emerald-400">Cotización AIU guardada</p>
-                    <p className="text-[10px] text-brand-muted font-mono">{saved.numero}</p>
+                    <p className="text-sm font-semibold text-brand-primary">Cotización AIU guardada</p>
+                    <p className="text-[10px] text-brand-text-secondary font-mono">{saved.numero}</p>
                   </div>
                 </div>
-                <button onClick={() => navigate('/historial')} className="text-xs text-brand-muted hover:text-emerald-400 transition-colors">
+                <button onClick={() => navigate('/historial')} className="text-xs text-brand-text-secondary hover:text-brand-primary transition-colors">
                   Ver historial →
                 </button>
               </div>
@@ -580,12 +582,12 @@ function Step2Resultado({
             {saved && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button onClick={handlePDF} disabled={pdfLoading}
-                  className="py-3 rounded-lg border border-brand-gold/40 bg-brand-gold/10 text-sm font-semibold text-brand-gold hover:bg-brand-gold/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                  className="py-3 rounded-lg border border-brand-primary/40 bg-brand-primary/[0.06] text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.12] transition-all disabled:opacity-50 flex items-center justify-center gap-2">
                   {pdfLoading && <Loader2 size={14} className="animate-spin" />}
                   {pdfLoading ? 'Generando…' : 'Descargar Oferta AIU'}
                 </button>
                 <button onClick={() => setShowCC(true)}
-                  className="py-3 rounded-lg border border-brand-border text-sm font-semibold text-brand-muted hover:text-brand-text hover:border-brand-border/80 transition-all">
+                  className="py-3 rounded-lg border border-brand-border text-sm font-semibold text-brand-text-secondary hover:text-brand-text hover:border-brand-border/80 transition-all">
                   Cuenta de Cobro
                 </button>
               </div>
@@ -594,7 +596,7 @@ function Step2Resultado({
 
           <div className="flex gap-3">
             <button onClick={onBack}
-              className="flex-1 py-3 rounded border border-brand-border text-sm text-brand-muted hover:text-brand-text transition-colors">
+              className="flex-1 py-3 rounded border border-brand-border text-sm text-brand-text-secondary hover:text-brand-text transition-colors">
               Ajustar parámetros
             </button>
           </div>
@@ -687,25 +689,18 @@ export default function CotizacionAIUPage() {
   return (
     <AppLayout>
       <div className="max-w-4xl mx-auto py-6 px-2">
-        {/* Page header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-1 h-6 bg-brand-gold rounded-full" />
-            <h1 className="text-lg font-bold text-brand-text tracking-tight">Cotización AIU</h1>
-            <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-brand-gold/15 text-brand-gold border border-brand-gold/30 tracking-widest">
-              DECRETO 1372/92
-            </span>
-          </div>
-          <p className="text-xs text-brand-muted ml-4 pl-0.5">
-            Estructura de precio para obra pública y licitaciones: A + I + U sobre Costo Directo
-          </p>
-        </div>
+        <PageHeader
+          kicker="Crear"
+          title="Cotización AIU"
+          subtitle="Estructura de precio para obra pública y licitaciones: A + I + U sobre Costo Directo"
+          actions={<Badge tono="gold">Decreto 1372/92</Badge>}
+        />
 
         <StepIndicator paso={paso} />
 
         {calcError && paso === 1 && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-4 rounded border border-red-500/30 bg-red-500/5 text-red-400 text-sm">
+            className="mb-6 p-4 rounded border border-brand-danger/30 bg-brand-danger/5 text-brand-danger text-sm">
             {calcError}
           </motion.div>
         )}

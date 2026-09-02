@@ -8,6 +8,7 @@ export interface Usuario {
   rol_codigo: RolCodigo
   nombre_completo: string
   cargo_visible: string | null
+  empresa_nombre: string | null
   puede_ver_dashboard: boolean
   puede_usar_modo_bi_senior: boolean
   puede_pedir_datos_agregados_agente: boolean

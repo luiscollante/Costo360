@@ -5,6 +5,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import AppLayout from '@/components/AppLayout'
 import { getConfigEmpresa, putConfigEmpresa, getLogo, uploadLogo, type ConfigEmpresa } from '@/api/config'
 import { Save, ImageUp } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 const DEFAULTS: ConfigEmpresa = {
   nombre: '',
@@ -66,38 +67,30 @@ export default function ConfigPage() {
     setForm((f) => ({ ...f, [key]: value }))
   }
 
-  const inputBase = 'input-light w-full px-3 py-2.5 rounded-lg bg-brand-surface border border-brand-border text-sm text-brand-text placeholder:text-brand-muted/40 focus:outline-none focus:border-brand-primary/50 transition-colors'
+  const inputBase = 'input-light w-full px-3 py-2.5 rounded-lg bg-brand-surface border border-brand-border text-sm text-brand-text placeholder:text-brand-text-secondary focus:outline-none focus:border-brand-primary/50 transition-colors'
 
   return (
     <AppLayout>
       <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-1">
-            <span className="font-mono text-[10px] text-brand-muted/50 tracking-[0.2em]">CONFIGURACIÓN</span>
-            <div className="w-16 h-px bg-brand-border/40" />
-          </div>
-          <h1 className="text-2xl font-bold text-brand-text tracking-tight">Empresa</h1>
-          <p className="text-sm text-brand-muted mt-1">Datos que aparecen en los PDFs de cotización</p>
-        </div>
+        <PageHeader
+          kicker="Ajustes"
+          title="Configuración"
+          subtitle="Datos de tu empresa que aparecen en los PDFs de cotización"
+        />
 
         {isPending ? (
-          <div className="glass rounded-xl border border-brand-border p-12 text-center">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}
-              className="inline-block w-6 h-6 border-2 border-brand-muted/30 border-t-brand-primary rounded-full mb-3"
-            />
-            <p className="text-sm text-brand-muted">Cargando configuración…</p>
+          <div role="status" className="rounded-xl border border-brand-border bg-brand-surface p-12 text-center">
+            <span className="mx-auto mb-3 inline-block h-6 w-6 animate-spin rounded-full border-2 border-brand-border border-t-brand-primary" aria-hidden="true" />
+            <p className="text-sm text-brand-text-secondary">Cargando configuración…</p>
           </div>
         ) : (
           <div className="space-y-5">
             {/* Datos de la empresa */}
             <div className="glass rounded-xl border border-brand-border p-6">
-              <h2 className="text-[9px] font-semibold text-brand-muted/50 uppercase tracking-widest mb-5">Datos de la empresa</h2>
+              <h2 className="text-[9px] font-semibold text-brand-text-secondary uppercase tracking-widest mb-5">Datos de la empresa</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Nombre empresa</label>
+                  <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Nombre empresa</label>
                   <input
                     type="text"
                     value={form.nombre}
@@ -107,7 +100,7 @@ export default function ConfigPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">NIT</label>
+                  <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">NIT</label>
                   <input
                     type="text"
                     value={form.nit}
@@ -117,17 +110,17 @@ export default function ConfigPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Ciudad</label>
+                  <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Ciudad</label>
                   <input
                     type="text"
                     value={form.ciudad}
                     onChange={(e) => set('ciudad', e.target.value)}
-                    placeholder="Barranquilla"
+                    placeholder="Ciudad"
                     className={inputBase}
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Dirección</label>
+                  <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Dirección</label>
                   <input
                     type="text"
                     value={form.direccion}
@@ -137,7 +130,7 @@ export default function ConfigPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Teléfono</label>
+                  <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Teléfono</label>
                   <input
                     type="text"
                     value={form.telefono}
@@ -147,7 +140,7 @@ export default function ConfigPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Correo</label>
+                  <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Correo</label>
                   <input
                     type="email"
                     value={form.email}
@@ -161,10 +154,10 @@ export default function ConfigPage() {
 
             {/* Datos bancarios */}
             <div className="glass rounded-xl border border-brand-border p-6">
-              <h2 className="text-[9px] font-semibold text-brand-muted/50 uppercase tracking-widest mb-5">Datos bancarios</h2>
+              <h2 className="text-[9px] font-semibold text-brand-text-secondary uppercase tracking-widest mb-5">Datos bancarios</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Banco</label>
+                  <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Banco</label>
                   <input
                     type="text"
                     value={form.banco_nombre}
@@ -174,7 +167,7 @@ export default function ConfigPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Tipo de cuenta</label>
+                  <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Tipo de cuenta</label>
                   <select
                     value={form.banco_tipo}
                     onChange={(e) => set('banco_tipo', e.target.value)}
@@ -185,7 +178,7 @@ export default function ConfigPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Número de cuenta</label>
+                  <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Número de cuenta</label>
                   <input
                     type="text"
                     value={form.banco_cuenta}
@@ -195,7 +188,7 @@ export default function ConfigPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Titular</label>
+                  <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Titular</label>
                   <input
                     type="text"
                     value={form.banco_titular}
@@ -209,10 +202,10 @@ export default function ConfigPage() {
 
             {/* Condiciones comerciales */}
             <div className="glass rounded-xl border border-brand-border p-6">
-              <h2 className="text-[9px] font-semibold text-brand-muted/50 uppercase tracking-widest mb-5">Condiciones comerciales</h2>
+              <h2 className="text-[9px] font-semibold text-brand-text-secondary uppercase tracking-widest mb-5">Condiciones comerciales</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">
+                  <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">
                     Anticipo requerido —{' '}
                     <span className="text-brand-primary font-mono">{form.anticipo_pct}%</span>
                   </label>
@@ -227,7 +220,7 @@ export default function ConfigPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Días de entrega</label>
+                  <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Días de entrega</label>
                   <input
                     type="number"
                     min={1}
@@ -237,7 +230,7 @@ export default function ConfigPage() {
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-[10px] font-semibold text-brand-muted mb-1.5 uppercase tracking-wide">Condiciones de pago</label>
+                  <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Condiciones de pago</label>
                   <input
                     type="text"
                     value={form.condiciones_pago}
@@ -250,7 +243,7 @@ export default function ConfigPage() {
 
             {/* Logo de empresa */}
             <div className="glass rounded-xl border border-brand-border p-6">
-              <h2 className="text-[9px] font-semibold text-brand-muted/50 uppercase tracking-widest mb-5">Logo de empresa</h2>
+              <h2 className="text-[9px] font-semibold text-brand-text-secondary uppercase tracking-widest mb-5">Logo de empresa</h2>
               <div className="flex items-center gap-5">
                 <div className="w-24 h-24 rounded-xl border border-brand-border bg-brand-surface flex items-center justify-center overflow-hidden shrink-0">
                   {logoData?.logo_b64 ? (
@@ -260,11 +253,11 @@ export default function ConfigPage() {
                       className="w-full h-full object-contain p-1"
                     />
                   ) : (
-                    <span className="text-xs text-brand-muted/40 text-center px-2">Sin logo</span>
+                    <span className="text-xs text-brand-text-secondary text-center px-2">Sin logo</span>
                   )}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm text-brand-muted mb-3">
+                  <p className="text-sm text-brand-text-secondary mb-3">
                     Aparece en los PDFs de cotización. Formatos: JPEG o PNG. Máximo 2 MB.
                   </p>
                   <div className="flex items-center gap-3">
@@ -282,7 +275,7 @@ export default function ConfigPage() {
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       disabled={logoMut.isPending}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg border border-brand-border text-sm text-brand-muted hover:text-brand-text hover:border-brand-primary/50 disabled:opacity-60 transition-colors cursor-pointer"
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg border border-brand-border text-sm text-brand-text-secondary hover:text-brand-text hover:border-brand-primary/50 disabled:opacity-60 transition-colors cursor-pointer"
                     >
                       <ImageUp className="w-4 h-4" />
                       {logoMut.isPending ? 'Subiendo…' : 'Cambiar logo'}
@@ -291,13 +284,13 @@ export default function ConfigPage() {
                       <motion.p
                         initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="text-sm text-emerald-400 font-medium"
+                        className="text-sm text-brand-primary font-medium"
                       >
                         ✓ Logo actualizado
                       </motion.p>
                     )}
                     {logoMut.isError && (
-                      <p className="text-xs text-red-400">
+                      <p className="text-xs text-brand-danger">
                         {(logoMut.error as any)?.response?.data?.detail ?? 'Error al subir logo'}
                       </p>
                     )}
@@ -308,26 +301,26 @@ export default function ConfigPage() {
 
             {/* Acceso rápido */}
             <div className="glass rounded-xl border border-brand-border p-6">
-              <h2 className="text-[9px] font-semibold text-brand-muted/50 uppercase tracking-widest mb-5">Acceso rápido</h2>
+              <h2 className="text-[9px] font-semibold text-brand-text-secondary uppercase tracking-widest mb-5">Acceso rápido</h2>
               <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
                 <div className="bg-white p-3 rounded-xl shrink-0">
                   <QRCodeSVG value="https://costo360.vercel.app" size={120} fgColor="#0C1B3A" bgColor="#ffffff" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-brand-text mb-1 font-mono">costo360.vercel.app</p>
-                  <p className="text-xs text-brand-muted mb-4">Comparte este código QR con los operarios para que abran la app desde su celular sin escribir la URL.</p>
+                  <p className="text-xs text-brand-text-secondary mb-4">Comparte este código QR con los operarios para que abran la app desde su celular sin escribir la URL.</p>
                   <div className="space-y-2.5">
                     <div className="flex items-start gap-2.5">
-                      <span className="text-[10px] font-bold text-brand-gold bg-brand-gold/10 border border-brand-gold/20 rounded px-1.5 py-0.5 shrink-0 mt-0.5">Android</span>
-                      <span className="text-xs text-brand-muted">Chrome → menú <span className="font-mono">⋮</span> → «Agregar a pantalla de inicio»</span>
+                      <span className="text-[10px] font-bold text-brand-gold-text bg-brand-gold/10 border border-brand-gold/20 rounded px-1.5 py-0.5 shrink-0 mt-0.5">Android</span>
+                      <span className="text-xs text-brand-text-secondary">Chrome → menú <span className="font-mono">⋮</span> → «Agregar a pantalla de inicio»</span>
                     </div>
                     <div className="flex items-start gap-2.5">
-                      <span className="text-[10px] font-bold text-brand-gold bg-brand-gold/10 border border-brand-gold/20 rounded px-1.5 py-0.5 shrink-0 mt-0.5">iPhone</span>
-                      <span className="text-xs text-brand-muted">Safari → botón compartir <span className="font-mono">⎙</span> → «Añadir a la pantalla de inicio»</span>
+                      <span className="text-[10px] font-bold text-brand-gold-text bg-brand-gold/10 border border-brand-gold/20 rounded px-1.5 py-0.5 shrink-0 mt-0.5">iPhone</span>
+                      <span className="text-xs text-brand-text-secondary">Safari → botón compartir <span className="font-mono">⎙</span> → «Añadir a la pantalla de inicio»</span>
                     </div>
                     <div className="flex items-start gap-2.5">
-                      <span className="text-[10px] font-bold text-brand-gold bg-brand-gold/10 border border-brand-gold/20 rounded px-1.5 py-0.5 shrink-0 mt-0.5">PC</span>
-                      <span className="text-xs text-brand-muted">Chrome → icono <span className="font-mono">⊕</span> en la barra de dirección → «Instalar»</span>
+                      <span className="text-[10px] font-bold text-brand-gold-text bg-brand-gold/10 border border-brand-gold/20 rounded px-1.5 py-0.5 shrink-0 mt-0.5">PC</span>
+                      <span className="text-xs text-brand-text-secondary">Chrome → icono <span className="font-mono">⊕</span> en la barra de dirección → «Instalar»</span>
                     </div>
                   </div>
                 </div>
@@ -340,7 +333,7 @@ export default function ConfigPage() {
                 <motion.p
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="text-sm text-emerald-400 font-medium"
+                  className="text-sm text-brand-primary font-medium"
                 >
                   ✓ Guardado correctamente
                 </motion.p>

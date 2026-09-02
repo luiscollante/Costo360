@@ -212,6 +212,9 @@ rowcount), `verificar_dispositivo` (409 `SESSION_SUPERSEDED` / `SESSION_PENDING`
 
 ## 6. Identidad de marca / estándar visual
 
+*Actualizado 2026-09-01 con los Ciclos 1 y 2 del rediseño visual + la ronda de revisión en vivo
+del fundador (rama `goal/rediseno-visual`, pendiente de fusionar a `master`).*
+
 Tokens reales extraídos de `web/src/index.css` (verificado en código):
 
 | Token | Valor | Uso |
@@ -221,17 +224,85 @@ Tokens reales extraídos de `web/src/index.css` (verificado en código):
 | `--color-brand-border` | `#E5D5BA` | Bordes |
 | `--color-brand-primary` | `#15612E` | Verde principal (marca) |
 | `--color-brand-primary-light` | `#1A7A3A` | Verde hover/acento |
-| `--color-brand-text` | `#4A4A4A` | Texto secundario |
+| `--color-brand-text` | `#4A4A4A` | Texto (cuerpo) |
+| `--color-brand-text-secondary` | `#5F5F5F` | Texto secundario y micro-labels 11px/600 (≈5,3:1 sobre crema — WCAG AA). **Prohibido bajarle opacidad.** |
+| `--color-brand-text-tertiary` | `#6E6E6E` | Solo texto ≥18px e iconos no esenciales (≈4,2:1) |
 | `--color-brand-text-dark` | `#1A1A1A` | Texto principal |
 | `--color-brand-muted` | `#8A8A8A` | Texto deshabilitado/placeholder |
-| `--color-brand-gold` | `#D4AF37` | Dorado — acentos premium |
-| `--color-brand-gold-light` | `#F0C447` | Dorado claro |
+| `--color-brand-gold` | `#D4AF37` | Dorado — **solo** relleno, bordes, iconos, trazos de gráfico. **NUNCA texto** sobre crema ni sobre `gold/xx` (≈1,6-1,9:1). |
+| `--color-brand-gold-text` | `#6E5410` | Dorado oscuro para TEXTO (5,9:1 sobre crema — WCAG AA). Es el que va en los números de acento de Cotización/Express/AIU/Nesting (barrido en la ronda de revisión, 2026-09-01). |
+| `--color-brand-gold-light` | `#F0C447` | Dorado claro (solo sobre fondos oscuros) |
+| `--color-brand-success` / `-soft` | `#15612E` / `#E7F1E9` | Estado OK — texto vs. relleno de badge |
+| `--color-brand-warning-text` / `--color-brand-warning` / `-soft` | `#6E5410` / `#B4820E` / `#F5EBD5` | Advertencia — el tono medio `#B4820E` **solo** para relleno/borde, nunca texto |
+| `--color-brand-danger` / `-soft` | `#B23B3B` / `#F6E5E5` | Error — texto vs. relleno de badge |
+| `--color-brand-emerald` / `-deep` | `#00472B` / `#00311D` | Verde esmeralda **del isotipo real** (muestreado de `assets/marca/isotipo.png`) — barra lateral |
 
-- **Tipografías:** Plus Jakarta Sans (general) + JetBrains Mono (datos numéricos).
+- **Regla de contraste:** prohibido aplicar opacidad/alfa `<100%` a nodos de **texto** — usar
+  siempre el token sólido. Foco visible global: `:focus-visible { outline: 2px solid
+  var(--color-brand-primary); outline-offset: 2px }`.
+- **Tipografías:** Plus Jakarta Sans (general) + JetBrains Mono (datos numéricos). "Inter" ya
+  NO se usa (se quitó en el Ciclo 1).
 - **Modo de color:** light-mode estricto (`html{color-scheme:light}`) — la app NO tiene ni debe
-  tener modo oscuro. Cualquier mockup en oscuro no representa la marca real.
-- **Efecto glass:** `rgba(255,255,255,.6)` blur(20px), borde `rgba(255,255,255,.4)`, sombra
-  `rgba(74,74,74,.05)`. Fondo con textura de ruido sutil (PNG, 3% opacidad).
+  tener modo oscuro. El toggle sol/luna, `useTheme`, `data-theme`/`cm-theme` y el `<script>` de
+  tema en `index.html` se **eliminaron** en el Ciclo 1. `@media (prefers-reduced-motion)` +
+  `<MotionConfig reducedMotion="user">` respetan la preferencia del sistema.
+- **Barra lateral (`.glass-emerald`):** verde esmeralda del isotipo, glassmorphism —
+  `linear-gradient(180deg, rgba(0,65,40,.68), rgba(0,44,27,.82))` + halo superior claro,
+  `backdrop-filter: blur(26px) saturate(160%)`, borde `rgba(255,255,255,.16)`, highlight
+  interior + sombra lateral. Detrás va `.sidebar-aurora` (capa `fixed` con dos manchas
+  verde-menta muy difuminadas y **estáticas** — sin animación, para no consumir GPU) que el
+  `backdrop-filter` convierte en luz difusa; es lo que hace que lea como cristal y no como
+  pintura plana. Sin brillo diagonal (se probó y el fundador lo rechazó). Texto en **colores
+  sólidos**: inactivo crema `#F5E8D2`, activo `#FFFFFF`, encabezados de grupo `#E4D8BF`.
+  Indicador de ítem activo: barra izquierda dorada + `font-medium` + fondo `rgba(255,255,255,.14)`.
+  Foco de teclado: outline color crema (`.glass-emerald :focus-visible`).
+- **Orden del menú lateral (reorganizado por área del negocio, decisión del fundador
+  2026-09-01):** Dashboard suelto arriba (solo roles con acceso a BI) · grupo **Cotizaciones**
+  (Nueva Cotización, Express, Cotización AIU, Historial) · grupo **Taller** (Catálogo,
+  Inventario, Retales, Nesting) · grupo **Ajustes** (Parámetros, Configuración; ambos ocultos
+  al operativo) · separador · **Panel Admin** (solo `puede_gestionar_usuarios`). El operativo
+  ve solo Cotizaciones + Taller. `Sidebar.tsx` factoriza el enlace en `NavRow`.
+- **Shell de la app (`AppLayout`):** contenedor `flex h-screen overflow-hidden`; **solo
+  `<main>` scrollea** (`overflow-auto`) y la barra lateral queda fija. (Antes era
+  `min-h-screen` y en páginas largas la barra se iba con el scroll — bug corregido en la
+  ronda de revisión.)
+- **Efecto glass (paneles claros, `.glass`):** `rgba(255,255,255,.6)` blur(20px), borde
+  `rgba(255,255,255,.4)`, sombra `rgba(74,74,74,.05)`. Fondo con textura de ruido sutil (PNG,
+  3% opacidad, `z-index:1` — no tapa modales ni la barra).
+- **Logo:** arte real del fundador. `web/public/logo.png` (wordmark blanco) sobre fondos
+  oscuros (barra esmeralda); `web/public/logo_versiones_oscuras.png` (wordmark de tinta oscura
+  + isotipo verde) sobre fondos claros (login, encabezado, restablecer). Componente
+  `web/src/components/Logo.tsx` (`variant="light"|"dark"`). Favicon + apple-touch-icon =
+  isotipo. Fuentes de marca sin optimizar en `assets/marca/`. Pendiente: un SVG limpio
+  multi-variante (el vectorizado que entregó el fundador salía con el isotipo en negro).
+- **Librería de primitivos (`web/src/components/ui/`, Ciclo 2 R3):** 14 componentes que fijan
+  el estándar visual y de accesibilidad — `Card`, `Badge`/`StatusBadge`, `Button`,
+  `IconButton` (`aria-label` obligatorio por tipo), `EmptyState`, `PageHeader` (kicker + regla
+  verde + `<h1 tabindex=-1>`, fija `document.title`), `Field`/`FormSection`/`SelectField`/
+  `DateField` (envuelven el control nativo con `<label htmlFor>` + error `role="alert"`),
+  `SegmentedControl` (`tabs` con roving tabindex / `buttons` con `radiogroup`; indicador NO
+  cromático: subrayado + fondo + sombra), `Dialog` (portal a `body`, `inert` en `#root`,
+  trampa de foco, Escape, devuelve el foco; `role="alertdialog"` para avisos), `DataTable`
+  (`<caption class=sr-only>` + `<th scope>`), `AsyncBoundary` (loading `role="status"` / error
+  `role="alert"` + reintentar). Las 13 pantallas usan `<PageHeader>` (el mapa `TITULOS` de
+  `AppLayout` se eliminó). Porcentajes vía `formatPct` (escala 0–100, `Intl` es-CO).
+- **Selector de material (`MaterialCombobox`) + catálogo por taller (Ciclo 2 R10):** el picker
+  de referencia es un `<Dialog>` de marca (el dropdown se recortaba dentro de la tarjeta).
+  Opción "Otro" → campo de texto + modal decorativo "¿Guardar «X» a $Y/m² en tu catálogo?".
+  Pantalla `/materiales` ("Catálogo de materiales", **visible para operativo y admin** — se
+  quitó el `RoleRoute`). Tabla de 3 columnas (Categoría · Referencia · Precio/m²; se quitaron
+  "Origen" y "Acciones" por decisión del fundador). **Clic en cualquier parte de una fila →
+  abre el mismo modal que "Agregar material", precargado** (categoría/nombre/precio, los tres
+  editables); el modal ofrece "Quitar" para los materiales personalizados.
+- **Catálogo — aislamiento por taller (backend, migraciones `0005` + `0006`, ambas aplicadas):**
+  `catalogo_materiales.empresa_id` (`0005`) → `NULL` = fila base de Costo360, con valor = fila
+  propia del taller; 4 políticas RLS (base inmutable, propio aislado por empresa). `0006`
+  añade `base_id` para **copy-on-write**: editar una fila base NO la modifica — crea (o
+  actualiza) una fila propia del taller que la "sombrea"; `GET` devuelve las propias + las
+  base no sombreadas; borrar el override restaura la base. `POST`/`PUT`/`DELETE` de
+  `routers/materiales.py` bajo `db_rls` con `get_current_user` (cualquier usuario del taller
+  edita; RLS impide tocar otro taller). El dashboard usa `date.today()` del backend como "hoy"
+  (no `CURRENT_DATE` de Postgres, que corre en UTC) para el filtro de "mes en curso".
 
 ---
 
@@ -341,6 +412,10 @@ el cuaderno Notion "Costo360 — Base de Conocimiento Central".
 | 2026-08-26 | Harness completado; roadmap de 5 objetivos formalizado (`docs/ROADMAP_COSTO360.md`) |
 | 2026-08-27 | Ciclo `/goal` rediseñado a 7 fases (0-6); `codebase-memory-mcp` instalado |
 | 2026-08-27 | **Fase 2.A ejecutada** (rama `goal/fase-2a-multitenant-auth`): backend a Supabase Auth (JWKS ES256), `db_rls`/`db_service`, self-test de RLS al arrancar, aprovisionamiento por invitación, sesión única (Regla 5), migraciones `0003`/`0004`. Decisiones: backend long-lived (no serverless), acceso 100% por invitación, Google OAuth para después |
+| 2026-08-27 | Fase 2.A fusionada a `master` |
+| 2026-08-30 | **Rediseño visual — Ciclo 1** (rama `goal/rediseno-visual`): tokens de contraste AA, modo oscuro eliminado, barra lateral esmeralda, logo real, reconstrucción del flujo de carga inicial (`store/auth.ts` con estados) + `RoleRoute`, `empresa_nombre` en `/api/auth/me` |
+| 2026-08-31 | **Rediseño visual — Ciclo 2**: 14 primitivos `ui/`, 13 pantallas a `<PageHeader>`, catálogo de materiales por taller (migración `0005`). Fase 5: Code Reviewer + Accessibility Auditor, ambos "aprueba con cambios" |
+| 2026-09-01 | **Ronda de revisión en vivo del fundador**: bug del sidebar que scrolleaba (shell `h-screen overflow-hidden`); CORS del backend a cualquier puerto de localhost; dashboard usa `date.today()` del backend (no `CURRENT_DATE` UTC); glassmorphism del sidebar sin brillo diagonal + `.sidebar-aurora`; catálogo editable vía modal precargado + copy-on-write (migración `0006` `base_id`), visible para operativo; Express "Calcular precio" (placeholder confuso); Historial con actualización optimista; token `--color-brand-gold-text` `#6E5410` para números de acento; menú lateral reorganizado por área del negocio |
 
 ---
 

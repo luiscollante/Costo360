@@ -6,7 +6,6 @@ from PIL import Image
 
 from backend.db.client import db_rls
 from backend.db.config_helpers import cfg_get, cfg_set
-from backend.middleware.auth import get_current_user
 from backend.db.deps import require_dashboard, verificar_dispositivo
 from backend.services.audit_service import log_accion
 
@@ -31,8 +30,9 @@ _EMPRESA_DEFAULTS = {
 
 
 @router.get("/empresa")
-def get_empresa(conn=Depends(db_rls), usuario=Depends(get_current_user)):
-    """Configuración de empresa. Fusiona con defaults si aún no se ha configurado."""
+def get_empresa(conn=Depends(db_rls), usuario=Depends(require_dashboard)):
+    """Configuración de empresa. Fusiona con defaults si aún no se ha configurado.
+    Requiere acceso de Admin/Gerencia (el rol operativo no ve Configuración)."""
     saved = cfg_get(conn, usuario["empresa_id"], "empresa") or {}
     return {**_EMPRESA_DEFAULTS, **saved}
 
@@ -52,8 +52,9 @@ def set_empresa(
 
 
 @router.get("/logo")
-def get_logo(conn=Depends(db_rls), usuario=Depends(get_current_user)):
-    """Devuelve el logo de empresa en base64."""
+def get_logo(conn=Depends(db_rls), usuario=Depends(require_dashboard)):
+    """Devuelve el logo de empresa en base64. Requiere acceso de Admin/Gerencia
+    (la generación de PDF lee el logo de la BD directamente, no por este endpoint)."""
     emp = usuario["empresa_id"]
     logo_b64 = cfg_get(conn, emp, "empresa_logo_b64")
     content_type = cfg_get(conn, emp, "empresa_logo_content_type") or "image/jpeg"

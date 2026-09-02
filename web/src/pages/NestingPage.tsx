@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Grid, Plus, X, Download, AlertTriangle, Minus, Maximize2, PackagePlus, Check } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import AppLayout from '@/components/AppLayout'
 import { generarNesting } from '@/api/nesting'
 import type { NestingResult } from '@/api/nesting'
@@ -35,7 +36,7 @@ function makePieza(): PiezaLocal {
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <label className="block text-[10px] font-semibold tracking-[0.18em] uppercase text-brand-muted mb-1.5">
+    <label className="block text-[10px] font-semibold tracking-[0.18em] uppercase text-brand-text-secondary mb-1.5">
       {children}
     </label>
   )
@@ -77,7 +78,7 @@ function MonoInput({
 
   const inputClass = [
     'w-full bg-brand-input border border-brand-border rounded px-3 py-2.5',
-    'font-mono text-sm text-brand-text placeholder-brand-muted/40',
+    'font-mono text-sm text-brand-text placeholder:text-brand-text-secondary',
     'outline-none transition-all duration-200',
     'focus:border-brand-primary focus:shadow-[0_0_0_1px_#1F6F5440,0_0_12px_#1F6F5418]',
     'group-hover:border-brand-border/80',
@@ -104,7 +105,7 @@ function MonoInput({
           className={inputClass}
         />
         {suffix && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-brand-muted font-mono pointer-events-none">
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-brand-text-secondary font-mono pointer-events-none">
             {suffix}
           </span>
         )}
@@ -124,7 +125,7 @@ function MonoInput({
         className={inputClass}
       />
       {suffix && (
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-brand-muted font-mono pointer-events-none">
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-brand-text-secondary font-mono pointer-events-none">
           {suffix}
         </span>
       )}
@@ -149,7 +150,7 @@ function TextInput({
       placeholder={placeholder}
       className={[
         'w-full bg-brand-input border border-brand-border rounded px-3 py-2.5',
-        'text-sm text-brand-text placeholder-brand-muted/40',
+        'text-sm text-brand-text placeholder:text-brand-text-secondary',
         'outline-none transition-all duration-200',
         'focus:border-brand-primary focus:shadow-[0_0_0_1px_#1F6F5440]',
       ].join(' ')}
@@ -170,9 +171,9 @@ function MetricCard({
   color?: CardColor
 }) {
   const s: Record<CardColor, { border: string; text: string; line: string; bg: string }> = {
-    blue:    { border: 'border-brand-primary/25',  text: 'text-emerald-400', line: 'via-brand-primary/60',   bg: 'bg-brand-primary/[0.04] group-hover:bg-brand-primary/[0.07]'   },
+    blue:    { border: 'border-brand-primary/25',  text: 'text-brand-primary', line: 'via-brand-primary/60',   bg: 'bg-brand-primary/[0.04] group-hover:bg-brand-primary/[0.07]'   },
     gold:    { border: 'border-brand-gold/25',  text: 'text-brand-gold-light', line: 'via-brand-gold/60',   bg: 'bg-brand-gold/[0.04] group-hover:bg-brand-gold/[0.07]'   },
-    emerald: { border: 'border-emerald-500/25', text: 'text-emerald-400',      line: 'via-emerald-500/60',  bg: 'bg-emerald-500/[0.04] group-hover:bg-emerald-500/[0.07]' },
+    emerald: { border: 'border-brand-primary/25', text: 'text-brand-primary',      line: 'via-brand-primary/60',  bg: 'bg-brand-primary/[0.04] group-hover:bg-brand-primary/[0.07]' },
     default: { border: 'border-brand-border/60',text: 'text-brand-text',       line: 'via-brand-border/60', bg: '' },
   }
   const c = s[color]
@@ -180,9 +181,9 @@ function MetricCard({
     <div className={`glass rounded-xl border ${c.border} p-4 relative overflow-hidden group transition-all duration-300`}>
       <div className={`absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent ${c.line} to-transparent`} />
       {c.bg && <div className={`absolute inset-0 ${c.bg} transition-colors duration-300 pointer-events-none`} />}
-      <p className="text-[9px] uppercase tracking-[0.18em] text-brand-muted/60 font-semibold mb-1.5">{label}</p>
+      <p className="text-[9px] uppercase tracking-[0.18em] text-brand-text-secondary font-semibold mb-1.5">{label}</p>
       <p className={`font-mono text-2xl font-bold leading-none ${c.text}`}>{value}</p>
-      {sub && <p className="text-[10px] text-brand-muted/50 font-mono mt-1">{sub}</p>}
+      {sub && <p className="text-[10px] text-brand-text-secondary font-mono mt-1">{sub}</p>}
     </div>
   )
 }
@@ -202,6 +203,7 @@ function FormPanel({
   setCategoria,
   materialRef,
   setMaterialRef,
+  materialPrecioM2,
   setMaterialPrecioM2,
 }: {
   laminaLargo: string
@@ -216,6 +218,7 @@ function FormPanel({
   setCategoria: (v: string) => void
   materialRef: string
   setMaterialRef: (v: string) => void
+  materialPrecioM2: number
   setMaterialPrecioM2: (v: number) => void
 }) {
   const largo = parseFloat(laminaLargo) || 0
@@ -253,11 +256,11 @@ function FormPanel({
       <div className="glass rounded-xl border border-brand-border/60 p-5">
         <div className="flex items-center gap-2 mb-1">
           <div className="w-0.5 h-4 bg-brand-primary rounded-full" />
-          <h3 className="text-xs font-semibold tracking-[0.15em] uppercase text-brand-muted">
+          <h3 className="text-xs font-semibold tracking-[0.15em] uppercase text-brand-text-secondary">
             Material
           </h3>
         </div>
-        <p className="text-[10px] text-brand-muted/50 mb-4 pl-2.5">Para poder guardar el sobrante en el Banco de Retales</p>
+        <p className="text-[10px] text-brand-text-secondary mb-4 pl-2.5">Para poder guardar el sobrante en el Banco de Retales</p>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <FieldLabel>Categoría</FieldLabel>
@@ -274,6 +277,7 @@ function FormPanel({
             <MaterialCombobox
               categoria={categoria}
               value={materialRef}
+              precioM2Actual={materialPrecioM2}
               onChange={(ref, precioM2) => { setMaterialRef(ref); setMaterialPrecioM2(precioM2) }}
             />
           </div>
@@ -284,11 +288,11 @@ function FormPanel({
       <div className="glass rounded-xl border border-brand-border/60 p-5">
         <div className="flex items-center gap-2 mb-1">
           <div className="w-0.5 h-4 bg-brand-primary rounded-full" />
-          <h3 className="text-xs font-semibold tracking-[0.15em] uppercase text-brand-muted">
+          <h3 className="text-xs font-semibold tracking-[0.15em] uppercase text-brand-text-secondary">
             Lámina
           </h3>
         </div>
-        <p className="text-[10px] text-brand-muted/50 mb-4 pl-2.5">La plancha de mármol disponible para cortar</p>
+        <p className="text-[10px] text-brand-text-secondary mb-4 pl-2.5">La plancha de mármol disponible para cortar</p>
 
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
@@ -314,10 +318,10 @@ function FormPanel({
         </div>
 
         <div className="flex items-center justify-between px-4 py-2.5 bg-brand-input rounded border border-brand-border/40">
-          <span className="text-[9px] uppercase tracking-[0.18em] text-brand-muted font-semibold">
+          <span className="text-[9px] uppercase tracking-[0.18em] text-brand-text-secondary font-semibold">
             Área lámina
           </span>
-          <span className="font-mono text-sm font-bold text-brand-gold">
+          <span className="font-mono text-sm font-bold text-brand-gold-text">
             {formatNum(areaLamina)} m²
           </span>
         </div>
@@ -327,14 +331,14 @@ function FormPanel({
       <div className="glass rounded-xl border border-brand-border/60 p-5">
         <div className="flex items-center gap-2 mb-1">
           <div className="w-0.5 h-4 bg-brand-primary rounded-full" />
-          <h3 className="text-xs font-semibold tracking-[0.15em] uppercase text-brand-muted">
+          <h3 className="text-xs font-semibold tracking-[0.15em] uppercase text-brand-text-secondary">
             Piezas
           </h3>
-          <span className="ml-auto font-mono text-[10px] text-brand-muted/40">
+          <span className="ml-auto font-mono text-[10px] text-brand-text-secondary">
             {piezas.length} pieza{piezas.length !== 1 ? 's' : ''}
           </span>
         </div>
-        <p className="text-[10px] text-brand-muted/50 mb-4 pl-2.5">Los cortes que necesitas obtener de la plancha</p>
+        <p className="text-[10px] text-brand-text-secondary mb-4 pl-2.5">Los cortes que necesitas obtener de la plancha</p>
 
         <AnimatePresence initial={false}>
           {piezas.length === 0 ? (
@@ -342,7 +346,7 @@ function FormPanel({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="text-center text-xs text-brand-muted/40 py-6"
+              className="text-center text-xs text-brand-text-secondary py-6"
             >
               Sin piezas — agrega al menos una
             </motion.p>
@@ -362,7 +366,7 @@ function FormPanel({
                     className="relative bg-brand-input rounded-lg border border-brand-border/50 p-4"
                   >
                     {/* index badge */}
-                    <span className="absolute top-3 left-3.5 font-mono text-[9px] text-brand-muted/30 tracking-widest">
+                    <span className="absolute top-3 left-3.5 font-mono text-[9px] text-brand-text-secondary tracking-widest">
                       P{String(idx + 1).padStart(2, '0')}
                     </span>
 
@@ -370,7 +374,7 @@ function FormPanel({
                     <button
                       type="button"
                       onClick={() => removePieza(pieza.uid)}
-                      className="absolute top-2.5 right-2.5 p-1 rounded text-brand-muted/30 hover:text-red-400/70 hover:bg-red-500/10 transition-all"
+                      className="absolute top-2.5 right-2.5 p-1 rounded text-brand-text-secondary hover:text-brand-danger/70 hover:bg-brand-danger/10 transition-all"
                       aria-label="Eliminar pieza"
                     >
                       <X size={13} />
@@ -416,18 +420,18 @@ function FormPanel({
                       </div>
                       {/* area badge */}
                       <div className="flex flex-col items-end gap-0.5 pb-0.5">
-                        <span className="text-[9px] uppercase tracking-widest text-brand-muted/40">
+                        <span className="text-[9px] uppercase tracking-widest text-brand-text-secondary">
                           Área
                         </span>
                         <span
                           className={[
                             'font-mono text-sm font-bold',
-                            area > 0 ? 'text-emerald-400' : 'text-brand-muted/30',
+                            area > 0 ? 'text-brand-primary' : 'text-brand-text-secondary',
                           ].join(' ')}
                         >
                           {formatNum(area)}
                         </span>
-                        <span className="text-[9px] text-brand-muted/40 font-mono">m²</span>
+                        <span className="text-[9px] text-brand-text-secondary font-mono">m²</span>
                       </div>
                     </div>
                   </motion.div>
@@ -441,7 +445,7 @@ function FormPanel({
         <button
           type="button"
           onClick={addPieza}
-          className="w-full py-2.5 rounded-lg border border-dashed border-brand-border/50 text-xs text-brand-muted hover:text-emerald-400 hover:border-brand-primary/40 transition-all duration-200 flex items-center justify-center gap-2"
+          className="w-full py-2.5 rounded-lg border border-dashed border-brand-border/50 text-xs text-brand-text-secondary hover:text-brand-primary hover:border-brand-primary/40 transition-all duration-200 flex items-center justify-center gap-2"
         >
           <Plus size={13} />
           Agregar pieza
@@ -450,12 +454,12 @@ function FormPanel({
         {/* Total area piezas */}
         {piezas.length > 0 && (
           <div className="mt-4 flex items-center justify-between px-4 py-2.5 bg-brand-input rounded border border-brand-border/40">
-            <span className="text-[9px] uppercase tracking-[0.18em] text-brand-muted font-semibold">
+            <span className="text-[9px] uppercase tracking-[0.18em] text-brand-text-secondary font-semibold">
               Total piezas
             </span>
             <span className="font-mono text-sm font-bold text-brand-text">
               {formatNum(totalAreaPiezas)}{' '}
-              <span className="text-xs text-brand-muted font-normal">m²</span>
+              <span className="text-xs text-brand-text-secondary font-normal">m²</span>
             </span>
           </div>
         )}
@@ -476,10 +480,9 @@ function FormPanel({
       >
         {loading ? (
           <span className="flex items-center justify-center gap-3">
-            <motion.span
-              animate={{ rotate: 360 }}
-              transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
-              className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
+            <span
+              className="inline-block w-4 h-4 animate-spin border-2 border-white/30 border-t-white rounded-full"
+              aria-hidden="true"
             />
             Generando…
           </span>
@@ -552,11 +555,11 @@ function ResultPanel({
     return (
       <div className="glass rounded-xl border border-brand-border/60 flex flex-col items-center justify-center min-h-[480px] gap-4">
         <div className="w-16 h-16 rounded-2xl bg-brand-surface/80 border border-brand-border flex items-center justify-center">
-          <Grid size={28} className="text-brand-muted/30" />
+          <Grid size={28} className="text-brand-text-secondary" />
         </div>
         <div className="text-center">
-          <p className="text-sm font-semibold text-brand-muted/50">El plano aparecerá aquí</p>
-          <p className="text-xs text-brand-muted/30 mt-1">
+          <p className="text-sm font-semibold text-brand-text-secondary">El plano aparecerá aquí</p>
+          <p className="text-xs text-brand-text-secondary mt-1">
             Completa el formulario y genera el plano
           </p>
         </div>
@@ -586,7 +589,7 @@ function ResultPanel({
               <p className="text-sm font-medium text-brand-text">
                 {formatNum(areaLibre, 2)} m² de sobrante en {categoria}{materialRef ? ` — ${materialRef}` : ''}
               </p>
-              <p className="text-[11px] text-brand-muted/60">Guárdalo en el Banco de Retales para usarlo en una próxima cotización</p>
+              <p className="text-[11px] text-brand-text-secondary">Guárdalo en el Banco de Retales para usarlo en una próxima cotización</p>
             </div>
           </div>
           <button
@@ -600,7 +603,7 @@ function ResultPanel({
         </div>
       )}
       {errorGuardar && (
-        <p className="text-xs text-red-400 -mt-2">{errorGuardar}</p>
+        <p className="text-xs text-brand-danger -mt-2">{errorGuardar}</p>
       )}
 
       {/* Metrics row — color-coded */}
@@ -638,18 +641,18 @@ function ResultPanel({
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="flex flex-col gap-2 px-4 py-3.5 rounded-lg border border-red-500/30 bg-red-500/5"
+            className="flex flex-col gap-2 px-4 py-3.5 rounded-lg border border-brand-danger/30 bg-brand-danger/5"
           >
             <div className="flex items-center gap-2">
-              <AlertTriangle size={14} className="text-red-400 shrink-0" />
-              <span className="text-sm font-semibold text-red-400">
+              <AlertTriangle size={14} className="text-brand-danger shrink-0" />
+              <span className="text-sm font-semibold text-brand-danger">
                 {result.piezas_fuera.length} pieza
                 {result.piezas_fuera.length !== 1 ? 's' : ''} no caben en la lámina
               </span>
             </div>
             <ul className="pl-5 space-y-0.5">
               {result.piezas_fuera.map((nombre) => (
-                <li key={nombre} className="text-xs text-red-400/70 font-mono">
+                <li key={nombre} className="text-xs text-brand-danger/70 font-mono">
                   {nombre}
                 </li>
               ))}
@@ -662,7 +665,7 @@ function ResultPanel({
       <div className="rounded-xl border border-brand-primary/15 bg-brand-input overflow-hidden">
         {/* Toolbar */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-brand-border/40">
-          <span className="text-[9px] tracking-[0.2em] uppercase text-brand-muted font-semibold">
+          <span className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold">
             Plano de corte
           </span>
           <div className="flex items-center gap-2">
@@ -671,7 +674,7 @@ function ResultPanel({
               <button
                 type="button"
                 onClick={() => setZoom((z) => Math.max(MIN_ZOOM, parseFloat((z - ZOOM_STEP).toFixed(1))))}
-                className="w-6 h-6 flex items-center justify-center rounded border border-brand-border/60 text-brand-muted hover:text-brand-text hover:border-brand-primary/40 transition-all"
+                className="w-6 h-6 flex items-center justify-center rounded border border-brand-border/60 text-brand-text-secondary hover:text-brand-text hover:border-brand-primary/40 transition-all"
                 aria-label="Reducir zoom"
               >
                 <Minus size={11} />
@@ -679,7 +682,7 @@ function ResultPanel({
               <button
                 type="button"
                 onClick={() => setZoom(1)}
-                className="px-2 h-6 font-mono text-[10px] rounded border border-brand-border/60 text-brand-muted hover:text-brand-text hover:border-brand-primary/40 transition-all min-w-[44px] text-center"
+                className="px-2 h-6 font-mono text-[10px] rounded border border-brand-border/60 text-brand-text-secondary hover:text-brand-text hover:border-brand-primary/40 transition-all min-w-[44px] text-center"
                 aria-label="Restablecer zoom"
               >
                 {Math.round(zoom * 100)}%
@@ -687,7 +690,7 @@ function ResultPanel({
               <button
                 type="button"
                 onClick={() => setZoom((z) => Math.min(MAX_ZOOM, parseFloat((z + ZOOM_STEP).toFixed(1))))}
-                className="w-6 h-6 flex items-center justify-center rounded border border-brand-border/60 text-brand-muted hover:text-brand-text hover:border-brand-primary/40 transition-all"
+                className="w-6 h-6 flex items-center justify-center rounded border border-brand-border/60 text-brand-text-secondary hover:text-brand-text hover:border-brand-primary/40 transition-all"
                 aria-label="Aumentar zoom"
               >
                 <Plus size={11} />
@@ -695,7 +698,7 @@ function ResultPanel({
               <button
                 type="button"
                 onClick={() => setZoom(1)}
-                className="w-6 h-6 flex items-center justify-center rounded border border-brand-border/60 text-brand-muted hover:text-brand-text hover:border-brand-primary/40 transition-all"
+                className="w-6 h-6 flex items-center justify-center rounded border border-brand-border/60 text-brand-text-secondary hover:text-brand-text hover:border-brand-primary/40 transition-all"
                 aria-label="Ajustar al ancho"
               >
                 <Maximize2 size={11} />
@@ -773,19 +776,11 @@ export default function NestingPage() {
     <AppLayout>
       <div className="max-w-[1400px] mx-auto py-6 px-2">
 
-        {/* Page header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-1 h-6 bg-brand-primary rounded-full" />
-            <h1 className="text-lg font-bold text-brand-text tracking-tight">
-              Nesting — Plano de corte
-            </h1>
-          </div>
-          <p className="text-xs text-brand-muted ml-4 pl-0.5">
-            Optimiza el aprovechamiento de la lámina distribuyendo las piezas automáticamente
-          </p>
-          <div className="mt-4 h-px bg-gradient-to-r from-brand-primary/40 via-brand-border to-transparent" />
-        </div>
+        <PageHeader
+          kicker="Taller"
+          title="Nesting"
+          subtitle="Optimiza el aprovechamiento de la lámina distribuyendo las piezas automáticamente"
+        />
 
         {/* Error banner */}
         <AnimatePresence>
@@ -795,15 +790,15 @@ export default function NestingPage() {
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className="mb-6 flex items-center gap-3 px-5 py-3.5 rounded-lg border border-red-500/30 bg-red-500/5"
+              className="mb-6 flex items-center gap-3 px-5 py-3.5 rounded-lg border border-brand-danger/30 bg-brand-danger/5"
             >
-              <AlertTriangle size={15} className="text-red-400 shrink-0" />
-              <p className="text-sm text-red-400">{error}</p>
+              <AlertTriangle size={15} className="text-brand-danger shrink-0" />
+              <p className="text-sm text-brand-danger">{error}</p>
               <button
                 type="button"
                 onClick={() => setError(null)}
                 aria-label="Cerrar"
-                className="ml-auto text-red-400/50 hover:text-red-400 transition-colors"
+                className="ml-auto text-brand-danger/50 hover:text-brand-danger transition-colors"
               >
                 <X size={14} />
               </button>
@@ -828,6 +823,7 @@ export default function NestingPage() {
             setCategoria={setCategoria}
             materialRef={materialRef}
             setMaterialRef={setMaterialRef}
+            materialPrecioM2={materialPrecioM2}
             setMaterialPrecioM2={setMaterialPrecioM2}
           />
 

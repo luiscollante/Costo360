@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Zap, ChevronDown, ChevronUp, Save, ArrowRight, RotateCcw, FileDown, Receipt, Loader2 } from 'lucide-react'
+import { Zap, ChevronDown, ChevronUp, Save, ArrowRight, RotateCcw, FileDown, Receipt, Loader2, AlertCircle } from 'lucide-react'
 import AppLayout from '@/components/AppLayout'
 import { calcularCotizacionDirecta, guardarCotizacion, descargarPDF, descargarCuentaCobro } from '@/api/cotizacion'
 import type { CotizacionResult } from '@/types/cotizacion'
-import { formatCOP, formatNum } from '@/lib/utils'
+import { formatCOP, formatNum, formatPct } from '@/lib/utils'
 import { useCountUp } from '@/hooks/useCountUp'
 import MaterialCombobox from '@/components/MaterialCombobox'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 // ─── Persistencia Express en localStorage ────────────────────────────────────
 
@@ -82,7 +83,7 @@ const TIPOS: TipoProyecto[] = [
 
 const inputCls = [
   'w-full bg-brand-input border border-brand-border rounded-lg px-3 py-2.5',
-  'text-sm text-brand-text placeholder:text-brand-muted/40',
+  'text-sm text-brand-text placeholder:text-brand-text-secondary',
   'focus:outline-none focus:border-brand-primary',
   'focus:shadow-[0_0_0_1px_#1F6F5440,0_0_12px_#1F6F5418]',
   'transition-all duration-200',
@@ -92,7 +93,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 mb-4">
       <div className="w-0.5 h-4 bg-brand-primary rounded-full shrink-0" />
-      <h3 className="text-[10px] font-semibold tracking-[0.18em] uppercase text-brand-muted">
+      <h3 className="text-[10px] font-semibold tracking-[0.18em] uppercase text-brand-text-secondary">
         {children}
       </h3>
     </div>
@@ -101,7 +102,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <label className="block text-[10px] font-semibold tracking-[0.15em] uppercase text-brand-muted mb-1.5">
+    <label className="block text-[10px] font-semibold tracking-[0.15em] uppercase text-brand-text-secondary mb-1.5">
       {children}
     </label>
   )
@@ -130,7 +131,7 @@ function MoneyInput({
 
   return (
     <div className="relative">
-      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-brand-muted/60 font-mono pointer-events-none">$</span>
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-brand-text-secondary font-mono pointer-events-none">$</span>
       <input
         ref={inputRef}
         type="text"
@@ -145,7 +146,7 @@ function MoneyInput({
         }}
         className={inputCls + ' pl-7 pr-12 font-mono'}
       />
-      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-brand-muted pointer-events-none">COP</span>
+      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-brand-text-secondary pointer-events-none">COP</span>
     </div>
   )
 }
@@ -153,13 +154,13 @@ function MoneyInput({
 // ─── Margin traffic light ─────────────────────────────────────────────────────
 
 function MarginLight({ pct }: { pct: number }) {
-  const color = pct >= 30 ? '#22D3A5' : pct >= 20 ? '#F59E0B' : '#EF4444'
+  const color = pct >= 30 ? '#15612E' : pct >= 20 ? '#6E5410' : '#B23B3B'
   const label = pct >= 30 ? 'Margen saludable' : pct >= 20 ? 'Margen ajustado' : 'Margen bajo'
   return (
     <div className="flex items-center gap-2 mt-3">
-      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color, boxShadow: `0 0 8px ${color}70` }} />
+      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />
       <span className="text-xs font-semibold" style={{ color }}>{label}</span>
-      <span className="text-xs text-brand-muted ml-auto font-mono">{formatNum(pct, 1)}%</span>
+      <span className="text-xs text-brand-text-secondary ml-auto font-mono">{formatPct(pct, 1)}</span>
     </div>
   )
 }
@@ -190,26 +191,26 @@ function CCModalExpress({ cotId, onClose }: { cotId: number; onClose: () => void
         className="relative glass rounded-xl border border-brand-border shadow-2xl p-5 w-80 z-10"
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-brand-muted/60 mb-4">Cuenta de Cobro</p>
+        <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-brand-text-secondary mb-4">Cuenta de Cobro</p>
         <div className="space-y-3 mb-4">
           <div>
-            <label className="block text-[10px] text-brand-muted mb-1.5">Nombre del pagador *</label>
+            <label className="block text-[10px] text-brand-text-secondary mb-1.5">Nombre del pagador *</label>
             <input autoFocus value={nombre} onChange={(e) => setNombre(e.target.value)}
               placeholder="Constructora XYZ S.A.S"
-              className="w-full bg-brand-input border border-brand-border rounded px-3 py-2.5 text-sm text-brand-text placeholder-brand-muted/40 outline-none focus:border-brand-primary/50 transition-all" />
+              className="w-full bg-brand-input border border-brand-border rounded px-3 py-2.5 text-sm text-brand-text placeholder:text-brand-text-secondary outline-none focus:border-brand-primary/50 transition-all" />
           </div>
           <div>
-            <label className="block text-[10px] text-brand-muted mb-1.5">NIT / Cédula</label>
+            <label className="block text-[10px] text-brand-text-secondary mb-1.5">NIT / Cédula</label>
             <input value={nit} onChange={(e) => setNit(e.target.value)}
               placeholder="900.123.456-7"
-              className="w-full bg-brand-input border border-brand-border rounded px-3 py-2.5 text-sm text-brand-text placeholder-brand-muted/40 outline-none focus:border-brand-primary/50 transition-all" />
+              className="w-full bg-brand-input border border-brand-border rounded px-3 py-2.5 text-sm text-brand-text placeholder:text-brand-text-secondary outline-none focus:border-brand-primary/50 transition-all" />
           </div>
         </div>
-        {err && <p className="text-xs text-red-400 mb-3">{err}</p>}
+        {err && <p className="text-xs text-brand-danger mb-3">{err}</p>}
         <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded border border-brand-border text-sm text-brand-muted hover:text-brand-text transition-colors">Cancelar</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded border border-brand-border text-sm text-brand-text-secondary hover:text-brand-text transition-colors">Cancelar</button>
           <button onClick={handleDownload} disabled={loading || !nombre.trim()}
-            className="flex-1 py-2.5 rounded bg-brand-gold/15 border border-brand-gold/40 text-sm font-semibold text-brand-gold hover:bg-brand-gold/25 transition-all disabled:opacity-40 flex items-center justify-center gap-1.5">
+            className="flex-1 py-2.5 rounded border border-brand-primary/40 bg-brand-primary/[0.06] text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.12] transition-all disabled:opacity-40 flex items-center justify-center gap-1.5">
             {loading ? <Loader2 size={13} className="animate-spin" /> : null}
             {loading ? 'Generando…' : 'Descargar PDF'}
           </button>
@@ -266,7 +267,7 @@ function ResultPanel({
     >
       {/* Price hero */}
       <div className="glass rounded-xl border border-brand-primary/30 p-6 text-center">
-        <p className="text-[9px] tracking-[0.22em] uppercase text-brand-muted/60 mb-2">
+        <p className="text-[9px] tracking-[0.22em] uppercase text-brand-text-secondary mb-2">
           {incluirIva ? 'Total con IVA' : 'Precio sugerido al cliente'}
         </p>
         <p className="text-3xl sm:text-4xl font-bold text-brand-text font-mono tracking-tight leading-none break-words tabular-nums">
@@ -279,8 +280,8 @@ function ResultPanel({
             transition={{ delay: 0.8 }}
             className="mt-2 space-y-0.5"
           >
-            <p className="text-xs text-brand-muted">Subtotal: <span className="font-mono">{formatCOP(precioBaseAnimado)}</span></p>
-            <p className="text-xs text-brand-muted">+ IVA 19%: <span className="font-mono">{formatCOP(iva)}</span></p>
+            <p className="text-xs text-brand-text-secondary">Subtotal: <span className="font-mono">{formatCOP(precioBaseAnimado)}</span></p>
+            <p className="text-xs text-brand-text-secondary">+ IVA 19%: <span className="font-mono">{formatCOP(iva)}</span></p>
           </motion.div>
         )}
         <MarginLight pct={result.margen_pct} />
@@ -290,11 +291,11 @@ function ResultPanel({
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: 'Costo total',      value: formatCOP(Math.round(result.costo_total)), color: 'text-brand-text' },
-          { label: 'Utilidad neta',    value: formatCOP(utilidad),                       color: 'text-brand-gold' },
-          { label: 'Aprovechamiento',  value: `${formatNum(result.aprovechamiento, 1)}%`,   color: 'text-brand-text' },
+          { label: 'Utilidad neta',    value: formatCOP(utilidad),                       color: 'text-brand-gold-text' },
+          { label: 'Aprovechamiento',  value: formatPct(result.aprovechamiento, 1),   color: 'text-brand-text' },
         ].map(({ label, value, color }) => (
           <div key={label} className="glass rounded-xl border border-brand-border p-3 text-center">
-            <p className="text-[8px] tracking-widest uppercase text-brand-muted/50 mb-1.5">{label}</p>
+            <p className="text-[8px] tracking-widest uppercase text-brand-text-secondary mb-1.5">{label}</p>
             <p className={`text-xs font-bold font-mono ${color}`}>{value}</p>
           </div>
         ))}
@@ -303,10 +304,10 @@ function ResultPanel({
       {/* Retal */}
       {result.retal > 0 && (
         <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-brand-surface/40 border border-brand-border/50">
-          <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-          <p className="text-xs text-brand-muted">
-            Retal estimado: <span className="font-mono font-semibold text-amber-400">{formatNum(result.retal)} m²</span>
-            <span className="text-brand-muted/50"> sobrante de la lámina</span>
+          <div className="w-1.5 h-1.5 rounded-full bg-brand-warning shrink-0" />
+          <p className="text-xs text-brand-text-secondary">
+            Retal estimado: <span className="font-mono font-semibold text-brand-warning-text">{formatNum(result.retal)} m²</span>
+            <span className="text-brand-text-secondary"> sobrante de la lámina</span>
           </p>
         </div>
       )}
@@ -318,10 +319,10 @@ function ResultPanel({
           onClick={() => setExpanded((e) => !e)}
           className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-brand-surface/30 transition-colors cursor-pointer"
         >
-          <span className="text-[10px] tracking-[0.15em] uppercase text-brand-muted font-semibold">
+          <span className="text-[10px] tracking-[0.15em] uppercase text-brand-text-secondary font-semibold">
             Desglose de costos
           </span>
-          {expanded ? <ChevronUp size={13} className="text-brand-muted" /> : <ChevronDown size={13} className="text-brand-muted" />}
+          {expanded ? <ChevronUp size={13} className="text-brand-text-secondary" /> : <ChevronDown size={13} className="text-brand-text-secondary" />}
         </button>
         <AnimatePresence>
           {expanded && (
@@ -335,18 +336,18 @@ function ResultPanel({
               <div className="px-4 pb-4 space-y-1.5 border-t border-brand-border/40 pt-3">
                 {breakdown.map(({ label, value }) => (
                   <div key={label} className="flex items-center justify-between py-1">
-                    <span className="text-xs text-brand-muted">{label}</span>
+                    <span className="text-xs text-brand-text-secondary">{label}</span>
                     <span className="text-xs font-mono font-semibold text-brand-text">{formatCOP(Math.round(value))}</span>
                   </div>
                 ))}
                 <div className="flex items-center justify-between py-1 pt-2 border-t border-brand-border/30">
-                  <span className="text-xs text-brand-muted">Subtotal (sin IVA)</span>
+                  <span className="text-xs text-brand-text-secondary">Subtotal (sin IVA)</span>
                   <span className="text-xs font-mono font-bold text-brand-text">{formatCOP(Math.round(result.costo_total))}</span>
                 </div>
                 {incluirIva && (
-                  <div className="flex items-center justify-between py-1 bg-amber-400/5 px-2 rounded">
-                    <span className="text-xs text-amber-400/80">IVA 19% (Art. 468 E.T.)</span>
-                    <span className="text-xs font-mono font-bold text-amber-400">{formatCOP(Math.round(iva))}</span>
+                  <div className="flex items-center justify-between py-1 bg-brand-warning/5 px-2 rounded">
+                    <span className="text-xs text-brand-warning-text/80">IVA 19% (Art. 468 E.T.)</span>
+                    <span className="text-xs font-mono font-bold text-brand-warning-text">{formatCOP(Math.round(iva))}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between py-1 pt-1 border-t border-brand-border/30">
@@ -359,7 +360,7 @@ function ResultPanel({
         </AnimatePresence>
       </div>
 
-      <p className="text-[10px] text-brand-muted/40 text-center leading-relaxed px-2">
+      <p className="text-[10px] text-brand-text-secondary text-center leading-relaxed px-2">
         Cotización express: instalación en condiciones estándar.
       </p>
 
@@ -390,7 +391,7 @@ function ResultPanel({
                 setDlPDF(true)
                 try { await descargarPDF(savedId) } finally { setDlPDF(false) }
               }}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-brand-border text-sm text-brand-muted hover:text-emerald-400 hover:border-emerald-400/40 transition-all disabled:opacity-40"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-brand-primary/40 bg-brand-primary/[0.07] text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.14] hover:border-brand-primary/60 transition-all disabled:opacity-40 cursor-pointer"
             >
               {dlPDF ? <Loader2 size={13} className="animate-spin" /> : <FileDown size={13} />}
               Descargar PDF
@@ -398,7 +399,7 @@ function ResultPanel({
             <button
               type="button"
               onClick={() => setShowCC(true)}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-brand-gold/30 bg-brand-gold/5 text-sm text-brand-gold hover:bg-brand-gold/10 transition-all"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-brand-primary/40 bg-brand-primary/[0.07] text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.14] hover:border-brand-primary/60 transition-all cursor-pointer"
             >
               <Receipt size={13} />
               Cuenta de Cobro
@@ -413,7 +414,7 @@ function ResultPanel({
         <button
           type="button"
           onClick={onRefine}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-brand-border text-sm text-brand-muted hover:text-brand-text hover:border-brand-primary/40 transition-all duration-200 cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-brand-border text-sm text-brand-text-secondary hover:text-brand-text hover:border-brand-primary/40 transition-all duration-200 cursor-pointer"
         >
           <ArrowRight size={14} />
           Refinar en Modo Completo
@@ -459,8 +460,14 @@ export default function CotizacionExpressPage() {
     ? (parseFloat(metros) || 0) * anchoFinal
     : (parseFloat(metros) || 0)
 
-  // Sincroniza anchoCustom cuando cambia el tipo de proyecto
+  // Sincroniza anchoCustom / limpia metros al CAMBIAR el tipo de proyecto — pero
+  // NO en el montaje inicial, para no descartar lo que el usuario dejó guardado.
+  const montado = useRef(false)
   useEffect(() => {
+    if (!montado.current) {
+      montado.current = true
+      return
+    }
     const stdAncho = tipo.ancho
     setAnchoCustom(stdAncho !== null ? String(stdAncho) : '')
     setMetros('')
@@ -553,18 +560,11 @@ export default function CotizacionExpressPage() {
     <AppLayout>
       <div className="max-w-[1200px] mx-auto">
 
-        {/* Header */}
-        <div className="mb-7">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-1 h-6 bg-brand-primary rounded-full" />
-            <Zap className="w-4 h-4 text-emerald-400" />
-            <h1 className="text-lg font-bold text-brand-text tracking-tight">Cotización Express</h1>
-          </div>
-          <p className="text-xs text-brand-muted ml-4 pl-1.5">
-            Una pantalla. Cálculo real. Precio en segundos.
-          </p>
-          <div className="mt-4 h-px bg-gradient-to-r from-brand-primary/40 via-brand-border to-transparent" />
-        </div>
+        <PageHeader
+          kicker="Crear"
+          title="Cotización Express"
+          subtitle="Una pantalla. Cálculo real. Precio en segundos."
+        />
 
         {/* Two-column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
@@ -592,12 +592,13 @@ export default function CotizacionExpressPage() {
                   <MaterialCombobox
                     categoria={cat}
                     value={ref}
+                    precioM2Actual={parseFloat(precioM2) || 0}
                     onChange={(newRef, precio, dims) => {
                       setRef(newRef)
                       if (precio > 0) setPrecioM2(String(precio))
                       if (dims) { setLargo(String(dims.largo)); setAncho(String(dims.ancho)) }
                     }}
-                    placeholder="Buscar en catálogo Gramar…"
+                    placeholder="Buscar en el catálogo…"
                   />
                 </div>
 
@@ -627,13 +628,13 @@ export default function CotizacionExpressPage() {
                           min={0}
                           className={inputCls + ' pr-7 font-mono'}
                         />
-                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-brand-muted pointer-events-none">m</span>
+                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-brand-text-secondary pointer-events-none">m</span>
                       </div>
                     ))}
                   </div>
                   {areaPlaca > 0 && (
-                    <p className="text-[10px] text-brand-muted/60 mt-1.5 font-mono pl-0.5">
-                      Área lámina: <span className="text-brand-gold font-semibold">{formatNum(areaPlaca)} m²</span>
+                    <p className="text-[10px] text-brand-text-secondary mt-1.5 font-mono pl-0.5">
+                      Área lámina: <span className="text-brand-gold-text font-semibold">{formatNum(areaPlaca)} m²</span>
                     </p>
                   )}
                 </div>
@@ -657,7 +658,7 @@ export default function CotizacionExpressPage() {
                           'px-2 py-2 rounded-lg text-[11px] font-medium text-center transition-all duration-150 border',
                           tipoIdx === i
                             ? 'bg-brand-primary/15 border-brand-primary/50 text-brand-text'
-                            : 'border-brand-border text-brand-muted hover:border-brand-primary/30 hover:text-brand-text',
+                            : 'border-brand-border text-brand-text-secondary hover:border-brand-primary/30 hover:text-brand-text',
                         ].join(' ')}
                       >
                         {t.label}
@@ -674,12 +675,12 @@ export default function CotizacionExpressPage() {
                         type="number"
                         value={metros}
                         onChange={(e) => setMetros(e.target.value)}
-                        placeholder={esMl ? '3.50' : '12.00'}
+                        placeholder={esMl ? 'Ej. 3.50' : 'Ej. 12.00'}
                         step={0.01}
                         min={0}
                         className={inputCls + ' pr-10 font-mono'}
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-brand-muted pointer-events-none">
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-brand-text-secondary pointer-events-none">
                         {esMl ? 'ml' : 'm²'}
                       </span>
                     </div>
@@ -695,20 +696,20 @@ export default function CotizacionExpressPage() {
                           type="number"
                           value={anchoCustom}
                           onChange={(e) => setAnchoCustom(e.target.value)}
-                          placeholder="0.60"
+                          placeholder="Ej. 0.60"
                           step={0.01}
                           min={0}
                           className={inputCls + ' pr-7 font-mono'}
                         />
-                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-brand-muted pointer-events-none">m</span>
+                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-brand-text-secondary pointer-events-none">m</span>
                       </div>
                     </div>
                   )}
                 </div>
 
                 {m2Pieza > 0 && (
-                  <p className="text-[10px] text-brand-muted/60 font-mono">
-                    Área proyecto: <span className="text-brand-gold font-semibold">{formatNum(m2Pieza)} m²</span>
+                  <p className="text-[10px] text-brand-text-secondary font-mono">
+                    Área proyecto: <span className="text-brand-gold-text font-semibold">{formatNum(m2Pieza)} m²</span>
                   </p>
                 )}
               </div>
@@ -733,7 +734,7 @@ export default function CotizacionExpressPage() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <Label>Margen de utilidad</Label>
-                    <span className="font-mono text-sm font-bold text-brand-gold">{margen}%</span>
+                    <span className="font-mono text-sm font-bold text-brand-gold-text">{margen}%</span>
                   </div>
                   <input
                     type="range"
@@ -742,7 +743,7 @@ export default function CotizacionExpressPage() {
                     onChange={(e) => setMargen(Number(e.target.value))}
                     className="w-full h-1.5 rounded-full cursor-pointer accent-[#1F6F54]"
                   />
-                  <div className="flex justify-between text-[9px] text-brand-muted/40 mt-1 font-mono">
+                  <div className="flex justify-between text-[9px] text-brand-text-secondary mt-1 font-mono">
                     <span>5%</span><span>70%</span>
                   </div>
                 </div>
@@ -750,7 +751,7 @@ export default function CotizacionExpressPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-brand-text font-medium">Incluir IVA 19%</p>
-                    <p className="text-[10px] text-brand-muted/50 mt-0.5">Responsable de IVA — Art. 468 E.T.</p>
+                    <p className="text-[10px] text-brand-text-secondary mt-0.5">Responsable de IVA — Art. 468 E.T.</p>
                   </div>
                   <button
                     type="button"
@@ -794,15 +795,16 @@ export default function CotizacionExpressPage() {
                   type="button"
                   onClick={handleReset}
                   aria-label="Limpiar formulario"
-                  className="p-4 rounded-xl border border-brand-border text-brand-muted hover:text-brand-text hover:border-brand-primary/30 transition-all duration-200 cursor-pointer"
+                  className="p-4 rounded-xl border border-brand-border text-brand-text-secondary hover:text-brand-text hover:border-brand-primary/30 transition-all duration-200 cursor-pointer"
                 >
                   <RotateCcw size={15} />
                 </button>
               )}
             </div>
             {!canCalc && !loading && missingFields.length > 0 && (
-              <p className="text-[11px] text-amber-400/80 px-0.5">
-                Falta completar: {missingFields.join(', ')}
+              <p className="flex items-start gap-1.5 px-0.5 text-[12px] font-medium text-brand-warning-text">
+                <AlertCircle size={13} className="mt-px shrink-0" aria-hidden="true" />
+                <span>Falta completar: {missingFields.join(', ')}</span>
               </p>
             )}
           </div>
@@ -830,11 +832,11 @@ export default function CotizacionExpressPage() {
                   className="glass rounded-xl border border-brand-border/60 flex flex-col items-center justify-center min-h-[520px] gap-4 text-center p-8"
                 >
                   <div className="w-16 h-16 rounded-2xl bg-brand-surface/80 border border-brand-border flex items-center justify-center">
-                    <Zap size={26} className="text-brand-muted/25" />
+                    <Zap size={26} className="text-brand-text-secondary" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-brand-muted/50">El precio aparecerá aquí</p>
-                    <p className="text-xs text-brand-muted/30 mt-1.5 max-w-[200px] leading-relaxed">
+                    <p className="text-sm font-semibold text-brand-text-secondary">El precio aparecerá aquí</p>
+                    <p className="text-xs text-brand-text-secondary mt-1.5 max-w-[200px] leading-relaxed">
                       Completa el formulario y presiona Calcular precio
                     </p>
                   </div>
