@@ -128,60 +128,28 @@ body::before {
   box-shadow: 0 8px 32px rgba(212, 175, 55, 0.1);
 }
 
-/* Barra lateral — glassmorphism real (R4). Verde del isotipo (#00472B) a baja
-   opacidad para que se vea a través del cristal la capa de color `.sidebar-aurora`
-   que va detrás; el `backdrop-filter` la desenfoca y produce la luz difusa
-   característica del vidrio esmerilado. Sin brillos ni destellos.
-   La transparencia va SOLO en el fondo, nunca en el texto (crema/blanco sólido). */
+/* Barra lateral (R4). Verde esmeralda del isotipo real (#00472B → #00311D), casi
+   opaco para que SIEMPRE se lea igual y el texto crema/blanco tenga contraste
+   pleno. La "profundidad de cristal" se consigue con pistas ligeras y baratas:
+   un halo de luz arriba (donde va el logo), un borde interior claro, una sombra
+   lateral y un `backdrop-filter` pequeño (solo importa cuando la barra se
+   superpone al contenido, p. ej. el drawer en móvil). SIN capas de blur pesadas
+   detrás — consumían GPU y no aportaban (nada pasa por detrás de una barra fija).
+   Se probó el glass translúcido y el brillo diagonal; el fundador rechazó ambos. */
 .glass-emerald {
   position: relative;
   background:
-    radial-gradient(120% 26% at 50% 0%, rgba(255, 255, 255, 0.12), transparent 72%),
-    linear-gradient(180deg, rgba(0, 65, 40, 0.68) 0%, rgba(0, 44, 27, 0.82) 100%);
-  backdrop-filter: blur(26px) saturate(160%);
-  -webkit-backdrop-filter: blur(26px) saturate(160%);
-  border-right: 1px solid rgba(255, 255, 255, 0.16);
+    radial-gradient(130% 18% at 50% 0%, rgba(255, 255, 255, 0.14), transparent 70%),
+    linear-gradient(180deg, #00472B 0%, #00311D 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-right: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow:
-    inset 1px 0 0 rgba(255, 255, 255, 0.14),
-    6px 0 30px rgba(0, 0, 0, 0.16);
+    inset 1px 0 0 rgba(255, 255, 255, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    6px 0 26px rgba(0, 0, 0, 0.18);
 }
 
-/* Capa de color DETRÁS del cristal: manchas verdes que el `backdrop-filter` de
-   `.glass-emerald` desenfoca. Es lo que se ve —difuminado— a través del vidrio y
-   lo que hace que lea como cristal esmerilado y no como pintura plana. Estática
-   (sin animación) para no consumir GPU. No lleva texto. */
-.sidebar-aurora {
-  position: fixed;
-  inset: 0 auto 0 0;
-  width: 14rem;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-  background: #012c1c;
-}
-.sidebar-aurora::before,
-.sidebar-aurora::after {
-  content: "";
-  position: absolute;
-  border-radius: 9999px;
-  filter: blur(44px);
-}
-.sidebar-aurora::before {
-  top: -4rem;
-  left: -5rem;
-  width: 20rem;
-  height: 20rem;
-  background: radial-gradient(circle, #17A86A 0%, #0B6E45 60%, transparent 72%);
-  opacity: 0.85;
-}
-.sidebar-aurora::after {
-  bottom: -6rem;
-  right: -7rem;
-  width: 19rem;
-  height: 19rem;
-  background: radial-gradient(circle, #0C9C7A 0%, #04412C 62%, transparent 74%);
-  opacity: 0.7;
-}
 
 /* Shimmer animation (Premium shine) */
 @keyframes shimmer {

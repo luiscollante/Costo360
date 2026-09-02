@@ -246,16 +246,17 @@ Tokens reales extraídos de `web/src/index.css` (verificado en código):
   tener modo oscuro. El toggle sol/luna, `useTheme`, `data-theme`/`cm-theme` y el `<script>` de
   tema en `index.html` se **eliminaron** en el Ciclo 1. `@media (prefers-reduced-motion)` +
   `<MotionConfig reducedMotion="user">` respetan la preferencia del sistema.
-- **Barra lateral (`.glass-emerald`):** verde esmeralda del isotipo, glassmorphism —
-  `linear-gradient(180deg, rgba(0,65,40,.68), rgba(0,44,27,.82))` + halo superior claro,
-  `backdrop-filter: blur(26px) saturate(160%)`, borde `rgba(255,255,255,.16)`, highlight
-  interior + sombra lateral. Detrás va `.sidebar-aurora` (capa `fixed` con dos manchas
-  verde-menta muy difuminadas y **estáticas** — sin animación, para no consumir GPU) que el
-  `backdrop-filter` convierte en luz difusa; es lo que hace que lea como cristal y no como
-  pintura plana. Sin brillo diagonal (se probó y el fundador lo rechazó). Texto en **colores
-  sólidos**: inactivo crema `#F5E8D2`, activo `#FFFFFF`, encabezados de grupo `#E4D8BF`.
-  Indicador de ítem activo: barra izquierda dorada + `font-medium` + fondo `rgba(255,255,255,.14)`.
-  Foco de teclado: outline color crema (`.glass-emerald :focus-visible`).
+- **Barra lateral (`.glass-emerald`):** verde esmeralda del isotipo real, **casi opaco** —
+  `linear-gradient(180deg, #00472B, #00311D)` + halo de luz arriba (donde va el logo) +
+  borde interior claro + sombra lateral + `backdrop-filter: blur(8px)` pequeño (solo cuenta
+  cuando la barra se superpone al contenido, p. ej. el drawer en móvil). **NO lleva capas de
+  blur pesadas detrás** — se probaron (`.sidebar-aurora` con `filter: blur(44px)` +
+  `backdrop-filter: blur(26px)`) y consumían GPU sin aportar (nada pasa por detrás de una
+  barra fija); también se probó y descartó un brillo diagonal. Conclusión: un glassmorphism
+  "que se ve a través" no cabe en este layout sin que la barra tape contenido. Texto en
+  **colores sólidos**: inactivo crema `#F5E8D2`, activo `#FFFFFF`, encabezados de grupo
+  `#E4D8BF`. Indicador de ítem activo: barra izquierda dorada + `font-medium` + fondo
+  `rgba(255,255,255,.14)`. Foco de teclado: outline color crema (`.glass-emerald :focus-visible`).
 - **Orden del menú lateral (reorganizado por área del negocio, decisión del fundador
   2026-09-01):** Dashboard suelto arriba (solo roles con acceso a BI) · grupo **Cotizaciones**
   (Nueva Cotización, Express, Cotización AIU, Historial) · grupo **Taller** (Catálogo,
@@ -415,7 +416,7 @@ el cuaderno Notion "Costo360 — Base de Conocimiento Central".
 | 2026-08-27 | Fase 2.A fusionada a `master` |
 | 2026-08-30 | **Rediseño visual — Ciclo 1** (rama `goal/rediseno-visual`): tokens de contraste AA, modo oscuro eliminado, barra lateral esmeralda, logo real, reconstrucción del flujo de carga inicial (`store/auth.ts` con estados) + `RoleRoute`, `empresa_nombre` en `/api/auth/me` |
 | 2026-08-31 | **Rediseño visual — Ciclo 2**: 14 primitivos `ui/`, 13 pantallas a `<PageHeader>`, catálogo de materiales por taller (migración `0005`). Fase 5: Code Reviewer + Accessibility Auditor, ambos "aprueba con cambios" |
-| 2026-09-01 | **Ronda de revisión en vivo del fundador**: bug del sidebar que scrolleaba (shell `h-screen overflow-hidden`); CORS del backend a cualquier puerto de localhost; dashboard usa `date.today()` del backend (no `CURRENT_DATE` UTC); glassmorphism del sidebar sin brillo diagonal + `.sidebar-aurora`; catálogo editable vía modal precargado + copy-on-write (migración `0006` `base_id`), visible para operativo; Express "Calcular precio" (placeholder confuso); Historial con actualización optimista; token `--color-brand-gold-text` `#6E5410` para números de acento; menú lateral reorganizado por área del negocio |
+| 2026-09-01 | **Ronda de revisión en vivo del fundador**: bug del sidebar que scrolleaba (shell `h-screen overflow-hidden`); CORS del backend a cualquier puerto de localhost; dashboard usa `date.today()` del backend (no `CURRENT_DATE` UTC); barra lateral casi opaca sin capas de blur (consumían GPU y lavaban el color; el glass translúcido y el brillo diagonal se descartaron); catálogo editable vía modal precargado + copy-on-write (migración `0006` `base_id`), visible para operativo; Express "Calcular precio" (placeholder confuso); Historial con actualización optimista; token `--color-brand-gold-text` `#6E5410` para números de acento; menú lateral reorganizado por área del negocio |
 
 ---
 

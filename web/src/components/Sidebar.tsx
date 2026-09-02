@@ -116,9 +116,6 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     .filter((g) => g.items.length > 0)
 
   return (
-    <>
-    {/* Capa de color difusa detrás del cristal (glassmorphism) — ver index.css */}
-    <div className="sidebar-aurora hidden lg:block" aria-hidden="true" />
     <aside className="glass-emerald w-56 shrink-0 flex flex-col h-screen sticky top-0 relative z-10">
       {/* Logo */}
       <div className="px-4 py-2.5 border-b border-white/15 flex flex-col items-center gap-0.5 shrink-0">
@@ -166,6 +163,5 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         </button>
       </div>
     </aside>
-    </>
   )
 }
