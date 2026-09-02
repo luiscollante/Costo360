@@ -24,7 +24,7 @@ actualiza con la siguiente ronda de objetivos — no se reemplaza, se extiende.*
    integral para llevar cada trabajo *después* de cotizarlo: proyectos (tablero Kanban por
    estado), tareas, hitos con dependencias, registro de horas, comentarios, notificaciones
    automáticas, un asistente de IA que opera y analiza los datos, y automatizaciones diarias.
-   El fundador lo construyó como prototipo en **Base44** (`gestion-inventario-nuevo-modulo.zip`
+   El fundador lo construyó como prototipo en **Base44** (`gestion-proyectos-nuevo-modulo.zip`
    en la raíz) — hay que **reimplementarlo nativo** en el stack de Costo360 (React 19 +
    FastAPI + Supabase), no se puede "pegar" tal cual. Análisis completo abajo, en la Fase 2.D.
 
@@ -137,7 +137,7 @@ otros 6 agentes se construyen uno a la vez después, reutilizando la misma base.
 ### 2.D — Objetivo 6: Módulo de gestión de proyectos  (añadido 2026-09-01, prototipo en Base44)
 
 **Qué es.** Un sistema completo para gestionar cada trabajo *después* de cotizarlo. El fundador
-lo construyó con otra IA como app **Base44** — `gestion-inventario-nuevo-modulo.zip` en la raíz
+lo construyó con otra IA como app **Base44** — `gestion-proyectos-nuevo-modulo.zip` en la raíz
 (≈135 archivos, ≈8.500 líneas; el nombre del zip dice "inventario" pero el contenido es
 **gestión de proyectos**, no el módulo de Inventario/láminas que ya existe).
 
