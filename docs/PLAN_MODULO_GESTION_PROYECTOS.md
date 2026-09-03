@@ -824,5 +824,42 @@ inputs nuevos, `text-tertiary`→`text-secondary` en textos <18px, punto de colu
 
 `tsc -b` + `eslint` + `vite build`: limpios.
 
-**Ciclo B CERRADO** (a falta de la prueba en vivo con navegador — necesita el `.env` del
-fundador).
+**Ciclo B CERRADO.**
+
+### Prueba en vivo (2026-09-02, cuenta admin "Ana")
+
+Servidores locales (`uvicorn` :8000 contra Supabase real `hrmpyhixhbnkkpvxtuit`, `vite`
+:5174). Recorrido con la extensión de Chrome:
+- ✅ Crear proyecto → tablero + resumen.
+- ✅ Hito + tarea dependiente → nace `bloqueada`.
+- ✅ Completar hito → toast "1 tarea desbloqueada" + la tarea salta a `por_hacer`.
+- ✅ Mover tarjeta ("Mover a"), diálogo de tarea, registrar horas (total, autor, fecha),
+  comentar.
+- ✅ Barrido diario → marca "en riesgo" + notificación + **2ª corrida idempotente**.
+- ✅ Campana muestra el contador y la notificación.
+
+**Bug encontrado y corregido** (`b1825a5`): el barrido reventaba con `TypeError: dict is
+not a sequence` — el `%` literal de *"% de avance"* en el SQL colisiona con el parseo de
+parámetros de psycopg2. Fix: `%%`. No lo cazó la prueba SQL previa (el MCP `execute_sql` no
+interpola). Verificado en vivo.
+
+### Ronda de pulido de UI (2026-09-02, feedback en vivo del fundador) — commit `23f7b8a`
+
+- **Cursor de "mano"** en las tarjetas de tarea y proyecto (faltaba `cursor-pointer` — en
+  Tailwind v4 el `<button>` ya no lo trae) + tinte de título en hover.
+- **Modal de tarea recortado / doble scroll** en pantallas bajas: el primitivo `Dialog`
+  ahora acota el panel a `max-h-[calc(100dvh-2rem)]` con su propio scroll (uno solo, sin
+  recorte); `TareaDialog` deja de anidar su `max-h-[75vh]`; el overlay pasa a
+  `items-start` + `overflow-y-auto`. Cambio en el primitivo → aplica a todos los diálogos
+  (defensivo, los cortos no se ven afectados).
+- **Recuadro "Título" desbordado**: el `:focus-visible` global (outline 2px + offset)
+  sobresalía del modal → los inputs de los diálogos del módulo pasan a
+  `focus-visible:outline-none` + anillo `ring-inset` contenido.
+- **Cronograma**: ancho acotado y centrado (`max-w-2xl`), cabecera "N de M hitos cumplidos"
+  + botón, fila de hito con estilo de "completado", "Vencía …" en pasado, conteo de tareas
+  dependientes, hito atrasado en rojo.
+- **Tiempos**: ancho acotado (`max-w-3xl`), tarjetas de resumen con sub-etiqueta ("38% del
+  estimado", "bajo/sobre lo estimado"), tabla en `<Card>` con hover de fila.
+
+**Pendiente:** prueba en vivo con la cuenta **operativo (Beto)** — verificar Regla 6 (ve
+todo, sin botones de gestión, 403 al forzar) — y luego fusionar a `master`.
