@@ -10,8 +10,9 @@ import { crearProyecto, type EstadoProyecto } from '@/api/proyectos'
 import { PROYECTO_META } from './badgeMeta'
 
 const INPUT =
-  'w-full bg-brand-input border border-brand-border rounded-lg px-3 h-10 text-sm text-brand-text ' +
-  'outline-none transition-colors focus-visible:border-brand-primary aria-[invalid=true]:border-brand-danger'
+  'w-full bg-brand-input border border-brand-border rounded-lg px-3 h-10 text-sm text-brand-text transition-colors ' +
+  'focus-visible:outline-none focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-inset ' +
+  'focus-visible:ring-brand-primary/40 aria-[invalid=true]:border-brand-danger'
 
 const ESTADOS_INICIALES: EstadoProyecto[] = ['planificacion', 'activo', 'en_revision', 'en_pausa']
 
@@ -134,7 +135,7 @@ export function NuevoProyectoDialog({
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
               rows={3}
-              className="w-full resize-y rounded-lg border border-brand-border bg-brand-input px-3 py-2 text-sm text-brand-text outline-none focus-visible:border-brand-primary"
+              className="w-full resize-y rounded-lg border border-brand-border bg-brand-input px-3 py-2 text-sm text-brand-text focus-visible:outline-none focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-primary/40"
             />
           )}
         </Field>

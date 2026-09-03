@@ -102,7 +102,7 @@ export function Dialog({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm sm:items-center"
       onClick={dismissOnBackdrop ? onClose : undefined}
     >
       <div
@@ -114,7 +114,9 @@ export function Dialog({
         tabIndex={-1}
         onKeyDown={onKeyDown}
         onClick={(e) => e.stopPropagation()}
-        className={`w-full max-w-md rounded-2xl border border-brand-border bg-brand-surface p-6 shadow-[0_12px_40px_rgba(0,0,0,0.18)] focus:outline-none ${className}`}
+        // Alto acotado al viewport + scroll propio del panel: un solo scroll, sin
+        // recorte del contenido en pantallas bajas (feedback del fundador).
+        className={`my-auto max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-2xl border border-brand-border bg-brand-surface p-6 shadow-[0_12px_40px_rgba(0,0,0,0.18)] focus:outline-none ${className}`}
       >
         {title && (
           <h2 id={titleId} className="mb-3 text-base font-bold text-brand-text-dark">

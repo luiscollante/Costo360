@@ -20,7 +20,7 @@ import { TAREA_META } from '@/components/proyectos/badgeMeta'
 
 const INPUT =
   'w-full bg-brand-input border border-brand-border rounded-lg px-3 h-10 text-sm text-brand-text ' +
-  'outline-none focus-visible:border-brand-primary'
+  'focus-visible:outline-none focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-primary/40'
 
 const PRIORIDADES: Prioridad[] = ['baja', 'media', 'alta', 'urgente']
 const ESTADOS: EstadoTarea[] = ['bloqueada', 'por_hacer', 'en_progreso', 'revision', 'completada']
@@ -121,7 +121,7 @@ export function TareaDialog({
         </span>
       </div>
 
-      <div className="max-h-[75vh] space-y-4 overflow-y-auto pr-1">
+      <div className="space-y-4">
         {/* ── Campos ── */}
         {esGestor && (
           <Field label="Título">
@@ -221,7 +221,7 @@ export function TareaDialog({
               disabled={!puedeEditar}
               onChange={(e) => setDescripcion(e.target.value)}
               rows={3}
-              className="w-full resize-y rounded-lg border border-brand-border bg-brand-input px-3 py-2 text-sm text-brand-text outline-none focus-visible:border-brand-primary disabled:opacity-60"
+              className="w-full resize-y rounded-lg border border-brand-border bg-brand-input px-3 py-2 text-sm text-brand-text focus-visible:outline-none focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-primary/40 disabled:opacity-60"
             />
           )}
         </Field>
@@ -258,7 +258,7 @@ export function TareaDialog({
       </div>
 
       {/* ── Acciones ── */}
-      <div className="mt-4 flex items-center gap-2 border-t border-brand-border/60 pt-3">
+      <div className="mt-5 flex items-center gap-2 border-t border-brand-border/60 pt-3">
         {esGestor && (
           confirmarBorrado ? (
             <span className="flex items-center gap-1 text-xs text-brand-danger">
@@ -366,7 +366,7 @@ function PanelComentarios({ taskId, usuarioId, esGestor }: { taskId: number; usu
           onChange={(e) => setTexto(e.target.value)}
           placeholder="Escribe un comentario…"
           aria-label="Nuevo comentario"
-          className="h-9 flex-1 rounded-lg border border-brand-border bg-brand-input px-3 text-sm text-brand-text outline-none focus-visible:border-brand-primary"
+          className="h-9 flex-1 rounded-lg border border-brand-border bg-brand-input px-3 text-sm text-brand-text focus-visible:outline-none focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-primary/40"
         />
         <Button type="submit" size="sm" disabled={add.isPending || !texto.trim()}>Comentar</Button>
       </form>
@@ -450,7 +450,7 @@ function PanelHoras({
             <input
               type="number" min={0} step="0.5" value={horas}
               onChange={(e) => setHoras(e.target.value)}
-              className="mt-1 h-9 w-full rounded-lg border border-brand-border bg-brand-input px-2 text-sm text-brand-text outline-none focus-visible:border-brand-primary"
+              className="mt-1 h-9 w-full rounded-lg border border-brand-border bg-brand-input px-2 text-sm text-brand-text focus-visible:outline-none focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-primary/40"
             />
           </label>
           <label className="text-[11px] text-brand-text-secondary">
@@ -458,7 +458,7 @@ function PanelHoras({
             <input
               value={nota}
               onChange={(e) => setNota(e.target.value)}
-              className="mt-1 h-9 w-full rounded-lg border border-brand-border bg-brand-input px-2 text-sm text-brand-text outline-none focus-visible:border-brand-primary"
+              className="mt-1 h-9 w-full rounded-lg border border-brand-border bg-brand-input px-2 text-sm text-brand-text focus-visible:outline-none focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-primary/40"
             />
           </label>
           <Button type="submit" size="sm" disabled={add.isPending || !(Number(horas) > 0)}>Registrar</Button>

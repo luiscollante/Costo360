@@ -174,7 +174,7 @@ function ProyectoDetalle({ projectId }: { projectId: number }) {
                   isError={hitosQ.isError}
                   onRetry={() => hitosQ.refetch()}
                 >
-                  <CronogramaHitos projectId={projectId} hitos={hitos} esGestor={esGestor} />
+                  <CronogramaHitos projectId={projectId} hitos={hitos} tareas={tareas} esGestor={esGestor} />
                 </AsyncBoundary>
               </div>
 

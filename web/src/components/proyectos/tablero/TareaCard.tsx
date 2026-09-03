@@ -47,9 +47,9 @@ export function TareaCard({
         <button
           type="button"
           onClick={onAbrir}
-          className="block min-w-0 flex-1 rounded text-left focus-visible:outline-2 focus-visible:outline-brand-primary"
+          className="block min-w-0 flex-1 rounded text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-brand-primary"
         >
-          <p className="text-sm font-semibold leading-tight text-brand-text-dark">{tarea.titulo}</p>
+          <p className="text-sm font-semibold leading-tight text-brand-text-dark hover:text-brand-primary transition-colors">{tarea.titulo}</p>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <PriorityBadge prioridad={tarea.prioridad} />
             {vencida && <span className="text-[11px] font-semibold text-brand-danger">Vencida</span>}
@@ -79,7 +79,7 @@ export function TareaCard({
               if (v) onMover(v)
             }}
             aria-label={`Mover a otra columna: ${tarea.titulo}`}
-            className="h-7 flex-1 rounded border border-brand-border bg-brand-input px-2 text-[11px] text-brand-text outline-none focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer"
+            className="h-7 flex-1 rounded border border-brand-border bg-brand-input px-2 text-[11px] text-brand-text focus-visible:outline-none focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-primary/40 cursor-pointer"
           >
             <option value="">…</option>
             {destinos.map((d) => (

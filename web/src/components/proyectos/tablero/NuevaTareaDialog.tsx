@@ -9,7 +9,7 @@ import { crearTarea, type Hito, type Prioridad, type UsuarioTaller } from '@/api
 
 const INPUT =
   'w-full bg-brand-input border border-brand-border rounded-lg px-3 h-10 text-sm text-brand-text ' +
-  'outline-none focus-visible:border-brand-primary'
+  'focus-visible:outline-none focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-primary/40'
 const PRIORIDADES: Prioridad[] = ['baja', 'media', 'alta', 'urgente']
 
 export function NuevaTareaDialog({
@@ -119,7 +119,7 @@ export function NuevaTareaDialog({
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
               rows={3}
-              className="w-full resize-y rounded-lg border border-brand-border bg-brand-input px-3 py-2 text-sm text-brand-text outline-none focus-visible:border-brand-primary"
+              className="w-full resize-y rounded-lg border border-brand-border bg-brand-input px-3 py-2 text-sm text-brand-text focus-visible:outline-none focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-primary/40"
             />
           )}
         </Field>

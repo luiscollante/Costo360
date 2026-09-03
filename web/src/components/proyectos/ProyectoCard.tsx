@@ -44,10 +44,10 @@ export function ProyectoCard({
         )}
         <Link
           to={`/proyectos/${proyecto.id}`}
-          className="block min-w-0 flex-1 rounded focus-visible:outline-2 focus-visible:outline-brand-primary"
+          className="group block min-w-0 flex-1 rounded cursor-pointer focus-visible:outline-2 focus-visible:outline-brand-primary"
         >
           <div className="flex items-start justify-between gap-2">
-            <p className="min-w-0 text-sm font-semibold leading-tight text-brand-text-dark">
+            <p className="min-w-0 text-sm font-semibold leading-tight text-brand-text-dark transition-colors group-hover:text-brand-primary">
               {proyecto.nombre}
             </p>
             {proyecto.en_riesgo && (
@@ -86,7 +86,7 @@ export function ProyectoCard({
               if (v) onMover(proyecto.id, v)
             }}
             aria-label={`Mover a otra columna: ${proyecto.nombre}`}
-            className="h-7 flex-1 rounded border border-brand-border bg-brand-input px-2 text-[11px] text-brand-text outline-none focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer"
+            className="h-7 flex-1 rounded border border-brand-border bg-brand-input px-2 text-[11px] text-brand-text focus-visible:outline-none focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-primary/40 cursor-pointer"
           >
             <option value="">…</option>
             {destinos.map((d) => (
