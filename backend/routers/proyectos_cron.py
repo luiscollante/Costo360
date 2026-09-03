@@ -171,7 +171,7 @@ def ejecutar_barrido(cur, hoy) -> dict:
             (empresa_id, titulo, mensaje, tipo, project_id, dedupe_key)
         select p.empresa_id, 'Proyecto en riesgo',
                '"' || p.nombre || '" entrega el ' || to_char(p.fecha_fin, 'YYYY-MM-DD') ||
-               ' con solo ' || p.progreso_pct || '% de avance.',
+               ' con solo ' || p.progreso_pct || '%% de avance.',
                'riesgo', p.id,
                'riesgo-proyecto-' || p.id || '-' || to_char(%(hoy)s::date, 'YYYY-MM-DD')
         from pm_projects p
