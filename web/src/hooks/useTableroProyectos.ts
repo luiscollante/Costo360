@@ -9,24 +9,26 @@ const MAX_CARGADAS = 200 // más allá de esto, pedir afinar la búsqueda
 
 export interface Filtros {
   q: string
-  cliente: string
-  material: string
   orden: 'reciente' | 'entrega' | 'avance' | 'nombre'
 }
 
 interface ColumnaState {
   items: Proyecto[]
   cargando: boolean
+  error: boolean
   hayMas: boolean
   topeAlcanzado: boolean
 }
 
-const COL_VACIA: ColumnaState = { items: [], cargando: true, hayMas: false, topeAlcanzado: false }
+function colVacia(): ColumnaState {
+  return { items: [], cargando: true, error: false, hayMas: false, topeAlcanzado: false }
+}
 
 /**
  * Carga el tablero columna por columna, paginando en el backend (nunca se trae
  * el catálogo entero). Reescritura de `useBoardData` del prototipo Base44 contra
- * `/api/proyectos`. El movimiento entre columnas es optimista.
+ * `/api/proyectos`. El movimiento entre columnas es optimista con reversión por
+ * snapshot y reconciliación tras el éxito.
  */
 export function useTableroProyectos(columns: EstadoProyecto[], filtros: Filtros) {
   const [state, setState] = useState<Record<string, ColumnaState>>({})
@@ -35,46 +37,46 @@ export function useTableroProyectos(columns: EstadoProyecto[], filtros: Filtros)
 
   const fetchPage = useCallback(
     async (estado: EstadoProyecto, skip: number, token: number) => {
-      const { items } = await listarProyectos({
-        estado,
-        q: filtros.q || undefined,
-        orden: filtros.orden,
-        limit: PAGE_SIZE + 1,
-        offset: skip,
-      })
-      if (token !== reqRef.current) return
-      // El backend filtra por `q` (nombre/cliente/material). `cliente`/`material`
-      // exactos se afinan en el cliente sobre lo ya traído.
-      const filtrados = items.filter(
-        (p) =>
-          (!filtros.cliente || p.cliente === filtros.cliente) &&
-          (!filtros.material || p.material === filtros.material),
-      )
-      const hayMas = items.length > PAGE_SIZE
-      const page = hayMas ? filtrados.slice(0, PAGE_SIZE) : filtrados
-      setState((prev) => {
-        const previos = skip === 0 ? [] : prev[estado]?.items ?? []
-        const merged = [...previos, ...page]
-        return {
+      try {
+        const { items } = await listarProyectos({
+          estado,
+          q: filtros.q || undefined,
+          orden: filtros.orden,
+          limit: PAGE_SIZE + 1,
+          offset: skip,
+        })
+        if (token !== reqRef.current) return
+        const hayMas = items.length > PAGE_SIZE
+        const page = hayMas ? items.slice(0, PAGE_SIZE) : items
+        setState((prev) => {
+          const previos = skip === 0 ? [] : prev[estado]?.items ?? []
+          const merged = [...previos, ...page]
+          return {
+            ...prev,
+            [estado]: {
+              items: merged,
+              cargando: false,
+              error: false,
+              hayMas: hayMas && merged.length < MAX_CARGADAS,
+              topeAlcanzado: hayMas && merged.length >= MAX_CARGADAS,
+            },
+          }
+        })
+      } catch {
+        if (token !== reqRef.current) return
+        setState((prev) => ({
           ...prev,
-          [estado]: {
-            items: merged,
-            cargando: false,
-            hayMas: hayMas && merged.length < MAX_CARGADAS,
-            topeAlcanzado: hayMas && merged.length >= MAX_CARGADAS,
-          },
-        }
-      })
+          [estado]: { ...(prev[estado] ?? colVacia()), cargando: false, error: true },
+        }))
+      }
     },
-    [filtros.q, filtros.cliente, filtros.material, filtros.orden],
+    [filtros.q, filtros.orden],
   )
 
   useEffect(() => {
     const token = ++reqRef.current
-    // Reset de todas las columnas al cambiar de vista/filtros y recarga (patrón
-    // de `useBoardData` del prototipo; mismo caso que los 23 pre-existentes).
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setState(Object.fromEntries(columns.map((c) => [c, COL_VACIA])))
+    setState(Object.fromEntries(columns.map((c) => [c, colVacia()])))
     columns.forEach((estado) => {
       void fetchPage(estado, 0, token)
     })
@@ -91,23 +93,28 @@ export function useTableroProyectos(columns: EstadoProyecto[], filtros: Filtros)
     [state, fetchPage],
   )
 
-  const recargar = useCallback(() => {
-    const token = ++reqRef.current
-    columns.forEach((estado) => {
-      setState((prev) => ({ ...prev, [estado]: { ...(prev[estado] ?? COL_VACIA), cargando: true } }))
-      void fetchPage(estado, 0, token)
-    })
+  const recargar = useCallback(
+    (estado?: EstadoProyecto) => {
+      const token = ++reqRef.current
+      const cols = estado ? [estado] : columns
+      cols.forEach((e) => {
+        setState((prev) => ({ ...prev, [e]: { ...colVacia() } }))
+        void fetchPage(e, 0, token)
+      })
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, fetchPage])
+    [key, fetchPage],
+  )
 
-  /** Mueve una tarjeta entre columnas de forma optimista y persiste el estado. */
+  /** Mueve una tarjeta entre columnas: optimista, revierte por snapshot, reconcilia al éxito. */
   const mover = useCallback(
-    async (id: number, desde: EstadoProyecto, hacia: EstadoProyecto) => {
-      if (desde === hacia) return
-      let movido: Proyecto | undefined
+    async (id: number, desde: EstadoProyecto, hacia: EstadoProyecto): Promise<boolean> => {
+      if (desde === hacia) return true
+      let previo: Record<string, ColumnaState> | null = null
       setState((prev) => {
+        previo = prev
         const origen = prev[desde]?.items ?? []
-        movido = origen.find((p) => p.id === id)
+        const movido = origen.find((p) => p.id === id)
         if (!movido) return prev
         const next: Record<string, ColumnaState> = {
           ...prev,
@@ -121,12 +128,19 @@ export function useTableroProyectos(columns: EstadoProyecto[], filtros: Filtros)
       })
       try {
         await moverProyecto(id, hacia)
+        // Reconciliar la columna destino con la verdad del backend (progreso,
+        // en_riesgo, contadores). La de origen ya no contiene la tarjeta.
+        if (columns.includes(hacia)) recargar(hacia)
+        return true
       } catch {
-        recargar() // revertir consultando la verdad del backend
+        if (previo) setState(previo)
+        return false
       }
     },
-    [recargar],
+    [columns, recargar],
   )
 
-  return { state, cargarMas, recargar, mover }
+  const algunError = columns.some((c) => state[c]?.error)
+
+  return { state, cargarMas, recargar, mover, algunError }
 }

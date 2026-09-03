@@ -10,10 +10,12 @@ export function BarraProgreso({
   pct,
   className = '',
   mostrarValor = false,
+  etiqueta = 'Avance',
 }: {
   pct: number
   className?: string
   mostrarValor?: boolean
+  etiqueta?: string
 }) {
   const v = Math.max(0, Math.min(100, pct))
   return (
@@ -21,6 +23,7 @@ export function BarraProgreso({
       <div
         className="h-1.5 flex-1 overflow-hidden rounded-full bg-brand-border/40"
         role="progressbar"
+        aria-label={etiqueta}
         aria-valuenow={v}
         aria-valuemin={0}
         aria-valuemax={100}

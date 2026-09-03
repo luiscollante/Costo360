@@ -6,6 +6,7 @@ import { IconButton } from '@/components/ui/IconButton'
 import { Dialog } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { showToast } from '@/lib/toast'
 import { formatFechaHora } from '@/lib/utils'
 import {
   listarNotificaciones, marcarNotificacionLeida, marcarTodasLeidas,
@@ -32,10 +33,12 @@ export function CampanaNotificaciones() {
   const marcarUna = useMutation({
     mutationFn: (id: number) => marcarNotificacionLeida(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['notificaciones'] }),
+    onError: () => showToast('error', 'No se pudo marcar la notificación'),
   })
   const marcarTodas = useMutation({
     mutationFn: () => marcarTodasLeidas(),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['notificaciones'] }),
+    onError: () => showToast('error', 'No se pudieron marcar las notificaciones'),
   })
 
   return (
@@ -78,11 +81,22 @@ export function CampanaNotificaciones() {
                   <>
                     <NotifIcono tipo={n.tipo} />
                     <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-semibold text-brand-text-dark">{n.titulo}</span>
+                      <span className="block text-sm font-semibold text-brand-text-dark">
+                        {!n.leida && (
+                          <>
+                            <span className="sr-only">Sin leer. </span>
+                            <span
+                              className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-brand-primary align-middle"
+                              aria-hidden="true"
+                            />
+                          </>
+                        )}
+                        {n.titulo}
+                      </span>
                       {n.mensaje && (
                         <span className="mt-0.5 block text-[12px] text-brand-text-secondary">{n.mensaje}</span>
                       )}
-                      <span className="mt-0.5 block text-[10px] text-brand-text-tertiary">
+                      <span className="mt-0.5 block text-[10px] text-brand-text-secondary">
                         {formatFechaHora(n.created_at)}
                       </span>
                     </span>

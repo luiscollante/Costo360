@@ -4,15 +4,28 @@ import { createPortal } from 'react-dom'
 const FOCUSABLES =
   'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])'
 
+// Contador de diálogos abiertos: `#root` solo deja de ser `inert` cuando el
+// ÚLTIMO se cierra (hallazgo Fase 5 a11y — la campana puede abrirse sobre otro
+// diálogo). El retorno de foco de cada diálogo (returnFocusRef) apunta al
+// elemento que tenía el foco cuando ESE diálogo se abrió, así que el apilado
+// devuelve el foco correctamente en cascada.
+let _dialogosAbiertos = 0
+function _marcarInert() {
+  if (_dialogosAbiertos === 0) document.getElementById('root')?.setAttribute('inert', '')
+  _dialogosAbiertos += 1
+}
+function _desmarcarInert() {
+  _dialogosAbiertos = Math.max(0, _dialogosAbiertos - 1)
+  if (_dialogosAbiertos === 0) document.getElementById('root')?.removeAttribute('inert')
+}
+
 /**
- * Diálogo modal accesible. Portala a `document.body`, marca `#root` como `inert`,
- * atrapa el foco, cierra con Escape, y devuelve el foco al elemento que lo abrió.
+ * Diálogo modal accesible. Portala a `document.body`, marca `#root` como `inert`
+ * (con contador de referencias para soportar diálogos apilados), atrapa el foco,
+ * cierra con Escape, y devuelve el foco al elemento que lo abrió.
  *
  * `role="alertdialog"` para avisos que requieren una decisión (no se cierra al
  * clicar el fondo). `role="dialog"` (default) sí se cierra al clicar el fondo.
- *
- * Limitación conocida: no soporta diálogos apilados (el primero en cerrar quita
- * el `inert`). Suficiente para el uso actual.
  */
 export function Dialog({
   open,
@@ -43,8 +56,7 @@ export function Dialog({
     if (!open) return
     returnFocusRef.current = (document.activeElement as HTMLElement) ?? null
 
-    const root = document.getElementById('root')
-    root?.setAttribute('inert', '')
+    _marcarInert()
 
     // Foco al primer control (respeta un autoFocus del consumidor); si no hay,
     // al panel. Para alertdialog (sin campos) suele caer en el panel.
@@ -58,7 +70,7 @@ export function Dialog({
     }
 
     return () => {
-      root?.removeAttribute('inert')
+      _desmarcarInert()
       returnFocusRef.current?.focus?.()
     }
   }, [open])

@@ -21,7 +21,7 @@ export const PROYECTO_META: Record<EstadoProyecto, EstadoMeta> = {
   activo:        { tono: 'success', Icon: Play,         label: 'Activo',        dot: 'bg-brand-success' },
   en_revision:   { tono: 'warning', Icon: Search,       label: 'En revisión',   dot: 'bg-brand-warning' },
   completado:    { tono: 'gold',    Icon: Check,        label: 'Completado',    dot: 'bg-brand-gold'    },
-  en_pausa:      { tono: 'neutral', Icon: Pause,        label: 'En pausa',      dot: 'bg-brand-warning' },
+  en_pausa:      { tono: 'neutral', Icon: Pause,        label: 'En pausa',      dot: 'bg-brand-text-tertiary' },
   cancelado:     { tono: 'danger',  Icon: X,            label: 'Cancelado',     dot: 'bg-brand-danger'  },
   archivado:     { tono: 'neutral', Icon: Archive,      label: 'Archivado',     dot: 'bg-brand-border'  },
 }

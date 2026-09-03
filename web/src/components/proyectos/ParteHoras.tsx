@@ -7,10 +7,17 @@ import { AsyncBoundary } from '@/components/ui/AsyncBoundary'
 import { formatFecha, formatNum } from '@/lib/utils'
 import { listarHorasProyecto, type Tarea } from '@/api/proyectos'
 
-export function ParteHoras({ projectId, tareas }: { projectId: number; tareas: Tarea[] }) {
+export function ParteHoras({
+  projectId, tareas, activo = true,
+}: {
+  projectId: number
+  tareas: Tarea[]
+  activo?: boolean
+}) {
   const { data = [], isPending, isError, refetch } = useQuery({
     queryKey: ['horas-proyecto', projectId],
     queryFn: () => listarHorasProyecto(projectId),
+    enabled: activo, // no consultar mientras la pestaña "Tiempos" está oculta (FD#10)
   })
 
   const tituloDe = (taskId: number) => tareas.find((t) => t.id === taskId)?.titulo ?? '—'

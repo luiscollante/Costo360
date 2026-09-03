@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   DragDropContext, Draggable, Droppable,
-  type DropResult, type DraggableProvided,
+  type DropResult, type DraggableProvided, type ResponderProvided,
 } from '@hello-pangea/dnd'
 import { Plus, FolderKanban } from 'lucide-react'
 import AppLayout from '@/components/AppLayout'
@@ -14,8 +14,10 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { useAuthStore } from '@/store/auth'
 import { puedeVerDashboard } from '@/lib/capabilities'
 import { formatNum } from '@/lib/utils'
+import { showToast } from '@/lib/toast'
 import { getResumen, type EstadoProyecto } from '@/api/proyectos'
 import { PROYECTO_META } from '@/components/proyectos/badgeMeta'
+import { crearResponders, anuncioFin } from '@/components/proyectos/dndAnuncios'
 import { ProyectoCard } from '@/components/proyectos/ProyectoCard'
 import { NuevoProyectoDialog } from '@/components/proyectos/NuevoProyectoDialog'
 import { useTableroProyectos, type Filtros } from '@/hooks/useTableroProyectos'
@@ -48,7 +50,6 @@ export default function ProyectosPage() {
   const [orden, setOrden] = useState<Filtros['orden']>('reciente')
   const [dialogAbierto, setDialogAbierto] = useState(false)
 
-  // Debounce del texto de búsqueda
   useEffect(() => {
     const t = setTimeout(() => setQ(busqueda.trim()), 300)
     return () => clearTimeout(t)
@@ -57,18 +58,35 @@ export default function ProyectosPage() {
   const vistaCfg = useMemo(() => VISTAS.find((v) => v.key === vista)!, [vista])
   const soloLectura = !!vistaCfg.soloLectura || !esGestor
 
-  const filtros: Filtros = useMemo(() => ({ q, cliente: '', material: '', orden }), [q, orden])
+  const filtros: Filtros = useMemo(() => ({ q, orden }), [q, orden])
   const { state, cargarMas, recargar, mover } = useTableroProyectos(vistaCfg.columnas, filtros)
 
   const resumen = useQuery({ queryKey: ['proyectos-resumen'], queryFn: getResumen, staleTime: 1000 * 30 })
 
-  function onDragEnd(r: DropResult) {
+  const tituloDe = (id: string) => {
+    for (const c of vistaCfg.columnas) {
+      const p = state[c]?.items.find((x) => String(x.id) === id)
+      if (p) return p.nombre
+    }
+    return 'el proyecto'
+  }
+  const columnaDe = (id: string) => PROYECTO_META[id as EstadoProyecto]?.label ?? id
+  const responders = crearResponders(tituloDe, columnaDe)
+
+  async function onDragEnd(r: DropResult, p: ResponderProvided) {
+    anuncioFin(r, p, tituloDe, columnaDe)
     if (!r.destination || r.destination.droppableId === r.source.droppableId) return
-    mover(
+    const ok = await mover(
       Number(r.draggableId),
       r.source.droppableId as EstadoProyecto,
       r.destination.droppableId as EstadoProyecto,
     )
+    if (!ok) showToast('error', 'No se pudo mover el proyecto')
+  }
+
+  async function moverPorMenu(id: number, desde: EstadoProyecto, hacia: EstadoProyecto) {
+    const ok = await mover(id, desde, hacia)
+    if (!ok) showToast('error', 'No se pudo mover el proyecto')
   }
 
   return (
@@ -87,7 +105,6 @@ export default function ProyectosPage() {
           }
         />
 
-        {/* Franja de resumen del módulo (no duplica el Dashboard global) */}
         <div className="mb-5 grid grid-cols-3 gap-3">
           <ResumenTile label="Proyectos activos" valor={resumen.data?.proyectos_activos} />
           <ResumenTile label="Tareas en progreso" valor={resumen.data?.tareas_en_progreso} />
@@ -97,7 +114,6 @@ export default function ProyectosPage() {
           />
         </div>
 
-        {/* Vistas + orden */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <SegmentedControl
             mode="buttons"
@@ -112,13 +128,13 @@ export default function ProyectosPage() {
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar por nombre, cliente o material…"
               aria-label="Buscar proyectos"
-              className="h-9 w-[min(280px,60vw)] rounded-lg border border-brand-border bg-brand-surface px-3 text-sm text-brand-text outline-none focus-visible:border-brand-primary"
+              className="h-9 w-[min(280px,60vw)] rounded-lg border border-brand-border bg-brand-surface px-3 text-sm text-brand-text outline-none focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary"
             />
             <select
               value={orden}
               onChange={(e) => setOrden(e.target.value as Filtros['orden'])}
-              aria-label="Ordenar"
-              className="h-9 rounded-lg border border-brand-border bg-brand-surface px-2 text-sm text-brand-text outline-none focus-visible:border-brand-primary cursor-pointer"
+              aria-label="Ordenar proyectos"
+              className="h-9 rounded-lg border border-brand-border bg-brand-surface px-2 text-sm text-brand-text outline-none focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer"
             >
               {ORDENES.map((o) => (
                 <option key={o.key} value={o.key}>{o.label}</option>
@@ -127,9 +143,10 @@ export default function ProyectosPage() {
           </div>
         </div>
 
-        {/* Tablero */}
         <DragDropContext
           onDragEnd={onDragEnd}
+          onDragStart={responders.onDragStart}
+          onDragUpdate={responders.onDragUpdate}
           dragHandleUsageInstructions="Presiona Espacio para levantar la tarjeta. Usa las flechas para moverla entre columnas y Espacio de nuevo para soltarla."
         >
           <div className="flex gap-4 overflow-x-auto pb-4">
@@ -143,9 +160,7 @@ export default function ProyectosPage() {
                     <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-text-secondary">
                       {meta.label}
                     </span>
-                    <span className="text-[11px] text-brand-text-tertiary">
-                      {col?.items.length ?? 0}
-                    </span>
+                    <span className="text-[11px] text-brand-text-secondary">{col?.items.length ?? 0}</span>
                   </div>
 
                   <Droppable droppableId={estado} isDropDisabled={soloLectura}>
@@ -155,7 +170,18 @@ export default function ProyectosPage() {
                         {...dp.droppableProps}
                         className="flex min-h-[120px] flex-1 flex-col gap-2 rounded-xl bg-brand-border/20 p-2"
                       >
-                        {col?.cargando && !col.items.length ? (
+                        {col?.error ? (
+                          <div role="alert" className="flex flex-col items-center gap-2 py-8 text-center">
+                            <p className="text-[12px] text-brand-text-secondary">No se pudo cargar esta columna</p>
+                            <button
+                              type="button"
+                              onClick={() => recargar(estado)}
+                              className="h-8 rounded-lg border border-brand-border bg-brand-surface px-3 text-xs font-semibold text-brand-text-secondary hover:border-brand-primary/40 cursor-pointer"
+                            >
+                              Reintentar
+                            </button>
+                          </div>
+                        ) : col?.cargando && !col.items.length ? (
                           <ColSkeleton />
                         ) : col && col.items.length === 0 ? (
                           <EmptyState title="Sin proyectos aquí" />
@@ -168,17 +194,13 @@ export default function ProyectosPage() {
                               isDragDisabled={soloLectura}
                             >
                               {(drag: DraggableProvided) => (
-                                <div
-                                  ref={drag.innerRef}
-                                  {...drag.draggableProps}
-                                  {...drag.dragHandleProps}
-                                  className="rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
-                                >
+                                <div ref={drag.innerRef} {...drag.draggableProps} className="rounded-xl">
                                   <ProyectoCard
                                     proyecto={p}
                                     columnasDestino={vistaCfg.columnas}
-                                    onMover={(id, hacia) => mover(id, estado, hacia)}
+                                    onMover={(id, hacia) => moverPorMenu(id, estado, hacia)}
                                     puedeMover={!soloLectura}
+                                    dragHandleProps={soloLectura ? null : drag.dragHandleProps}
                                   />
                                 </div>
                               )}
@@ -188,7 +210,7 @@ export default function ProyectosPage() {
                         {dp.placeholder}
 
                         {col?.topeAlcanzado && (
-                          <p className="px-1 py-2 text-center text-[11px] text-brand-text-tertiary">
+                          <p className="px-1 py-2 text-center text-[11px] text-brand-text-secondary">
                             Muchos proyectos — afiná la búsqueda para ver el resto.
                           </p>
                         )}
@@ -212,11 +234,13 @@ export default function ProyectosPage() {
         </DragDropContext>
       </div>
 
-      <NuevoProyectoDialog
-        open={dialogAbierto}
-        onClose={() => setDialogAbierto(false)}
-        onCreado={recargar}
-      />
+      {dialogAbierto && (
+        <NuevoProyectoDialog
+          open
+          onClose={() => setDialogAbierto(false)}
+          onCreado={() => recargar()}
+        />
+      )}
     </AppLayout>
   )
 }

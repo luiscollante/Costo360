@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, Loader2, Trash2, X } from 'lucide-react'
 import { Dialog } from '@/components/ui/Dialog'
@@ -8,7 +8,8 @@ import { DateField } from '@/components/ui/DateField'
 import { Button } from '@/components/ui/Button'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { formatFechaHora, formatNum } from '@/lib/utils'
+import { showToast } from '@/lib/toast'
+import { formatFecha, formatFechaHora, formatNum } from '@/lib/utils'
 import {
   editarTarea, asignarResponsable, borrarTarea,
   listarComentarios, crearComentario, borrarComentario,
@@ -58,6 +59,15 @@ export function TareaDialog({
   const [tab, setTab] = useState<'comentarios' | 'horas'>('comentarios')
   const [confirmarBorrado, setConfirmarBorrado] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const confirmarRef = useRef<HTMLButtonElement>(null)
+  const eliminarRef = useRef<HTMLButtonElement>(null)
+
+  // Foco a la confirmación de borrado (y de vuelta al cancelar) — la acción
+  // destructiva no debe dejar el foco en <body> (hallazgo Fase 5 a11y).
+  useEffect(() => {
+    if (confirmarBorrado) confirmarRef.current?.focus()
+    else if (eliminarRef.current && document.activeElement === document.body) eliminarRef.current.focus()
+  }, [confirmarBorrado])
 
   const invalidar = () => {
     qc.invalidateQueries({ queryKey: ['tareas', projectId] })
@@ -91,11 +101,13 @@ export function TareaDialog({
   const asignarme = useMutation({
     mutationFn: () => asignarResponsable(tarea!.id, usuarioId),
     onSuccess: invalidar,
+    onError: () => showToast('error', 'No se pudo asignar la tarea'),
   })
 
   const cambiarResponsable = useMutation({
     mutationFn: (id: string | null) => asignarResponsable(tarea!.id, id),
     onSuccess: invalidar,
+    onError: () => showToast('error', 'No se pudo cambiar el responsable'),
   })
 
   if (!tarea) return null
@@ -223,16 +235,17 @@ export function TareaDialog({
             ariaLabel="Detalle de la tarea"
             value={tab}
             onChange={(v) => setTab(v as 'comentarios' | 'horas')}
-            panelIdFor={(v) => `panel-${v}`}
+            panelIdFor={(v) => `td-panel-${v}`}
+            tabIdPrefix="td-tab"
             options={[
               { value: 'comentarios', label: 'Comentarios' },
               { value: 'horas', label: 'Registro de horas' },
             ]}
           />
-          <div id="panel-comentarios" role="tabpanel" tabIndex={0} hidden={tab !== 'comentarios'} className="pt-3">
+          <div id="td-panel-comentarios" role="tabpanel" aria-labelledby="td-tab-comentarios" tabIndex={0} hidden={tab !== 'comentarios'} className="pt-3">
             <PanelComentarios taskId={tarea.id} usuarioId={usuarioId} esGestor={esGestor} />
           </div>
-          <div id="panel-horas" role="tabpanel" tabIndex={0} hidden={tab !== 'horas'} className="pt-3">
+          <div id="td-panel-horas" role="tabpanel" aria-labelledby="td-tab-horas" tabIndex={0} hidden={tab !== 'horas'} className="pt-3">
             <PanelHoras
               taskId={tarea.id}
               projectId={projectId}
@@ -251,11 +264,12 @@ export function TareaDialog({
             <span className="flex items-center gap-1 text-xs text-brand-danger">
               ¿Eliminar?
               <button
+                ref={confirmarRef}
                 type="button"
                 onClick={() => borrar.mutate()}
                 disabled={borrar.isPending}
                 aria-label="Confirmar eliminación"
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-brand-danger hover:bg-brand-danger/15"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-brand-danger hover:bg-brand-danger/15 focus-visible:outline-2 focus-visible:outline-brand-danger"
               >
                 {borrar.isPending ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
               </button>
@@ -270,6 +284,7 @@ export function TareaDialog({
             </span>
           ) : (
             <button
+              ref={eliminarRef}
               type="button"
               onClick={() => setConfirmarBorrado(true)}
               className="inline-flex items-center gap-1 text-xs text-brand-text-secondary hover:text-brand-danger"
@@ -301,16 +316,20 @@ function PanelComentarios({ taskId, usuarioId, esGestor }: { taskId: number; usu
   const add = useMutation({
     mutationFn: () => crearComentario(taskId, texto.trim()),
     onSuccess: () => { setTexto(''); qc.invalidateQueries({ queryKey: ['comentarios', taskId] }) },
+    onError: () => showToast('error', 'No se pudo enviar el comentario'),
   })
   const del = useMutation({
     mutationFn: (id: number) => borrarComentario(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['comentarios', taskId] }),
+    onError: () => showToast('error', 'No se pudo borrar el comentario'),
   })
 
   return (
     <div className="space-y-3">
       {isPending ? (
-        <div className="h-10 rounded bg-brand-border/40" role="status" aria-busy="true" />
+        <div className="h-10 rounded bg-brand-border/40" role="status" aria-busy="true">
+          <span className="sr-only">Cargando comentarios…</span>
+        </div>
       ) : data.length === 0 ? (
         <EmptyState title="Sin comentarios todavía" />
       ) : (
@@ -370,19 +389,27 @@ function PanelHoras({
   const invalidar = () => {
     qc.invalidateQueries({ queryKey: ['horas-tarea', taskId] })
     qc.invalidateQueries({ queryKey: ['horas-proyecto', projectId] })
+    qc.invalidateQueries({ queryKey: ['proyectos-resumen'] })
   }
   const add = useMutation({
     mutationFn: () => registrarHoras(taskId, { horas: Number(horas), nota: nota.trim() }),
     onSuccess: () => { setHoras(''); setNota(''); invalidar() },
+    onError: () => showToast('error', 'No se pudieron registrar las horas'),
   })
-  const del = useMutation({ mutationFn: (id: number) => borrarHoras(id), onSuccess: invalidar })
+  const del = useMutation({
+    mutationFn: (id: number) => borrarHoras(id),
+    onSuccess: invalidar,
+    onError: () => showToast('error', 'No se pudo borrar el registro'),
+  })
 
   const total = data.reduce((s, e) => s + e.horas, 0)
 
   return (
     <div className="space-y-3">
       {isPending ? (
-        <div className="h-10 rounded bg-brand-border/40" role="status" aria-busy="true" />
+        <div className="h-10 rounded bg-brand-border/40" role="status" aria-busy="true">
+          <span className="sr-only">Cargando horas…</span>
+        </div>
       ) : data.length === 0 ? (
         <EmptyState title="Sin horas registradas" />
       ) : (
@@ -392,8 +419,8 @@ function PanelHoras({
               <li key={e.id} className="flex items-center justify-between rounded-lg border border-brand-border/60 px-2.5 py-1.5 text-sm">
                 <span className="min-w-0">
                   <span className="font-mono font-semibold tabular-nums text-brand-text">{formatNum(e.horas, 1)} h</span>
-                  <span className="ml-2 text-[11px] text-brand-text-secondary">{e.user_name || '—'} · {e.fecha}</span>
-                  {e.nota && <span className="ml-2 text-[11px] text-brand-text-tertiary">— {e.nota}</span>}
+                  <span className="ml-2 text-[11px] text-brand-text-secondary">{e.user_name || '—'} · {formatFecha(e.fecha)}</span>
+                  {e.nota && <span className="ml-2 text-[11px] text-brand-text-secondary">— {e.nota}</span>}
                 </span>
                 {(esGestor || e.usuario_id === usuarioId) && (
                   <button

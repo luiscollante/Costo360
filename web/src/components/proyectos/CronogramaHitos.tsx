@@ -28,6 +28,8 @@ export function CronogramaHitos({
     qc.invalidateQueries({ queryKey: ['hitos', projectId] })
     qc.invalidateQueries({ queryKey: ['tareas', projectId] })
     qc.invalidateQueries({ queryKey: ['proyecto', projectId] })
+    qc.invalidateQueries({ queryKey: ['proyectos-resumen'] })
+    qc.invalidateQueries({ queryKey: ['notificaciones'] }) // el desbloqueo puede generar avisos (M5)
   }
 
   const completar = useMutation({
@@ -39,6 +41,7 @@ export function CronogramaHitos({
         showToast('success', `Hito completado — ${res.tareas_desbloqueadas} tarea(s) desbloqueada(s)`)
       }
     },
+    onError: () => showToast('error', 'No se pudo cambiar el estado del hito'),
   })
 
   return (
@@ -90,12 +93,14 @@ export function CronogramaHitos({
         </ol>
       )}
 
-      <NuevoHitoDialog
-        open={dialogAbierto}
-        onClose={() => setDialogAbierto(false)}
-        projectId={projectId}
-        onCreado={invalidar}
-      />
+      {dialogAbierto && (
+        <NuevoHitoDialog
+          open
+          onClose={() => setDialogAbierto(false)}
+          projectId={projectId}
+          onCreado={invalidar}
+        />
+      )}
     </div>
   )
 }

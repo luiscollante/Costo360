@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, Navigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Plus } from 'lucide-react'
 import AppLayout from '@/components/AppLayout'
@@ -27,6 +27,11 @@ type Panel = 'tablero' | 'cronograma' | 'tiempos'
 export default function ProyectoDetallePage() {
   const { id: idParam } = useParams()
   const projectId = Number(idParam)
+  if (!Number.isFinite(projectId)) return <Navigate to="/proyectos" replace />
+  return <ProyectoDetalle projectId={projectId} />
+}
+
+function ProyectoDetalle({ projectId }: { projectId: number }) {
   const qc = useQueryClient()
   const usuario = useAuthStore((s) => s.usuario)
   const esGestor = puedeVerDashboard(usuario)
@@ -69,8 +74,8 @@ export default function ProyectoDetallePage() {
   const tareaSelViva = tareaSel ? tareas.find((t) => t.id === tareaSel.id) ?? tareaSel : null
 
   const mover = useMutation({
-    mutationFn: ({ tarea, hacia }: { tarea: Tarea; hacia: EstadoTarea }) =>
-      moverTarea(tarea.id, hacia),
+    mutationFn: ({ tarea, hacia, orden }: { tarea: Tarea; hacia: EstadoTarea; orden?: number }) =>
+      moverTarea(tarea.id, hacia, orden),
     onMutate: async ({ tarea, hacia }) => {
       await qc.cancelQueries({ queryKey: ['tareas', projectId] })
       const prev = qc.getQueryData<Tarea[]>(['tareas', projectId])
@@ -131,7 +136,8 @@ export default function ProyectoDetallePage() {
                   ariaLabel="Secciones del proyecto"
                   value={panel}
                   onChange={(v) => setPanel(v as Panel)}
-                  panelIdFor={(v) => `panel-${v}`}
+                  panelIdFor={(v) => `pd-panel-${v}`}
+                  tabIdPrefix="pd-tab"
                   options={[
                     { value: 'tablero', label: 'Tablero' },
                     { value: 'cronograma', label: 'Cronograma' },
@@ -145,7 +151,7 @@ export default function ProyectoDetallePage() {
                 )}
               </div>
 
-              <div id="panel-tablero" role="tabpanel" tabIndex={0} hidden={panel !== 'tablero'}>
+              <div id="pd-panel-tablero" role="tabpanel" aria-labelledby="pd-tab-tablero" tabIndex={0} hidden={panel !== 'tablero'}>
                 <AsyncBoundary
                   isPending={tareasQ.isPending}
                   isError={tareasQ.isError}
@@ -154,14 +160,15 @@ export default function ProyectoDetallePage() {
                   <TareaKanban
                     tareas={tareas}
                     nombreDe={(uid) => (uid ? nombrePorId[uid] : undefined)}
+                    esGestor={esGestor}
                     puedeEditar={puedeEditar}
-                    onMover={(tarea, hacia) => mover.mutate({ tarea, hacia })}
+                    onMover={(tarea, hacia, orden) => mover.mutate({ tarea, hacia, orden })}
                     onAbrir={setTareaSel}
                   />
                 </AsyncBoundary>
               </div>
 
-              <div id="panel-cronograma" role="tabpanel" tabIndex={0} hidden={panel !== 'cronograma'}>
+              <div id="pd-panel-cronograma" role="tabpanel" aria-labelledby="pd-tab-cronograma" tabIndex={0} hidden={panel !== 'cronograma'}>
                 <AsyncBoundary
                   isPending={hitosQ.isPending}
                   isError={hitosQ.isError}
@@ -171,21 +178,23 @@ export default function ProyectoDetallePage() {
                 </AsyncBoundary>
               </div>
 
-              <div id="panel-tiempos" role="tabpanel" tabIndex={0} hidden={panel !== 'tiempos'}>
-                <ParteHoras projectId={projectId} tareas={tareas} />
+              <div id="pd-panel-tiempos" role="tabpanel" aria-labelledby="pd-tab-tiempos" tabIndex={0} hidden={panel !== 'tiempos'}>
+                <ParteHoras projectId={projectId} tareas={tareas} activo={panel === 'tiempos'} />
               </div>
             </>
           )}
         </AsyncBoundary>
       </div>
 
-      <NuevaTareaDialog
-        open={nuevaTareaAbierta}
-        onClose={() => setNuevaTareaAbierta(false)}
-        projectId={projectId}
-        hitos={hitos}
-        usuarios={usuarios}
-      />
+      {nuevaTareaAbierta && (
+        <NuevaTareaDialog
+          open
+          onClose={() => setNuevaTareaAbierta(false)}
+          projectId={projectId}
+          hitos={hitos}
+          usuarios={usuarios}
+        />
+      )}
       <TareaDialog
         key={tareaSel?.id ?? 'none'}
         tarea={tareaSelViva}
