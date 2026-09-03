@@ -594,3 +594,62 @@ Change, `U#` = UX.
 2. **¿Se quita `pm_tasks.responsable` (texto libre)?** Recomendación: sí, dejar solo
    `responsable_id`. Se mantiene **solo si** el fundador quiere asignar tareas a operarios
    **sin cuenta** en Costo360.
+
+---
+
+## PARTE V — Ejecución del Ciclo A (2026-09-02)
+
+Rama `goal/modulo-proyectos` (sobre `master`). Micro-commits por bloque.
+
+### G0 — Migración `0007` ✅ (commit `aab3b55`)
+`backend/migrations/0007_gestion_proyectos.sql` aplicada a Supabase
+`hrmpyhixhbnkkpvxtuit` vía `apply_migration`. 6 tablas `pm_*` + RLS `enable`/`force` +
+policy `FOR ALL TO authenticated` + `GRANT` de DML. Aislamiento estructural padre-hijo
+con `UNIQUE (id, empresa_id)` + FK compuestas. `pm_notifications` con índice único
+parcial `(empresa_id, dedupe_key)`. `pm_touch_updated_at()` + `revoke execute`.
+`get_advisors` (security): **sin hallazgos nuevos** (los 2 WARN son pre-existentes y
+ajenos: `empresa_actual` SECURITY DEFINER intencional; leaked-password de Auth).
+Ajuste durante la ejecución: `milestone_id` queda FK simple (un `SET NULL`
+multi-columna anularía también `empresa_id NOT NULL`); la pertenencia hito↔proyecto la
+valida el backend (S13).
+
+### G1 — Routers backend ✅ (commit `2f82567`)
+`backend/routers/proyectos.py` (+ `backend/models/proyectos.py`) — 29 rutas bajo
+`db_rls` + `get_current_user` + `verificar_dispositivo` de router. Todos los hallazgos
+de la Fase 2 incorporados (S1 lock+lista blanca, S2 crear = gestor, S3 autoría
+server-side, S9 ILIKE/ORDER BY lista blanca/Literal, S10 `_recalc_progreso` propaga,
+S13 milestone↔proyecto, U11 `/resumen`, `/usuarios` para el selector). Registrado en
+`main.py`; `_self_test_rls` extendido (S11).
+
+### G2 — Barrido diario ✅ (commit `2f82567`)
+`backend/routers/proyectos_cron.py` — router aparte sin deps de sesión (S7). Secreto
+`X-Cron-Secret` con `hmac.compare_digest`, fail-closed (S8), rate-limit 6/h. Barrido
+**set-based sin bucle**, `empresa_id IN (SELECT id FROM empresas WHERE activa)` en cada
+sentencia (S4), idempotente por `dedupe_key` (S5), corre bajo `db_service` y no hace
+`commit` (S12), 500 genérico (S15). `hoy` = `America/Bogota`. `CRON_SECRET` documentado
+en `ENV_SETUP.md`.
+
+### G3 — Cliente API frontend ✅ (commit `280c61e`)
+`web/src/api/proyectos.ts` — cliente tipado, una función por endpoint. `tsc -b` +
+`eslint` limpios.
+
+### Verificación (SQL con rollback contra el proyecto real)
+1. Empresa A ve su proyecto. **OK**
+2. Empresa A **no** ve el de la empresa B (RLS). **OK**
+3. `WITH CHECK` rechaza INSERT con `empresa_id` ajeno. **OK**
+4. Empresa A no puede `UPDATE` un proyecto de B (0 filas). **OK**
+5. FK compuesta bloquea una tarea de A colgada de un proyecto de B. **OK**
+6. Usuario sin perfil (claims inválidos) ve 0 proyectos (fail-closed). **OK**
+7. `ON CONFLICT (empresa_id, dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING` →
+   idempotencia (valida la sintaxis de S5). **OK**
+8. Varias notificaciones con `dedupe_key NULL` coexisten. **OK**
+- Las 6 sentencias del barrido ejecutan sin error contra el esquema real (rollback).
+- `py_compile` + import de la app + build de OpenAPI + `tsc -b` + `eslint`: limpios.
+
+**Pendiente del Ciclo A:** prueba en vivo por HTTP de D6 (403 del operativo al crear
+proyecto / editar tarea ajena) — necesita `backend/.env` + `web/.env` del fundador
+(igual que el B8 de la Fase 2.A). Se cubre en la prueba en vivo del Ciclo B.
+
+### Fase 5 del Ciclo A — auditoría de seguridad
+*(Se llena con los hallazgos de los agentes de la Fase 5 — distintos de los de Fase 1 y
+Fase 2. Si hay bloqueantes, se corrigen antes de arrancar el Ciclo B.)*
