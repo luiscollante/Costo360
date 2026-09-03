@@ -706,3 +706,64 @@ hallazgos nuevos. `py_compile` + import de la app + OpenAPI + `tsc -b` + `eslint
 limpios.
 
 **Ciclo A CERRADO.** Listo para el Ciclo B (G4–G7 + prueba en vivo).
+
+---
+
+## PARTE VI — Ejecución del Ciclo B (2026-09-02)
+
+Rama `goal/modulo-proyectos`, commits `663e642` + `0ea46b8`. `@hello-pangea/dnd@18.0.1`
+instalado (react@19 deduped, sin duplicados).
+
+### G4 — Navegación ✅
+- `Sidebar.tsx`: "Proyectos" como `NavRow` suelto entre "Cotizaciones" y "Taller" (U10),
+  icono `FolderKanban`, visible para todos los roles.
+- `App.tsx`: rutas `/proyectos` y `/proyectos/:id` (`<Private>`, sin `RoleRoute`).
+- `CommandPalette.tsx`: entrada "Proyectos".
+
+### G5 — Tablero de proyectos ✅ (`pages/ProyectosPage.tsx`)
+- `<PageHeader kicker="Proyectos">` + franja de resumen (`GET /api/proyectos/resumen`).
+- `<SegmentedControl mode="buttons">` vistas Operativa / Cierre / Archivo (U3).
+- Kanban con `@hello-pangea/dnd` + `dragHandleUsageInstructions` en español + `<select>`
+  "Mover a" por tarjeta como vía accesible (U5). Arrastre deshabilitado en Archivo y para
+  no-gestores. Búsqueda con debounce + orden. Paginación por columna
+  (`hooks/useTableroProyectos.ts`, reescritura de `useBoardData`). Movimiento optimista.
+- "Nuevo proyecto" (`<Dialog>`, solo gestor) con `<Field>`/`<SelectField>`/`<DateField>`;
+  material = `<SelectField>` poblado con `/api/materiales/categorias` (G8, `api/materiales.ts`
+  gana `getCategoriasMaterial`).
+
+### G6 — Detalle de proyecto ✅ (`pages/ProyectoDetallePage.tsx`)
+- `<PageHeader kicker="Proyecto">` + `<ProjectStatusBadge>` + `formatPct` (U13). Enlace
+  "← Proyectos" encima.
+- `<SegmentedControl mode="tabs">` + `<div role="tabpanel">`: Tablero / Cronograma / Tiempos
+  (U3).
+- Tablero: `TareaKanban` (5 columnas) + `<TareaDialog>` (`max-w-2xl`, cuerpo `max-h-[75vh]
+  overflow-y-auto`, borrado **inline** con swap check/x — sin diálogo anidado, U4) con
+  `<SegmentedControl mode="tabs">` interno Comentarios / Registro de horas. Mover tarea =
+  optimista (`onMutate`/`onError`/`onSettled`); no-gestor solo mueve lo suyo y no saca de
+  `bloqueada`. Estado del formulario del diálogo con `useState(() => …)` + `key={tareaSel.id}`
+  (sin `useEffect` de sincronización).
+- Cronograma: `CronogramaHitos` (línea de hitos, "Completar" → `showToast` de desbloqueo).
+- Tiempos: `ParteHoras` (`<DataTable>` + estimado / registrado / desvío).
+
+### G7 — Notificaciones ✅ (`components/proyectos/CampanaNotificaciones.tsx`)
+- `<IconButton>` + contador de no leídas + `<Dialog>` con la lista + "marcar todas".
+- En **ambos** headers de `AppLayout` (móvil → `justify-between`). Sin `refetchInterval`:
+  `refetchOnWindowFocus` + `staleTime` 1 min + invalidación desde `/proyectos` (M5).
+
+### Componentes de apoyo
+- `components/proyectos/badges.tsx` (solo componentes) + `badgeMeta.ts` (mapas
+  `estado → {tono, icon, dot}`, U1/U2 — split por `react-refresh`).
+- `BarraProgreso.tsx` (U8, local, NO en `ui/`; relleno `bg-brand-primary`, 100 % / hito
+  `bg-brand-gold`).
+- `lib/utils.ts`: `formatFecha` / `formatFechaHora` / `diasHasta` (U7, sin `date-fns`).
+
+### Verificación
+`tsc -b` + `eslint` + `vite build` limpios. `npm ls react` sin duplicados.
+
+**Pendiente del Ciclo B:** prueba en vivo con navegador (cuenta admin + operativo) —
+necesita `backend/.env` + `web/.env` del fundador. Cubre el 403 del operativo (D6), el
+arrastre real, el desbloqueo de tareas al completar un hito, la campana, y el barrido manual.
+
+### Fase 5 del Ciclo B — auditoría
+*(Se llena con Frontend Developer + Accessibility Auditor + Code Reviewer — distintos de
+Fase 1 y Fase 2. Bloqueantes se corrigen antes de la prueba en vivo / fusión.)*
