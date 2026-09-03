@@ -764,6 +764,65 @@ instalado (react@19 deduped, sin duplicados).
 necesita `backend/.env` + `web/.env` del fundador. Cubre el 403 del operativo (D6), el
 arrastre real, el desbloqueo de tareas al completar un hito, la campana, y el barrido manual.
 
-### Fase 5 del Ciclo B — auditoría
-*(Se llena con Frontend Developer + Accessibility Auditor + Code Reviewer — distintos de
-Fase 1 y Fase 2. Bloqueantes se corrigen antes de la prueba en vivo / fusión.)*
+### Fase 5 del Ciclo B — auditoría (2026-09-02)
+
+**Frontend Developer**, **Accessibility Auditor**, **Code Reviewer** — los tres **APRUEBA
+CON CAMBIOS**. La Accessibility Auditor marcó **2 bloqueantes de nivel A**; el resto son
+serios/medios/menores. Todo aplicado en el commit `9fc7414`.
+
+**Bloqueantes (a11y) — cerrados:**
+- **Asa de arrastre dedicada** — `dragHandleProps` va SOLO en un botón "agarre"
+  (`GripVertical` + `aria-label`), no en un `div role="button"` con `<Link>`/`<select>`
+  anidados (WCAG 4.1.2). `ProyectoCard`/`TareaCard` + `ProyectosPage`/`TareaKanban`.
+- **`aria-label` de "Mover a"** empieza por el texto visible: `"Mover a otra columna:
+  <nombre>"` (WCAG 2.5.3 Label in Name).
+
+**Serios — cerrados:**
+- **`Dialog`: contador de referencias del `inert`** de `#root` → soporta diálogos apilados
+  (la campana sobre otro diálogo ya no rompe la trampa de foco).
+- **Anuncios de arrastre en español** — `onDragStart/Update/End` con `provided.announce()`
+  (nuevo `components/proyectos/dndAnuncios.ts`), ambos tableros (U5).
+
+**Medios / convergentes (FD/CR/A11Y) — cerrados:**
+- Estado de error del tablero: `try/catch` en `useTableroProyectos.fetchPage` + `error`
+  por columna + "Reintentar"; `mover` revierte por **snapshot** y reconcilia la columna
+  destino al éxito; objetos de columna frescos (no compartir `COL_VACIA`).
+- `ProyectoDetallePage`: `:id` no numérico → `<Navigate to="/proyectos">` (antes skeleton
+  infinito). `esGestor` a `<TareaKanban>` para el gate correcto de `bloqueada` (CR#1).
+  Mover tarea envía el `orden` de destino (CR#8).
+- Pestañas: `SegmentedControl` expone `tabIdPrefix`; los `role="tabpanel"` con
+  `aria-labelledby` (detalle → `pd-*`, diálogo de tarea → `td-*`, sin colisión).
+- `onError` + toast en todas las mutaciones que faltaban (responsable, asignarme,
+  comentar/borrar, registrar/borrar horas, completar hito, notificaciones, mover proyecto).
+- Invalidación de `['proyectos-resumen']` (registrar horas, completar hito) y
+  `['notificaciones']` (completar hito — M5).
+- `ParteHoras` no consulta con la pestaña oculta; `TareaKanban.porColumna` con `useMemo`;
+  diálogos "Nuevo*" montados condicionalmente (no conservan lo tecleado).
+
+**Menores de a11y — cerrados:** `EmptyState "Sin tareas"`, `sr-only` en skeletons,
+`aria-label` en `BarraProgreso` y "Ordenar proyectos", tipo de notificación con `sr-only`,
+marca "Sin leer" (no solo color), foco a la confirmación de borrado, focus-ring en los
+inputs nuevos, `text-tertiary`→`text-secondary` en textos <18px, punto de columna
+`en_pausa` distinto, fecha de horas con `formatFecha`. Lint nit de `SegmentedControl`
+(`no-useless-assignment`) arreglado de paso.
+
+**Diferido / documentado (no accionado):**
+- **Toggle "Todas / Mías" (U12) + filtros cliente/material (G5):** necesitan una consulta
+  de backend nueva (proyectos donde el usuario tiene tareas asignadas / facetas). El
+  operativo ya ve el tablero completo (D6). El código muerto de filtro en cliente se quitó.
+  **→ Decisión del fundador si se quiere en un ciclo posterior.**
+- **Toolbar con `<input>`/`<select>` crudos** (FD#6): se acepta — llevan `aria-label` +
+  tokens + focus-ring; un `<label>` visible por control recargaría la barra de filtros.
+- **Responsable desactivado se muestra "Sin responsable"** (CR#7): borde raro; los usuarios
+  se desactivan, no se borran, y los permisos siguen bien por id. Sin acción.
+- **`AppLayout` enfoca `<main>` y no el `<h1>` de `PageHeader`** (A11Y-15) y **contraste
+  del toast de éxito** (A11Y-16): defectos **pre-existentes** de `AppLayout`/`Toast.tsx`,
+  fuera del alcance de este módulo.
+- **`outline-none` en los primitivos `SelectField`/`DateField`** (A11Y-10): los inputs
+  nuevos del módulo llevan focus-ring; cambiar los primitivos compartidos es un cambio
+  transversal fuera de alcance.
+
+`tsc -b` + `eslint` + `vite build`: limpios.
+
+**Ciclo B CERRADO** (a falta de la prueba en vivo con navegador — necesita el `.env` del
+fundador).
