@@ -650,6 +650,59 @@ en `ENV_SETUP.md`.
 proyecto / editar tarea ajena) — necesita `backend/.env` + `web/.env` del fundador
 (igual que el B8 de la Fase 2.A). Se cubre en la prueba en vivo del Ciclo B.
 
-### Fase 5 del Ciclo A — auditoría de seguridad
-*(Se llena con los hallazgos de los agentes de la Fase 5 — distintos de los de Fase 1 y
-Fase 2. Si hay bloqueantes, se corrigen antes de arrancar el Ciclo B.)*
+### Fase 5 del Ciclo A — auditoría (2026-09-02)
+
+3 agentes distintos a los de Fase 1 y 2: **Code Reviewer**, **Backend Architect**,
+**Database Optimizer**. Los tres: **APRUEBA CON CAMBIOS**. **Ningún bloqueante para
+arrancar el Ciclo B.** Todos los arreglos aplicados en el commit `ca5798c` + migración
+`0008` (`0008_gestion_proyectos_endurecimiento.sql`, aplicada).
+
+**Cerrados antes del Ciclo B (convergentes CR#1/#2 + BA#1/#2):**
+- `editar_tarea`: `responsable_id` **fuera** de `TareaUpdate` — el cambio de responsable
+  va SIEMPRE por `PATCH /tareas/{id}/responsable` (valida el usuario contra `usuarios`
+  bajo RLS; antes el PUT lo aplicaba sin validar → riesgo cross-taller por la FK simple).
+- `_NO_GESTOR_WHITELIST` recortada a las **4** columnas que aprobó Security en S1:
+  `{estado, orden, descripcion, horas_estimadas}` (antes tenía 7).
+- Listados con `LIMIT 500` (`tareas`, `hitos`, `horas` ×2, `comentarios`) — contrato
+  fijado antes de cablear los hooks del Ciclo B.
+
+**Otros arreglos aplicados:**
+- CR#3 — un no-gestor no puede sacar una tarea de `bloqueada` saltándose el hito (403 en
+  `editar_tarea` y `mover_tarea`).
+- CR#4 — `responsable_id` tipado `Optional[UUID]` → 422 en vez de 500 con un valor no-UUID.
+- CR#5 — `estado`/`orden` de `listar_proyectos` tipados con `Literal`.
+- BA#3 — el chequeo del `X-Cron-Secret` es una dependencia resuelta **antes** de
+  `db_service` → un secreto inválido no consume conexión del pool.
+- BA#4 — `SET LOCAL statement_timeout='60s'` + `lock_timeout='5s'` al inicio del barrido.
+  La respuesta del barrido añade `empresas`.
+- DBO-H2 / CR#7 — `pm_projects.completado_en` (migración `0008`): el archivado usa esa
+  marca, no `updated_at` (que `_recalc_progreso` / el paso "en_riesgo" mueven).
+  `mover_proyecto`/`crear_proyecto` la fijan al pasar a `completado`.
+
+**Migración `0008` (no bloqueante, aplicada):**
+- `completado_en` + backfill.
+- `horas` / `horas_estimadas` → `numeric(7,2)` (DBO-H1).
+- `pm_tasks.milestone_id` → FK **compuesta** `(id, empresa_id)` con `on delete set null
+  (milestone_id)` (PG17) — aislamiento estructural también en el enlace al hito (DBO-H3).
+- Índices: `(empresa_id, updated_at desc)`, `(empresa_id, fecha_fin)`, `pm_tasks
+  (empresa_id, estado)`, `(empresa_id, fecha_limite)`, `milestone_id`-líder, `pm_milestones
+  (empresa_id, fecha_limite)`. Se quita `(empresa_id, archivado)` redundante
+  (DBO-H4/H5/H6/H7, BA#5).
+
+**Diferidos a producción / no accionables ahora (registrados):**
+- CR#6 — el `503` del cron cuando `CRON_SECRET` está vacío es por-request, no un fallo al
+  arrancar; se acepta como fail-closed mientras el disparo real no esté cableado.
+- CR#8 / índices con `pg_trgm` para el `ILIKE %q%` de `listar_proyectos` — a evaluar si
+  crece el volumen.
+- BA (escalabilidad ~1000 empresas) — troceo por lotes del barrido; a revisar cuando
+  aplique.
+- CR#9/#10/#11 — nits cosméticos (`round` bancario, `_recalc_progreso` no-op al
+  desbloquear/reordenar). Sin acción.
+
+**Verificado (SQL con rollback contra el proyecto real):** FK compuesta de hito bloquea
+cross-tenant; `completado_en` archiva a los 30 días y **no** antes; `SET NULL` toca solo
+`milestone_id`; las 6 sentencias del barrido v2 OK. `get_advisors` (security): sin
+hallazgos nuevos. `py_compile` + import de la app + OpenAPI + `tsc -b` + `eslint`:
+limpios.
+
+**Ciclo A CERRADO.** Listo para el Ciclo B (G4–G7 + prueba en vivo).
