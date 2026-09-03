@@ -25,7 +25,7 @@ from slowapi.errors import RateLimitExceeded
 from backend.middleware.rate_limiter import limiter
 from backend.routers import (
     auth, session, bootstrap, calculos, cotizacion, parametros, config, dashboard,
-    retales, admin, nesting, materiales, inventario, agente,
+    retales, admin, nesting, materiales, inventario, agente, proyectos, proyectos_cron,
 )
 # `finanzas` NO se registra en el prototipo nuevo: opera sobre `facturas_compra`, una
 # tabla que el fundador confirmó que NO es de Costo360 (sobra de otro proyecto) y que
@@ -94,13 +94,16 @@ def _self_test_rls() -> None:
             cur.execute("select current_user")
             if cur.fetchone()[0] != "authenticated":
                 raise RuntimeError("SET LOCAL ROLE authenticated no tuvo efecto.")
-            cur.execute("select count(*) from public.cotizaciones")
-            n = cur.fetchone()[0]
-            if n != 0:
-                raise RuntimeError(
-                    f"RLS no está bloqueando sin claims: cotizaciones devolvió {n} filas "
-                    "como 'authenticated' sin sesión. El aislamiento por empresa NO es fiable."
-                )
+            # Fail-closed sobre varias tablas de tenant, incluidas las del módulo de
+            # proyectos (hallazgo S11 de la auditoría de la Fase 2.D).
+            for tabla in ("cotizaciones", "pm_projects", "pm_notifications"):
+                cur.execute(f"select count(*) from public.{tabla}")
+                n = cur.fetchone()[0]
+                if n != 0:
+                    raise RuntimeError(
+                        f"RLS no está bloqueando sin claims: {tabla} devolvió {n} filas "
+                        "como 'authenticated' sin sesión. El aislamiento por empresa NO es fiable."
+                    )
         conn.rollback()
 
         # Tras el rollback, `SET LOCAL ROLE` debe haberse revertido: la conexión vuelve
@@ -170,6 +173,8 @@ app.include_router(nesting.router)
 app.include_router(materiales.router)
 app.include_router(inventario.router)
 app.include_router(agente.router)
+app.include_router(proyectos.router)
+app.include_router(proyectos_cron.router)
 
 
 @app.get("/")
