@@ -7,6 +7,7 @@ para dar un 422 claro antes de tocar SQL (hallazgo S9).
 """
 from datetime import date
 from typing import Literal, Optional
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -70,21 +71,22 @@ class TareaIn(BaseModel):
     titulo:          str = Field(min_length=1, max_length=200)
     descripcion:     str = Field(default="", max_length=4000)
     prioridad:       Prioridad = "media"
-    responsable_id:  Optional[str] = None          # uuid de usuarios; validado en BD
+    responsable_id:  Optional[UUID] = None          # 422 si el formato es inválido
     fecha_limite:    Optional[date] = None
     horas_estimadas: Optional[float] = Field(default=None, ge=0)
     milestone_id:    Optional[int] = None
 
 
 class TareaUpdate(BaseModel):
-    """Edición de tarea. Un no-gestor responsable solo puede tocar la lista
-    blanca (titulo, descripcion, estado, prioridad, orden, horas_estimadas,
-    fecha_limite); el backend rechaza el resto (hallazgo S1)."""
+    """Edición de tarea. NO incluye `responsable_id` — el cambio de responsable
+    va SIEMPRE por `PATCH /tareas/{id}/responsable` (hallazgos S1 y Fase 5 CR#1/
+    BA#1). Un no-gestor responsable solo puede tocar la lista blanca
+    `_NO_GESTOR_WHITELIST` del router (estado, orden, descripcion,
+    horas_estimadas); el backend rechaza el resto."""
     titulo:          Optional[str] = Field(default=None, min_length=1, max_length=200)
     descripcion:     Optional[str] = Field(default=None, max_length=4000)
     estado:          Optional[EstadoTarea] = None
     prioridad:       Optional[Prioridad] = None
-    responsable_id:  Optional[str] = None
     fecha_limite:    Optional[date] = None
     horas_estimadas: Optional[float] = Field(default=None, ge=0)
     milestone_id:    Optional[int] = None
@@ -99,7 +101,7 @@ class TareaMoverIn(BaseModel):
 
 class ResponsableIn(BaseModel):
     # None = desasignar (solo gestor). uuid = asignar a ese usuario del taller.
-    responsable_id: Optional[str] = None
+    responsable_id: Optional[UUID] = None
 
 
 # ── Registro de horas ───────────────────────────────────────────────────────

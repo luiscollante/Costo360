@@ -191,7 +191,10 @@ export async function crearTarea(projectId: number, body: TareaNueva): Promise<T
   return res.data
 }
 
-export type TareaCambios = Partial<TareaNueva & { estado: EstadoTarea; orden: number }>
+/** El cambio de responsable va SIEMPRE por `asignarResponsable`, no por aquí. */
+export type TareaCambios = Partial<
+  Omit<TareaNueva, 'responsable_id'> & { estado: EstadoTarea; orden: number }
+>
 
 export async function editarTarea(tareaId: number, body: TareaCambios): Promise<Tarea> {
   const res = await api.put<Tarea>(`/api/proyectos/tareas/${tareaId}`, body)

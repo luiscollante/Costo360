@@ -37,7 +37,10 @@ except Exception:  # pragma: no cover
 router = APIRouter(prefix="/api/proyectos/cron", tags=["proyectos-cron"])
 
 
-def _verificar_secreto(x_cron_secret: str | None) -> None:
+def verificar_secreto_cron(x_cron_secret: str | None = Header(default=None)) -> None:
+    """Dependencia — se resuelve ANTES de `db_service` en la firma del endpoint,
+    para que un secreto ausente/inválido devuelva 401/503 SIN tomar una conexión
+    del pool (hallazgo Fase 5 BA#3)."""
     esperado = os.environ.get("CRON_SECRET", "")
     if not esperado:
         # Fail-closed: sin secreto configurado, el endpoint no opera (S8).
@@ -52,8 +55,14 @@ def ejecutar_barrido(cur, hoy) -> dict:
     """Corre las 5 automatizaciones para TODAS las empresas activas. Recibe un
     cursor y NO hace commit (lo hace el wrapper `db_service`) — hallazgo S12.
     Devuelve un resumen de conteos."""
-    res = {"desbloqueadas": 0, "recordatorios": 0, "hitos_riesgo": 0,
-           "proyectos_riesgo": 0, "archivados": 0}
+    # Cotas de tiempo/lock para no bloquear ediciones de usuario si el disparo
+    # llega en horario laboral (hallazgo Fase 5 BA#4). SET LOCAL → solo esta tx.
+    cur.execute("set local statement_timeout = '60s'")
+    cur.execute("set local lock_timeout = '5s'")
+
+    cur.execute("select count(*) from empresas where activa")
+    res = {"empresas": cur.fetchone()[0], "desbloqueadas": 0, "recordatorios": 0,
+           "hitos_riesgo": 0, "proyectos_riesgo": 0, "archivados": 0}
 
     # 1. Desbloquear tareas cuyo hito ya está completado + avisar.
     cur.execute(
@@ -177,14 +186,18 @@ def ejecutar_barrido(cur, hoy) -> dict:
     )
     res["proyectos_riesgo"] = cur.rowcount
 
-    # 5. Archivar proyectos completados hace más de 30 días.
+    # 5. Archivar proyectos completados hace más de 30 días. Se usa `completado_en`
+    #    (fijado por el backend al pasar a 'completado'), no `updated_at`, que un
+    #    `_recalc_progreso` o el paso 4a moverían (hallazgos Fase 5 DBO-H2 / CR#7).
     cur.execute(
         """
         update pm_projects set estado = 'archivado', archivado = true
         where estado = 'completado'
-          and updated_at < now() - interval '30 days'
+          and completado_en is not null
+          and completado_en < (%(hoy)s::date - 30)
           and empresa_id in (select id from empresas where activa)
-        """
+        """,
+        {"hoy": hoy},
     )
     res["archivados"] = cur.rowcount
 
@@ -195,10 +208,9 @@ def ejecutar_barrido(cur, hoy) -> dict:
 @limiter.limit("6/hour")
 def barrido_diario(
     request: Request,
-    x_cron_secret: str | None = Header(default=None),
+    _secreto=Depends(verificar_secreto_cron),   # se resuelve ANTES de db_service (BA#3)
     conn=Depends(db_service),
 ):
-    _verificar_secreto(x_cron_secret)
     hoy = (datetime.now(_BOGOTA).date() if _BOGOTA else datetime.utcnow().date())
     cur = conn.cursor()
     try:

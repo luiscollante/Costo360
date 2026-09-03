@@ -16,9 +16,9 @@ Aislamiento jerárquico interno (D6 — "el operativo ve todo, edita solo lo suy
 El barrido diario de automatizaciones va en `routers/proyectos_cron.py` (bloque
 G2), en un router aparte SIN dependencias de sesión (hallazgo S7).
 """
-import re
 from datetime import date
 from decimal import Decimal
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
@@ -26,6 +26,7 @@ from backend.db.client import db_rls
 from backend.db.deps import verificar_dispositivo
 from backend.middleware.auth import get_current_user
 from backend.models.proyectos import (
+    EstadoProyecto,
     ProyectoIn, ProyectoUpdate, EstadoProyectoIn,
     HitoIn, HitoUpdate, EstadoHitoIn,
     TareaIn, TareaUpdate, TareaMoverIn, ResponsableIn,
@@ -36,7 +37,9 @@ from backend.services.audit_service import log_accion
 router = APIRouter(prefix="/api/proyectos", tags=["proyectos"],
                    dependencies=[Depends(verificar_dispositivo)])
 
-_UUID_RE = r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+# Tope defensivo para los listados sin paginación real (Fase 5 BA#2). El Ciclo B
+# puede pedir paginación como parámetro más adelante (aditivo).
+_LIMITE_LISTA = 500
 
 # ORDER BY solo desde lista blanca (hallazgo S9) — nunca interpolando valor del cliente.
 _ORDEN_PROYECTOS = {
@@ -225,8 +228,9 @@ def marcar_leida(notif_id: int, conn=Depends(db_rls), _usuario=Depends(get_curre
 
 # ── Tareas por id ───────────────────────────────────────────────────────────
 
-_NO_GESTOR_WHITELIST = {"titulo", "descripcion", "estado", "prioridad", "orden",
-                        "horas_estimadas", "fecha_limite"}
+# Lista blanca EXACTA que aprobó Security en S1 (Fase 5 CR#2 / BA#1): un no-gestor
+# responsable solo puede tocar estos 4 campos de su tarea.
+_NO_GESTOR_WHITELIST = {"estado", "orden", "descripcion", "horas_estimadas"}
 
 
 @router.put("/tareas/{tarea_id}")
@@ -243,6 +247,14 @@ def editar_tarea(tarea_id: int, body: TareaUpdate,
             raise HTTPException(
                 status_code=403,
                 detail=f"No puedes cambiar: {', '.join(sorted(prohibidos))}",
+            )
+        # Un no-gestor no puede sacar una tarea de 'bloqueada' saltándose el hito
+        # (Fase 5 CR#3). Solo un gestor puede forzar esa transición.
+        if (tarea["estado"] == "bloqueada"
+                and cambios.get("estado") not in (None, "bloqueada")):
+            raise HTTPException(
+                status_code=403,
+                detail="La tarea está bloqueada por un hito sin completar",
             )
 
     if not cambios:
@@ -279,6 +291,10 @@ def mover_tarea(tarea_id: int, body: TareaMoverIn,
     tarea = _tarea_para_editar(conn, tarea_id)
     if not _puede_editar_tarea(usuario, tarea):
         raise HTTPException(status_code=403, detail="Solo puedes mover tus tareas asignadas")
+    if (not _es_gestor(usuario)
+            and tarea["estado"] == "bloqueada" and body.estado != "bloqueada"):
+        raise HTTPException(status_code=403,
+                            detail="La tarea está bloqueada por un hito sin completar")
     cur = conn.cursor()
     if body.orden is not None:
         cur.execute("update pm_tasks set estado = %s, orden = %s where id = %s returning "
@@ -299,7 +315,7 @@ def asignar_responsable(tarea_id: int, body: ResponsableIn,
     No-gestor: solo puede autoasignarse (su propio id) y solo si la tarea está
     SIN responsable (hallazgo S1)."""
     tarea = _tarea_para_editar(conn, tarea_id)
-    nuevo = body.responsable_id
+    nuevo = str(body.responsable_id) if body.responsable_id is not None else None
 
     if not _es_gestor(usuario):
         if nuevo != usuario["id"]:
@@ -310,9 +326,7 @@ def asignar_responsable(tarea_id: int, body: ResponsableIn,
 
     cur = conn.cursor()
     if nuevo is not None:
-        if not re.match(_UUID_RE, nuevo):
-            cur.close()
-            raise HTTPException(status_code=422, detail="responsable_id inválido")
+        # RLS acota `usuarios` a la empresa: un id de otro taller devuelve 0 filas.
         cur.execute("select 1 from usuarios where id = %s and activo = true", (nuevo,))
         if cur.fetchone() is None:
             cur.close()
@@ -344,7 +358,8 @@ def borrar_tarea(tarea_id: int, request: Request,
 def listar_horas_tarea(tarea_id: int, conn=Depends(db_rls), _usuario=Depends(get_current_user)):
     cur = conn.cursor()
     cur.execute("select id, task_id, project_id, usuario_id, user_name, horas, fecha, nota, created_at "
-                "from pm_time_entries where task_id = %s order by fecha desc, id desc", (tarea_id,))
+                f"from pm_time_entries where task_id = %s order by fecha desc, id desc limit {_LIMITE_LISTA}",
+                (tarea_id,))
     rows = cur.fetchall()
     cur.close()
     return [_hora_row(r) for r in rows]
@@ -393,7 +408,8 @@ def borrar_horas(entry_id: int, conn=Depends(db_rls), usuario=Depends(get_curren
 def listar_comentarios(tarea_id: int, conn=Depends(db_rls), _usuario=Depends(get_current_user)):
     cur = conn.cursor()
     cur.execute("select id, task_id, autor_id, autor_nombre, contenido, created_at "
-                "from pm_comments where task_id = %s order by created_at asc, id asc", (tarea_id,))
+                f"from pm_comments where task_id = %s order by created_at asc, id asc limit {_LIMITE_LISTA}",
+                (tarea_id,))
     rows = cur.fetchall()
     cur.close()
     return [{"id": r[0], "task_id": r[1], "autor_id": str(r[2]) if r[2] else None,
@@ -496,10 +512,10 @@ def cambiar_estado_hito(hito_id: int, body: EstadoHitoIn,
 
 @router.get("")
 def listar_proyectos(
-    estado: str = Query(default=""),
+    estado: EstadoProyecto | Literal[""] = Query(default=""),
     archivado: bool | None = Query(default=None),
     q: str = Query(default="", max_length=120),
-    orden: str = Query(default="reciente"),
+    orden: Literal["reciente", "entrega", "avance", "nombre"] = Query(default="reciente"),
     limit: int = Query(default=25, ge=1, le=100),
     offset: int = Query(default=0, ge=0, le=100_000),
     conn=Depends(db_rls),
@@ -535,12 +551,15 @@ def listar_proyectos(
 def crear_proyecto(body: ProyectoIn, conn=Depends(db_rls), usuario=Depends(get_current_user)):
     _ensure_gestor(usuario)
     cur = conn.cursor()
+    completado_en = "now()" if body.estado == "completado" else "null"
     cur.execute(
         "insert into pm_projects "
-        "(empresa_id, nombre, descripcion, cliente, material, estado, fecha_inicio, fecha_fin) "
-        "values (%s,%s,%s,%s,%s,%s,%s,%s) returning " + _PROY_COLS,
+        "(empresa_id, nombre, descripcion, cliente, material, estado, fecha_inicio, "
+        " fecha_fin, archivado, completado_en) "
+        f"values (%s,%s,%s,%s,%s,%s,%s,%s,%s,{completado_en}) returning " + _PROY_COLS,
         (usuario["empresa_id"], body.nombre, body.descripcion, body.cliente,
-         body.material, body.estado, body.fecha_inicio, body.fecha_fin),
+         body.material, body.estado, body.fecha_inicio, body.fecha_fin,
+         body.estado == "archivado"),
     )
     row = cur.fetchone()
     cur.close()
@@ -585,8 +604,15 @@ def mover_proyecto(project_id: int, body: EstadoProyectoIn,
     _ensure_gestor(usuario)
     archivado = body.estado == "archivado"
     cur = conn.cursor()
-    cur.execute("update pm_projects set estado = %s, archivado = %s where id = %s "
-                f"returning {_PROY_COLS}", (body.estado, archivado, project_id))
+    # `completado_en` marca cuándo entró a 'completado' (reloj del archivado
+    # automático); se conserva si ya estaba, se limpia al salir de 'completado'.
+    cur.execute(
+        "update pm_projects set estado = %s, archivado = %s, "
+        "completado_en = case when %s = 'completado' then coalesce(completado_en, now()) "
+        "                     else null end "
+        f"where id = %s returning {_PROY_COLS}",
+        (body.estado, archivado, body.estado, project_id),
+    )
     row = cur.fetchone()
     cur.close()
     if row is None:
@@ -615,7 +641,7 @@ def borrar_proyecto(project_id: int, request: Request,
 def listar_tareas(project_id: int, conn=Depends(db_rls), _usuario=Depends(get_current_user)):
     cur = conn.cursor()
     cur.execute(f"select {_TAREA_COLS} from pm_tasks where project_id = %s "
-                "order by orden asc, id asc", (project_id,))
+                f"order by orden asc, id asc limit {_LIMITE_LISTA}", (project_id,))
     rows = cur.fetchall()
     cur.close()
     return [_tarea_row(r) for r in rows]
@@ -670,7 +696,7 @@ def crear_tarea(project_id: int, body: TareaIn,
 def listar_hitos(project_id: int, conn=Depends(db_rls), _usuario=Depends(get_current_user)):
     cur = conn.cursor()
     cur.execute(f"select {_HITO_COLS} from pm_milestones where project_id = %s "
-                "order by fecha_limite asc nulls last, id asc", (project_id,))
+                f"order by fecha_limite asc nulls last, id asc limit {_LIMITE_LISTA}", (project_id,))
     rows = cur.fetchall()
     cur.close()
     return [_hito_row(r) for r in rows]
@@ -701,7 +727,8 @@ def crear_hito(project_id: int, body: HitoIn,
 def listar_horas_proyecto(project_id: int, conn=Depends(db_rls), _usuario=Depends(get_current_user)):
     cur = conn.cursor()
     cur.execute("select id, task_id, project_id, usuario_id, user_name, horas, fecha, nota, created_at "
-                "from pm_time_entries where project_id = %s order by fecha desc, id desc", (project_id,))
+                f"from pm_time_entries where project_id = %s order by fecha desc, id desc limit {_LIMITE_LISTA}",
+                (project_id,))
     rows = cur.fetchall()
     cur.close()
     return [_hora_row(r) for r in rows]
