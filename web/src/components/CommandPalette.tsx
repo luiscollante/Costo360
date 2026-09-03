@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   LayoutDashboard, PlusCircle, ClipboardList, Layers, Grid3X3, Boxes,
-  SlidersHorizontal, Settings2, Zap, HardHat, Search, BookMarked, type LucideIcon,
+  SlidersHorizontal, Settings2, Zap, HardHat, Search, BookMarked, FolderKanban,
+  type LucideIcon,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import { puedeVerDashboard } from '@/lib/capabilities'
@@ -17,6 +18,7 @@ const ITEMS: CommandItem[] = [
   { to: '/express',        label: 'Cotización Express', hint: 'Cálculo rápido',          Icon: Zap               },
   { to: '/cotizacion-aiu', label: 'Cotización AIU',     hint: 'Obra pública',            Icon: HardHat           },
   { to: '/historial',      label: 'Historial',          hint: 'Cotizaciones guardadas',  Icon: ClipboardList     },
+  { to: '/proyectos',      label: 'Proyectos',          hint: 'Tablero de trabajos',     Icon: FolderKanban      },
   { to: '/inventario',     label: 'Inventario',         hint: 'Láminas en bodega',       Icon: Boxes             },
   { to: '/retales',        label: 'Retales',            hint: 'Sobrantes reutilizables', Icon: Layers            },
   { to: '/nesting',        label: 'Nesting',            hint: 'Plano de corte óptimo',   Icon: Grid3X3           },

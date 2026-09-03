@@ -21,6 +21,8 @@ import AppShellSkeleton from '@/components/AppShellSkeleton'
 import AdminPage from '@/pages/AdminPage'
 import ParametrosPage from '@/pages/ParametrosPage'
 import MaterialesPage from '@/pages/MaterialesPage'
+import ProyectosPage from '@/pages/ProyectosPage'
+import ProyectoDetallePage from '@/pages/ProyectoDetallePage'
 import NestingPage from '@/pages/NestingPage'
 import CotizacionExpressPage from '@/pages/CotizacionExpressPage'
 import CotizacionAIUPage from '@/pages/CotizacionAIUPage'
@@ -102,6 +104,8 @@ export default function App() {
               <Route path="/express" element={<Private><CotizacionExpressPage /></Private>} />
               <Route path="/cotizacion-aiu" element={<Private><CotizacionAIUPage /></Private>} />
               <Route path="/historial" element={<Private><HistorialPage /></Private>} />
+              <Route path="/proyectos" element={<Private><ProyectosPage /></Private>} />
+              <Route path="/proyectos/:id" element={<Private><ProyectoDetallePage /></Private>} />
               <Route path="/retales" element={<Private><RetalesPage /></Private>} />
               <Route path="/inventario" element={<Private><InventarioPage /></Private>} />
               <Route path="/nesting" element={<Private><NestingPage /></Private>} />

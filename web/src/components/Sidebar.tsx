@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@/store/auth'
@@ -18,6 +19,7 @@ import {
   Zap,
   HardHat,
   BookMarked,
+  FolderKanban,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -30,6 +32,8 @@ interface NavItem { to: string; label: string; Icon: LucideIcon; requiereDashboa
 //  · Ajustes: parámetros de costo y datos de la empresa.
 //  · Panel Admin va aparte, abajo.
 const DASHBOARD_ITEM: NavItem = { to: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard, requiereDashboard: true }
+// Ítem suelto (no un grupo de un solo hijo — hallazgo UX U10), entre "Cotizaciones" y "Taller".
+const PROYECTOS_ITEM: NavItem = { to: '/proyectos', label: 'Proyectos', Icon: FolderKanban }
 
 const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
@@ -132,16 +136,23 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         )}
 
         {grupos.map((group) => (
-          <div key={group.label}>
-            <p className="px-3 mb-1 text-[11px] font-semibold uppercase tracking-widest text-[#E4D8BF]">
-              {group.label}
-            </p>
-            <div className="space-y-0.5">
-              {group.items.map((it) => (
-                <NavRow key={it.to} {...it} onNavigate={onNavigate} />
-              ))}
+          <Fragment key={group.label}>
+            <div>
+              <p className="px-3 mb-1 text-[11px] font-semibold uppercase tracking-widest text-[#E4D8BF]">
+                {group.label}
+              </p>
+              <div className="space-y-0.5">
+                {group.items.map((it) => (
+                  <NavRow key={it.to} {...it} onNavigate={onNavigate} />
+                ))}
+              </div>
             </div>
-          </div>
+            {group.label === 'Cotizaciones' && (
+              <div className="space-y-0.5">
+                <NavRow {...PROYECTOS_ITEM} onNavigate={onNavigate} />
+              </div>
+            )}
+          </Fragment>
         ))}
 
         {usuario?.puede_gestionar_usuarios && (
