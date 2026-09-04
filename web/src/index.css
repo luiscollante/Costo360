@@ -45,6 +45,21 @@
   box-sizing: border-box;
 }
 
+/* Alto disponible dentro de <main> (AppLayout.tsx), para tableros que necesitan
+   su propio scroll acotado en vez de crecer con la página (p. ej. Proyectos —
+   el Kanban de @hello-pangea/dnd exige un único contenedor de scroll por
+   columna). MANTENER SINCRONIZADO con el padding de <main> en AppLayout.tsx:
+   pt-[calc(3.5rem+1rem)] lg:pt-20, p-4 sm:p-6 lg:p-8. Solo se usa desde md:. */
+:root {
+  --board-viewport-h: calc(100vh - 3.5rem - 1rem - 1rem);
+}
+@media (min-width: 640px) {
+  :root { --board-viewport-h: calc(100vh - 3.5rem - 1rem - 1.5rem); }
+}
+@media (min-width: 1024px) {
+  :root { --board-viewport-h: calc(100vh - 5rem - 2rem); }
+}
+
 html, body, #root {
   height: 100%;
   margin: 0;

@@ -53,12 +53,12 @@ export function TareaKanban({
       onDragUpdate={responders.onDragUpdate}
       dragHandleUsageInstructions="Presiona Espacio para levantar la tarea. Flechas para moverla, Espacio para soltarla."
     >
-      <div className="flex gap-3 overflow-x-auto pb-4">
+      <div className="flex gap-3 overflow-x-auto pb-4 md:h-[65vh] md:min-h-0">
         {columnas.map(({ estado, items }) => {
           const meta = TAREA_META[estado]
           return (
-            <div key={estado} className="flex w-[260px] shrink-0 flex-col">
-              <div className="mb-2 flex items-center gap-2 px-1">
+            <div key={estado} className="flex w-[260px] shrink-0 flex-col md:min-h-0">
+              <div className="mb-2 flex shrink-0 items-center gap-2 px-1">
                 <span className={`h-2 w-2 rounded-full ${meta.dot}`} aria-hidden="true" />
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-text-secondary">
                   {meta.label}
@@ -70,7 +70,7 @@ export function TareaKanban({
                   <div
                     ref={dp.innerRef}
                     {...dp.droppableProps}
-                    className="flex min-h-[100px] flex-1 flex-col gap-2 rounded-xl bg-brand-border/20 p-2"
+                    className="flex min-h-[100px] flex-1 flex-col gap-2 rounded-xl bg-brand-border/20 p-2 md:min-h-0 md:overflow-y-auto md:pr-1"
                   >
                     {items.length === 0 ? (
                       <EmptyState title="Sin tareas" />

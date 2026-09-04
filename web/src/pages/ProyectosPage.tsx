@@ -91,21 +91,23 @@ export default function ProyectosPage() {
 
   return (
     <AppLayout>
-      <div className="mx-auto max-w-[1400px]">
-        <PageHeader
-          kicker="Proyectos"
-          title="Proyectos"
-          subtitle={vistaCfg.hint}
-          actions={
-            esGestor ? (
-              <Button size="sm" onClick={() => setDialogAbierto(true)}>
-                <Plus size={15} aria-hidden="true" /> Nuevo proyecto
-              </Button>
-            ) : undefined
-          }
-        />
+      <div className="mx-auto max-w-[1400px] md:flex md:h-[var(--board-viewport-h)] md:flex-col md:overflow-hidden">
+        <div className="md:shrink-0">
+          <PageHeader
+            kicker="Proyectos"
+            title="Proyectos"
+            subtitle={vistaCfg.hint}
+            actions={
+              esGestor ? (
+                <Button size="sm" onClick={() => setDialogAbierto(true)}>
+                  <Plus size={15} aria-hidden="true" /> Nuevo proyecto
+                </Button>
+              ) : undefined
+            }
+          />
+        </div>
 
-        <div className="mb-5 grid grid-cols-3 gap-3">
+        <div className="mb-5 grid shrink-0 grid-cols-3 gap-3">
           <ResumenTile label="Proyectos activos" valor={resumen.data?.proyectos_activos} />
           <ResumenTile label="Tareas en progreso" valor={resumen.data?.tareas_en_progreso} />
           <ResumenTile
@@ -114,7 +116,7 @@ export default function ProyectosPage() {
           />
         </div>
 
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-3">
           <SegmentedControl
             mode="buttons"
             ariaLabel="Vista del tablero"
@@ -149,13 +151,13 @@ export default function ProyectosPage() {
           onDragUpdate={responders.onDragUpdate}
           dragHandleUsageInstructions="Presiona Espacio para levantar la tarjeta. Usa las flechas para moverla entre columnas y Espacio de nuevo para soltarla."
         >
-          <div className="flex gap-4 overflow-x-auto pb-4">
+          <div className="flex gap-4 overflow-x-auto pb-4 md:min-h-0 md:flex-1">
             {vistaCfg.columnas.map((estado) => {
               const col = state[estado]
               const meta = PROYECTO_META[estado]
               return (
-                <div key={estado} className="flex w-[300px] shrink-0 flex-col">
-                  <div className="mb-2 flex items-center gap-2 px-1">
+                <div key={estado} className="flex w-[300px] shrink-0 flex-col md:min-h-0">
+                  <div className="mb-2 flex shrink-0 items-center gap-2 px-1">
                     <span className={`h-2 w-2 rounded-full ${meta.dot}`} aria-hidden="true" />
                     <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-text-secondary">
                       {meta.label}
@@ -168,7 +170,7 @@ export default function ProyectosPage() {
                       <div
                         ref={dp.innerRef}
                         {...dp.droppableProps}
-                        className="flex min-h-[120px] flex-1 flex-col gap-2 rounded-xl bg-brand-border/20 p-2"
+                        className="flex min-h-[120px] flex-1 flex-col gap-2 rounded-xl bg-brand-border/20 p-2 md:min-h-0 md:overflow-y-auto md:pr-1"
                       >
                         {col?.error ? (
                           <div role="alert" className="flex flex-col items-center gap-2 py-8 text-center">
