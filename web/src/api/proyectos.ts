@@ -117,8 +117,11 @@ export interface PaginaProyectos {
   hay_mas: boolean
 }
 
-export async function listarProyectos(params: ListarProyectosParams = {}): Promise<PaginaProyectos> {
-  const res = await api.get<PaginaProyectos>('/api/proyectos', { params })
+export async function listarProyectos(
+  params: ListarProyectosParams = {},
+  signal?: AbortSignal,
+): Promise<PaginaProyectos> {
+  const res = await api.get<PaginaProyectos>('/api/proyectos', { params, signal })
   return res.data
 }
 
