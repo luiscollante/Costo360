@@ -2153,7 +2153,7 @@ function Step4Resultado({ dir }: { dir: number }) {
               onClick={() => setPaso(2)}
               className="mt-6 flex items-center gap-2 text-sm text-brand-text-secondary hover:text-brand-text transition-colors mx-auto"
             >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
                 <path d="M9 2L4 7L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               Anterior
@@ -2389,7 +2389,7 @@ function Step4Resultado({ dir }: { dir: number }) {
                 }}
                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded border border-brand-border text-sm text-brand-text-secondary hover:text-brand-text hover:border-brand-border/80 transition-colors"
               >
-                <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
                   <path d="M9 2L4 7L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 Anterior — ajustar parámetros

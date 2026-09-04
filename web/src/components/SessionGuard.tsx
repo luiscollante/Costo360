@@ -125,7 +125,7 @@ export default function SessionGuard() {
         {vista.tipo === 'esperando' && (
           <>
             <h2 className="text-base font-bold text-brand-text mb-2">Sesión en otro dispositivo</h2>
-            <p className="text-sm text-brand-text-secondary mb-6">
+            <p className="text-sm text-brand-text mb-6">
               Tu cuenta está activa en «{vista.prev}». Puedes moverla aquí ahora mismo o cancelar.
             </p>
             <div className="flex flex-col gap-2">
@@ -148,7 +148,7 @@ export default function SessionGuard() {
         {vista.tipo === 'aviso-titular' && (
           <>
             <h2 className="text-base font-bold text-brand-text mb-2">¿Mover la sesión?</h2>
-            <p className="text-sm text-brand-text-secondary mb-6">
+            <p className="text-sm text-brand-text mb-6">
               Se intentó iniciar sesión en «{vista.retador}». ¿Qué quieres hacer?
             </p>
             <div className="flex flex-col gap-2">
@@ -177,7 +177,7 @@ export default function SessionGuard() {
         {vista.tipo === 'expulsado' && (
           <>
             <h2 className="text-base font-bold text-brand-text mb-2">Tu sesión se movió</h2>
-            <p className="text-sm text-brand-text-secondary mb-6">
+            <p className="text-sm text-brand-text mb-6">
               Iniciaste sesión en otro dispositivo. Aquí se cerró para mantener una sola sesión activa.
             </p>
             <button
@@ -192,7 +192,7 @@ export default function SessionGuard() {
         {vista.tipo === 'sin-cupo' && (
           <>
             <h2 className="text-base font-bold text-brand-text mb-2">Sin cupo disponible</h2>
-            <p className="text-sm text-brand-text-secondary mb-6">
+            <p className="text-sm text-brand-text mb-6">
               Tu plan no tiene cupos de usuario libres. Contacta al administrador de tu empresa.
             </p>
             <button
