@@ -4,6 +4,68 @@
 
 ## ✅ Hecho
 
+- **Ronda de bugs post-lanzamiento del módulo de Proyectos + wizard de Cotización
+  (2026-09-03):** ciclo `/goal` completo (Fases 0-6) sobre 6 problemas reportados
+  por el fundador tras explorar el módulo recién fusionado, agrupados en 4 causas
+  de fondo reales. Todo directamente en `master` (no ameritaba rama aparte — son
+  correcciones puntuales, no una feature nueva), un commit por frente + 2 commits
+  de arreglos de las auditorías de Fase 5. Fase 2 auditada por Backend Architect +
+  Frontend Developer + Minimal Change Engineer; Fase 5 por Code Reviewer +
+  Accessibility Auditor (los 5, distintos entre fases).
+  - **Rendimiento del tablero de Proyectos** (`useTableroProyectos.ts`,
+    `api/proyectos.ts`): medido con `performance.getEntriesByType` en el
+    navegador real — el tablero disparaba 5-7 peticiones paralelas por carga
+    (una por columna + resumen + notificaciones), sin cancelar las obsoletas al
+    cambiar de pestaña/filtro (React StrictMode las duplicaba en dev). Ahora
+    cancela de verdad con `AbortController` en el cleanup del efecto, distingue
+    cancelación de error real, y reintenta una vez ante fallos transitorios
+    (timeout/5xx, nunca 4xx) antes de mostrar "No se pudo cargar esta columna".
+    Se descartó a propósito combinar las 5-7 peticiones en un endpoint nuevo —
+    los auditores recomendaron medir primero con este cambio más acotado.
+  - **Arrastrar-y-soltar roto + columnas sin altura fija** (`ProyectosPage.tsx`,
+    `TareaKanban.tsx`, `index.css`): causa raíz confirmada por un warning real de
+    `@hello-pangea/dnd` en consola ("nested scroll container") — el scroll
+    vertical de cada columna dependía de `<main>` (compartido por toda la app) en
+    vez de tener el suyo propio. Aplicado el patrón exacto del prototipo Base44
+    (`gestion-proyectos-nuevo-modulo.zip`, inspeccionado a pedido del fundador):
+    altura acotada de página + cada columna con su propio `overflow-y-auto`.
+    Alcance: solo escritorio (`md:` y superior), decisión explícita del fundador
+    — Proyectos no tiene versión de móvil probada todavía, el arrastre en móvil
+    queda pendiente. Verificado en vivo: el warning de consola desapareció por
+    completo (antes 5 por carga, después 0) en las 3 vistas.
+  - **Modal de "sesión en otro dispositivo"** (`SessionGuard.tsx`,
+    `backend/routers/session.py`): decisión del fundador — se quita el período de
+    gracia de 30 segundos antes de poder forzar el cambio (`_GRACE_S=0` en
+    backend y frontend), queda disponible de inmediato. Corregido el contraste
+    bajo (`text-brand-muted` sobre fondo `.glass` compuesto → botones a fondo
+    sólido + `text-brand-text`, ajustado una segunda vez tras la auditoría de
+    Fase 5 porque el primer arreglo seguía sin pasar AA sobre ese fondo real).
+  - **Wizard de Nueva Cotización, fase Resultado** (`CotizacionPage.tsx`):
+    **bug real encontrado y corregido** — el botón "Anterior" llamaba
+    `setPaso(3)`, el mismo paso "Resultado" en el que ya se está (paso 2 =
+    Proyecto), así que nunca navegaba a ningún lado; corregido a `setPaso(2)`,
+    verificado en vivo (vuelve a "Proyecto" con los datos conservados). Quitado
+    el botón "Calcular" duplicado. Tarjetas de esa fase (`.glass` → superficie
+    sólida) y botón "Guardar cotización" reforzado a fondo sólido — antes casi
+    invisible al 10% de opacidad, con jerarquía visual invertida frente a "Nueva
+    cotización".
+  - **Regla CSS global `button:not(:disabled) { cursor: pointer }`** en
+    `index.css` (dentro de `@layer base`, corregido tras la Fase 5 — sin capa le
+    ganaba al `cursor-grab` de las asas de arrastre) — cierra en toda la app el
+    olvido recurrente de `cursor-pointer` por botón (Tailwind v4 quita el cursor
+    por defecto de `<button>`; ya se había parchado uno por uno en Proyectos).
+  - **2 hallazgos reales de las auditorías de Fase 5, corregidos**: contraste
+    insuficiente del modal de sesión sobre su fondo compuesto real (no crema
+    plano), y `--board-viewport-h` con una fórmula que asumía un padding-top que
+    en realidad pierde contra `sm:p-6` en el rango 640-1023px (verificado contra
+    el CSS compilado real, no en teoría).
+  - **Pendiente honesto:** no logré simular de forma confiable un arrastre real
+    de mouse con las herramientas de automatización del navegador (limitación
+    conocida de este tipo de librería de drag-and-drop) — la corrección de raíz
+    quedó verificada por la desaparición del warning de consola y por arrastre
+    de columna independiente confirmado visualmente, pero el fundador debería
+    hacer una prueba manual de arrastre real para cerrar el loop del todo.
+
 - **Objetivo 6 — Módulo de gestión de proyectos: CICLO A + CICLO B completados (2026-09-02):**
   rama `goal/modulo-proyectos` (sobre `master`, con el rediseño visual ya fusionado).
   Reimplementación **nativa** (React 19 + FastAPI + Supabase) del prototipo que el fundador
@@ -262,10 +324,12 @@
 
 ## 🔄 En progreso
 
-- **Objetivo 6 (módulo de gestión de proyectos) — cierre pendiente:** Ciclo A y Ciclo B
-  completos y auditados en la rama `goal/modulo-proyectos` (no fusionada). Falta la prueba en
-  vivo con la cuenta operativa (Regla 2/D6) y fusionar a `master`. Ver
-  `docs/PLAN_MODULO_GESTION_PROYECTOS.md`, Parte VI.
+- **Prueba manual de arrastre real pendiente:** la corrección del drag-and-drop de Proyectos
+  (2026-09-03) quedó verificada por la desaparición del warning de consola de
+  `@hello-pangea/dnd` y por el arrastre entre columnas confirmado con teclado — no se logró
+  simular un arrastre real de mouse con las herramientas de automatización del navegador
+  (limitación conocida de esa clase de librería). El fundador debería confirmar con un
+  arrastre real en su propio navegador para cerrar el loop del todo.
 
 ---
 
@@ -286,8 +350,9 @@
    hoy `web/src/api/*.ts` están alineados a mano con el backend nuevo.
 
 ### Frente activo ahora mismo
-- **Prueba en vivo con la cuenta operativa** del módulo de gestión de proyectos (Objetivo 6),
-  luego fusionar `goal/modulo-proyectos` a `master`.
+- **El fundador confirma la ronda de bugs del 2026-09-03** (Proyectos + wizard de Cotización,
+  ver entrada de "Hecho" arriba) — en particular el arrastre real con mouse, que no se pudo
+  probar de forma automatizada.
 - **Después:** el fundador decide el siguiente frente entre los objetivos que quedan abiertos
   del roadmap (ver `docs/ROADMAP_COSTO360.md`) — landing page de alto impacto (Objetivo 2),
   agentes de operación (Objetivos 3-4), o el asistente de IA dentro del producto (Objetivo 5,
@@ -316,4 +381,4 @@
 
 ---
 
-*Última actualización: 2026-09-03*
+*Última actualización: 2026-09-03 (tarde)*

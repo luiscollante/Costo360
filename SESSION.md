@@ -2,6 +2,90 @@
 
 ---
 
+## Sesión: 2026-09-03 (tarde) — Ronda de bugs: tablero de Proyectos + wizard de Cotización
+
+### Qué se hizo
+Tras fusionar el módulo de gestión de proyectos, el fundador exploró la app en vivo (servidor
+local levantado para él) y reportó 6 problemas. Ciclo `/goal` completo (Fases 0-6), directo en
+`master` (correcciones puntuales, no ameritaba rama aparte). Investigación propia con evidencia
+real (consola del navegador, `performance.getEntriesByType`, lectura del prototipo Base44 a
+pedido explícito del fundador) antes de plan/auditoría — no se adivinó ningún diagnóstico.
+
+- **Fase 0-1 (mapa + plan):** los 6 reportes se agruparon en 4 causas de fondo reales.
+- **Fase 2 (auditoría del plan):** Backend Architect + Frontend Developer + Minimal Change
+  Engineer, los 3 "APRUEBA CON CAMBIOS". Decisiones del fundador tras la explicación: forzar el
+  cambio de sesión de inmediato (sin esperar 30s), y dejar el arrastre en móvil sin arreglar
+  por ahora (Proyectos no tiene versión de móvil probada).
+- **Fase 4 (ejecución), 4 commits + 3 de arreglos de auditoría:**
+  - **Rendimiento + error transitorio de columnas** (`af92749` es sesión, `b0de613` es este):
+    `useTableroProyectos.ts` cancela peticiones obsoletas con `AbortController` (antes solo
+    descartaba la respuesta tarde, sin cortar la petición HTTP — React StrictMode las
+    duplicaba en dev), distingue cancelación de error real, reintenta 1 vez ante fallos
+    transitorios (timeout/5xx, nunca 4xx). Medido con datos reales: picos de hasta 9.6s con 7
+    peticiones paralelas por carga. Se descartó combinar las peticiones en un endpoint nuevo
+    por ahora — los auditores recomendaron medir primero con este cambio más acotado.
+  - **Arrastrar-y-soltar + columnas fijas** (`0cc5d53`): causa raíz confirmada por un warning
+    real de `@hello-pangea/dnd` en consola ("nested scroll container") — el scroll vertical de
+    cada columna dependía de `<main>` de `AppLayout.tsx` en vez de tener el suyo propio.
+    Aplicado el patrón exacto del prototipo Base44 (`ProjectColumn.jsx`/`Projects.jsx`,
+    inspeccionado línea por línea): altura acotada (`--board-viewport-h`, variable CSS nueva) +
+    cada columna con `overflow-y-auto` propio. Solo `md:` y superior (decisión del fundador).
+  - **Modal de sesión en otro dispositivo** (`af92749`): `_GRACE_S` de 30s → 0 (backend +
+    frontend) por decisión del fundador; botones secundarios de `text-brand-muted` (documentado
+    para texto deshabilitado, no accionable) a fondo sólido.
+  - **Wizard de Cotización** (`fa641d8`): **bug real encontrado**, no solo cosmético — el botón
+    "Anterior"/"Ajustar parámetros" de la fase Resultado llamaba `setPaso(3)`, el mismo paso
+    "Resultado" en el que ya se está (paso 2 = Proyecto) — nunca navegaba a ningún lado, por
+    eso el fundador no encontraba cómo volver. Corregido a `setPaso(2)`, verificado en vivo.
+    Botón "Calcular" duplicado eliminado. Tarjetas de esa fase de `.glass` a superficie sólida;
+    "Guardar cotización" reforzado (antes 10% de opacidad, casi invisible).
+  - **Regla CSS global** `button:not(:disabled){cursor:pointer}` en vez de seguir parchando
+    botón por botón (ya se había hecho una vez en Proyectos, commit `23f7b8a`).
+- **Fase 5 (auditoría de la ejecución):** Code Reviewer + Accessibility Auditor, distintos a
+  los de la Fase 2, ambos "APRUEBA CON CAMBIOS". Hallazgos reales, no ruido:
+  - [Serio, a11y] Los párrafos del modal de sesión quedaron en `text-brand-text-secondary` —
+    insuficiente sobre el fondo compuesto real (`.glass` sobre `bg-black/60`), no sobre crema
+    plano como asume el contraste documentado de ese token. Corregido a `text-brand-text`.
+  - [Medio, code review] La regla global de cursor se escribió sin `@layer` — en CSS Cascade
+    Layers, una regla sin capa le gana a CUALQUIER regla en capa sin importar especificidad, así
+    que le quitaba el `cursor-grab` a las asas de arrastre. Envuelta en `@layer base`.
+  - [Medio, code review] `--board-viewport-h` asumía un padding-top de 4.5rem en el rango
+    640-1023px, pero `sm:p-6` gana sobre `pt-[calc(3.5rem+1rem)]` ahí (verificado contra el CSS
+    compilado real) — el padding real es 1.5rem. Corregido el bucket `sm:` de la variable.
+  - [Menor, a11y] 2 iconos SVG decorativos nuevos sin `aria-hidden="true"`. Agregado.
+  - Todo corregido en 2 commits de seguimiento (uno de a11y, uno de code review), ambos
+    verificados en el navegador real (`getComputedStyle`), no solo por lectura de código.
+- **Fase 6:** reindexar el grafo queda pendiente para el cierre de sesión; esta entrada +
+  `PROGRESS.md` actualizados ahora.
+
+### Archivos tocados
+- `web/src/hooks/useTableroProyectos.ts`, `web/src/api/proyectos.ts` — cancelación + reintento.
+- `web/src/pages/ProyectosPage.tsx`, `web/src/components/proyectos/tablero/TareaKanban.tsx` —
+  layout de columnas con scroll propio.
+- `web/src/components/SessionGuard.tsx`, `backend/routers/session.py` — modal de sesión.
+- `web/src/pages/CotizacionPage.tsx` — wizard de cotización (solo `Step4Resultado`, Step1/2/3
+  intactos a propósito).
+- `web/src/index.css` — `--board-viewport-h`, regla global de cursor (en `@layer base`).
+
+### Pendiente honesto
+No se logró simular un arrastre real de mouse con las herramientas de automatización del
+navegador disponibles en esta sesión (limitación conocida de `@hello-pangea/dnd` y libraries
+similares — necesitan movimiento incremental real del puntero, no un salto atómico). La
+corrección de raíz quedó verificada por: (a) el warning de consola de la librería desapareció
+por completo tras el fix, reproducido en las 3 vistas; (b) un arrastre completo con teclado
+(Espacio para levantar, flecha para mover, Espacio para soltar) sí movió una tarjeta de
+columna con éxito. Falta que el fundador confirme con un arrastre real de mouse en su propio
+navegador.
+
+### Primera tarea de la próxima sesión
+1. Confirmar con el fundador que el arrastre real con mouse funciona en Proyectos.
+2. Si todo queda conforme, reindexar el grafo (`codebase-memory-mcp`) contra el estado actual
+   de `master`.
+3. Preguntar cuál de los objetivos abiertos del roadmap ataca después (landing page, agentes de
+   operación, o el asistente de IA del producto).
+
+---
+
 ## Sesión: 2026-09-02/03 — Objetivo 6: módulo de gestión de proyectos, Ciclo A + Ciclo B completos
 
 ### Qué se hizo
