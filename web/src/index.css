@@ -48,13 +48,17 @@
 /* Alto disponible dentro de <main> (AppLayout.tsx), para tableros que necesitan
    su propio scroll acotado en vez de crecer con la página (p. ej. Proyectos —
    el Kanban de @hello-pangea/dnd exige un único contenedor de scroll por
-   columna). MANTENER SINCRONIZADO con el padding de <main> en AppLayout.tsx:
-   pt-[calc(3.5rem+1rem)] lg:pt-20, p-4 sm:p-6 lg:p-8. Solo se usa desde md:. */
+   columna). MANTENER SINCRONIZADO con el padding real de <main> en
+   AppLayout.tsx — OJO: `sm:p-6` gana sobre `pt-[calc(3.5rem+1rem)]` en el
+   rango 640-1023px (misma especificidad, `sm:p-6` sale después en la cascada
+   de Tailwind), así que el padding-top real ahí es 1.5rem, NO 4.5rem — el
+   bucket de abajo refleja el padding REAL, no el nominal de la clase `pt-`.
+   Solo se usa desde md:. */
 :root {
   --board-viewport-h: calc(100vh - 3.5rem - 1rem - 1rem);
 }
 @media (min-width: 640px) {
-  :root { --board-viewport-h: calc(100vh - 3.5rem - 1rem - 1.5rem); }
+  :root { --board-viewport-h: calc(100vh - 1.5rem - 1.5rem); }
 }
 @media (min-width: 1024px) {
   :root { --board-viewport-h: calc(100vh - 5rem - 2rem); }
@@ -99,9 +103,14 @@ body::before {
    cursor:pointer por defecto de <button> en su preflight — sin esta regla, cada
    botón nuevo necesita `cursor-pointer` a mano (ya se nos olvidó dos veces:
    Proyectos y Cotización). Los deshabilitados mantienen su cursor propio
-   (cursor-not-allowed explícito en los componentes que lo necesitan). */
-button:not(:disabled) {
-  cursor: pointer;
+   (cursor-not-allowed explícito en los componentes que lo necesitan).
+   DEBE ir en @layer base: sin capa, una regla le gana a CUALQUIER utilidad de
+   Tailwind (todas viven en capas) sin importar especificidad — le quitaba el
+   cursor-grab a las asas de arrastre de Proyectos. */
+@layer base {
+  button:not(:disabled) {
+    cursor: pointer;
+  }
 }
 
 /* Foco visible global — base para toda la app. Los componentes con indicador de
