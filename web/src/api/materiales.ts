@@ -22,6 +22,12 @@ export async function getMaterialesTodos(): Promise<MaterialCatalogo[]> {
   return res.data
 }
 
+/** Categorías del catálogo (para selects de "tipo de material"). */
+export async function getCategoriasMaterial(): Promise<string[]> {
+  const res = await api.get<string[]>('/api/materiales/categorias')
+  return res.data
+}
+
 export interface MaterialNuevo {
   categoria: string
   referencia: string

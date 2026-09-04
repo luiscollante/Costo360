@@ -33,6 +33,20 @@ BOOTSTRAP_SECRET=<≥ 32 bytes aleatorios>
 
 - Protege `POST /api/bootstrap/empresa`. Si está vacío, ese endpoint queda desactivado.
 
+## Barrido diario del módulo de gestión de proyectos (Objetivo 6)
+
+```
+CRON_SECRET=<≥ 32 bytes aleatorios>
+```
+
+- Protege `POST /api/proyectos/cron/barrido-diario` (desbloqueos automáticos,
+  alertas de plazo/riesgo, archivado de proyectos completados > 30 días).
+- Si está vacío, el endpoint responde `503` y no opera (fail-closed).
+- El disparo real se cablea cuando el backend tenga hosting: un cron del proveedor,
+  una GitHub Action programada, o un servicio tipo cron-job.org que haga
+  `POST` diario a ese endpoint con el header `X-Cron-Secret: <CRON_SECRET>`.
+  Zona horaria del cálculo de "hoy": `America/Bogota`.
+
 ## IA del producto (agente de Parámetros)
 
 ```

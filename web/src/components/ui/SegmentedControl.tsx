@@ -23,18 +23,23 @@ export function SegmentedControl<T extends string>({
   ariaLabel,
   mode = 'buttons',
   panelIdFor,
+  tabIdPrefix,
 }: {
   options: Opcion<T>[]
   value: T
   onChange: (v: T) => void
   ariaLabel: string
   mode?: 'tabs' | 'buttons'
+  /** `mode="tabs"`: id del `<div role="tabpanel">` que controla cada tab. */
   panelIdFor?: (v: T) => string
+  /** `mode="tabs"`: prefijo para el `id` de cada `<button role="tab">`. El
+   *  consumidor pone `aria-labelledby={`${tabIdPrefix}-${valorActivo}`}` en el panel. */
+  tabIdPrefix?: string
 }) {
   const refs = useRef<(HTMLButtonElement | null)[]>([])
 
   function onKeyDown(e: KeyboardEvent, i: number) {
-    let next = i
+    let next: number
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % options.length
     else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (i - 1 + options.length) % options.length
     else if (e.key === 'Home') next = 0
@@ -59,6 +64,7 @@ export function SegmentedControl<T extends string>({
             ref={(el) => {
               refs.current[i] = el
             }}
+            id={mode === 'tabs' && tabIdPrefix ? `${tabIdPrefix}-${o.value}` : undefined}
             type="button"
             role={mode === 'tabs' ? 'tab' : 'radio'}
             aria-selected={mode === 'tabs' ? selected : undefined}

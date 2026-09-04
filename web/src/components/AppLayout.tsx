@@ -6,6 +6,7 @@ import Sidebar from './Sidebar'
 import AgenteChat from './AgenteChat'
 import CommandPalette from './CommandPalette'
 import Logo from './Logo'
+import { CampanaNotificaciones } from './proyectos/CampanaNotificaciones'
 import { useAuthStore } from '@/store/auth'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -32,16 +33,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </a>
 
       {/* Mobile header bar */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-brand-bg/95 border-b border-brand-border/40 flex items-center px-4 gap-3 z-30" style={{ backdropFilter: 'blur(12px)' }}>
-        <button
-          type="button"
-          onClick={() => setSidebarOpen(true)}
-          className="w-11 h-11 flex items-center justify-center rounded-lg border border-brand-border text-brand-muted hover:text-brand-text hover:border-brand-primary/40 transition-all cursor-pointer"
-          aria-label="Abrir menú"
-        >
-          <Menu size={18} />
-        </button>
-        <Logo variant="dark" className="h-6 w-auto ml-1" />
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-brand-bg/95 border-b border-brand-border/40 flex items-center justify-between px-4 gap-3 z-30" style={{ backdropFilter: 'blur(12px)' }}>
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            className="w-11 h-11 flex items-center justify-center rounded-lg border border-brand-border text-brand-muted hover:text-brand-text hover:border-brand-primary/40 transition-all cursor-pointer"
+            aria-label="Abrir menú"
+          >
+            <Menu size={18} />
+          </button>
+          <Logo variant="dark" className="h-6 w-auto ml-1" />
+        </div>
+        <CampanaNotificaciones />
       </header>
 
       {/* Mobile overlay */}
@@ -101,16 +105,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {usuario?.nombre_completo}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => window.dispatchEvent(new CustomEvent('costo360:open-command-palette'))}
-          className="flex items-center gap-2 px-3 h-9 rounded-lg border border-brand-border text-brand-text-secondary hover:text-brand-text hover:border-brand-primary/40 transition-all cursor-pointer shrink-0"
-          aria-label="Buscar y navegar (Ctrl+K)"
-        >
-          <Search size={14} />
-          <span className="text-xs">Buscar</span>
-          <kbd className="text-[10px] px-1.5 py-0.5 rounded border border-brand-border/70 text-brand-text-secondary font-mono">Ctrl K</kbd>
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <CampanaNotificaciones />
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent('costo360:open-command-palette'))}
+            className="flex items-center gap-2 px-3 h-9 rounded-lg border border-brand-border text-brand-text-secondary hover:text-brand-text hover:border-brand-primary/40 transition-all cursor-pointer shrink-0"
+            aria-label="Buscar y navegar (Ctrl+K)"
+          >
+            <Search size={14} />
+            <span className="text-xs">Buscar</span>
+            <kbd className="text-[10px] px-1.5 py-0.5 rounded border border-brand-border/70 text-brand-text-secondary font-mono">Ctrl K</kbd>
+          </button>
+        </div>
       </header>
 
       {/* Main content */}
