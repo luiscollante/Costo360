@@ -95,6 +95,15 @@ body::before {
   opacity: 0.03;
 }
 
+/* Cursor de mano global en botones accionables. Tailwind v4 quita el
+   cursor:pointer por defecto de <button> en su preflight — sin esta regla, cada
+   botón nuevo necesita `cursor-pointer` a mano (ya se nos olvidó dos veces:
+   Proyectos y Cotización). Los deshabilitados mantienen su cursor propio
+   (cursor-not-allowed explícito en los componentes que lo necesitan). */
+button:not(:disabled) {
+  cursor: pointer;
+}
+
 /* Foco visible global — base para toda la app. Los componentes con indicador de
    foco propio lo sobreescriben en R6. */
 :focus-visible {

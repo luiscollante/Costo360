@@ -8,6 +8,7 @@ import { calcularCotizacionDirecta, guardarCotizacion, descargarPDF, descargarCu
 import type { MaterialItem, PiezaItem } from '@/types/cotizacion'
 import MaterialCombobox from '@/components/MaterialCombobox'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { Card } from '@/components/ui/Card'
 import { formatCOP, formatNum, formatPct } from '@/lib/utils'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -2090,7 +2091,7 @@ function Step4Resultado({ dir }: { dir: number }) {
 
         {!resultado ? (
           <div className="text-center">
-            <div className="glass rounded-lg p-6 mb-8 text-left border border-brand-border/60">
+            <Card className="p-6 mb-8 text-left">
               <p className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary mb-4 font-semibold">
                 Resumen del proyecto
               </p>
@@ -2109,7 +2110,7 @@ function Step4Resultado({ dir }: { dir: number }) {
                 <SummaryRow label="Margen" value={`${proyecto.margen_pct}%`} mono />
                 <SummaryRow label="Días / Personas" value={`${proyecto.dias}d · ${proyecto.personas}p`} mono />
               </div>
-            </div>
+            </Card>
 
             {error && (
               <motion.div
@@ -2146,6 +2147,17 @@ function Step4Resultado({ dir }: { dir: number }) {
                 'Calcular cotización'
               )}
             </button>
+
+            <button
+              type="button"
+              onClick={() => setPaso(2)}
+              className="mt-6 flex items-center gap-2 text-sm text-brand-text-secondary hover:text-brand-text transition-colors mx-auto"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M9 2L4 7L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Anterior
+            </button>
           </div>
         ) : (
           <motion.div
@@ -2157,7 +2169,7 @@ function Step4Resultado({ dir }: { dir: number }) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="relative glass rounded-xl p-8 mb-6 border border-brand-primary/20 text-center overflow-hidden"
+              className="relative bg-brand-surface shadow-[0_1px_3px_rgba(74,74,74,0.08)] rounded-xl p-8 mb-6 border border-brand-primary/20 text-center overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-b from-brand-primary/5 to-transparent pointer-events-none" />
               <div className="absolute top-3 left-3 w-6 h-6 border-t border-l border-brand-primary/30" />
@@ -2225,7 +2237,7 @@ function Step4Resultado({ dir }: { dir: number }) {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.25 }}
-              className="glass rounded-lg border border-brand-border/60 overflow-hidden mb-4"
+              className="bg-brand-surface shadow-[0_1px_3px_rgba(74,74,74,0.08)] rounded-lg border border-brand-border overflow-hidden mb-4"
             >
               <div className="px-5 py-3 border-b border-brand-border/50">
                 <span className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold">
@@ -2360,7 +2372,7 @@ function Step4Resultado({ dir }: { dir: number }) {
                     type="button"
                     onClick={handleSave}
                     disabled={saving}
-                    className="w-full py-3.5 rounded-lg border border-brand-primary/40 bg-brand-primary/10 text-sm font-semibold text-brand-text hover:bg-brand-primary/20 hover:border-brand-primary/70 transition-all disabled:opacity-50"
+                    className="w-full py-3.5 rounded-lg bg-brand-primary text-sm font-semibold text-white hover:bg-brand-primary/90 shadow-[0_0_20px_#1F6F5430] transition-all disabled:opacity-50"
                   >
                     {saving ? 'Guardando…' : 'Guardar cotización'}
                   </button>
@@ -2372,12 +2384,15 @@ function Step4Resultado({ dir }: { dir: number }) {
               <button
                 type="button"
                 onClick={() => {
-                  setPaso(3)
+                  setPaso(2)
                   setResultado(null)
                 }}
-                className="flex-1 py-3 rounded border border-brand-border text-sm text-brand-text-secondary hover:text-brand-text hover:border-brand-border/80 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded border border-brand-border text-sm text-brand-text-secondary hover:text-brand-text hover:border-brand-border/80 transition-colors"
               >
-                Ajustar parámetros
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                  <path d="M9 2L4 7L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Anterior — ajustar parámetros
               </button>
               <button
                 type="button"
@@ -2388,16 +2403,6 @@ function Step4Resultado({ dir }: { dir: number }) {
               </button>
             </div>
           </motion.div>
-        )}
-
-        {!resultado && (
-          <StepNav
-            onBack={() => setPaso(3)}
-            onNext={handleCalc}
-            nextLabel="Calcular"
-            nextDisabled={loading}
-            isLast
-          />
         )}
       </div>
     </StepMotion>
@@ -2462,12 +2467,12 @@ function MetricCell({
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="glass rounded-lg p-4 border border-brand-border/50 text-center">
+    <Card className="p-4 text-center">
       <p className="text-[9px] uppercase tracking-[0.15em] text-brand-text-secondary mb-2 font-semibold">
         {label}
       </p>
       <p className="font-mono text-sm font-bold text-brand-text">{value}</p>
-    </div>
+    </Card>
   )
 }
 
