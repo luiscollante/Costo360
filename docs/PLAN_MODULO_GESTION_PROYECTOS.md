@@ -863,3 +863,33 @@ interpola). Verificado en vivo.
 
 **Pendiente:** prueba en vivo con la cuenta **operativo (Beto)** — verificar Regla 6 (ve
 todo, sin botones de gestión, 403 al forzar) — y luego fusionar a `master`.
+
+### Prueba en vivo con la cuenta operativa (2026-09-03, cuenta "Beto")
+
+Servidores locales (`uvicorn` :8000 contra Supabase real `hrmpyhixhbnkkpvxtuit`, `vite`
+:5173). El fundador inició sesión como Beto (Operativo); la verificación de UI y de API se
+hizo con la extensión de Chrome.
+
+- **UI:** tablero `/proyectos` visible completo (ve el proyecto "Cocina Torre Andina 302" de
+  todo el taller, no solo el suyo); sin botón "Nuevo proyecto" en la barra; detalle de
+  proyecto sin "Nueva tarea"/"Nuevo hito"/"Completar hito"; puede mover su propia tarea
+  ("Cortar mesón principal") por el `<select>` "Mover a" — probado ida y vuelta
+  (En progreso → Revisión → En progreso), actualización optimista correcta.
+- **API (peticiones directas con el token real de la sesión de Beto, sin pasar por la UI) —
+  confirma que el 403 es del backend, no solo botones ocultos en el frontend:**
+  - `POST /api/proyectos/` (crear proyecto) → **403** `"Requiere rol de administración o
+    gerencia"`.
+  - `PATCH /api/proyectos/8/estado` (mover proyecto en el Kanban) → **403** (mismo mensaje).
+  - `POST /api/proyectos/8/tareas` (crear tarea) → **403** (mismo mensaje) — confirma S2.
+  - `PATCH /api/proyectos/hitos/1/estado` (completar hito) → **403** (mismo mensaje).
+  - `PUT /api/proyectos/tareas/4` con `{titulo: ...}` sobre su propia tarea → **403**
+    `"No puedes cambiar: titulo"` — confirma la lista blanca de 4 columnas (S1/Fase 5 Ciclo A).
+  - `PUT /api/proyectos/tareas/4` con `{estado: ...}` sobre su propia tarea, vía la UI real →
+    **200**, cambia de columna — confirma que la lista blanca no es sobre-restrictiva.
+- **Resiliencia:** una columna del tablero mostró "No se pudo cargar esta columna" tras una
+  navegación con tráfico simultáneo de las pruebas de API directas; "Reintentar" la recuperó
+  al instante — confirma que el manejo de error por columna (Fase 5 del Ciclo B) funciona en
+  vivo, no solo en el código.
+
+**Regla 2 / D6 verificada de punta a punta (UI + API) con la cuenta operativa real.**
+**Ciclo B y el módulo completo quedan listos para fusionar a `master`.**
