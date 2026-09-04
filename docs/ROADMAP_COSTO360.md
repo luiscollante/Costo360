@@ -134,7 +134,32 @@ Con la infraestructura de 2.B lista, construir el primer agente (Atención al Cl
 como el primero en `docs/ARQUITECTURA_AGENTES_OPERACION.md` sección 0) en `agentes-operacion/`. Los
 otros 6 agentes se construyen uno a la vez después, reutilizando la misma base.
 
-### 2.D — Objetivo 6: Módulo de gestión de proyectos  (añadido 2026-09-01, prototipo en Base44)
+### 2.D — Objetivo 6: Módulo de gestión de proyectos  ✅ **COMPLETADO (2026-09-03, fusionado a `master`)**
+
+> **Añadido 2026-09-01, prototipo en Base44.** Ejecutado y fusionado en la sesión del
+> 2026-09-02/03 (rama `goal/modulo-proyectos`). Detalle completo, auditorías y verificación en
+> vivo: `docs/PLAN_MODULO_GESTION_PROYECTOS.md`.
+
+- **✅ Ciclo A (2026-09-02) — datos + backend:** migraciones `0007`/`0008` (6 tablas `pm_*`
+  con RLS, Regla 1), 29 rutas en `routers/proyectos.py` con la jerarquía interna (Regla 2/D6)
+  aplicada en Python, barrido diario de automatizaciones (`routers/proyectos_cron.py`,
+  set-based bajo `db_service`, idempotente). Fase 5: Code Reviewer + Backend Architect +
+  Database Optimizer, "APRUEBA CON CAMBIOS", sin bloqueantes.
+- **✅ Ciclo B (2026-09-02) — interfaz completa:** tablero Kanban (`ProyectosPage.tsx`,
+  `@hello-pangea/dnd`), detalle de proyecto con tablero de tareas/cronograma/parte de horas
+  (`ProyectoDetallePage.tsx`), campana de notificaciones — todo sobre los 14 primitivos `ui/`
+  y los tokens de marca. Fase 5: Frontend Developer + Accessibility Auditor + Code Reviewer,
+  "APRUEBA CON CAMBIOS" (2 bloqueantes de accesibilidad nivel A corregidos).
+- **✅ Prueba en vivo:** cuenta admin (crear proyecto, hito→desbloqueo, mover tarjetas,
+  horas, comentarios, barrido idempotente) y cuenta operativa (Regla 2/D6 verificada con
+  llamadas directas al backend: 403 real en crear/mover proyecto, crear tarea, completar
+  hito, y en editar un campo fuera de la lista blanca de su propia tarea).
+- **✅ Fusionado a `master`**; rama `goal/modulo-proyectos` borrada.
+- **Diferido, fuera de este objetivo:** el asistente de IA del módulo (decisión D2) — se
+  funde con el **Objetivo 5** (ver más abajo); toggle "Todas/Mías" y filtros
+  cliente/material del tablero; tour de bienvenida; realtime (hoy es refetch/polling).
+
+*(Contenido histórico del plan original, para referencia — ya ejecutado como se describe arriba):*
 
 **Qué es.** Un sistema completo para gestionar cada trabajo *después* de cotizarlo. El fundador
 lo construyó con otra IA como app **Base44** — `gestion-proyectos-nuevo-modulo.zip` en la raíz
@@ -204,9 +229,15 @@ está bien pensado, y define el comportamiento exacto a replicar.
 
 ## Fase 3 — Objetivo 5: Agente de IA dentro del producto
 
-Una vez la interfaz nueva del Objetivo 1 exista (Fase 2.A completada), evolucionar el agente actual
+Una vez la interfaz nueva del Objetivo 1 exista (✅ completada), evolucionar el agente actual
 de Parámetros hacia el asistente personal por usuario que navega la interfaz de forma autónoma
 (CopilotKit/AG-UI, decisión de la Ruta A) — sin reemplazar nunca la navegación manual (Regla 7).
+
+**Ampliado 2026-09-01/02 (decisión D2 del Objetivo 6):** este agente también absorbe el
+asistente de IA que el prototipo Base44 del módulo de gestión de proyectos definía como
+"asistente_costo360" (opera entidades por lenguaje natural con confirmación antes de borrar +
+asesora con resúmenes/análisis/riesgos). Cuando se construya, puede estrenarse acotado a
+proyectos (datos y UI ya existen desde el Objetivo 6) antes de cubrir el resto del producto.
 
 ---
 

@@ -5,7 +5,7 @@ componente, cada tabla de base de datos, cada dependencia y cada regla sin excep
 estado de avance día a día, ver `PROGRESS.md`/`SESSION.md`. Para el contexto de negocio, ver
 `CONTEXTO_COSTO360.md` y el cuaderno Notion "Costo360 — Base de Conocimiento Central".*
 
-*Última actualización: 2026-08-27.*
+*Última actualización: 2026-09-03.*
 
 > **⚠️ Fase 2.A ejecutada en la rama `goal/fase-2a-multitenant-auth` (aún NO fusionada a
 > `master`).** Cambia mucho de este documento: el backend del prototipo pasa a Supabase Auth
@@ -70,6 +70,10 @@ Cloud apuntan a `app.py` por ruta fija. Moverlo o romperlo tumba la operación r
 - **Iconos:** `lucide-react`.
 - **Paleta de comandos:** `cmdk` 1.1.1 (Ctrl+K, componente `CommandPalette.tsx`).
 - **Gráficas:** `recharts` 3.8.1 (Dashboard).
+- **Arrastrar y soltar:** `@hello-pangea/dnd` 18.0.1 (fork mantenido de `react-beautiful-dnd`,
+  con soporte de teclado/lector de pantalla) — Kanban del módulo de gestión de proyectos
+  (`ProyectosPage.tsx`, `TareaKanban.tsx`). Aprobada 2026-09-02 (decisión D5,
+  `docs/PLAN_MODULO_GESTION_PROYECTOS.md`); `peer react@19` verificado sin duplicados.
 - **Empaquetado móvil:** Capacitor 8.4.1 (`@capacitor/android`, `/core`, `/cli`, `/network`, `/preferences`) — Fase 5 futura (Android/iOS), `capacitor.config.ts` en la raíz de `web/`.
 - **Lint:** ESLint 10.3.0 + `typescript-eslint` 8.59.2 (`eslint.config.js`, formato flat config).
 
@@ -77,11 +81,12 @@ Cloud apuntan a `app.py` por ruta fija. Moverlo o romperlo tumba la operación r
 
 | Carpeta | Contenido |
 |---|---|
-| `pages/` | `AdminPage`, `ConfigPage`, `CotizacionAIUPage`, `CotizacionExpressPage`, `CotizacionPage` (Directa), `DashboardPage`, `HistorialPage`, `InventarioPage`, `LandingPage`, `LoginPage`, `NestingPage`, `ParametrosPage`, `PlaceholderPage`, `RetalesPage` |
-| `components/` | `AdminRoute.tsx`, `AgenteChat.tsx`, `AppLayout.tsx`, `CommandPalette.tsx`, `MaterialCombobox.tsx`, `PrivateRoute.tsx`, `Sidebar.tsx`, `Toast.tsx`, `ToastHost.tsx` |
+| `pages/` | `AdminPage`, `ConfigPage`, `CotizacionAIUPage`, `CotizacionExpressPage`, `CotizacionPage` (Directa), `DashboardPage`, `HistorialPage`, `InventarioPage`, `LandingPage`, `LoginPage`, `MaterialesPage`, `NestingPage`, `ParametrosPage`, `PlaceholderPage`, `ProyectoDetallePage`, `ProyectosPage`, `RetalesPage` |
+| `components/` | `AdminRoute.tsx`, `AgenteChat.tsx`, `AppLayout.tsx`, `CommandPalette.tsx`, `MaterialCombobox.tsx`, `PrivateRoute.tsx`, `RoleRoute.tsx`, `Sidebar.tsx`, `SessionGuard.tsx`, `Toast.tsx`, `ToastHost.tsx` |
+| `components/proyectos/` | `ProyectoCard`, `BarraProgreso`, `CampanaNotificaciones`, `CronogramaHitos`, `NuevoProyectoDialog`, `ParteHoras`, `badges`/`badgeMeta`, `dndAnuncios`, `tablero/{TareaCard,TareaDialog,TareaKanban,NuevaTareaDialog}` — módulo de gestión de proyectos (Objetivo 6) |
 | `components/landing/` | `CTASection`, `Features`, `FeaturesBento`, `Footer`, `Hero`, `InteractiveDemo`, `MetricsSection`, `Navbar`, `QuoteModal`, `SpecsSection`, `TrustSection` |
-| `components/ui/` | `background-beams.tsx`, `border-beam.tsx`, `number-ticker.tsx`, `particles.tsx`, `spotlight.tsx` — efectos decorativos reutilizables |
-| `api/` | `admin.ts`, `agente.ts`, `auth.ts`, `client.ts`, `config.ts`, `cotizacion.ts`, `dashboard.ts`, `inventario.ts`, `materiales.ts`, `nesting.ts`, `parametros.ts`, `retales.ts` — un archivo por dominio, todos consumen `client.ts` |
+| `components/ui/` | 14 primitivos accesibles (`Card`, `Badge`/`StatusBadge`, `Button`, `IconButton`, `EmptyState`, `PageHeader`, `Field`/`FormSection`/`SelectField`/`DateField`, `SegmentedControl`, `Dialog`, `DataTable`, `AsyncBoundary` — ver sección 6) + `background-beams.tsx`/`border-beam.tsx`/`number-ticker.tsx`/`particles.tsx`/`spotlight.tsx` (efectos decorativos de la landing, sin relación con los primitivos) |
+| `api/` | `admin.ts`, `agente.ts`, `auth.ts`, `client.ts`, `config.ts`, `cotizacion.ts`, `dashboard.ts`, `inventario.ts`, `materiales.ts`, `nesting.ts`, `parametros.ts`, `proyectos.ts`, `retales.ts`, `session.ts` — un archivo por dominio, todos consumen `client.ts` |
 
 ### 3.3 Prototipo nuevo — Backend (`backend/`)
 
@@ -133,6 +138,21 @@ Cloud apuntan a `app.py` por ruta fija. Moverlo o romperlo tumba la operación r
 | `catalogo_materiales` | categoría, referencia, precio/m², precio/lámina, dimensiones, proveedor | |
 | `facturas_compra` | fecha, mes, (columnas adicionales no auditadas en esta pasada) | **Confirmado 2026-08-26 por el fundador: NO pertenece a Costo360** — es una sobra de un proyecto no relacionado (finanzas de una empresa familiar distinta), mezclada por error en el mismo repositorio de código. No se recrea en el esquema nuevo. |
 | `correos_procesados` | cuenta, message_id | **Confirmado 2026-08-26: misma situación que `facturas_compra`** — no pertenece a Costo360, no se recrea en el esquema nuevo. |
+| `pm_projects` | `empresa_id`, `nombre`, `cliente`, `material`, `estado` (7 valores, `CHECK`), `progreso_pct`/`tareas_total`/`tareas_hechas` (desnormalizados, recalculados por el backend en cada mutación de tarea), `en_riesgo`, `completado_en`, `creado_por` | Módulo de gestión de proyectos (Objetivo 6), migraciones `0007`/`0008` |
+| `pm_tasks` | `empresa_id`, `project_id`, `titulo`, `estado` (5 valores), `prioridad`, `responsable_id` (FK a `usuarios`, **sin** columna de texto libre — decisión D8), `milestone_id` (FK compuesta con `empresa_id`), `orden` | Un no-gestor solo edita `estado/orden/descripcion/horas_estimadas` de sus propias tareas (Regla 2/D6, ver sección 7.1 #2) |
+| `pm_milestones` | `empresa_id`, `project_id`, `titulo`, `fecha_limite`, `estado` (3 valores) | Al completarse desbloquea las tareas que dependían de él |
+| `pm_time_entries` | `empresa_id`, `task_id`, `project_id`, `usuario_id`, `horas`, `fecha`, `nota` | Registro de horas por tarea |
+| `pm_comments` | `empresa_id`, `task_id`, `autor_id`, `autor_nombre`, `contenido` | Comentarios por tarea |
+| `pm_notifications` | `empresa_id`, `titulo`, `tipo` (3 valores), `project_id`/`task_id`, `dedupe_key` (índice único parcial — idempotencia del barrido), `leida` | `leida` es a nivel taller (todos comparten el estado de lectura), heredado del prototipo Base44 por decisión explícita |
+
+**Las 6 tablas `pm_*`** siguen el mismo patrón de aislamiento que el resto del esquema:
+`empresa_id NOT NULL REFERENCES empresas(id)`, RLS `enable`+`force`, una policy `FOR ALL TO
+authenticated` por tabla (Regla 1), y `UNIQUE(id,empresa_id)` + FK compuestas para bloquear
+también el enlace padre-hijo cruzado entre talleres (p. ej. una tarea de la empresa A no puede
+colgar de un proyecto de la empresa B). El barrido diario de automatizaciones
+(`routers/proyectos_cron.py`) corre bajo `db_service` (BYPASSRLS) pero es **set-based, con
+`empresa_id` explícito en cada sentencia** — nunca confía solo en RLS. Detalle completo del
+diseño, la auditoría de seguridad y la verificación por SQL: `docs/PLAN_MODULO_GESTION_PROYECTOS.md`.
 
 ### ✅ Resuelto 2026-08-26 — esquema multi-tenant diseñado
 
@@ -417,19 +437,25 @@ el cuaderno Notion "Costo360 — Base de Conocimiento Central".
 | 2026-08-30 | **Rediseño visual — Ciclo 1** (rama `goal/rediseno-visual`): tokens de contraste AA, modo oscuro eliminado, barra lateral esmeralda, logo real, reconstrucción del flujo de carga inicial (`store/auth.ts` con estados) + `RoleRoute`, `empresa_nombre` en `/api/auth/me` |
 | 2026-08-31 | **Rediseño visual — Ciclo 2**: 14 primitivos `ui/`, 13 pantallas a `<PageHeader>`, catálogo de materiales por taller (migración `0005`). Fase 5: Code Reviewer + Accessibility Auditor, ambos "aprueba con cambios" |
 | 2026-09-01 | **Ronda de revisión en vivo del fundador**: bug del sidebar que scrolleaba (shell `h-screen overflow-hidden`); CORS del backend a cualquier puerto de localhost; dashboard usa `date.today()` del backend (no `CURRENT_DATE` UTC); barra lateral casi opaca sin capas de blur (consumían GPU y lavaban el color; el glass translúcido y el brillo diagonal se descartaron); catálogo editable vía modal precargado + copy-on-write (migración `0006` `base_id`), visible para operativo; Express "Calcular precio" (placeholder confuso); Historial con actualización optimista; token `--color-brand-gold-text` `#6E5410` para números de acento; menú lateral reorganizado por área del negocio |
+| 2026-09-01 | Objetivo 1 (rediseño visual) fusionado a `master`; **Objetivo 6 añadido al roadmap** — módulo de gestión de proyectos, reimplementación nativa del prototipo Base44 del fundador |
+| 2026-09-02/03 | **Objetivo 6 ejecutado y fusionado a `master`** (rama `goal/modulo-proyectos`, ciclo `/goal` completo partido en Ciclo A datos+backend / Ciclo B interfaz, cada uno con su propia Fase 2 y Fase 5 con 3 agentes distintos). 6 tablas `pm_*` (migraciones `0007`/`0008`), 29 rutas en `routers/proyectos.py`, barrido diario en `routers/proyectos_cron.py`, tablero Kanban + detalle de proyecto + cronograma + parte de horas + notificaciones en el frontend (`@hello-pangea/dnd` nuevo). Regla 2/D6 ("el operativo ve todo, edita solo lo suyo") verificada en vivo con la cuenta operativa real, con llamadas directas al backend (no solo botones ocultos). El asistente de IA del módulo se funde con el Objetivo 5 (decisión D2, no construido todavía) |
 
 ---
 
-## 12. Planes pendientes — los 5 objetivos activos del proyecto
+## 12. Planes pendientes — los objetivos activos del proyecto
 
-Ver `docs/ROADMAP_COSTO360.md` para el detalle completo con fases y dependencias. Resumen:
+Ver `docs/ROADMAP_COSTO360.md` para el detalle completo con fases y dependencias. Resumen
+(✅ = completado y fusionado a `master`):
 
-1. Rediseño de la interfaz del producto (sin tocar cálculos) — bloqueado por el hallazgo de la
-   sección 4 hasta resolver el aislamiento multi-tenant.
+1. ✅ Rediseño de la interfaz del producto (sin tocar cálculos).
 2. Landing page de alto impacto — independiente, puede avanzar en cualquier momento.
 3. Construcción de los 7 agentes de operación (Capa B).
 4. Infraestructura gratuita para los agentes, con ruta de migración a infraestructura de pago.
-5. Agente de IA dentro del producto (Capa A, evolucionado) — depende del Objetivo 1.
+5. Agente de IA dentro del producto (Capa A, evolucionado) — depende del Objetivo 1 (ya
+   cumplido); ahora también incluye el asistente del módulo de gestión de proyectos
+   (decisión D2 del Objetivo 6).
+6. ✅ Módulo de gestión de proyectos (datos + backend + interfaz; el asistente de IA propio
+   del módulo queda para el Objetivo 5).
 
 ---
 
