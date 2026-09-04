@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/auth'
 import {
@@ -19,19 +19,17 @@ import {
 type Vista =
   | { tipo: 'oculto' }
   | { tipo: 'reclamando' }
-  | { tipo: 'esperando'; prev: string; puedeForzar: boolean }
+  | { tipo: 'esperando'; prev: string }
   | { tipo: 'aviso-titular'; retador: string }
   | { tipo: 'expulsado' }
   | { tipo: 'sin-cupo' }
 
-const GRACE_MS = 30_000
 const POLL_MS = 15_000
 
 export default function SessionGuard() {
   const session = useAuthStore((s) => s.session)
   const usuario = useAuthStore((s) => s.usuario)
   const [vista, setVista] = useState<Vista>({ tipo: 'oculto' })
-  const esperandoDesde = useRef<number>(0)
   const activo = session && !!usuario
 
   const salir = useCallback(async () => {
@@ -51,12 +49,7 @@ export default function SessionGuard() {
       if (r.status === 'active') {
         setVista({ tipo: 'oculto' })
       } else if (r.status === 'pending') {
-        if (!esperandoDesde.current) esperandoDesde.current = Date.now()
-        setVista({
-          tipo: 'esperando',
-          prev: r.prev_device ?? 'otro dispositivo',
-          puedeForzar: Date.now() - esperandoDesde.current > GRACE_MS,
-        })
+        setVista({ tipo: 'esperando', prev: r.prev_device ?? 'otro dispositivo' })
       } else {
         setVista({ tipo: 'oculto' }) // 'busy' → reintenta en el próximo poll
       }
@@ -89,12 +82,9 @@ export default function SessionGuard() {
           setVista({ tipo: 'aviso-titular', retador: hb.retador ?? 'otro dispositivo' })
         } else if (hb.estado === 'takeover_pendiente' && hb.am_i_retador) {
           setVista((v) =>
-            v.tipo === 'esperando'
-              ? { ...v, puedeForzar: Date.now() - esperandoDesde.current > GRACE_MS }
-              : { tipo: 'esperando', prev: hb.device_actual ?? 'otro dispositivo', puedeForzar: false },
+            v.tipo === 'esperando' ? v : { tipo: 'esperando', prev: hb.device_actual ?? 'otro dispositivo' },
           )
         } else if (hb.mine) {
-          esperandoDesde.current = 0
           setVista((v) => (v.tipo === 'expulsado' ? v : { tipo: 'oculto' }))
         }
       } catch {
@@ -135,22 +125,19 @@ export default function SessionGuard() {
         {vista.tipo === 'esperando' && (
           <>
             <h2 className="text-base font-bold text-brand-text mb-2">Sesión en otro dispositivo</h2>
-            <p className="text-sm text-brand-muted mb-6">
-              Tu cuenta está activa en «{vista.prev}». Le pedimos permiso para moverla aquí.
-              {vista.puedeForzar ? ' Si no respondes en ese equipo, puedes forzar el cambio.' : ''}
+            <p className="text-sm text-brand-text-secondary mb-6">
+              Tu cuenta está activa en «{vista.prev}». Puedes moverla aquí ahora mismo o cancelar.
             </p>
             <div className="flex flex-col gap-2">
-              {vista.puedeForzar && (
-                <button
-                  onClick={() => reclamar(true)}
-                  className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white font-semibold py-2.5 rounded-lg text-sm cursor-pointer"
-                >
-                  Forzar y usar aquí
-                </button>
-              )}
+              <button
+                onClick={() => reclamar(true)}
+                className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white font-semibold py-2.5 rounded-lg text-sm cursor-pointer"
+              >
+                Usar aquí (cierra la otra sesión)
+              </button>
               <button
                 onClick={salir}
-                className="w-full border border-brand-border text-brand-muted hover:text-brand-text py-2.5 rounded-lg text-sm cursor-pointer"
+                className="w-full bg-brand-surface border border-brand-border text-brand-text hover:border-brand-primary/40 hover:text-brand-primary py-2.5 rounded-lg text-sm font-semibold cursor-pointer transition-colors"
               >
                 Cancelar y salir
               </button>
@@ -161,7 +148,7 @@ export default function SessionGuard() {
         {vista.tipo === 'aviso-titular' && (
           <>
             <h2 className="text-base font-bold text-brand-text mb-2">¿Mover la sesión?</h2>
-            <p className="text-sm text-brand-muted mb-6">
+            <p className="text-sm text-brand-text-secondary mb-6">
               Se intentó iniciar sesión en «{vista.retador}». ¿Qué quieres hacer?
             </p>
             <div className="flex flex-col gap-2">
@@ -179,7 +166,7 @@ export default function SessionGuard() {
                   await handoffSession()
                   setVista({ tipo: 'expulsado' })
                 }}
-                className="w-full border border-brand-border text-brand-muted hover:text-brand-text py-2.5 rounded-lg text-sm cursor-pointer"
+                className="w-full bg-brand-surface border border-brand-border text-brand-text hover:border-brand-primary/40 hover:text-brand-primary py-2.5 rounded-lg text-sm font-semibold cursor-pointer transition-colors"
               >
                 Permitir el otro dispositivo
               </button>
@@ -190,7 +177,7 @@ export default function SessionGuard() {
         {vista.tipo === 'expulsado' && (
           <>
             <h2 className="text-base font-bold text-brand-text mb-2">Tu sesión se movió</h2>
-            <p className="text-sm text-brand-muted mb-6">
+            <p className="text-sm text-brand-text-secondary mb-6">
               Iniciaste sesión en otro dispositivo. Aquí se cerró para mantener una sola sesión activa.
             </p>
             <button
@@ -205,10 +192,13 @@ export default function SessionGuard() {
         {vista.tipo === 'sin-cupo' && (
           <>
             <h2 className="text-base font-bold text-brand-text mb-2">Sin cupo disponible</h2>
-            <p className="text-sm text-brand-muted mb-6">
+            <p className="text-sm text-brand-text-secondary mb-6">
               Tu plan no tiene cupos de usuario libres. Contacta al administrador de tu empresa.
             </p>
-            <button onClick={salir} className="w-full border border-brand-border py-2.5 rounded-lg text-sm cursor-pointer">
+            <button
+              onClick={salir}
+              className="w-full bg-brand-surface border border-brand-border text-brand-text hover:border-brand-primary/40 hover:text-brand-primary py-2.5 rounded-lg text-sm font-semibold cursor-pointer transition-colors"
+            >
               Salir
             </button>
           </>

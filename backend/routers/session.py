@@ -11,7 +11,8 @@ Flujo: B inicia sesión → `claim` → si hay otro dispositivo activo, estado p
 `takeover_pendiente`. A (titular) recibe el aviso por polling de `heartbeat` (o por
 Realtime en el frontend) y decide: `keep` (se queda) o `handoff` (cede). Si A no
 responde en `_TIMEOUT_S`, el `heartbeat` cede automáticamente a B. B puede `claim?
-force=true` pasado `_GRACE_S` si A sigue sin responder.
+force=true` de inmediato (decisión del fundador 2026-09-03: sin período de espera
+para forzar — antes eran `_GRACE_S` segundos).
 
 Todas las transiciones son un `UPDATE ... WHERE estado=<esperado>` condicional con
 chequeo de `rowcount` (evita TOCTOU — hallazgo S6/D10). `claim` toma `FOR UPDATE`
@@ -37,7 +38,7 @@ from backend.middleware.rate_limiter import limiter
 
 router = APIRouter(prefix="/api/auth/session", tags=["session"])
 
-_GRACE_S = 30       # B espera 30 s antes de poder forzar
+_GRACE_S = 0        # B puede forzar de inmediato (decisión del fundador 2026-09-03)
 _TIMEOUT_S = 90     # si el titular no responde en 90 s, el heartbeat cede a B
 _UUSO_THROTTLE_S = 60
 
