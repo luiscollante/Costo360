@@ -4,6 +4,71 @@
 
 ## ✅ Hecho
 
+- **Objetivo 6 — Módulo de gestión de proyectos: CICLO A + CICLO B completados (2026-09-02):**
+  rama `goal/modulo-proyectos` (sobre `master`, con el rediseño visual ya fusionado).
+  Reimplementación **nativa** (React 19 + FastAPI + Supabase) del prototipo que el fundador
+  construyó en Base44 (`gestion-proyectos-nuevo-modulo.zip`): proyectos en tablero Kanban,
+  tareas, hitos con dependencias, registro de horas, comentarios, notificaciones y barrido
+  diario de automatizaciones. El asistente de IA del módulo queda **fuera** de este ciclo — se
+  funde con el Objetivo 5 (decisión D2). Ciclo `/goal` completo, partido en 2 por recomendación
+  de los auditores (mismo patrón que el rediseño visual). Plan vivo, con el detalle exacto de
+  cada bloque y cada hallazgo de auditoría: `docs/PLAN_MODULO_GESTION_PROYECTOS.md`.
+  - **Fase 1-2 (plan + auditoría del plan):** planeado por Software Architect / Database
+    Optimizer / Frontend Developer / Product Manager. Auditado por 3 agentes distintos
+    (**Security Engineer, UX Architect, Minimal Change Engineer**), los 3 "APRUEBA CON
+    CAMBIOS" — se incorporaron todos los ajustes al plan antes de ejecutar (lista blanca de
+    columnas editables por un no-gestor, autoría server-side, barrido set-based sin bucle bajo
+    BYPASSRLS con `empresa_id` explícito en cada sentencia, `ProjectStatusBadge`/
+    `TaskStatusBadge`, alternativa de teclado al arrastre, entre otros). El fundador decidió
+    partir el ciclo en dos.
+  - **Ciclo A — datos + backend (G0-G3):**
+    - Migración `0007_gestion_proyectos.sql` **aplicada** a Supabase `hrmpyhixhbnkkpvxtuit`: 6
+      tablas nuevas (`pm_projects`, `pm_tasks`, `pm_milestones`, `pm_time_entries`,
+      `pm_comments`, `pm_notifications`), todas con `empresa_id` + RLS `enable`/`force` +
+      policy `FOR ALL TO authenticated` (Regla 1), aislamiento estructural padre-hijo con
+      `UNIQUE(id, empresa_id)` + FK compuestas.
+    - `backend/routers/proyectos.py` (29 rutas bajo `db_rls`) — la jerarquía interna (Regla 2,
+      decisión **D6: "el operativo ve todo el tablero del taller, solo edita lo suyo"**) se
+      aplica en Python, no en RLS (RLS solo separa talleres).
+    - `backend/routers/proyectos_cron.py` — barrido diario (desbloqueo de tareas al completar
+      un hito, recordatorios de plazo, hitos/proyectos en riesgo, archivado a 30 días),
+      protegido por `X-Cron-Secret`, set-based sin bucle, idempotente por `dedupe_key`.
+    - **Fase 5 del Ciclo A** (Code Reviewer + Backend Architect + Database Optimizer, los 3
+      "APRUEBA CON CAMBIOS", sin bloqueantes): arreglos aplicados + migración
+      `0008_gestion_proyectos_endurecimiento.sql` (`completado_en`, `numeric(7,2)`, FK
+      compuesta de `milestone_id`, índices). Verificado por SQL con rollback: aislamiento
+      entre empresas, `WITH CHECK`, FK cross-tenant bloqueada, fail-closed sin claims,
+      idempotencia del barrido — todo OK.
+  - **Ciclo B — interfaz completa (G4-G7):**
+    - Menú lateral "Proyectos" + rutas `/proyectos` y `/proyectos/:id`.
+    - `ProyectosPage.tsx` (tablero Kanban con `@hello-pangea/dnd@18.0.1`, vistas
+      Operativa/Cierre/Archivo, franja de resumen) y `ProyectoDetallePage.tsx` (tablero de
+      tareas, cronograma de hitos, parte de horas) — construidos 100% sobre los 14 primitivos
+      `ui/` y los tokens de marca; nada del verde/dorado del prototipo Base44.
+    - Campana de notificaciones en ambos headers de `AppLayout`.
+    - **Fase 5 del Ciclo B** (Frontend Developer + Accessibility Auditor + Code Reviewer, los 3
+      "APRUEBA CON CAMBIOS"): **2 bloqueantes de accesibilidad nivel A corregidos** (asa de
+      arrastre dedicada en vez de un `div role="button"` con controles anidados; `aria-label`
+      de "Mover a" que empieza por el texto visible), más arreglos serios/medios (trampa de
+      foco con diálogos apilados, anuncios de arrastre en español, manejo de error por columna
+      del tablero con reintentar).
+  - **Prueba en vivo (2026-09-02, cuenta admin "Ana"):** crear proyecto, hito + tarea
+    dependiente que nace bloqueada, completar hito → desbloqueo con toast, mover tarjetas,
+    registrar horas, comentar, barrido diario (2ª corrida idempotente), campana. **Bug real
+    encontrado y corregido** (`b1825a5`): el barrido reventaba con `TypeError: dict is not a
+    sequence` — el `%` literal del mensaje "% de avance" colisionaba con el parseo de
+    parámetros de psycopg2 (fix: `%%`). No lo cazó la prueba SQL previa porque el MCP
+    `execute_sql` no interpola parámetros.
+  - **Ronda de pulido de UI** (feedback en vivo del fundador, commit `23f7b8a`): cursor de mano
+    en tarjetas de tarea/proyecto; modal de tarea con doble scroll/recorte corregido — cambio
+    en el primitivo `Dialog` (`max-h-[calc(100dvh-2rem)]` con su propio scroll), aplica a toda
+    la app, no solo a Proyectos; foco visible que se desbordaba del modal; cronograma y parte
+    de horas con mejor jerarquía visual (ancho acotado, tarjetas de resumen, hitos atrasados en
+    rojo).
+  - **Pendiente:** prueba en vivo con la cuenta **operativa** (Regla 2/D6 — ve todo el
+    tablero, sin botones de gestión, 403 al forzar una acción de gestor o editar una tarea
+    ajena) y **fusionar `goal/modulo-proyectos` a `master`**.
+
 - **Rediseño visual del producto — CICLO 1 + CICLO 2 completados (2026-08-30/31):** rama
   `goal/rediseno-visual` (sobre `master`, Fase 2.A ya fusionada). Objetivo 1 del roadmap
   cerrado a falta de la fusión a `master`. Ciclo `/goal` completo:
@@ -197,12 +262,10 @@
 
 ## 🔄 En progreso
 
-- **Fase 2.A — cierre pendiente:** el código está completo y auditado en la rama
-  `goal/fase-2a-multitenant-auth` (no fusionada). Falta la prueba en vivo por HTTP (B8),
-  que necesita `backend/.env` + `web/.env` + config del panel de Supabase Auth — acción del
-  fundador. Ver `docs/PLAN_FASE_2A.md`, sección "B8" y "Deuda anotada".
-- Hay 3 archivos vacíos de 0 bytes en la raíz del repo (`(CURRENT_DATE`, `NOW()`, `v_cupo`) —
-  basura de redirects de shell, untracked, sin commitear. Borrarlos cuando se confirme.
+- **Objetivo 6 (módulo de gestión de proyectos) — cierre pendiente:** Ciclo A y Ciclo B
+  completos y auditados en la rama `goal/modulo-proyectos` (no fusionada). Falta la prueba en
+  vivo con la cuenta operativa (Regla 2/D6) y fusionar a `master`. Ver
+  `docs/PLAN_MODULO_GESTION_PROYECTOS.md`, Parte VI.
 
 ---
 
@@ -223,10 +286,12 @@
    hoy `web/src/api/*.ts` están alineados a mano con el backend nuevo.
 
 ### Frente activo ahora mismo
-- **B8:** prueba en vivo de la Fase 2.A (necesita `.env` del fundador — ver arriba), luego
-  fusionar `goal/fase-2a-multitenant-auth` a `master`.
-- **Después:** rediseño visual del producto (Objetivo 1 / Fase 2.A del roadmap) — el fundador
-  lo pidió como el siguiente frente tras la Fase 2.A.
+- **Prueba en vivo con la cuenta operativa** del módulo de gestión de proyectos (Objetivo 6),
+  luego fusionar `goal/modulo-proyectos` a `master`.
+- **Después:** el fundador decide el siguiente frente entre los objetivos que quedan abiertos
+  del roadmap (ver `docs/ROADMAP_COSTO360.md`) — landing page de alto impacto (Objetivo 2),
+  agentes de operación (Objetivos 3-4), o el asistente de IA dentro del producto (Objetivo 5,
+  que ahora también incluye el asistente del módulo de proyectos, diferido por decisión D2).
 
 ### Prototipo ya construido — pendientes menores
 - `GEMINI_API_KEY` en `backend/.env` está vencida/inválida — el chat de Parámetros responde con error controlado hasta que se renueve.
@@ -251,4 +316,4 @@
 
 ---
 
-*Última actualización: 2026-09-01*
+*Última actualización: 2026-09-03*

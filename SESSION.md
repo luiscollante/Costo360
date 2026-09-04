@@ -2,6 +2,113 @@
 
 ---
 
+## Sesión: 2026-09-02/03 — Objetivo 6: módulo de gestión de proyectos, Ciclo A + Ciclo B completos
+
+### Qué se hizo
+Ciclo `/goal` completo (Fases 0-6) para el **Objetivo 6 del roadmap** (módulo de gestión de
+proyectos), partido en 2 ciclos por recomendación de los auditores — mismo patrón que el
+rediseño visual. Rama `goal/modulo-proyectos` (sobre `master`, con el rediseño visual ya
+fusionado). Plan vivo con el detalle completo de cada bloque, cada hallazgo de auditoría y
+cada verificación por SQL: `docs/PLAN_MODULO_GESTION_PROYECTOS.md`.
+
+- **Fase 0-1 (mapa + plan):** grafo del proyecto consultado; plan escrito por Software
+  Architect / Database Optimizer / Frontend Developer / Product Manager — 6 tablas nuevas
+  (`pm_*`), CRUD backend, automatizaciones, y toda la interfaz del tablero de proyectos. El
+  asistente de IA del módulo queda fuera de este ciclo (decisión D2: se funde con el Objetivo
+  5, que ahora se estrena acotado a proyectos cuando se construya).
+- **Fase 2 (auditoría del plan):** 3 agentes distintos — **Security Engineer**, **UX
+  Architect**, **Minimal Change Engineer** — los 3 "APRUEBA CON CAMBIOS". Hallazgos clave
+  incorporados antes de ejecutar: lista blanca de columnas que un no-gestor puede tocar en una
+  tarea propia (`estado`, `orden`, `descripcion`, `horas_estimadas`), `responsable_id`
+  evaluado siempre contra la fila en BD (nunca el payload), autoría server-side en
+  comentarios/horas, el barrido diario **set-based sin bucle** con `empresa_id` explícito en
+  cada sentencia (corre bajo BYPASSRLS), `X-Cron-Secret` con comparación constante-time,
+  `ProjectStatusBadge`/`TaskStatusBadge` nuevos (el `<StatusBadge>` genérico no sirve),
+  alternativa de teclado al arrastre, `<Dialog>` de tarea sin diálogo anidado para borrar.
+  El fundador decidió partir el ciclo en dos (Ciclo A = datos+backend, Ciclo B = interfaz).
+- **Ciclo A — G0-G3 (datos + backend), `aab3b55`…`280c61e`:**
+  - Migración `0007_gestion_proyectos.sql` aplicada a Supabase `hrmpyhixhbnkkpvxtuit`: 6
+    tablas `pm_projects/pm_tasks/pm_milestones/pm_time_entries/pm_comments/pm_notifications`,
+    `empresa_id` + RLS `force` + policy única por tabla (Regla 1), `UNIQUE(id,empresa_id)` +
+    FK compuestas para aislamiento estructural padre-hijo.
+  - `backend/routers/proyectos.py` (29 rutas, `db_rls`) + `backend/routers/proyectos_cron.py`
+    (barrido diario, router separado sin dependencias de sesión) + `web/src/api/proyectos.ts`.
+  - **Fase 5 del Ciclo A:** Code Reviewer + Backend Architect + Database Optimizer, los 3
+    "APRUEBA CON CAMBIOS", **sin bloqueantes**. Arreglos en `ca5798c` + migración `0008`
+    (endurecimiento: `completado_en`, `numeric(7,2)`, FK compuesta de `milestone_id`, índices).
+    Verificado por SQL con rollback: aislamiento entre empresas, `WITH CHECK`, FK cross-tenant,
+    fail-closed sin claims, idempotencia del barrido.
+- **Ciclo B — G4-G7 (interfaz), `663e642`+`0ea46b8`:**
+  - `@hello-pangea/dnd@18.0.1` (React 19 sin duplicados). Menú "Proyectos", rutas
+    `/proyectos`/`/proyectos/:id`. `ProyectosPage.tsx` (Kanban, vistas
+    Operativa/Cierre/Archivo, franja de resumen), `ProyectoDetallePage.tsx` (tablero de tareas,
+    cronograma, parte de horas), campana de notificaciones en `AppLayout`.
+  - **Fase 5 del Ciclo B:** Frontend Developer + Accessibility Auditor + Code Reviewer, los 3
+    "APRUEBA CON CAMBIOS". **2 bloqueantes de accesibilidad nivel A** (asa de arrastre
+    dedicada; `aria-label` de "Mover a" con el texto visible al frente) + serios/medios
+    (trampa de foco con diálogos apilados, anuncios de arrastre en español, manejo de error
+    por columna). Todo corregido en `9fc7414`.
+- **Prueba en vivo (cuenta admin "Ana"):** crear proyecto, hito + tarea dependiente que nace
+  bloqueada, completar hito → desbloqueo, mover tarjetas, registrar horas, comentar, barrido
+  diario con 2ª corrida idempotente, campana. **Bug real encontrado y corregido** (`b1825a5`):
+  el `%` literal de "% de avance" colisionaba con el parseo de parámetros de psycopg2 en el
+  SQL del barrido — la prueba SQL previa no lo cazó porque el MCP `execute_sql` no interpola.
+- **Ronda de pulido de UI** (feedback en vivo del fundador, `23f7b8a`): cursor de mano en
+  tarjetas; modal de tarea con doble scroll/recorte corregido **en el primitivo `Dialog`**
+  (aplica a toda la app); foco visible desbordado del modal; cronograma y parte de horas con
+  mejor jerarquía visual.
+- **Documentación puesta al día (2026-09-03):** `PROGRESS.md` y este archivo no reflejaban
+  nada de lo anterior — el Ciclo A y el Ciclo B se ejecutaron y auditaron por completo sin que
+  el harness se actualizara en el camino (solo vivía en `docs/PLAN_MODULO_GESTION_PROYECTOS.md`).
+  Corregido ahora.
+- **Limpieza:** 2 archivos basura de 0 bytes en la raíz del repo (`30`, `v_cupo` — restos de
+  redirects de shell de sesiones anteriores) revisados contra el grafo del proyecto
+  (`codebase-memory-mcp`: sin nodos, sin referencias, `v_cupo` además gitignored y sin
+  historial de git) y borrados por ser irrelevantes.
+
+### Archivos tocados
+- **Backend nuevos:** `backend/migrations/0007_gestion_proyectos.sql`,
+  `backend/migrations/0008_gestion_proyectos_endurecimiento.sql`,
+  `backend/routers/proyectos.py`, `backend/routers/proyectos_cron.py`,
+  `backend/models/proyectos.py`.
+- **Backend modificados:** `backend/main.py` (router + `_self_test_rls` extendido),
+  `backend/ENV_SETUP.md` (`CRON_SECRET`).
+- **Frontend nuevos:** `web/src/api/proyectos.ts`, `web/src/pages/ProyectosPage.tsx`,
+  `web/src/pages/ProyectoDetallePage.tsx`, `web/src/hooks/useTableroProyectos.ts`,
+  `web/src/components/proyectos/*` (tarjetas, Kanban de tareas, diálogo de tarea, cronograma,
+  parte de horas, notificaciones, badges).
+- **Frontend modificados:** `web/src/App.tsx`, `web/src/components/Sidebar.tsx`,
+  `web/src/components/AppLayout.tsx`, `web/src/components/CommandPalette.tsx`,
+  `web/src/components/ui/Dialog.tsx` (scroll del panel — cambio transversal),
+  `web/src/api/materiales.ts` (`getCategoriasMaterial`), `web/src/lib/utils.ts`
+  (`formatFecha`/`formatFechaHora`/`diasHasta`), `web/package.json` (`@hello-pangea/dnd`).
+- **Docs:** `docs/PLAN_MODULO_GESTION_PROYECTOS.md` (vivo, todo el detalle), este archivo,
+  `PROGRESS.md`.
+- **Raíz:** borrados `30` y `v_cupo` (basura, 0 bytes).
+
+### Decisiones tomadas
+- El asistente de IA del módulo se funde con el Objetivo 5 — no se construye en este ciclo (D2).
+- Ciclo partido en dos (Ciclo A datos+backend, Ciclo B interfaz) — decisión del fundador tras
+  la Fase 2, siguiendo la recomendación de los 3 auditores.
+- `pm_tasks` sin columna `responsable` de texto libre — solo `responsable_id` ligado a
+  `usuarios` (decisión D8, confirmada por el fundador el 2026-09-02).
+- Barrido diario = endpoint idempotente protegido por secreto, sin planificador todavía (D3) —
+  el disparo real se cablea cuando el backend tenga hosting propio.
+
+### Pendiente / primera tarea de la próxima sesión
+1. **Prueba en vivo con la cuenta operativa** (Regla 2/D6: ve el tablero completo del taller,
+   sin botones de gestión, 403 real al forzar crear un proyecto o editar una tarea ajena).
+2. Si pasa, **fusionar `goal/modulo-proyectos` a `master`**.
+3. Tras la fusión: reindexar el grafo (`codebase-memory-mcp`) contra `master`, y actualizar
+   `ARQUITECTURA_MAESTRA.md` (§3 dependencia `@hello-pangea/dnd`, §4 las 6 tablas `pm_*`, §11
+   historial, §12) + `docs/ROADMAP_COSTO360.md` (Fase 2.D) — quedaron pendientes de esta
+   sesión porque el pedido explícito del fundador fue actualizar solo `PROGRESS.md`/
+   `SESSION.md` antes de la prueba con la cuenta operativa.
+4. Renovar `GEMINI_API_KEY` en `backend/.env` (el chat de Parámetros sigue en error
+   controlado) — pendiente de sesiones anteriores, sigue sin resolver.
+
+---
+
 ## Sesión: 2026-09-01 — Rediseño visual: ronda de revisión en vivo del fundador (Ciclo 2)
 
 ### Qué se hizo
