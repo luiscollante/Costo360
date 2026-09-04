@@ -221,12 +221,14 @@ storage adapter a `@capacitor/preferences` en el APK). Alta de cuentas 100% por 
 `sesiones`, `services/auth_service.py`) se **eliminó**. En `master` sigue el sistema viejo hasta
 que se fusione la rama.
 
-**Regla 5 (sesión única con control real): ✅ implementada en la rama** — `routers/session.py`
+**Regla 5 (sesión única con control real): ✅ implementada, en `master`** — `routers/session.py`
 (claim/keep/handoff/heartbeat/logout, transiciones con `UPDATE ... WHERE estado=<esperado>` +
 rowcount), `verificar_dispositivo` (409 `SESSION_SUPERSEDED` / `SESSION_PENDING` según el header
 `X-Device-Id` vs `sesion_activa.device_actual`), y `SessionGuard.tsx` en el frontend. Es "sesión
 única cooperativa": la expulsión se hace cumplir con el 409, no revocando el token de Supabase
-(GoTrue no lo permite por-dispositivo).
+(GoTrue no lo permite por-dispositivo). **Decisión del fundador, 2026-09-03:** el dispositivo
+nuevo puede forzar el cambio de inmediato — se quitó el período de gracia que antes obligaba a
+esperar 30s antes de poder forzar (`_GRACE_S` en `routers/session.py`, ahora `0`).
 
 ---
 
@@ -439,6 +441,7 @@ el cuaderno Notion "Costo360 — Base de Conocimiento Central".
 | 2026-09-01 | **Ronda de revisión en vivo del fundador**: bug del sidebar que scrolleaba (shell `h-screen overflow-hidden`); CORS del backend a cualquier puerto de localhost; dashboard usa `date.today()` del backend (no `CURRENT_DATE` UTC); barra lateral casi opaca sin capas de blur (consumían GPU y lavaban el color; el glass translúcido y el brillo diagonal se descartaron); catálogo editable vía modal precargado + copy-on-write (migración `0006` `base_id`), visible para operativo; Express "Calcular precio" (placeholder confuso); Historial con actualización optimista; token `--color-brand-gold-text` `#6E5410` para números de acento; menú lateral reorganizado por área del negocio |
 | 2026-09-01 | Objetivo 1 (rediseño visual) fusionado a `master`; **Objetivo 6 añadido al roadmap** — módulo de gestión de proyectos, reimplementación nativa del prototipo Base44 del fundador |
 | 2026-09-02/03 | **Objetivo 6 ejecutado y fusionado a `master`** (rama `goal/modulo-proyectos`, ciclo `/goal` completo partido en Ciclo A datos+backend / Ciclo B interfaz, cada uno con su propia Fase 2 y Fase 5 con 3 agentes distintos). 6 tablas `pm_*` (migraciones `0007`/`0008`), 29 rutas en `routers/proyectos.py`, barrido diario en `routers/proyectos_cron.py`, tablero Kanban + detalle de proyecto + cronograma + parte de horas + notificaciones en el frontend (`@hello-pangea/dnd` nuevo). Regla 2/D6 ("el operativo ve todo, edita solo lo suyo") verificada en vivo con la cuenta operativa real, con llamadas directas al backend (no solo botones ocultos). El asistente de IA del módulo se funde con el Objetivo 5 (decisión D2, no construido todavía) |
+| 2026-09-03 (tarde) | **Ronda de bugs post-lanzamiento de Proyectos + wizard de Cotización**, directo en `master`. 4 causas de fondo corregidas: rendimiento del tablero (peticiones paralelas sin cancelar — `AbortController` + reintento ante fallo transitorio), arrastrar-y-soltar roto + columnas sin altura fija (mismo origen: el `Droppable` de `@hello-pangea/dnd` no tenía su propio scroll — resuelto replicando el patrón del prototipo Base44, solo `md:`), modal de sesión (período de gracia de 30s eliminado por decisión del fundador + contraste corregido), y un **bug real de navegación** en el wizard de cotización (`setPaso(3)` apuntaba al mismo paso en el que ya se estaba). Auditado en 2 rondas (Fase 2: Backend Architect + Frontend Developer + Minimal Change Engineer; Fase 5: Code Reviewer + Accessibility Auditor), con 2 commits de arreglos reales sobre hallazgos de la propia auditoría (contraste del modal sobre su fondo compuesto real, y una regla CSS sin `@layer` que le quitaba el cursor "grab" a las asas de arrastre) |
 
 ---
 

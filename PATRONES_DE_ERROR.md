@@ -71,3 +71,39 @@ parche) / **Checklist accionable** (qué revisar la próxima vez para no repetir
   `eliminar_usuario(id)` best-effort **antes** de deshacer lo demás (ver `routers/bootstrap.py`
   y `routers/admin.py`). Nunca interpolar el error crudo de la API externa en el `detail` de
   la `HTTPException` (filtra URLs/detalles internos) — loguearlo y devolver un mensaje genérico.
+
+## 5. CSS global sin `@layer` le gana a CUALQUIER utilidad de Tailwind, sin importar especificidad
+
+- **Síntoma:** una regla CSS nueva y "obviamente menos específica" (p. ej. un selector de
+  elemento simple como `button:not(:disabled)`) pisa una utilidad de Tailwind que debería ganar
+  por estar más abajo en la cascada o ser más específica (p. ej. `.cursor-grab`).
+- **Causa raíz:** Tailwind v4 organiza todo su CSS generado en capas (`@layer theme, base,
+  components, utilities`). Por la especificación de CSS Cascade Layers, una declaración **sin
+  capa** siempre gana sobre cualquier declaración **con capa**, sin importar especificidad ni
+  orden en el archivo — no es "más específico gana", es "sin capa gana siempre". Pasó al
+  agregar `button:not(:disabled) { cursor: pointer }` suelto en `index.css`: le quitaba el
+  `cursor: grab` (que sí vive en `@layer utilities` vía la clase `.cursor-grab`) a las asas de
+  arrastre del tablero de Proyectos.
+- **Checklist accionable:** cualquier regla CSS nueva en `index.css` que deba convivir con
+  utilidades de Tailwind (es decir, casi todas) va dentro de `@layer base { ... }` (o
+  `components`/`utilities` según corresponda) — nunca suelta. Verificar en el navegador real
+  con `getComputedStyle`, no solo leyendo el CSS fuente, porque el orden de capas no es
+  visualmente obvio en el archivo compilado.
+
+## 6. Combinar padding con shorthand (`p-4 sm:p-6`) y un lado explícito (`pt-[...]`) en el mismo elemento — el shorthand puede ganar sin avisar
+
+- **Síntoma:** un cálculo que asume el valor de un `padding-top` explícito (p. ej. una variable
+  CSS `calc(100vh - <padding real>)`) da un resultado equivocado en un rango de viewport
+  específico, sin ningún error ni warning.
+- **Causa raíz:** `AppLayout.tsx` combina `p-4 sm:p-6 lg:p-8` (shorthand de las 4 direcciones)
+  con `pt-[calc(3.5rem+1rem)] lg:pt-20` (solo `padding-top`) en el mismo elemento. En el rango
+  640-1023px, `sm:p-6` y `pt-[calc(...)]` tienen la misma especificidad (una clase), y
+  `sm:p-6` sale **después** en el CSS generado por Tailwind — su `padding-top` implícito (parte
+  del shorthand) gana, aunque el override explícito de `pt-` "se vea" más específico en el JSX.
+- **Checklist accionable:** al construir cualquier cálculo (`calc()`, JS) que dependa del
+  padding real de un elemento con mezcla de shorthand + lado explícito, **verificar contra el
+  CSS compilado real** (`npx vite build` + inspeccionar el `dist/assets/*.css`, o
+  `getComputedStyle` en el navegador) en cada breakpoint relevante — nunca asumir el valor
+  "nominal" de la clase que se ve en el JSX. Si el elemento es compartido por toda la app (como
+  `<main>` en `AppLayout.tsx`), preferir fijar el override explícito también en el breakpoint
+  conflictivo (`sm:pt-[...]`) antes que ajustar cada consumidor externo al valor real.
