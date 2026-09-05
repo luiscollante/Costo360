@@ -27,6 +27,7 @@ from backend.routers import (
     auth, session, bootstrap, calculos, cotizacion, parametros, config, dashboard,
     retales, admin, nesting, materiales, inventario, agente, proyectos, proyectos_cron,
 )
+from backend.agente import router as agente_ia  # Objetivo 5, Ciclo 1 — motor nuevo, /api/agente/*
 # `finanzas` NO se registra en el prototipo nuevo: opera sobre `facturas_compra`, una
 # tabla que el fundador confirmó que NO es de Costo360 (sobra de otro proyecto) y que
 # no existe en el esquema multi-tenant. Ver docs/PLAN_FASE_2A.md (hallazgo R7).
@@ -121,11 +122,30 @@ def _self_test_rls() -> None:
         conn.close()
 
 
+def _self_test_agente() -> None:
+    """
+    NO fatal a propósito: a diferencia de `_self_test_rls`, esto no protege el
+    aislamiento entre talleres — protege solo la función del agente. Un typo en
+    la API key del agente no debe tumbar el resto del backend (Regla 7: "la app
+    nunca depende exclusivamente del Agente; cualquier usuario puede navegar y
+    cotizar a mano") — si esto falla, `/api/agente/*` responde degradado, el
+    resto del backend sigue funcionando con normalidad.
+    """
+    try:
+        api_key = os.getenv("GEMINI_AGENTE_API_KEY") or os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            print("[agente] ADVERTENCIA: sin GEMINI_AGENTE_API_KEY/GEMINI_API_KEY — "
+                  "el agente responderá degradado hasta que se configure.", flush=True)
+    except Exception as e:
+        print(f"[agente] ADVERTENCIA: self-test del agente falló: {e}", flush=True)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # El esquema lo gobiernan las migraciones de Supabase (backend/migrations/*.sql),
     # NO la app. Aquí solo se verifica que el aislamiento por empresa esté operativo.
     _self_test_rls()
+    _self_test_agente()
     yield
 
 
@@ -173,6 +193,7 @@ app.include_router(nesting.router)
 app.include_router(materiales.router)
 app.include_router(inventario.router)
 app.include_router(agente.router)
+app.include_router(agente_ia.router)
 app.include_router(proyectos.router)
 app.include_router(proyectos_cron.router)
 
