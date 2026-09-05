@@ -18,15 +18,22 @@ import {
  * detalle genérico, para que la tarjeta funcione igual de bien con tareas,
  * cotizaciones o cualquier dominio futuro sin tener que tocar este
  * componente cada vez que se agrega una tool nueva. */
-const _CAMPOS_OCULTOS = new Set(['id', 'titulo', 'numero'])
+// Campos usados como nombre principal (nunca se repiten en el detalle) o que
+// son ids/flags internos sin valor para que un humano confirme una acción.
+const _CAMPOS_PRINCIPAL = ['numero', 'titulo', 'referencia'] as const
+const _CAMPOS_OCULTOS = new Set(['id', 'base_id', 'es_propio', ..._CAMPOS_PRINCIPAL])
+const _CAMPOS_MONEDA = new Set(['precio', 'precio_m2', 'precio_m2_propuesto', 'precio_lamina'])
 const _ETIQUETAS: Record<string, string> = {
   cliente: 'Cliente', precio: 'Precio', fecha: 'Fecha', estado: 'Estado',
-  project_id: 'Proyecto',
+  project_id: 'Proyecto', categoria: 'Categoría', proveedor: 'Proveedor',
+  precio_m2: 'Precio actual', precio_m2_propuesto: 'Precio propuesto',
+  es_override: 'Es copia de Costo360', activo: 'Activo',
 }
 
 function _valorLegible(campo: string, valor: unknown): string {
-  if (campo === 'precio' && typeof valor === 'number') return formatCOP(valor)
+  if (_CAMPOS_MONEDA.has(campo) && typeof valor === 'number') return formatCOP(valor)
   if (campo === 'fecha' && typeof valor === 'string') return formatFecha(valor)
+  if (typeof valor === 'boolean') return valor ? 'Sí' : 'No'
   return String(valor)
 }
 
@@ -241,8 +248,11 @@ export default function AgentePage() {
               </p>
               <ul className="mt-2 space-y-1.5 text-sm text-brand-text">
                 {propuesta.filas_afectadas.map((f, i) => {
-                  const principal = String(f.numero ?? f.titulo ?? f.id)
-                  const detalles = Object.entries(f).filter(([k]) => !_CAMPOS_OCULTOS.has(k))
+                  const campoPrincipal = _CAMPOS_PRINCIPAL.find((c) => f[c] != null)
+                  const principal = String(campoPrincipal ? f[campoPrincipal] : f.id)
+                  const detalles = Object.entries(f).filter(
+                    ([k, v]) => !_CAMPOS_OCULTOS.has(k) && v !== null && v !== undefined && v !== ''
+                  )
                   return (
                     <li key={i}>
                       <div>
