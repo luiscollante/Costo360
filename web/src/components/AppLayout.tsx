@@ -143,7 +143,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </main>
 
       <CommandPalette />
-      <AgenteChat />
+      {/* La burbuja flotante del chat legado no tiene sentido dentro de la
+          propia página del asistente nuevo (Objetivo 5) — sería un segundo
+          punto de entrada al mismo agente, superpuesto sobre el primero. */}
+      {location.pathname !== '/agente' && <AgenteChat />}
     </div>
   )
 }

@@ -50,6 +50,7 @@ export interface EventoAgUi {
 export async function* streamAgente(
   mensaje: string,
   historial: MensajeChat[],
+  signal?: AbortSignal,
 ): AsyncGenerator<EventoAgUi> {
   const { data } = await supabase.auth.getSession()
   const token = data.session?.access_token
@@ -63,6 +64,7 @@ export async function* streamAgente(
     method: 'POST',
     headers,
     body: JSON.stringify({ mensaje, historial }),
+    signal,
   })
   if (!resp.ok || !resp.body) {
     throw new Error(`El asistente respondió ${resp.status}`)

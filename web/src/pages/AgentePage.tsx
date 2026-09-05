@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Sparkles, Send, Loader2, AlertTriangle } from 'lucide-react'
+import { Sparkles, Send, AlertTriangle, Square } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
 import AppLayout from '@/components/AppLayout'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
@@ -10,6 +11,28 @@ import {
   streamAgente, confirmarPropuesta, descartarPropuesta,
   type MensajeChat, type Propuesta,
 } from '@/api/agente'
+
+/** Markdown del modelo → JSX con los tokens de marca (nunca los estilos por
+ * defecto del navegador para <strong>/<ul>/etc). */
+function TextoAsistente({ texto }: { texto: string }) {
+  return (
+    <ReactMarkdown
+      components={{
+        p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
+        strong: ({ children }) => <strong className="font-semibold text-brand-text-dark">{children}</strong>,
+        ul: ({ children }) => <ul className="mb-1.5 list-disc space-y-0.5 pl-4 last:mb-0">{children}</ul>,
+        ol: ({ children }) => <ol className="mb-1.5 list-decimal space-y-0.5 pl-4 last:mb-0">{children}</ol>,
+        li: ({ children }) => <li>{children}</li>,
+        a: ({ children, href }) => (
+          <a href={href} target="_blank" rel="noreferrer" className="underline text-brand-primary">{children}</a>
+        ),
+        code: ({ children }) => <code className="rounded bg-brand-border/40 px-1 py-0.5 text-[12px]">{children}</code>,
+      }}
+    >
+      {texto}
+    </ReactMarkdown>
+  )
+}
 
 /**
  * Página piloto del Ciclo 1 (Objetivo 5) — motor nuevo del agente, acotado al
@@ -31,6 +54,7 @@ export default function AgentePage() {
   const [resolviendo, setResolviendo] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const propuestaRef = useRef<HTMLDivElement>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   function scrollAbajo() {
     requestAnimationFrame(() => {
@@ -55,8 +79,10 @@ export default function AgentePage() {
     setMensajes((m) => [...m, { role: 'user', content: contenido }, { role: 'assistant', content: '' }])
     setCargando(true)
     scrollAbajo()
+    const controller = new AbortController()
+    abortRef.current = controller
     try {
-      for await (const evento of streamAgente(contenido, historial)) {
+      for await (const evento of streamAgente(contenido, historial, controller.signal)) {
         if (evento.type === 'TEXT_MESSAGE_CONTENT' && evento.delta) {
           setMensajes((m) => {
             const copia = [...m]
@@ -79,11 +105,26 @@ export default function AgentePage() {
           })
         }
       }
-    } catch {
-      showToast('error', 'No se pudo contactar al asistente')
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') {
+        setMensajes((m) => {
+          const copia = [...m]
+          const ultimo = copia[copia.length - 1]
+          if (!ultimo.content) copia.pop() // sin respuesta parcial: no dejar una burbuja vacía
+          else copia[copia.length - 1] = { ...ultimo, content: `${ultimo.content}\n\n*(detenido)*` }
+          return copia
+        })
+      } else {
+        showToast('error', 'No se pudo contactar al asistente')
+      }
     } finally {
+      abortRef.current = null
       setCargando(false)
     }
+  }
+
+  function detener() {
+    abortRef.current?.abort()
   }
 
   async function confirmar() {
@@ -147,16 +188,18 @@ export default function AgentePage() {
             {mensajes.map((m, i) => (
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
-                className={`max-w-[85%] whitespace-pre-wrap rounded-xl px-3 py-2 text-sm ${
+                className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
                   m.role === 'user'
-                    ? 'bg-brand-primary text-white'
+                    ? 'whitespace-pre-wrap bg-brand-primary text-white'
                     : 'border border-brand-border bg-brand-bg text-brand-text'
                 }`}
               >
-                {m.content || (
-                  cargando && i === mensajes.length - 1
-                    ? <span aria-hidden="true">…</span>
-                    : ''
+                {m.role === 'assistant' ? (
+                  m.content
+                    ? <TextoAsistente texto={m.content} />
+                    : (cargando && i === mensajes.length - 1 ? <span aria-hidden="true">…</span> : '')
+                ) : (
+                  m.content
                 )}
               </div>
             </div>
@@ -220,9 +263,15 @@ export default function AgentePage() {
             aria-label="Mensaje para el asistente"
             className="h-9 flex-1 rounded-lg border border-brand-border bg-brand-input px-3 text-sm text-brand-text focus-visible:outline-none focus-visible:border-brand-primary"
           />
-          <Button type="submit" size="sm" disabled={cargando || !input.trim()} aria-label="Enviar">
-            {cargando ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Send size={14} aria-hidden="true" />}
-          </Button>
+          {cargando ? (
+            <Button type="button" size="sm" variant="danger" onClick={detener} aria-label="Detener la respuesta">
+              <Square size={12} aria-hidden="true" />
+            </Button>
+          ) : (
+            <Button type="submit" size="sm" disabled={!input.trim()} aria-label="Enviar">
+              <Send size={14} aria-hidden="true" />
+            </Button>
+          )}
         </form>
         </Card>
       </div>
