@@ -33,6 +33,16 @@ from backend.models.proyectos import (
     HoraIn, ComentarioIn,
 )
 from backend.services.audit_service import log_accion
+from backend.services import proyectos_service as _svc
+from backend.services.proyectos_service import (
+    es_gestor as _es_gestor,
+    ensure_gestor as _ensure_gestor,
+    recalc_progreso as _recalc_progreso,
+    tarea_para_editar as _tarea_para_editar,
+    puede_editar_tarea as _puede_editar_tarea,
+    _tarea_row,
+    _TAREA_COLS,
+)
 
 router = APIRouter(prefix="/api/proyectos", tags=["proyectos"],
                    dependencies=[Depends(verificar_dispositivo)])
@@ -51,16 +61,6 @@ _ORDEN_PROYECTOS = {
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
-
-def _es_gestor(usuario) -> bool:
-    return bool(usuario.get("puede_ver_dashboard"))
-
-
-def _ensure_gestor(usuario) -> None:
-    if not _es_gestor(usuario):
-        raise HTTPException(status_code=403,
-                            detail="Requiere rol de administración o gerencia")
-
 
 def _f(v):
     return float(v) if isinstance(v, Decimal) else v
@@ -97,65 +97,11 @@ def _hito_row(r) -> dict:
 _HITO_COLS = "id,project_id,titulo,descripcion,fecha_inicio,fecha_limite,estado,created_at,updated_at"
 
 
-def _tarea_row(r) -> dict:
-    return {
-        "id": r[0], "project_id": r[1], "titulo": r[2], "descripcion": r[3],
-        "estado": r[4], "prioridad": r[5], "responsable_id": str(r[6]) if r[6] else None,
-        "fecha_limite": _d(r[7]), "horas_estimadas": _f(r[8]), "milestone_id": r[9],
-        "orden": r[10],
-        "created_at": r[11].isoformat() if r[11] else None,
-        "updated_at": r[12].isoformat() if r[12] else None,
-    }
-
-
-_TAREA_COLS = ("id,project_id,titulo,descripcion,estado,prioridad,responsable_id,"
-               "fecha_limite,horas_estimadas,milestone_id,orden,created_at,updated_at")
-
-
 def _hora_row(r) -> dict:
     return {"id": r[0], "task_id": r[1], "project_id": r[2],
             "usuario_id": str(r[3]) if r[3] else None, "user_name": r[4],
             "horas": _f(r[5]), "fecha": _d(r[6]), "nota": r[7],
             "created_at": r[8].isoformat() if r[8] else None}
-
-
-def _recalc_progreso(conn, project_id: int) -> None:
-    """Recalcula el % de avance del proyecto. Propaga excepciones — es lógica
-    central, no puede fallar en silencio (hallazgo S10). NO toca commit/rollback."""
-    cur = conn.cursor()
-    cur.execute(
-        "select count(*), count(*) filter (where estado = 'completada') "
-        "from pm_tasks where project_id = %s",
-        (project_id,),
-    )
-    total, hechas = cur.fetchone()
-    pct = round(hechas * 100 / total) if total else 0
-    cur.execute(
-        "update pm_projects set tareas_total = %s, tareas_hechas = %s, progreso_pct = %s "
-        "where id = %s",
-        (total, hechas, pct, project_id),
-    )
-    cur.close()
-
-
-def _tarea_para_editar(conn, tarea_id: int):
-    """Carga la tarea con FOR UPDATE (evalúa el permiso contra la BD, no contra
-    el payload — hallazgo S1). RLS ya la acota a la empresa. 404 si no existe."""
-    cur = conn.cursor()
-    cur.execute(
-        "select id, project_id, responsable_id, estado from pm_tasks where id = %s for update",
-        (tarea_id,),
-    )
-    row = cur.fetchone()
-    cur.close()
-    if row is None:
-        raise HTTPException(status_code=404, detail="Tarea no encontrada")
-    return {"id": row[0], "project_id": row[1],
-            "responsable_id": str(row[2]) if row[2] else None, "estado": row[3]}
-
-
-def _puede_editar_tarea(usuario, tarea) -> bool:
-    return _es_gestor(usuario) or tarea["responsable_id"] == usuario["id"]
 
 
 # ── /resumen — franja de la cabecera del tablero (hallazgo U11) ──────────────
@@ -341,15 +287,8 @@ def asignar_responsable(tarea_id: int, body: ResponsableIn,
 @router.delete("/tareas/{tarea_id}", status_code=204)
 def borrar_tarea(tarea_id: int, request: Request,
                  conn=Depends(db_rls), usuario=Depends(get_current_user)):
-    _ensure_gestor(usuario)
-    tarea = _tarea_para_editar(conn, tarea_id)
-    cur = conn.cursor()
-    cur.execute("delete from pm_tasks where id = %s", (tarea_id,))
-    cur.close()
-    _recalc_progreso(conn, tarea["project_id"])
     ip = request.client.host if request.client else None
-    log_accion(conn, "PM_TAREA_DELETE", {"tarea_id": tarea_id, "project_id": tarea["project_id"]},
-               empresa_id=usuario["empresa_id"], usuario_id=usuario["id"], ip=ip)
+    _svc.borrar_tarea(conn, usuario, tarea_id, ip=ip)
 
 
 # ── Registro de horas ───────────────────────────────────────────────────────
@@ -639,57 +578,13 @@ def borrar_proyecto(project_id: int, request: Request,
 
 @router.get("/{project_id}/tareas")
 def listar_tareas(project_id: int, conn=Depends(db_rls), _usuario=Depends(get_current_user)):
-    cur = conn.cursor()
-    cur.execute(f"select {_TAREA_COLS} from pm_tasks where project_id = %s "
-                f"order by orden asc, id asc limit {_LIMITE_LISTA}", (project_id,))
-    rows = cur.fetchall()
-    cur.close()
-    return [_tarea_row(r) for r in rows]
+    return _svc.listar_tareas(conn, project_id, limite=_LIMITE_LISTA)
 
 
 @router.post("/{project_id}/tareas", status_code=201)
 def crear_tarea(project_id: int, body: TareaIn,
                 conn=Depends(db_rls), usuario=Depends(get_current_user)):
-    _ensure_gestor(usuario)  # hallazgo S2: crear tareas = solo gestor
-    cur = conn.cursor()
-    cur.execute("select 1 from pm_projects where id = %s", (project_id,))
-    if cur.fetchone() is None:
-        cur.close()
-        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
-
-    estado = "por_hacer"
-    if body.milestone_id is not None:
-        cur.execute("select estado from pm_milestones where id = %s and project_id = %s",
-                    (body.milestone_id, project_id))
-        m = cur.fetchone()
-        if m is None:
-            cur.close()
-            raise HTTPException(status_code=400, detail="El hito no pertenece a este proyecto")
-        if m[0] != "completado":
-            estado = "bloqueada"
-
-    if body.responsable_id is not None:
-        cur.execute("select 1 from usuarios where id = %s and activo = true", (body.responsable_id,))
-        if cur.fetchone() is None:
-            cur.close()
-            raise HTTPException(status_code=400, detail="El responsable no pertenece a este taller")
-
-    cur.execute("select coalesce(max(orden) + 1, 0) from pm_tasks where project_id = %s", (project_id,))
-    orden = cur.fetchone()[0]
-
-    cur.execute(
-        "insert into pm_tasks "
-        "(empresa_id, project_id, titulo, descripcion, estado, prioridad, "
-        " responsable_id, fecha_limite, horas_estimadas, milestone_id, orden) "
-        "values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) returning " + _TAREA_COLS,
-        (usuario["empresa_id"], project_id, body.titulo, body.descripcion, estado,
-         body.prioridad, body.responsable_id, body.fecha_limite, body.horas_estimadas,
-         body.milestone_id, orden),
-    )
-    row = cur.fetchone()
-    cur.close()
-    _recalc_progreso(conn, project_id)
-    return _tarea_row(row)
+    return _svc.crear_tarea(conn, usuario, project_id, body)
 
 
 @router.get("/{project_id}/hitos")

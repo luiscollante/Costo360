@@ -24,6 +24,7 @@ no al transaction pooler (6543): `SET LOCAL` no sobrevive a un `commit()` allí.
 """
 import json
 import os
+from contextlib import contextmanager
 
 from fastapi import Depends, HTTPException
 from sqlalchemy import create_engine
@@ -76,8 +77,24 @@ def _claims_json(user: dict) -> str:
     return json.dumps({"sub": user["id"], "role": "authenticated"})
 
 
-def db_rls(user: dict = Depends(get_current_user)):
-    """Conexión con RLS activo bajo el JWT del usuario. Para todos los routers de datos."""
+@contextmanager
+def rls_connection(user: dict):
+    """
+    Conexión CORTA con RLS activo bajo el JWT del usuario — abre, comitea/revierte
+    y cierra al salir del `with`. Es el mismo mecanismo de `db_rls` de abajo,
+    extraído para poder reutilizarse fuera del ciclo de vida de `Depends()` de
+    FastAPI.
+
+    Uso previsto: el orquestador del Agente de IA (Objetivo 5) NUNCA debe
+    mantener una única conexión abierta durante todo un turno conversacional
+    (razonamiento del modelo + varias tool-calls puede tardar varios segundos,
+    muy por encima de lo que el pool `pool_size=5, max_overflow=5` está
+    dimensionado a sostener — hallazgo bloqueante de la auditoría de seguridad
+    del Objetivo 5). En su lugar, cada tool-call individual abre su propia
+    conexión corta con `with rls_connection(usuario) as conn: ...`, exactamente
+    igual de rápida que cualquier CRUD normal de hoy, y la cierra antes de que
+    el control vuelva al modelo para su siguiente paso de razonamiento.
+    """
     conn = get_engine().raw_connection()
     try:
         with conn.cursor() as cur:
@@ -104,3 +121,9 @@ def db_rls(user: dict = Depends(get_current_user)):
         except Exception:
             pass
         conn.close()
+
+
+def db_rls(user: dict = Depends(get_current_user)):
+    """Conexión con RLS activo bajo el JWT del usuario. Para todos los routers de datos."""
+    with rls_connection(user) as conn:
+        yield conn
