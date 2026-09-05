@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Sparkles, Send, Loader2, AlertTriangle } from 'lucide-react'
+import AppLayout from '@/components/AppLayout'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { showToast } from '@/lib/toast'
 import {
   streamAgente, confirmarPropuesta, descartarPropuesta,
@@ -16,6 +18,11 @@ import {
  * de dos fases funcionan con datos reales. El widget flotante global y el
  * "Centro del Agente" completo (bitácora, deshacer, BI) son del Ciclo 3.
  */
+const SUGERENCIAS = [
+  'Lista las tareas del proyecto 8',
+  'Crea una tarea llamada Revisar corte en el proyecto 8',
+]
+
 export default function AgentePage() {
   const [mensajes, setMensajes] = useState<MensajeChat[]>([])
   const [input, setInput] = useState('')
@@ -39,8 +46,8 @@ export default function AgentePage() {
     if (propuesta) propuestaRef.current?.focus()
   }, [propuesta])
 
-  async function enviar() {
-    const contenido = input.trim()
+  async function enviar(texto?: string) {
+    const contenido = (texto ?? input).trim()
     if (!contenido || cargando) return
     setInput('')
     setPropuesta(null)
@@ -107,21 +114,37 @@ export default function AgentePage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <PageHeader
-        kicker="Objetivo 5 · Piloto Ciclo 1"
-        title="Asistente de Costo360"
-        subtitle="Por ahora solo entiende de Proyectos y Tareas."
-      />
+    <AppLayout>
+      <div className="mx-auto max-w-2xl">
+        <PageHeader
+          kicker="Objetivo 5 · Piloto Ciclo 1"
+          title="Asistente de Costo360"
+          subtitle="Por ahora solo entiende de Proyectos y Tareas."
+        />
 
-      <Card className="flex h-[60vh] flex-col overflow-hidden">
-        <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
-          {mensajes.length === 0 && (
-            <p className="text-sm text-brand-text-secondary">
-              Prueba, por ejemplo: «Lista las tareas del proyecto 8» o «Crea una tarea llamada Revisar corte en el proyecto 8».
-            </p>
-          )}
-          {mensajes.map((m, i) => (
+        <Card className="flex h-[65vh] flex-col overflow-hidden">
+          <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
+            {mensajes.length === 0 && (
+              <div className="flex h-full flex-col items-center justify-center">
+                <EmptyState
+                  icon={<Sparkles size={32} />}
+                  title="Pregúntale algo sobre tus proyectos y tareas."
+                />
+                <div className="w-full max-w-sm space-y-1.5">
+                  {SUGERENCIAS.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => enviar(s)}
+                      className="w-full cursor-pointer rounded-lg border border-brand-border px-3 py-2 text-left text-xs text-brand-text-secondary transition-colors hover:border-brand-primary/40 hover:text-brand-text"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {mensajes.map((m, i) => (
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
                 className={`max-w-[85%] whitespace-pre-wrap rounded-xl px-3 py-2 text-sm ${
@@ -201,7 +224,8 @@ export default function AgentePage() {
             {cargando ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Send size={14} aria-hidden="true" />}
           </Button>
         </form>
-      </Card>
-    </div>
+        </Card>
+      </div>
+    </AppLayout>
   )
 }
