@@ -13,7 +13,7 @@ from backend.middleware.auth import get_current_user
 from backend.db.client import db_rls
 from backend.db.deps import scope_propio, verificar_dispositivo
 from backend.db.config_helpers import cfg_get
-from backend.services.audit_service import log_accion
+from backend.services import cotizacion_service
 
 from calculos import calcular_cotizacion_directa, calcular_aiu
 from parametros import ETAPAS_OBRA, ADICIONALES
@@ -217,22 +217,8 @@ def eliminar_cotizacion(
     conn=Depends(db_rls),
     usuario=Depends(get_current_user),
 ):
-    restringido, uid = scope_propio(usuario)
-    cur = conn.cursor()
-    if not restringido:
-        cur.execute("DELETE FROM cotizaciones WHERE id = %s RETURNING id", (cot_id,))
-    else:
-        cur.execute(
-            "DELETE FROM cotizaciones WHERE id = %s AND usuario_id = %s RETURNING id",
-            (cot_id, uid),
-        )
-    deleted = cur.fetchone()
-    cur.close()
-    if not deleted:
-        raise HTTPException(status_code=404, detail="Cotización no encontrada o sin permiso")
     ip = request.client.host if request.client else None
-    log_accion(conn, "COTIZACION_DELETE", {"cotizacion_id": cot_id},
-               empresa_id=usuario["empresa_id"], usuario_id=usuario["id"], ip=ip)
+    cotizacion_service.borrar_cotizacion(conn, usuario, cot_id, ip=ip)
     return {"ok": True}
 
 
@@ -240,25 +226,12 @@ def eliminar_cotizacion(
 def actualizar_estado(
     cot_id: int,
     body: dict,
+    request: Request,
     conn=Depends(db_rls),
     usuario=Depends(get_current_user),
 ):
-    estado = body.get("estado")
-    if estado not in ("Pendiente", "Aprobada", "Rechazada", "Borrador"):
-        raise HTTPException(status_code=400, detail="estado inválido")
-    restringido, uid = scope_propio(usuario)
-    cur = conn.cursor()
-    if restringido:
-        cur.execute(
-            "UPDATE cotizaciones SET estado=%s WHERE id=%s AND usuario_id=%s RETURNING id",
-            (estado, cot_id, uid),
-        )
-    else:
-        cur.execute("UPDATE cotizaciones SET estado=%s WHERE id=%s RETURNING id", (estado, cot_id))
-    ok = cur.fetchone()
-    cur.close()
-    if not ok:
-        raise HTTPException(status_code=404, detail="Cotización no encontrada o sin permiso")
+    ip = request.client.host if request.client else None
+    cotizacion_service.cambiar_estado_cotizacion(conn, usuario, cot_id, body.get("estado"), ip=ip)
     return {"ok": True}
 
 
