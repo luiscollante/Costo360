@@ -7,10 +7,28 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { showToast } from '@/lib/toast'
+import { formatCOP, formatFecha } from '@/lib/utils'
 import {
   streamAgente, confirmarPropuesta, descartarPropuesta,
   type MensajeChat, type Propuesta,
 } from '@/api/agente'
+
+/** Campos de una fila afectada que YA se muestran aparte (título/nombre
+ * principal, o el id que siempre se pinta al lado) — el resto se lista como
+ * detalle genérico, para que la tarjeta funcione igual de bien con tareas,
+ * cotizaciones o cualquier dominio futuro sin tener que tocar este
+ * componente cada vez que se agrega una tool nueva. */
+const _CAMPOS_OCULTOS = new Set(['id', 'titulo', 'numero'])
+const _ETIQUETAS: Record<string, string> = {
+  cliente: 'Cliente', precio: 'Precio', fecha: 'Fecha', estado: 'Estado',
+  project_id: 'Proyecto',
+}
+
+function _valorLegible(campo: string, valor: unknown): string {
+  if (campo === 'precio' && typeof valor === 'number') return formatCOP(valor)
+  if (campo === 'fecha' && typeof valor === 'string') return formatFecha(valor)
+  return String(valor)
+}
 
 /** Markdown del modelo → JSX con los tokens de marca (nunca los estilos por
  * defecto del navegador para <strong>/<ul>/etc). */
@@ -221,12 +239,24 @@ export default function AgentePage() {
                 {propuesta.es_destructiva && <AlertTriangle size={14} className="text-brand-danger" aria-hidden="true" />}
                 {propuesta.es_destructiva ? 'Confirma antes de borrar' : 'Confirma esta acción'}
               </p>
-              <ul className="mt-2 space-y-1 text-sm text-brand-text">
-                {propuesta.filas_afectadas.map((f, i) => (
-                  <li key={i}>
-                    {String(f.titulo ?? f.id)} <span className="text-brand-text-secondary">(id {String(f.id)})</span>
-                  </li>
-                ))}
+              <ul className="mt-2 space-y-1.5 text-sm text-brand-text">
+                {propuesta.filas_afectadas.map((f, i) => {
+                  const principal = String(f.numero ?? f.titulo ?? f.id)
+                  const detalles = Object.entries(f).filter(([k]) => !_CAMPOS_OCULTOS.has(k))
+                  return (
+                    <li key={i}>
+                      <div>
+                        <span className="font-medium">{principal}</span>{' '}
+                        <span className="text-brand-text-secondary">(id {String(f.id)})</span>
+                      </div>
+                      {detalles.length > 0 && (
+                        <div className="text-xs text-brand-text-secondary">
+                          {detalles.map(([k, v]) => `${_ETIQUETAS[k] ?? k}: ${_valorLegible(k, v)}`).join(' · ')}
+                        </div>
+                      )}
+                    </li>
+                  )
+                })}
               </ul>
               <div className="mt-3 flex gap-2">
                 <Button
