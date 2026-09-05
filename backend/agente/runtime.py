@@ -16,7 +16,17 @@ dimensionado para sostener una transacción durante todo un turno
 conversacional — con esta forma, cada operación de BD dura lo mismo que
 cualquier CRUD normal de hoy, sin importar cuántos pasos de razonamiento
 tenga el turno completo.
+
+El SDK `google-genai` (síncrono) y `psycopg2` (síncrono) NUNCA se llaman
+directamente dentro de esta función `async` — ambos van envueltos en
+`asyncio.to_thread(...)`. Sin esto, cada llamada bloqueante correría sobre
+el mismo hilo del event loop de asyncio y, en el despliegue actual de un
+solo proceso (`backend/middleware/rate_limiter.py`), congelaría TODO el
+backend (cotizaciones, login, cualquier otra pantalla) mientras cualquier
+usuario tuviera un turno de agente en curso — hallazgo bloqueante real de
+la auditoría de Fase 5 (Backend Architect), no solo del pool de conexiones.
 """
+import asyncio
 import os
 import uuid
 from typing import AsyncIterator
@@ -100,9 +110,11 @@ async def ejecutar_turno(usuario: dict, mensaje: str, historial: list[dict],
     interrupts: list[ag.Interrupt] = []
     texto_emitido = False
 
+    agotado = False
     try:
         for _paso in range(_MAX_PASOS):
-            response = client.models.generate_content(
+            response = await asyncio.to_thread(
+                client.models.generate_content,
                 model=_MODELO,
                 contents=contents,
                 config=gtypes.GenerateContentConfig(
@@ -143,11 +155,15 @@ async def ejecutar_turno(usuario: dict, mensaje: str, historial: list[dict],
                     resultado = {"error": "Esa herramienta no está disponible para tu rol."}
                 else:
                     args = dict(fc.args or {})
-                    # Conexión CORTA: se abre, se usa, se comitea y se cierra
-                    # ANTES de volver al modelo — nunca queda abierta durante
-                    # el razonamiento del siguiente paso.
-                    with rls_connection(usuario) as conn:
-                        resultado = spec.handler(conn, usuario, args)
+
+                    def _ejecutar_handler(_spec=spec, _args=args):
+                        # Conexión CORTA: se abre, se usa, se comitea y se
+                        # cierra ANTES de volver al modelo — nunca queda
+                        # abierta durante el razonamiento del siguiente paso.
+                        with rls_connection(usuario) as conn:
+                            return _spec.handler(conn, usuario, _args)
+
+                    resultado = await asyncio.to_thread(_ejecutar_handler)
                     if isinstance(resultado, dict) and resultado.get("propuesta_creada"):
                         propuesta = resultado["propuesta_creada"]
                         interrupts.append(ag.Interrupt(
@@ -170,13 +186,26 @@ async def ejecutar_turno(usuario: dict, mensaje: str, historial: list[dict],
                 # confirmó. La confirmación real es un flujo aparte, fuera
                 # de este loop (ver agente/router.py).
                 break
+        else:
+            # El `for` agotó `_MAX_PASOS` sin que ninguno de los `break` de
+            # arriba se disparara — el modelo seguía encadenando tool-calls
+            # sin llegar a una respuesta final ni a una propuesta. Regla 8
+            # del producto: nunca terminar en silencio dejando creer que el
+            # trabajo quedó completo.
+            agotado = True
     except Exception as e:
         print(f"[agente] ERROR en el turno: {e}", flush=True)
         yield encoder.encode(ag.TextMessageEndEvent(type=ag.EventType.TEXT_MESSAGE_END, message_id=msg_id))
         yield encoder.encode(ag.RunErrorEvent(type=ag.EventType.RUN_ERROR, message="El asistente no pudo responder. Intenta de nuevo."))
         return
 
-    if not texto_emitido and not interrupts:
+    if agotado:
+        yield encoder.encode(ag.TextMessageContentEvent(
+            type=ag.EventType.TEXT_MESSAGE_CONTENT, message_id=msg_id,
+            delta=("\n\nMe quedé sin pasos permitidos para terminar esto — puede que la "
+                   "tarea tenga demasiadas partes. ¿Puedes dividirla en algo más puntual?"),
+        ))
+    elif not texto_emitido and not interrupts:
         yield encoder.encode(ag.TextMessageContentEvent(
             type=ag.EventType.TEXT_MESSAGE_CONTENT, message_id=msg_id,
             delta="No estoy seguro de cómo ayudarte con eso todavía — ¿puedes darme más detalle?",

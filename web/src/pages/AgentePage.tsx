@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Sparkles, Send, Loader2, AlertTriangle } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
@@ -23,12 +23,21 @@ export default function AgentePage() {
   const [propuesta, setPropuesta] = useState<Propuesta | null>(null)
   const [resolviendo, setResolviendo] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const propuestaRef = useRef<HTMLDivElement>(null)
 
   function scrollAbajo() {
     requestAnimationFrame(() => {
       scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
     })
   }
+
+  // Foco acotado a la tarjeta al aparecer (sin atrapar todo el árbol, a
+  // diferencia de un <Dialog> modal — el agente nunca debe bloquear la
+  // navegación manual, Regla 7). Mismo patrón que ya usa TareaDialog.tsx
+  // para su confirmación inline de borrado (hallazgo Fase 5 a11y).
+  useEffect(() => {
+    if (propuesta) propuestaRef.current?.focus()
+  }, [propuesta])
 
   async function enviar() {
     const contenido = input.trim()
@@ -121,16 +130,21 @@ export default function AgentePage() {
                     : 'border border-brand-border bg-brand-bg text-brand-text'
                 }`}
               >
-                {m.content || (cargando && i === mensajes.length - 1 ? '…' : '')}
+                {m.content || (
+                  cargando && i === mensajes.length - 1
+                    ? <span aria-hidden="true">…</span>
+                    : ''
+                )}
               </div>
             </div>
           ))}
 
           {propuesta && (
             <div
-              role="alertdialog"
-              aria-label="Confirmación requerida"
-              className={`rounded-xl border p-3 ${
+              ref={propuestaRef}
+              tabIndex={-1}
+              role="alert"
+              className={`rounded-xl border p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${
                 propuesta.es_destructiva
                   ? 'border-brand-danger/40 bg-brand-danger-soft'
                   : 'border-brand-success/40 bg-brand-success-soft'
@@ -153,10 +167,17 @@ export default function AgentePage() {
                   variant={propuesta.es_destructiva ? 'danger' : 'primary'}
                   onClick={confirmar}
                   disabled={resolviendo}
+                  aria-label={propuesta.es_destructiva ? 'Confirmar borrado' : 'Confirmar acción'}
                 >
                   Confirmar
                 </Button>
-                <Button size="sm" variant="secondary" onClick={cancelar} disabled={resolviendo}>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={cancelar}
+                  disabled={resolviendo}
+                  aria-label="Cancelar y descartar la propuesta"
+                >
                   Cancelar
                 </Button>
               </div>
@@ -173,6 +194,7 @@ export default function AgentePage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Escribe tu mensaje…"
+            aria-label="Mensaje para el asistente"
             className="h-9 flex-1 rounded-lg border border-brand-border bg-brand-input px-3 text-sm text-brand-text focus-visible:outline-none focus-visible:border-brand-primary"
           />
           <Button type="submit" size="sm" disabled={cargando || !input.trim()} aria-label="Enviar">
