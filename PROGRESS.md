@@ -43,14 +43,34 @@
     hallazgo de accesibilidad real y ya corregido: la tarjeta de confirmación no movía el foco
     ni se anunciaba a un lector de pantalla, y los botones no decían qué se estaba confirmando —
     justo el tipo de descuido que podría dejar a alguien confirmar un borrado sin darse cuenta.
-  - **Verificado en vivo:** el camino degradado (sin `GEMINI_AGENTE_API_KEY` configurada, que
-    sigue siendo un pendiente de sesiones anteriores) — el backend y el frontend responden con
-    un mensaje claro en vez de romperse, exactamente como exige la Regla 7. **No se pudo
-    verificar la conversación real con el modelo** por falta de esa clave — queda como el
-    primer pendiente real antes de dar el Ciclo 1 por completamente probado.
+  - **Verificado en vivo, primero el camino degradado** (sin clave configurada): el backend y
+    el frontend respondían con un mensaje claro en vez de romperse, exactamente como exige la
+    Regla 7. **Y luego, el mismo 2026-09-05, con `GEMINI_AGENTE_API_KEY` real ya configurada,
+    los 3 casos de punta a punta con el modelo real:** el asistente listó una tarea real del
+    proyecto demo, creó una tarea nueva, y al pedirle borrarla **propuso la acción en vez de
+    ejecutarla** — mostró la tarjeta de confirmación con el nombre y el id exactos, y solo se
+    borró de verdad tras el clic explícito en "Confirmar" (confirmado contra el tablero real).
+    Un `503` transitorio de Gemini ("alta demanda") salió en el primer intento, y el aviso de
+    "completé parte de esto antes de un error" (el arreglo de la Fase 5) funcionó correctamente
+    en ese caso real, no solo en teoría. **El Ciclo 1 queda completamente probado, sin ningún
+    pendiente** — la clave se configuró con un tropiezo menor (el fundador la pegó por error en
+    `CRON_SECRET` en vez de `GEMINI_AGENTE_API_KEY`; se corrigió y se restauró el secreto de
+    cron original).
   - **Decisiones tomadas en el camino:** Ciclo 2 (resto de dominios) y Ciclo 3 (las dos
     superficies de UI completas) quedan para que el fundador decida cuándo arrancarlos, después
     de ver el Ciclo 1 funcionando de verdad con el modelo real.
+
+- **Rebranding puntual de la barra lateral (2026-09-05):** texto "Sistema de Cotizaciones" →
+  "Sistema Integral de Cotizaciones". Primer intento (2 bloques sólidos negro carbón arriba y
+  abajo, corte seco contra el verde) no convenció al fundador — se consultaron 3 agentes de
+  diseño (UI Designer, Brand Guardian, Accessibility Auditor). El Brand Guardian, revisando los
+  archivos reales del logo, encontró el porqué: el negro **nunca** es una superficie de fondo en
+  la marca real, solo tinta delgada de texto — un corte sin ninguna transición no tenía
+  precedente. El fundador eligió, de 3 alternativas presentadas con vista previa, un solo
+  degradado continuo (negro→esmeralda→negro) con un filo dorado de 1px marcando cada costura
+  real — verificado en el navegador, sin ningún problema de contraste (confirmado por el propio
+  Accessibility Auditor antes de implementar). Detalle completo: `ARQUITECTURA_MAESTRA.md`
+  sección 6 e historial del 2026-09-05.
 
 - **Rediseño del modal de notificaciones del módulo de Proyectos (2026-09-04):**
   ciclo `/goal` completo (Fases 0-6), directo en `master` (cambio acotado, solo
@@ -439,12 +459,10 @@
    hoy `web/src/api/*.ts` están alineados a mano con el backend nuevo.
 
 ### Frente activo ahora mismo
-- **Configurar una `GEMINI_AGENTE_API_KEY` real** — es lo único que falta para probar de punta
-  a punta el Ciclo 1 del Objetivo 5 (el motor del agente) con una conversación real, no solo el
-  camino degradado ya verificado.
-- **Después de probarlo con el modelo real:** el fundador decide si arranca el Ciclo 2
-  (expandir el agente al resto de dominios) o el Ciclo 3 (las dos superficies de UI completas)
-  del Objetivo 5 — o si prefiere atacar otro frente del roadmap primero.
+- **El fundador decide** si arranca el Ciclo 2 del Objetivo 5 (expandir el agente al resto de
+  dominios: cotización, catálogo, inventario, retales, nesting, parámetros) o el Ciclo 3 (las
+  dos superficies de UI completas — chat flotante global + "Centro del Agente") — el Ciclo 1 ya
+  quedó completamente probado con el modelo real, sin ningún pendiente técnico.
 - **El fundador confirma la ronda de bugs del 2026-09-03** (Proyectos + wizard de Cotización,
   ver entrada de "Hecho" arriba) — en particular el arrastre real con mouse, que no se pudo
   probar de forma automatizada.
@@ -454,7 +472,6 @@
   grande, hay que diseñarlo con cuidado de no reabrir el hallazgo WCAG 4.1.2 del 2026-09-02.
 
 ### Prototipo ya construido — pendientes menores
-- `GEMINI_API_KEY`/`GEMINI_AGENTE_API_KEY` sin configurar en `backend/.env` — afecta tanto el chat legado de Parámetros como el motor nuevo del Agente (Objetivo 5, Ciclo 1); ambos se degradan con gracia, pero sin una clave real no se puede probar la conversación real con el modelo.
 - Inventario, Dashboard y Historial no tienen pruebas automatizadas — solo verificación manual en vivo del 2026-08-23.
 
 ### Modelo financiero / negocio
@@ -476,4 +493,4 @@
 
 ---
 
-*Última actualización: 2026-09-05*
+*Última actualización: 2026-09-05 (tarde)*

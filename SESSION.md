@@ -2,6 +2,71 @@
 
 ---
 
+## Sesión: 2026-09-05 (tarde) — Revisión visual del piloto, rebranding de la barra lateral, y verificación en vivo con el modelo real
+
+### Qué se hizo
+Continuación de la sesión del Objetivo 5. Cuatro frentes cortos, todos directos en `master`:
+
+1. **Revisión visual pedida por el fundador** de la página piloto del agente (`/agente`): se
+   encontró un bug real de integración — la página no usaba `AppLayout`, así que le faltaba
+   toda la barra lateral y el encabezado del resto de la app (se veía "pelada"). Corregido
+   envolviéndola en `AppLayout` como cualquier otra página, y de paso se mejoró el estado vacío
+   con sugerencias clicables (mismo patrón que el chat legado de Parámetros). Verificado en el
+   navegador comparando pixel a pixel contra `/parametros` — coinciden.
+2. **Rebranding puntual de la barra lateral** (texto + color de fondo), a pedido del fundador:
+   cambio de "Sistema de Cotizaciones" a "Sistema Integral de Cotizaciones", y negro carbón real
+   del logo (`#212121`, muestreado de `assets/marca/logo-versiones-oscuras-original.png`) en el
+   encabezado y pie de la barra. El primer resultado (2 bloques sólidos con corte seco) no
+   convenció al fundador — se consultaron 3 agentes de diseño en paralelo (UI Designer, Brand
+   Guardian, Accessibility Auditor). El Brand Guardian, revisando los archivos reales del logo,
+   encontró el porqué de fondo: el negro nunca es una superficie de fondo en la marca real, solo
+   tinta delgada de texto, y el dorado siempre media las transiciones de color — un corte sin
+   ninguna mediación no tenía precedente. Se presentaron 3 alternativas con vista previa en
+   ASCII; el fundador eligió un degradado continuo de 4 paradas (negro→esmeralda→esmeralda
+   profundo→negro) con un filo dorado de 1px en cada costura real. Implementado y verificado en
+   el navegador — efecto de "pieza continua" logrado, sin ningún corte visible.
+3. **Corrección de un error del fundador al configurar la clave de Gemini:** pidió crear un
+   `.env` nuevo con plantilla; se le explicó que `backend/.env` ya existía con una línea lista
+   para eso, y se dejó más clara (`GEMINI_AGENTE_API_KEY=`). El fundador pegó la clave, pero por
+   error la puso en la línea de `CRON_SECRET` en vez de la indicada — se le detectó por el
+   diff automático del archivo (no coincidía el formato ni el valor esperado), se le confirmó
+   con él antes de tocar nada, y se corrigió: la clave se movió a `GEMINI_AGENTE_API_KEY` y se
+   restauró el `CRON_SECRET` original (que yo mismo había leído antes en la sesión).
+4. **Verificación en vivo del Objetivo 5, Ciclo 1, con el modelo real** (ya con la clave
+   correcta y el backend reiniciado): se probaron los 3 casos de punta a punta en `/agente` —
+   listar tareas de un proyecto real (respondió con los datos correctos), crear una tarea nueva
+   (se creó de verdad, verificado en el tablero), y pedir borrar esa tarea — el asistente
+   **propuso** la acción (tarjeta de confirmación con nombre e id exactos) en vez de ejecutarla
+   directo, y solo se borró tras el clic explícito en "Confirmar" (confirmado contra el tablero
+   real). Un `503` transitorio de Gemini salió en el primer intento de listar, y el mensaje de
+   "completé parte de esto antes de un error" (arreglo de la Fase 5 de la sesión anterior)
+   funcionó correctamente en ese caso real. El Ciclo 1 del Objetivo 5 queda completamente
+   probado, sin ningún pendiente técnico.
+
+### Archivos tocados
+- `web/src/pages/AgentePage.tsx` (envuelto en `AppLayout`, sugerencias clicables).
+- `web/src/index.css` (`--color-brand-carbon`, degradado de 4 paradas en `.glass-emerald`).
+- `web/src/components/Sidebar.tsx` (texto, filo dorado en header/footer).
+- `backend/.env` (clave de Gemini corregida de lugar; no se versiona, cambio solo local).
+- `ARQUITECTURA_MAESTRA.md`, `docs/ROADMAP_COSTO360.md`, `PROGRESS.md`, este archivo.
+- Memoria persistente: `reference_env_backend.md` (creado al inicio de este bloque, ver abajo).
+
+### Decisiones tomadas
+- Degradado continuo con filo dorado (no bloques sólidos) para la barra lateral — decisión del
+  fundador entre 3 alternativas, siguiendo la recomendación mejor fundamentada (Brand Guardian,
+  contra los archivos reales del logo).
+- `backend/.env` es el único archivo de entorno real del backend — nunca crear uno nuevo o
+  duplicado; ya se guardó en memoria persistente para no olvidarlo en futuras sesiones.
+
+### Pendiente / primera tarea de la próxima sesión
+1. El fundador decide el siguiente frente: Ciclo 2 del Objetivo 5 (expandir el agente a más
+   dominios), Ciclo 3 (las dos superficies de UI completas), u otro objetivo del roadmap
+   (landing page, agentes de operación).
+2. Sigue pendiente desde antes: confirmar el arrastre real de mouse en el tablero de Proyectos
+   (2026-09-03) — el fundador pidió explícitamente no tocar esa zona por ahora.
+
+---
+
 ## Sesión: 2026-09-04/05 — Objetivo 5, Ciclo 1: motor del Agente de IA (piloto en Proyectos)
 
 ### Qué se hizo

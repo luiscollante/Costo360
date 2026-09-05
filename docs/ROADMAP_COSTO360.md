@@ -259,9 +259,11 @@ dominio piloto de bajo riesgo — decisión aprobada por el fundador.
   para todos los usuarios mientras alguien conversaba con el agente, no solo la respuesta del
   agente misma), y el límite de pasos de razonamiento podía agotarse en silencio sin avisar
   (Regla 8) — ambos corregidos. Detalle completo: `ARQUITECTURA_MAESTRA.md` sección 8.
-  **Pendiente real, no de este ciclo:** configurar `GEMINI_AGENTE_API_KEY` para poder probar la
-  conversación real con el modelo — sin eso, solo se verificó el camino degradado (sin clave,
-  responde con gracia, no rompe nada).
+  **✅ Verificado en vivo con el modelo real (2026-09-05):** con `GEMINI_AGENTE_API_KEY`
+  configurada, se probaron los 3 casos con datos reales — consultar tareas, crear una tarea, y
+  borrar una tarea con la confirmación de dos fases completa (propuesta → tarjeta → clic
+  explícito → borrado real, verificado contra el tablero). Ya no queda ningún pendiente para
+  dar el Ciclo 1 por completamente probado.
 - **⬜ Ciclo 2 — Expansión al resto de dominios** (cotización, catálogo, inventario, retales,
   nesting, parámetros): repetir el mismo patrón de tools ya probado y auditado en el Ciclo 1.
 - **⬜ Ciclo 3 — Las dos superficies de UI completas:** chat flotante global (hoy solo vive en

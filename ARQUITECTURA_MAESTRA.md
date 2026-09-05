@@ -5,7 +5,7 @@ componente, cada tabla de base de datos, cada dependencia y cada regla sin excep
 estado de avance día a día, ver `PROGRESS.md`/`SESSION.md`. Para el contexto de negocio, ver
 `CONTEXTO_COSTO360.md` y el cuaderno Notion "Costo360 — Base de Conocimiento Central".*
 
-*Última actualización: 2026-09-05.*
+*Última actualización: 2026-09-05 (tarde).*
 
 > **⚠️ Fase 2.A ejecutada en la rama `goal/fase-2a-multitenant-auth` (aún NO fusionada a
 > `master`).** Cambia mucho de este documento: el backend del prototipo pasa a Supabase Auth
@@ -96,7 +96,7 @@ Cloud apuntan a `app.py` por ruta fija. Moverlo o romperlo tumba la operación r
 - **IA del producto:** `google-genai` SDK. Dos motores coexisten a propósito durante la migración del Objetivo 5:
   - **Legado** (`routers/agente.py`, `/api/agente/chat`): modelo `gemini-3.5-flash-lite`, sin tool-calling, solo explica Parámetros — sigue intacto.
   - **Nuevo, Ciclo 1** (`backend/agente/`, `/api/agente/stream` + `/propuestas/*`): motor de tool-calling con loop explícito (automatic function calling desactivado a propósito), modelo `gemini-3.5-flash`, protocolo **AG-UI** vía el paquete Python `ag-ui-protocol` (SSE nativo, sin runtime Node/CopilotCloud intermedio — verificado viable con un spike real). Acotado al dominio de Proyectos/Tareas. Ver sección 8 para el detalle de seguridad.
-  - Variable de entorno `GEMINI_AGENTE_API_KEY` (o `GEMINI_API_KEY` como fallback) — **sigue sin configurar en este entorno al 2026-09-05**; ambos motores se degradan con un mensaje claro (nunca tumban el backend) si falta.
+  - Variable de entorno `GEMINI_AGENTE_API_KEY` (o `GEMINI_API_KEY` como fallback) — **configurada y verificada en vivo el 2026-09-05**: los tres casos (consultar, crear, y borrar con confirmación de dos fases) probados con el modelo real contra datos reales del taller demo, con resultado correcto en cada uno. Ambos motores se degradan con un mensaje claro (nunca tumban el backend) si la clave llegara a faltar.
 - **Anthropic:** dependencia `anthropic` presente en `requirements.txt` pero **sin uso confirmado activo en el backend nuevo** (posible remanente o preparación futura — verificar antes de asumir que algo la usa).
 - **PDF:** `reportlab` + `Pillow` (`motor/generador_pdf.py`).
 - **Rate limiting:** `slowapi` (login 5/min, recuperación por PIN 5/hora, agente 20/min).
@@ -264,6 +264,7 @@ Tokens reales extraídos de `web/src/index.css` (verificado en código):
 | `--color-brand-warning-text` / `--color-brand-warning` / `-soft` | `#6E5410` / `#B4820E` / `#F5EBD5` | Advertencia — el tono medio `#B4820E` **solo** para relleno/borde, nunca texto |
 | `--color-brand-danger` / `-soft` | `#B23B3B` / `#F6E5E5` | Error — texto vs. relleno de badge |
 | `--color-brand-emerald` / `-deep` | `#00472B` / `#00311D` | Verde esmeralda **del isotipo real** (muestreado de `assets/marca/isotipo.png`) — barra lateral |
+| `--color-brand-carbon` | `#212121` | Negro carbón **real del logo** (muestreado del relleno exacto de la tinta del wordmark, `assets/marca/logo-versiones-oscuras-original.png`) — extremos del degradado de la barra lateral (2026-09-05), nunca superficie grande fuera de ahí |
 
 - **Regla de contraste:** prohibido aplicar opacidad/alfa `<100%` a nodos de **texto** — usar
   siempre el token sólido. Foco visible global: `:focus-visible { outline: 2px solid
@@ -274,17 +275,23 @@ Tokens reales extraídos de `web/src/index.css` (verificado en código):
   tener modo oscuro. El toggle sol/luna, `useTheme`, `data-theme`/`cm-theme` y el `<script>` de
   tema en `index.html` se **eliminaron** en el Ciclo 1. `@media (prefers-reduced-motion)` +
   `<MotionConfig reducedMotion="user">` respetan la preferencia del sistema.
-- **Barra lateral (`.glass-emerald`):** verde esmeralda del isotipo real, **casi opaco** —
-  `linear-gradient(180deg, #00472B, #00311D)` + halo de luz arriba (donde va el logo) +
-  borde interior claro + sombra lateral + `backdrop-filter: blur(8px)` pequeño (solo cuenta
-  cuando la barra se superpone al contenido, p. ej. el drawer en móvil). **NO lleva capas de
-  blur pesadas detrás** — se probaron (`.sidebar-aurora` con `filter: blur(44px)` +
-  `backdrop-filter: blur(26px)`) y consumían GPU sin aportar (nada pasa por detrás de una
-  barra fija); también se probó y descartó un brillo diagonal. Conclusión: un glassmorphism
-  "que se ve a través" no cabe en este layout sin que la barra tape contenido. Texto en
-  **colores sólidos**: inactivo crema `#F5E8D2`, activo `#FFFFFF`, encabezados de grupo
-  `#E4D8BF`. Indicador de ítem activo: barra izquierda dorada + `font-medium` + fondo
-  `rgba(255,255,255,.14)`. Foco de teclado: outline color crema (`.glass-emerald :focus-visible`).
+- **Barra lateral (`.glass-emerald`):** **actualizado 2026-09-05.** Un solo degradado vertical
+  continuo de 4 paradas — `#212121` (negro carbón, real de la tinta del wordmark) → `#00472B`
+  (esmeralda, 24%) → `#00311D` (esmeralda profundo, 76%) → `#212121` (100%) — + halo de luz
+  arriba + borde interior claro + sombra lateral + `backdrop-filter: blur(8px)` pequeño (igual
+  que antes). Un filo dorado de 1px (`border-brand-gold/35`) marca la costura real entre la
+  zona del logo/usuario y la navegación (`border-b`/`border-t` en los propios contenedores de
+  header/footer de `Sidebar.tsx`, no una posición aproximada dentro del degradado). Reemplaza
+  un primer intento (2 bloques sólidos negro carbón con corte seco, sin filo) que no convenció
+  al fundador — ver la entrada de decisiones del 2026-09-05 para el porqué (el negro nunca es
+  superficie de fondo en el logo real, solo tinta de texto). Texto bajo "Sistema Integral de
+  Cotizaciones" (antes "Sistema de Cotizaciones"). **NO lleva capas de blur pesadas detrás** —
+  se probaron (`.sidebar-aurora` con `filter: blur(44px)` + `backdrop-filter: blur(26px)`) y
+  consumían GPU sin aportar (nada pasa por detrás de una barra fija); también se probó y
+  descartó un brillo diagonal. Texto en **colores sólidos**: inactivo crema `#F5E8D2`, activo
+  `#FFFFFF`, encabezados de grupo `#E4D8BF`. Indicador de ítem activo: barra izquierda dorada +
+  `font-medium` + fondo `rgba(255,255,255,.14)`. Foco de teclado: outline color crema
+  (`.glass-emerald :focus-visible`).
 - **Orden del menú lateral (reorganizado por área del negocio, decisión del fundador
   2026-09-01):** Dashboard suelto arriba (solo roles con acceso a BI) · grupo **Cotizaciones**
   (Nueva Cotización, Express, Cotización AIU, Historial) · grupo **Taller** (Catálogo,
@@ -489,7 +496,8 @@ el cuaderno Notion "Costo360 — Base de Conocimiento Central".
 | 2026-09-02/03 | **Objetivo 6 ejecutado y fusionado a `master`** (rama `goal/modulo-proyectos`, ciclo `/goal` completo partido en Ciclo A datos+backend / Ciclo B interfaz, cada uno con su propia Fase 2 y Fase 5 con 3 agentes distintos). 6 tablas `pm_*` (migraciones `0007`/`0008`), 29 rutas en `routers/proyectos.py`, barrido diario en `routers/proyectos_cron.py`, tablero Kanban + detalle de proyecto + cronograma + parte de horas + notificaciones en el frontend (`@hello-pangea/dnd` nuevo). Regla 2/D6 ("el operativo ve todo, edita solo lo suyo") verificada en vivo con la cuenta operativa real, con llamadas directas al backend (no solo botones ocultos). El asistente de IA del módulo se funde con el Objetivo 5 (decisión D2, no construido todavía) |
 | 2026-09-03 (tarde) | **Ronda de bugs post-lanzamiento de Proyectos + wizard de Cotización**, directo en `master`. 4 causas de fondo corregidas: rendimiento del tablero (peticiones paralelas sin cancelar — `AbortController` + reintento ante fallo transitorio), arrastrar-y-soltar roto + columnas sin altura fija (mismo origen: el `Droppable` de `@hello-pangea/dnd` no tenía su propio scroll — resuelto replicando el patrón del prototipo Base44, solo `md:`), modal de sesión (período de gracia de 30s eliminado por decisión del fundador + contraste corregido), y un **bug real de navegación** en el wizard de cotización (`setPaso(3)` apuntaba al mismo paso en el que ya se estaba). Auditado en 2 rondas (Fase 2: Backend Architect + Frontend Developer + Minimal Change Engineer; Fase 5: Code Reviewer + Accessibility Auditor), con 2 commits de arreglos reales sobre hallazgos de la propia auditoría (contraste del modal sobre su fondo compuesto real, y una regla CSS sin `@layer` que le quitaba el cursor "grab" a las asas de arrastre) |
 | 2026-09-04 | Rediseño del modal de notificaciones (ciclo `/goal` acotado, directo en `master`): chip de color por categoría, encabezado unido, hover parejo, timestamp relativo con auto-refresco. Fase 2 (Accessibility Auditor + Code Reviewer) y Fase 5 (UI Designer + Minimal Change Engineer), sin bloqueantes |
-| 2026-09-04/05 | **Objetivo 5, Ciclo 1 ejecutado** (directo en `master`, sin rama aparte — cambio acotado a un dominio piloto): motor del Agente de IA con tool-calling real, confirmación de dos fases antes de borrar, acotado a Proyectos/Tareas. Plan de 3 especialistas (AI Engineer, Software Architect, Product Manager), auditado en 2 rondas: la primera del Security Engineer devolvió **NO APRUEBA** por 3 bloqueantes reales (confirmar no debía ser una tool del modelo; RLS debía aislar también por usuario; ninguna conexión debía sostenerse todo el turno) — corregidos y reverificados como cerrados antes de ejecutar. Fase 5 (Code Reviewer + Backend Architect + Accessibility Auditor, ninguno repetido de fases previas) encontró 2 bugs reales de implementación no vistos en la auditoría del plan: el motor bloqueaba el proceso entero por no usar `asyncio.to_thread` (habría congelado toda la app, no solo el agente, con solo un usuario conversando), y el límite de pasos de razonamiento podía agotarse en silencio sin avisar al usuario (Regla 8) — ambos corregidos y verificados. Migración `0009` (`agente_acciones_pendientes`). Extraído `services/proyectos_service.py` como patrón de reutilización de lógica entre routers HTTP y el agente. Confirmado viable el protocolo AG-UI en Python puro (`ag-ui-protocol`, sin runtime Node). **Pendiente real:** sin `GEMINI_AGENTE_API_KEY` configurada, no se pudo probar la conversación real con el modelo — solo el camino degradado (backend/frontend responden con gracia sin clave, verificado en vivo) |
+| 2026-09-04/05 | **Objetivo 5, Ciclo 1 ejecutado** (directo en `master`, sin rama aparte — cambio acotado a un dominio piloto): motor del Agente de IA con tool-calling real, confirmación de dos fases antes de borrar, acotado a Proyectos/Tareas. Plan de 3 especialistas (AI Engineer, Software Architect, Product Manager), auditado en 2 rondas: la primera del Security Engineer devolvió **NO APRUEBA** por 3 bloqueantes reales (confirmar no debía ser una tool del modelo; RLS debía aislar también por usuario; ninguna conexión debía sostenerse todo el turno) — corregidos y reverificados como cerrados antes de ejecutar. Fase 5 (Code Reviewer + Backend Architect + Accessibility Auditor, ninguno repetido de fases previas) encontró 2 bugs reales de implementación no vistos en la auditoría del plan: el motor bloqueaba el proceso entero por no usar `asyncio.to_thread` (habría congelado toda la app, no solo el agente, con solo un usuario conversando), y el límite de pasos de razonamiento podía agotarse en silencio sin avisar al usuario (Regla 8) — ambos corregidos y verificados. Migración `0009` (`agente_acciones_pendientes`). Extraído `services/proyectos_service.py` como patrón de reutilización de lógica entre routers HTTP y el agente. Confirmado viable el protocolo AG-UI en Python puro (`ag-ui-protocol`, sin runtime Node). **Verificado en vivo el mismo 2026-09-05** con la clave real configurada: el asistente listó una tarea real ("Cortar mesón principal"), creó una tarea nueva ("Prueba del agente", ID 6) y, al pedirle borrarla, propuso la acción (tarjeta de confirmación con nombre e id exactos, sin ambigüedad) en vez de ejecutarla directo — solo se borró de verdad tras el clic explícito en "Confirmar", confirmado contra el tablero real de Proyectos. Un `503` transitorio de Gemini ("alta demanda") ocurrió en el primer intento y el propio mensaje de error avisó correctamente que la lectura ya se había completado antes del fallo (el arreglo de la Fase 5 funcionando en un caso real, no solo en teoría) |
+| 2026-09-05 | **Rebranding puntual de la barra lateral** (directo en `master`): texto "Sistema de Cotizaciones" → "Sistema Integral de Cotizaciones". Primer intento (2 bloques sólidos negro carbón `#212121` arriba/abajo con corte seco contra el verde) no convenció al fundador — se consultaron 3 agentes de diseño (UI Designer, Brand Guardian, Accessibility Auditor). Hallazgo clave del Brand Guardian, verificado contra los archivos reales del logo: el negro **nunca** es una superficie de fondo en la marca real, solo tinta delgada de texto — el corte sin mediación no tenía precedente. Resultado final (elegido por el fundador entre 3 alternativas): un solo degradado continuo de 4 paradas (`#212121 → #00472B → #00311D → #212121`) sobre toda `.glass-emerald`, con un filo dorado de 1px (`border-brand-gold/35`) en cada costura real (borde de los propios contenedores de header/footer, no una aproximación dentro del gradiente). Accessibility Auditor confirmó que el degradado no introduce ningún punto de contraste riesgoso. Ver sección 6 |
 
 ---
 
