@@ -12,5 +12,6 @@ python-multipart
 httpx
 slowapi
 google-genai
+ag-ui-protocol
 defusedxml
 tzdata
