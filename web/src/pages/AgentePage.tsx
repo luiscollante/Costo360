@@ -159,8 +159,8 @@ export default function AgentePage() {
       <div className="mx-auto max-w-2xl">
         <PageHeader
           kicker="Objetivo 5 · Piloto Ciclo 1"
-          title="Asistente de Costo360"
-          subtitle="Por ahora solo entiende de Proyectos y Tareas."
+          title="Cost"
+          subtitle="Tu asistente de Costo360 — por ahora solo entiende de Proyectos y Tareas."
         />
 
         <Card className="flex h-[65vh] flex-col overflow-hidden">
@@ -169,7 +169,7 @@ export default function AgentePage() {
               <div className="flex h-full flex-col items-center justify-center">
                 <EmptyState
                   icon={<Sparkles size={32} />}
-                  title="Pregúntale algo sobre tus proyectos y tareas."
+                  title="Hola, soy Cost. Pregúntame sobre tus proyectos y tareas."
                 />
                 <div className="w-full max-w-sm space-y-1.5">
                   {SUGERENCIAS.map((s) => (
