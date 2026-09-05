@@ -2,6 +2,29 @@
 
 ---
 
+## ✅ Hecho (2026-09-05)
+
+- **Objetivo 5, Ciclo 2 — dominio Cotización para Cost:** 4 tools nuevas (`cotizacion_listar_historial`,
+  `cotizacion_ver_detalle`, `cotizacion_cambiar_estado`, `cotizacion_borrar`), siguiendo el mismo
+  patrón auditado de Ciclo 1 (capa de servicio compartida `backend/services/cotizacion_service.py`,
+  parámetros de identidad tipados `INTEGER`, borrado en dos fases). Auditado por Security Engineer
+  en 2 rondas (4 bloqueantes reales cerrados: falta de capa de servicio, tipado laxo de ids, falta
+  de auditoría en cambio de estado, y un gate de prompt insuficiente para la transición a
+  "Aprobada" — reemplazado por el mismo mecanismo técnico de dos fases que ya existía para
+  borrados) + Code Reviewer en Fase 5 (aprobado, encontró de paso un bug preexistente no
+  relacionado: `calcular_merma` no pasa `tarifas_src`, ignora la merma personalizada del taller —
+  pendiente como tarea aparte). Verificado en vivo con datos reales del taller demo: los 4 flujos
+  completos, incluida la tarjeta de confirmación del agente ahora genérica (antes solo mostraba
+  `{titulo, id}`, con una cotización mostraba "14 (id 14)" — ahora muestra número, cliente, precio,
+  fecha y estado para cualquier dominio). De paso se corrigió un bug real (Postgres devuelve
+  `Decimal`/`date`, no serializables al pasarle una respuesta de tool al modelo de IA). Además,
+  se descubrió y corrigió que `ag-ui-protocol` puede desaparecer del entorno Python entre
+  sesiones (paquete faltante tras una actualización del sistema) y que la app dependía de
+  `prefers-reduced-motion` del sistema operativo para mostrar animaciones — el fundador pidió
+  revertir esto último a propósito (ver `ARQUITECTURA_MAESTRA.md`). Próxima tarea lógica:
+  decidir si seguir con el resto de dominios de Ciclo 2 (catálogo, inventario, retales, nesting,
+  parámetros) o pasar a "crear cotización" (deferido por su complejidad — motor de ~60 variables).
+
 ## ✅ Hecho
 
 - **Objetivo 5, Ciclo 1 — motor del Agente de IA con tool-calling, piloto en Proyectos/Tareas

@@ -227,7 +227,7 @@ está bien pensado, y define el comportamiento exacto a replicar.
 
 ---
 
-## Fase 3 — Objetivo 5: Agente de IA dentro del producto  🔄 **Ciclo 1 COMPLETADO (2026-09-05)**
+## Fase 3 — Objetivo 5: Agente de IA dentro del producto  🔄 **Ciclo 2 en curso (2026-09-05)**
 
 Una vez la interfaz nueva del Objetivo 1 exista (✅ completada), evolucionar el agente actual
 de Parámetros hacia el asistente personal por usuario que navega la interfaz de forma autónoma
@@ -264,8 +264,22 @@ dominio piloto de bajo riesgo — decisión aprobada por el fundador.
   borrar una tarea con la confirmación de dos fases completa (propuesta → tarjeta → clic
   explícito → borrado real, verificado contra el tablero). Ya no queda ningún pendiente para
   dar el Ciclo 1 por completamente probado.
-- **⬜ Ciclo 2 — Expansión al resto de dominios** (cotización, catálogo, inventario, retales,
+- **🔄 Ciclo 2 — Expansión al resto de dominios** (cotización, catálogo, inventario, retales,
   nesting, parámetros): repetir el mismo patrón de tools ya probado y auditado en el Ciclo 1.
+  - **✅ Cotización (2026-09-05):** 4 tools — `cotizacion_listar_historial`, `cotizacion_ver_detalle`
+    (lectura), `cotizacion_cambiar_estado` (directo salvo la transición a "Aprobada", que exige
+    confirmación porque alimenta el KPI de facturado del mes en el Dashboard) y `cotizacion_borrar`
+    (dos fases, igual patrón que Ciclo 1). Auditado en 2 rondas por Security Engineer (4
+    bloqueantes reales encontrados y cerrados: capa de servicio compartida faltante, tipado
+    estricto de ids, auditoría faltante en cambio de estado, gate técnico real para "Aprobada" en
+    vez de solo una instrucción de prompt) + 1 ronda de Code Reviewer en Fase 5 (aprobado sin
+    bloqueantes). **Verificado en vivo con datos reales del taller demo:** los 4 flujos completos,
+    incluida la tarjeta de confirmación mostrando número+cliente+precio+fecha+estado. De paso se
+    corrigió un bug real (Decimal/date de Postgres no serializables al pasarle una tool al
+    modelo) y se generalizó la tarjeta de confirmación del agente para cualquier dominio futuro
+    (antes solo sabía mostrar `{titulo, id}`, el molde de las tareas). Detalle completo:
+    `ARQUITECTURA_MAESTRA.md` sección 8.
+  - **⬜ Pendientes del Ciclo 2:** catálogo, inventario, retales, nesting, parámetros.
 - **⬜ Ciclo 3 — Las dos superficies de UI completas:** chat flotante global (hoy solo vive en
   la página piloto) + "Centro del Agente" (bitácora de acciones, deshacer, modo BI con
   exportación).

@@ -442,10 +442,56 @@ piloto `web/src/pages/AgentePage.tsx` (ruta `/agente`, solo gestores).
   Ciclo 2) — cualquier regla de negocio nueva se aplica automáticamente también al agente.
 - **Auditoría:** cada escritura del agente pasa por el mismo `log_accion()` que ya usa cualquier
   mutación manual, con `metadata.origen = "agente"`.
-- **Roadmap de continuación:** Ciclo 2 (repetir el patrón sobre el resto de dominios: cotización,
-  catálogo, inventario, retales, nesting, parámetros) y Ciclo 3 (las dos superficies de UI
-  completas — chat flotante global + "Centro del Agente" con bitácora/deshacer/modo BI) —
-  ninguno arrancado todavía, decisión del fundador pendiente.
+**Objetivo 5, Ciclo 2 — 🔄 en curso, dominio Cotización ✅ completo (2026-09-05):** mismo patrón
+de tools + confirmación de dos fases del Ciclo 1, aplicado al dominio de Cotización.
+
+- **Capa de servicio nueva:** `backend/services/cotizacion_service.py` — `borrar_cotizacion`,
+  `cambiar_estado_cotizacion`, `listar_historial`, `obtener_cotizacion_datos`,
+  `obtener_cotizacion_resumen`. El router HTTP normal (`routers/cotizacion.py`) y las 4 tools del
+  agente (`agente/tools/cotizacion.py`) llaman a las MISMAS funciones — bloqueante real cerrado en
+  la auditoría de Fase 2 (la primera versión del plan dejaba el SQL inline en el router, sin capa
+  compartida). De paso se corrigió una brecha real: `PATCH /estado` no dejaba registro de
+  auditoría (`log_accion`) ni siquiera para uso humano.
+- **4 tools:** `cotizacion_listar_historial` / `cotizacion_ver_detalle` (lectura),
+  `cotizacion_cambiar_estado` (directo para Pendiente/Rechazada/Borrador; la transición a
+  "Aprobada" crea una propuesta de dos fases — no es destructiva, pero alimenta el KPI de
+  "facturado del mes" en `routers/dashboard.py`, así que un error ahí no es inocuo), y
+  `cotizacion_borrar` (dos fases, igual patrón que `proyectos_borrar_tarea`). Todas con
+  `cotizacion_id: INTEGER` estricto — nunca texto libre de cliente — y con instrucción explícita
+  de no encadenar un resultado de búsqueda fuzzy directo a una acción de escritura en el mismo
+  turno (usar `cotizacion_listar_historial` primero y esperar al usuario).
+- **Auditoría en 2 rondas (Security Engineer):** primera pasada devolvió 4 bloqueantes reales
+  (capa de servicio faltante; tipado de ids insuficiente; falta de auditoría en cambio de estado;
+  el gate de "Aprobada" era solo una instrucción de prompt, no un candado técnico — el propio
+  auditor notó que el mecanismo de dos fases ya existía completo, backend y frontend, para
+  `es_destructiva=False`, y bastaba con reutilizarlo). Los 4 corregidos y reverificados como
+  cerrados antes de ejecutar.
+- **Fase 5 (Code Reviewer) — aprobado.** Sin bloqueantes en el código ejecutado. Encontró de paso
+  un bug preexistente no relacionado con hoy: `cotizacion_service.calcular_merma` no pasa
+  `tarifas_src` a `calculos.calcular_merma_inteligente`, así que ignora la merma personalizada por
+  taller configurada en Parámetros — pendiente como tarea aparte, no bloqueante.
+- **2 bugs reales encontrados y corregidos en la verificación en vivo** (ninguna auditoría de plan
+  los podía ver): (1) `precio`/`margen` llegan de Postgres como `Decimal` y `fecha` como `date` —
+  ninguno serializa a JSON directo; FastAPI lo resuelve solo para el router HTTP, pero el
+  `FunctionResponse` que el motor le manda a Gemini no pasa por ahí — corregido con un helper
+  `_json_seguro`/`_fila_segura` en el service. (2) La tarjeta de confirmación del agente
+  (`AgentePage.tsx`) solo sabía renderizar `{titulo, id}` (el molde de las tareas de Ciclo 1) —
+  con una cotización mostraba únicamente "14 (id 14)", justo la ambigüedad que la auditoría de
+  seguridad pedía evitar. Generalizada para listar cualquier campo de la fila afectada (con
+  formato de moneda/fecha reales vía `lib/utils`), así que funciona igual de bien con cualquier
+  dominio futuro sin tocar el componente de nuevo.
+- **Verificado en vivo (2026-09-05)** contra datos reales del taller demo: los 4 flujos completos
+  — listar, ver detalle, cambiar estado (directo y con confirmación hacia "Aprobada"), y borrar
+  (autorizado explícitamente por el fundador sobre una fila de prueba QA, no un cliente real) —
+  con los cambios reflejados de verdad en el Historial y la auditoría.
+- **Roadmap de continuación:** dentro del Ciclo 2 quedan catálogo, inventario, retales, nesting y
+  parámetros (mismo patrón a repetir); "crear cotización" (`cotizacion_crear`) se difirió
+  a propósito por su complejidad (el motor `calcular_cotizacion_directa` tiene ~60 variables:
+  merma, logística, viáticos, zócalos geométricos) y el riesgo financiero de que la IA cotice mal
+  a un cliente real — cuando se aborde, el cálculo puede ser una tool directa y pura, pero el
+  guardado debe pasar por el mismo endpoint de confirmación de dos fases, nunca solo una promesa
+  conversacional del modelo. Ciclo 3 (las dos superficies de UI completas — chat flotante global +
+  "Centro del Agente" con bitácora/deshacer/modo BI) sigue sin arrancar.
 
 ### Capa B — Agentes de operación de Costo360 S.A.S. (`agentes-operacion/`, sin construir)
 

@@ -2,6 +2,56 @@
 
 ---
 
+## Sesión: 2026-09-05 (noche) — Personalidad de Cost, animaciones sin restricción del SO, y Ciclo 2 (Cotización)
+
+### Qué se hizo
+Continuación directa de la sesión de la tarde del mismo día. Todo directo en `master`, con
+micro-commits por cada avance.
+
+1. **Personalidad de Cost cerrada con el fundador:** las 3 preguntas abiertas de
+   `docs/AGENTE_PERSONALIDAD.md` (primera persona siempre, sin fórmula fija de saludo pero con
+   calidez real, humor conservador-amigable) quedaron traducidas al `_SYSTEM_PROMPT` real de
+   `backend/agente/runtime.py`. Al reiniciar el backend se descubrió que `ag-ui-protocol` había
+   desaparecido del entorno Python (probablemente una actualización del sistema entre sesiones) —
+   se reinstaló vía `pip install -r backend/requirements.txt`.
+2. **Burbuja flotante global revisada, decidido NO tocarla todavía:** se confirmó con el fundador
+   que `AgenteChat.tsx` (visible en toda la app salvo `/agente`) es un asistente previo y distinto
+   ("Asistente de Parámetros", `gemini-3.5-flash-lite`, `/api/agente/chat`) — no es Cost, y no lo
+   será hasta el Ciclo 3 (widget flotante global). Se le agregó sí un comportamiento pedido: cerrar
+   al hacer clic afuera, y una animación de cierre más suave.
+3. **Animaciones: reversión deliberada de `prefers-reduced-motion`.** Al depurar por qué esa
+   animación más suave no se notaba, se descubrió que el fundador tenía las animaciones de Windows
+   apagadas, y la app (a propósito, desde el rediseño visual) respeta esa preferencia del sistema
+   apagando TODAS sus animaciones en consecuencia. El fundador objetó: mucha gente apaga eso solo
+   por rendimiento, no por accesibilidad real, y no es razonable pedirles que lo cambien para ver
+   el pulido visual de la app. Decisión consciente: `<MotionConfig reducedMotion="never">` +
+   se eliminó el `@media (prefers-reduced-motion)` global + el chequeo de `useCountUp` — las
+   animaciones de Costo360 ahora se muestran siempre. Trade-off aceptado: se pierde esa protección
+   automática para quien sí la necesite por salud.
+4. **Objetivo 5, Ciclo 2 — dominio Cotización, ciclo `/goal` completo (Fases 0-6):** ver detalle en
+   `PROGRESS.md` y `ARQUITECTURA_MAESTRA.md` sección 8. Resumen: 4 tools nuevas, 2 rondas de
+   auditoría de seguridad (4 bloqueantes reales cerrados), Fase 5 de Code Reviewer aprobada, y
+   verificación en vivo completa contra datos reales del taller demo (incluido un borrado real
+   autorizado explícitamente por el fundador sobre una fila de prueba QA, no un cliente real).
+   Bugs reales encontrados y corregidos en el camino: serialización de `Decimal`/`date` de
+   Postgres al pasarle una tool al modelo, y la tarjeta de confirmación del agente que solo sabía
+   mostrar `{titulo, id}` (generalizada para cualquier dominio).
+
+### Decisiones tomadas
+- Personalidad de Cost cerrada (ver `AGENTE_PERSONALIDAD.md`).
+- Burbuja flotante vieja se deja intacta hasta el Ciclo 3 — no mezclar identidades a medio camino.
+- Animaciones de la app ignoran la preferencia del sistema operativo, a partir de hoy.
+- Ciclo 2 arranca por Cotización (no todos los dominios a la vez); "crear cotización" se difiere
+  a una segunda pasada por su complejidad (motor de ~60 variables) y riesgo financiero.
+
+### Pendiente / próxima tarea lógica
+- Bug preexistente encontrado de paso (no de hoy): `calcular_merma` no pasa `tarifas_src`, ignora
+  la merma personalizada configurada por el taller — no bloqueante, pendiente como tarea aparte.
+- Decidir con el fundador: seguir el Ciclo 2 con los demás dominios (catálogo, inventario,
+  retales, nesting, parámetros) o abordar "crear cotización" primero.
+
+---
+
 ## Sesión: 2026-09-05 (tarde) — Revisión visual del piloto, rebranding de la barra lateral, y verificación en vivo con el modelo real
 
 ### Qué se hizo
