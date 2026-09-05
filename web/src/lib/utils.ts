@@ -55,6 +55,28 @@ export function formatFechaHora(iso: string | null | undefined): string {
   return `${formatFecha(iso)}, ${hora}`
 }
 
+/**
+ * Timestamp ISO → tiempo relativo en español ("Hace 5 minutos") para lo
+ * reciente; fallback a `formatFechaHora` (fecha absoluta) desde los 7 días.
+ */
+export function formatRelativo(iso: string | null | undefined): string {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return '—'
+
+  const diffMinutos = Math.max(0, Math.floor((Date.now() - d.getTime()) / 60_000))
+  if (diffMinutos < 1) return 'Hace un momento'
+  if (diffMinutos < 60) return `Hace ${diffMinutos} ${diffMinutos === 1 ? 'minuto' : 'minutos'}`
+
+  const diffHoras = Math.floor(diffMinutos / 60)
+  if (diffHoras < 24) return `Hace ${diffHoras} ${diffHoras === 1 ? 'hora' : 'horas'}`
+
+  const diffDias = Math.floor(diffHoras / 24)
+  if (diffDias < 7) return diffDias === 1 ? 'Ayer' : `Hace ${diffDias} días`
+
+  return formatFechaHora(iso)
+}
+
 /** Días entre hoy y una fecha ISO (negativo = ya pasó). `null` si no hay fecha. */
 export function diasHasta(iso: string | null | undefined): number | null {
   if (!iso) return null
