@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Bell } from 'lucide-react'
@@ -7,7 +7,7 @@ import { Dialog } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { showToast } from '@/lib/toast'
-import { formatFechaHora } from '@/lib/utils'
+import { formatFechaHora, formatRelativo } from '@/lib/utils'
 import {
   listarNotificaciones, marcarNotificacionLeida, marcarTodasLeidas,
 } from '@/api/proyectos'
@@ -21,6 +21,15 @@ import { NotifIcono } from './badges'
 export function CampanaNotificaciones() {
   const qc = useQueryClient()
   const [abierto, setAbierto] = useState(false)
+
+  // Refresca el texto de "Hace N minutos" mientras el modal sigue abierto —
+  // sin esto se congela en el momento del render (sin refetch de datos).
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    if (!abierto) return
+    const id = setInterval(() => setTick((t) => t + 1), 30_000)
+    return () => clearInterval(id)
+  }, [abierto])
 
   const { data = [] } = useQuery({
     queryKey: ['notificaciones'],
@@ -61,7 +70,7 @@ export function CampanaNotificaciones() {
       </div>
 
       <Dialog open={abierto} onClose={() => setAbierto(false)} title="Notificaciones" className="max-w-md">
-        <div className="mb-3 flex justify-end">
+        <div className="mb-3 flex items-center justify-end border-b border-brand-border pb-3">
           <Button
             size="sm"
             variant="secondary"
@@ -96,13 +105,17 @@ export function CampanaNotificaciones() {
                       {n.mensaje && (
                         <span className="mt-0.5 block text-[12px] text-brand-text-secondary">{n.mensaje}</span>
                       )}
-                      <span className="mt-0.5 block text-[10px] text-brand-text-secondary">
-                        {formatFechaHora(n.created_at)}
-                      </span>
+                      <time
+                        dateTime={n.created_at ?? undefined}
+                        title={formatFechaHora(n.created_at)}
+                        className="mt-0.5 block text-[10px] text-brand-text-secondary"
+                      >
+                        {formatRelativo(n.created_at)}
+                      </time>
                     </span>
                   </>
                 )
-                const cls = `flex items-start gap-2.5 rounded-lg border p-2.5 ${
+                const cls = `flex items-start gap-2.5 rounded-lg border p-2.5 transition-colors hover:border-brand-primary/50 ${
                   n.leida ? 'border-brand-border/40' : 'border-brand-primary/30 bg-brand-primary/[0.04]'
                 }`
                 return (
@@ -111,7 +124,7 @@ export function CampanaNotificaciones() {
                       <Link
                         to={`/proyectos/${n.project_id}`}
                         onClick={() => { if (!n.leida) marcarUna.mutate(n.id); setAbierto(false) }}
-                        className={`${cls} hover:border-brand-primary/50`}
+                        className={cls}
                       >
                         {contenido}
                       </Link>
@@ -119,7 +132,7 @@ export function CampanaNotificaciones() {
                       <button
                         type="button"
                         onClick={() => { if (!n.leida) marcarUna.mutate(n.id) }}
-                        className={`${cls} w-full text-left`}
+                        className={`${cls} w-full cursor-pointer text-left`}
                       >
                         {contenido}
                       </button>
