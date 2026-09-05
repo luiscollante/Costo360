@@ -4,6 +4,47 @@
 
 ## ✅ Hecho
 
+- **Rediseño del modal de notificaciones del módulo de Proyectos (2026-09-04):**
+  ciclo `/goal` completo (Fases 0-6), directo en `master` (cambio acotado, solo
+  presentación, no ameritaba rama aparte). Fase 1 (plan) por un Frontend
+  Developer; Fase 2 (auditoría del plan) por Accessibility Auditor + Code
+  Reviewer, ambos "APRUEBA CON CAMBIOS" (ajustes menores ya incorporados al plan
+  antes de ejecutar, sin necesidad de volver a Fase 1); Fase 5 (auditoría del
+  resultado ejecutado) por UI Designer + Minimal Change Engineer, ambos
+  "APRUEBA" sin bloqueantes. 3 micro-commits (`a80ef83`, `17eecfa`, `d550201`).
+  - **Motivo:** el fundador probó la ronda de bugs del 2026-09-03 y, en el
+    camino, pidió mejorar el diseño del modal de notificaciones (`CampanaNotificaciones.tsx`),
+    que quedó funcional pero visualmente plano en esa ronda.
+  - **5 puntos implementados** (el 5º se agregó a pedido del fundador después de
+    la aprobación inicial de los primeros 4, incorporado al mismo ciclo antes de
+    ejecutar): icono de cada notificación con chip circular de fondo por
+    categoría (verde/dorado/rojo, reutilizando los mismos pares `-soft` que ya
+    usa `Badge.tsx` — sin colores nuevos); línea divisoria bajo el encabezado
+    para unir visualmente el título y el botón "Marcar todas como leídas";
+    hover unificado en todas las filas (antes solo las que llevan a un
+    proyecto reaccionaban al pasar el mouse); timestamp relativo en español
+    ("Hace 2 horas", "Ayer", fallback a fecha absoluta desde los 7 días) con la
+    fecha exacta disponible como tooltip nativo (`<time title=...>`); y ese
+    texto relativo se refresca solo cada 30s mientras el modal permanece
+    abierto (antes se congelaba, ya que el componente no tiene `refetchInterval`
+    a propósito).
+  - **Archivos tocados:** `web/src/components/proyectos/CampanaNotificaciones.tsx`,
+    `web/src/components/proyectos/badges.tsx` (`NotifIcono`), y el helper nuevo
+    `formatRelativo` en `web/src/lib/utils.ts`. No se tocó `Dialog.tsx` (genérico,
+    compartido), `badgeMeta.ts`, ni la lógica de datos/queries del componente.
+  - **Verificado en vivo** (navegador, cuenta Ana/admin): sin errores de
+    consola, `tsc -b` limpio. Nota de pulido menor anotada por ambos
+    auditores de Fase 5 (no bloqueante, preexistente): el tono `'gold'` de
+    `NOTIF_META.recordatorio` no tiene rama propia en `NotifIcono` y cae en los
+    estilos de `warning` — visualmente casi idéntico, queda como posible
+    follow-up si se quiere un dorado propio para ese tono.
+  - **Fuera de este ciclo, sin tocar (a pedido explícito del fundador):** el
+    asa de arrastre pequeña del tablero Kanban de Proyectos (`ProyectoCard`/
+    `TareaCard`) — es un arreglo deliberado de accesibilidad (WCAG 4.1.2,
+    auditoría del 2026-09-02) y NO se debe revertir a "tarjeta completa
+    arrastrable" sin rediseñar la interacción completa; ver la conversación de
+    esta sesión para el detalle de por qué.
+
 - **Ronda de bugs post-lanzamiento del módulo de Proyectos + wizard de Cotización
   (2026-09-03):** ciclo `/goal` completo (Fases 0-6) sobre 6 problemas reportados
   por el fundador tras explorar el módulo recién fusionado, agrupados en 4 causas
@@ -353,6 +394,10 @@
 - **El fundador confirma la ronda de bugs del 2026-09-03** (Proyectos + wizard de Cotización,
   ver entrada de "Hecho" arriba) — en particular el arrastre real con mouse, que no se pudo
   probar de forma automatizada.
+- **El fundador pidió no tocar el asa de arrastre pequeña de las tarjetas del tablero
+  Kanban** (2026-09-04) — es un arreglo deliberado de accesibilidad ya auditado (ver nota en
+  la entrada de "Hecho" del 2026-09-04); si en el futuro se quiere una zona de agarre más
+  grande, hay que diseñarlo con cuidado de no reabrir el hallazgo WCAG 4.1.2 del 2026-09-02.
 - **Después:** el fundador decide el siguiente frente entre los objetivos que quedan abiertos
   del roadmap (ver `docs/ROADMAP_COSTO360.md`) — landing page de alto impacto (Objetivo 2),
   agentes de operación (Objetivos 3-4), o el asistente de IA dentro del producto (Objetivo 5,
@@ -381,4 +426,4 @@
 
 ---
 
-*Última actualización: 2026-09-03 (tarde)*
+*Última actualización: 2026-09-04*

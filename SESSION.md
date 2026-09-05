@@ -2,6 +2,73 @@
 
 ---
 
+## Sesión: 2026-09-04 — Rediseño del modal de notificaciones + servidor levantado para pruebas
+
+### Qué se hizo
+Sesión corta. Se levantó el backend (`uvicorn`, puerto 8000, contra el proyecto Supabase real
+— no hizo falta Docker porque `backend/.env` ya apunta al Session pooler real) y el frontend
+(`vite`, puerto 5173) para que el fundador probara en vivo lo que quedó pendiente de la ronda
+de bugs del 2026-09-03 (arrastre real de mouse en el tablero de Proyectos).
+
+- **Arrastre de tarjetas — se aclaró, no se tocó:** el fundador pidió que cualquier parte de
+  la tarjeta (no solo el icono pequeño de la esquina) se pudiera usar para arrastrar. Se le
+  explicó que ese icono dedicado es un arreglo deliberado de accesibilidad (hallazgo WCAG
+  4.1.2 de la auditoría del 2026-09-02, documentado en `PATRONES_DE_ERROR.md` #5 y
+  `docs/PLAN_MODULO_GESTION_PROYECTOS.md`) — la librería (`@hello-pangea/dnd`) exige que el
+  asa de arrastre sea un `role="button"` propio; anidar ahí el `<Link>`/`<select>` de la
+  tarjeta reabre exactamente el bloqueante nivel A que se corrigió. El fundador decidió **no
+  tocar esa sección** y seguir con otra cosa. Queda pendiente (no bloqueante): si en el futuro
+  se quiere una zona de agarre más grande, diseñarlo con cuidado (p. ej. una franja más ancha
+  dedicada, no la tarjeta completa) — anotado en `PROGRESS.md`.
+- **Rediseño del modal de notificaciones — ciclo `/goal` completo (Fases 0-6):** el fundador
+  pidió mejorar el diseño visual de `CampanaNotificaciones.tsx` (modal de la campana en la
+  barra superior), plano desde que se construyó en el Objetivo 6. Detalle completo de las
+  Fases y los 5 puntos implementados en la entrada de "Hecho" de `PROGRESS.md` del
+  2026-09-04 — no se repite aquí para no duplicar. Resumen rápido: chip circular de color en
+  los iconos, encabezado unido con línea divisoria, hover parejo en todas las filas,
+  timestamp relativo con tooltip de fecha absoluta, y auto-refresco del timestamp cada 30s
+  mientras el modal está abierto (este último punto se agregó a mitad del ciclo, a pedido del
+  fundador, y se incorporó sin reabrir las Fases 1-2 por ser un cambio pequeño y autocontenido
+  — un `useEffect`/`setInterval` con limpieza, sin tocar datos). Fase 2 (Accessibility Auditor
+  + Code Reviewer) y Fase 5 (UI Designer + Minimal Change Engineer) sin bloqueantes en ningún
+  punto. 3 micro-commits: `a80ef83`, `17eecfa`, `d550201`.
+- **Sesión aparte, resuelta:** el fundador preguntó cómo activar el modo de auto-aceptación de
+  permisos de forma permanente (usa Antigravity IDE). Se investigó contra la documentación
+  oficial de Claude Code (no se confió en la primera respuesta de un agente, que tenía datos
+  incorrectos) — la sesión ya corre en modo `auto` por defecto (plan Pro/Max/Team), y ciertas
+  acciones sensibles (como editar `settings.json` de permisos) nunca se auto-aprueban en
+  ningún modo salvo `bypassPermissions`, que Anthropic recomienda solo para contenedores/VMs
+  aislados. Se le dieron los pasos exactos (`~/.claude/settings.json` con
+  `defaultMode: "bypassPermissions"`, o `Shift+Tab` en sesión) y la advertencia de riesgo real
+  dado que este proyecto toca una base de datos Supabase real con datos de clientes. El
+  fundador no pidió que se aplicara el cambio — quedó como información, no como acción tomada.
+
+### Archivos tocados
+- `web/src/components/proyectos/CampanaNotificaciones.tsx`, `web/src/components/proyectos/badges.tsx`
+  (`NotifIcono`), `web/src/lib/utils.ts` (`formatRelativo`, nuevo).
+- `PROGRESS.md`, este archivo.
+
+### Decisiones tomadas
+- No tocar el asa de arrastre del tablero Kanban en este ciclo (decisión del fundador tras
+  la explicación del trade-off de accesibilidad).
+- El punto 5 del modal de notificaciones (auto-refresco) se incorporó al mismo ciclo sin
+  repetir las Fases 1-2 completas, por ser un cambio mínimo y autocontenido — juicio tomado
+  en el momento, documentado aquí para que quede claro que no se saltó el proceso por
+  descuido.
+
+### Pendiente / primera tarea de la próxima sesión
+1. El fundador sigue sin confirmar el arrastre real de mouse en Proyectos (pendiente desde el
+   2026-09-03) — no se tocó nada de esa sección esta sesión.
+2. Preguntar si quiere el pulido menor y no bloqueante que anotaron los 2 auditores de Fase 5
+   del modal de notificaciones (alinear el color del icono "recordatorio" con el par exacto
+   que usa `Badge.tsx` para el tono `gold` — hoy usa los estilos de `warning`, visualmente casi
+   idéntico).
+3. Después: decidir el siguiente frente entre los objetivos abiertos del roadmap (landing page,
+   agentes de operación, o el asistente de IA del producto) — mismo pendiente que quedó abierto
+   desde el 2026-09-03.
+
+---
+
 ## Sesión: 2026-09-03 (tarde) — Ronda de bugs: tablero de Proyectos + wizard de Cotización
 
 ### Qué se hizo
