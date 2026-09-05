@@ -109,6 +109,7 @@ async def ejecutar_turno(usuario: dict, mensaje: str, historial: list[dict],
 
     interrupts: list[ag.Interrupt] = []
     texto_emitido = False
+    acciones_ejecutadas: list[str] = []  # nombres de tools de escritura ya comiteadas este turno
 
     agotado = False
     try:
@@ -164,6 +165,14 @@ async def ejecutar_turno(usuario: dict, mensaje: str, historial: list[dict],
                             return _spec.handler(conn, usuario, _args)
 
                     resultado = await asyncio.to_thread(_ejecutar_handler)
+                    if isinstance(resultado, dict) and "error" not in resultado:
+                        # Ya comiteó (la conexión corta de arriba hizo commit
+                        # al salir del `with`) — si un paso POSTERIOR de este
+                        # mismo turno falla, el mensaje de error no puede
+                        # fingir que no pasó nada (hallazgo de la auditoría
+                        # de Fase 5: "el usuario nunca se entera de que la
+                        # tarea sí se creó").
+                        acciones_ejecutadas.append(fc.name)
                     if isinstance(resultado, dict) and resultado.get("propuesta_creada"):
                         propuesta = resultado["propuesta_creada"]
                         interrupts.append(ag.Interrupt(
@@ -196,7 +205,18 @@ async def ejecutar_turno(usuario: dict, mensaje: str, historial: list[dict],
     except Exception as e:
         print(f"[agente] ERROR en el turno: {e}", flush=True)
         yield encoder.encode(ag.TextMessageEndEvent(type=ag.EventType.TEXT_MESSAGE_END, message_id=msg_id))
-        yield encoder.encode(ag.RunErrorEvent(type=ag.EventType.RUN_ERROR, message="El asistente no pudo responder. Intenta de nuevo."))
+        if acciones_ejecutadas:
+            # Una o más acciones de este turno YA se ejecutaron y comitearon
+            # antes del error — nunca decir "no pudo responder" a secas,
+            # como si nada hubiera pasado (Regla 8).
+            mensaje = (
+                "Alcancé a completar parte de lo que pediste antes de un error "
+                "("  + ", ".join(acciones_ejecutadas) + "). Revisa el proyecto para "
+                "confirmar el resultado — no pude terminar de responder."
+            )
+        else:
+            mensaje = "El asistente no pudo responder. Intenta de nuevo."
+        yield encoder.encode(ag.RunErrorEvent(type=ag.EventType.RUN_ERROR, message=mensaje))
         return
 
     if agotado:

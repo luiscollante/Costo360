@@ -13,9 +13,25 @@ from backend.models.proyectos import TareaIn
 from backend.services import proyectos_service
 
 
+def _como_entero(v) -> int | None:
+    """Gemini puede devolver un entero como `8.0` en los argumentos de una
+    tool-call (el propio SDK `google-genai` trae un parche para esto, pero
+    solo se aplica en el camino de "automatic function calling", que este
+    motor desactiva a propósito para controlar el loop a mano — hallazgo
+    real de la auditoría de Fase 5). `isinstance(v, int)` a secas rechazaría
+    una petición perfectamente válida."""
+    if isinstance(v, bool):
+        return None
+    if isinstance(v, int):
+        return v
+    if isinstance(v, float) and v.is_integer():
+        return int(v)
+    return None
+
+
 def _listar_tareas(conn, usuario: dict, args: dict) -> dict:
-    project_id = args.get("project_id")
-    if not isinstance(project_id, int):
+    project_id = _como_entero(args.get("project_id"))
+    if project_id is None:
         return {"error": "project_id debe ser un número entero"}
     try:
         tareas = proyectos_service.listar_tareas(conn, project_id)
@@ -41,9 +57,9 @@ registrar(ToolSpec(
 
 
 def _crear_tarea(conn, usuario: dict, args: dict) -> dict:
-    project_id = args.get("project_id")
+    project_id = _como_entero(args.get("project_id"))
     titulo = (args.get("titulo") or "").strip()
-    if not isinstance(project_id, int) or not titulo:
+    if project_id is None or not titulo:
         return {"error": "Se necesita project_id (entero) y un título no vacío"}
     try:
         body = TareaIn(
@@ -89,8 +105,8 @@ def _preparar_borrar_tarea(conn, usuario: dict, args: dict) -> dict:
     """SOLO lee y propone — nunca borra. La tool no tiene forma de ejecutar
     el borrado real; eso vive en `_confirmar_borrar_tarea`, alcanzable
     únicamente desde el endpoint HTTP de confirmación."""
-    tarea_id = args.get("tarea_id")
-    if not isinstance(tarea_id, int):
+    tarea_id = _como_entero(args.get("tarea_id"))
+    if tarea_id is None:
         return {"error": "tarea_id debe ser un número entero"}
     try:
         proyectos_service.ensure_gestor(usuario)
