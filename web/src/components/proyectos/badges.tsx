@@ -25,13 +25,13 @@ const NOTIF_LABEL: Record<TipoNotificacion, string> = {
 
 export function NotifIcono({ tipo }: { tipo: TipoNotificacion }) {
   const m = NOTIF_META[tipo] ?? NOTIF_META.recordatorio
-  const color =
-    m.tono === 'success' ? 'text-brand-success'
-      : m.tono === 'danger' ? 'text-brand-danger'
-        : 'text-brand-warning-text'
+  const { texto, fondo } =
+    m.tono === 'success' ? { texto: 'text-brand-success', fondo: 'bg-brand-success-soft' }
+      : m.tono === 'danger' ? { texto: 'text-brand-danger', fondo: 'bg-brand-danger-soft' }
+        : { texto: 'text-brand-warning-text', fondo: 'bg-brand-warning-soft' }
   return (
-    <span className="shrink-0">
-      <m.Icon size={15} className={color} aria-hidden="true" />
+    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${fondo}`}>
+      <m.Icon size={15} className={texto} aria-hidden="true" />
       <span className="sr-only">{NOTIF_LABEL[tipo] ?? 'Notificación'}: </span>
     </span>
   )
