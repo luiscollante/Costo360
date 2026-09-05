@@ -5,12 +5,64 @@ los dos caminos, nunca una reimplementación aparte del SQL (hallazgo de la
 auditoría de seguridad: ver `agente/tools/proyectos.py` para el mismo
 patrón ya aplicado en Ciclo 1).
 """
-from fastapi import HTTPException, Request
+from datetime import date, datetime
+from decimal import Decimal
+
+from fastapi import HTTPException
 
 from backend.db.deps import scope_propio
 from backend.services.audit_service import log_accion
+from backend.motor import calculos
 
 _ESTADOS_VALIDOS = ("Pendiente", "Aprobada", "Rechazada", "Borrador")
+
+
+def _json_seguro(v):
+    """`precio`/`margen` llegan de Postgres como `Decimal` y `fecha` como
+    `date` — ninguno de los dos es serializable a JSON tal cual, y estas filas
+    viajan tanto al frontend como (sin pasar por FastAPI, que sí sabe
+    convertirlos solo) al `FunctionResponse` que el motor del agente le
+    manda a Gemini."""
+    if isinstance(v, Decimal):
+        return float(v)
+    if isinstance(v, (date, datetime)):
+        return str(v)
+    return v
+
+
+def _fila_segura(cols: list[str], row) -> dict:
+    return {k: _json_seguro(v) for k, v in zip(cols, row)}
+
+
+def calcular_totales(piezas: list) -> dict:
+    piezas_raw = [
+        {
+            "nombre": p.get("nombre", ""),
+            "largo": float(p.get("largo", 0)),
+            "ancho": float(p.get("ancho", 0.60)),
+            "cantidad": int(p.get("cantidad", 1)),
+            "unidad_venta": p.get("unidad_venta", "ml"),
+            "ml": float(p.get("largo", 0)) * int(p.get("cantidad", 1)),
+            "precio_unitario": float(p.get("precio_unitario", 0)),
+        }
+        for p in piezas
+    ]
+    return calculos.calcular_totales_piezas(piezas_raw)
+
+
+def calcular_merma(piezas: list, categoria: str) -> dict:
+    piezas_raw = [
+        {
+            "nombre": p.get("nombre", ""),
+            "largo": float(p.get("largo", 0)),
+            "ancho": float(p.get("ancho", 0.60)),
+            "cantidad": int(p.get("cantidad", 1)),
+            "unidad_venta": p.get("unidad_venta", "ml"),
+            "ml": float(p.get("largo", 0)) * int(p.get("cantidad", 1)),
+        }
+        for p in piezas
+    ]
+    return calculos.calcular_merma_inteligente(piezas_raw, categoria)
 
 
 def borrar_cotizacion(conn, usuario: dict, cot_id: int, *, ip: str | None = None,
@@ -38,10 +90,7 @@ def borrar_cotizacion(conn, usuario: dict, cot_id: int, *, ip: str | None = None
         metadata.update(metadata_extra)
     log_accion(conn, "COTIZACION_DELETE", metadata,
                empresa_id=usuario["empresa_id"], usuario_id=usuario["id"], ip=ip)
-    return {
-        "id": row[0], "numero": row[1], "cliente": row[2],
-        "precio": row[3], "fecha": str(row[4]), "estado": row[5],
-    }
+    return _fila_segura(["id", "numero", "cliente", "precio", "fecha", "estado"], row)
 
 
 def cambiar_estado_cotizacion(conn, usuario: dict, cot_id: int, estado: str, *,
@@ -71,7 +120,7 @@ def cambiar_estado_cotizacion(conn, usuario: dict, cot_id: int, estado: str, *,
         metadata.update(metadata_extra)
     log_accion(conn, "COTIZACION_ESTADO", metadata,
                empresa_id=usuario["empresa_id"], usuario_id=usuario["id"], ip=ip)
-    return {"id": row[0], "numero": row[1], "cliente": row[2], "precio": row[3], "estado": row[4]}
+    return _fila_segura(["id", "numero", "cliente", "precio", "estado"], row)
 
 
 def listar_historial(conn, usuario: dict, *, busqueda: str = "", estado: str = "",
@@ -101,7 +150,7 @@ def listar_historial(conn, usuario: dict, *, busqueda: str = "", estado: str = "
     rows = cur.fetchall()
     cur.close()
     col_names = cols.split(",")
-    return [dict(zip(col_names, row)) for row in rows]
+    return [_fila_segura(col_names, row) for row in rows]
 
 
 def obtener_cotizacion_datos(conn, usuario: dict, cot_id: int) -> dict | None:
@@ -146,7 +195,4 @@ def obtener_cotizacion_resumen(conn, usuario: dict, cot_id: int) -> dict | None:
     cur.close()
     if row is None:
         return None
-    return {
-        "id": row[0], "numero": row[1], "cliente": row[2],
-        "precio": row[3], "fecha": str(row[4]), "estado": row[5],
-    }
+    return _fila_segura(["id", "numero", "cliente", "precio", "fecha", "estado"], row)

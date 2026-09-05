@@ -44,6 +44,7 @@ function TextoAsistente({ texto }: { texto: string }) {
 const SUGERENCIAS = [
   'Lista las tareas del proyecto 8',
   'Crea una tarea llamada Revisar corte en el proyecto 8',
+  'Muéstrame las cotizaciones pendientes de este mes',
 ]
 
 export default function AgentePage() {
@@ -158,9 +159,9 @@ export default function AgentePage() {
     <AppLayout>
       <div className="mx-auto max-w-2xl">
         <PageHeader
-          kicker="Objetivo 5 · Piloto Ciclo 1"
+          kicker="Objetivo 5 · Ciclo 2"
           title="Cost"
-          subtitle="Tu asistente de Costo360 — por ahora solo entiende de Proyectos y Tareas."
+          subtitle="Tu asistente de Costo360 — hoy entiende de Proyectos, Tareas y Cotización."
         />
 
         <Card className="flex h-[65vh] flex-col overflow-hidden">
@@ -169,7 +170,7 @@ export default function AgentePage() {
               <div className="flex h-full flex-col items-center justify-center">
                 <EmptyState
                   icon={<Sparkles size={32} />}
-                  title="Hola, soy Cost. Pregúntame sobre tus proyectos y tareas."
+                  title="Hola, soy Cost. Pregúntame sobre tus proyectos, tareas o cotizaciones."
                 />
                 <div className="w-full max-w-sm space-y-1.5">
                   {SUGERENCIAS.map((s) => (
