@@ -4,6 +4,54 @@
 
 ## ✅ Hecho
 
+- **Objetivo 5, Ciclo 1 — motor del Agente de IA con tool-calling, piloto en Proyectos/Tareas
+  (2026-09-04/05):** ciclo `/goal` completo (Fases 0-6), directo en `master`. El fundador eligió
+  la versión más ambiciosa desde el día uno (todo el producto, asesora Y opera datos, dos
+  superficies de UI) — los 3 planificadores (AI Engineer, Software Architect, Product Manager)
+  recomendaron partirlo en 3 ciclos empezando por un dominio piloto de bajo riesgo, aprobado por
+  el fundador. Detalle técnico completo: `ARQUITECTURA_MAESTRA.md` sección 8 y
+  `docs/ROADMAP_COSTO360.md` Fase 3.
+  - **Fase 2 (auditoría del plan):** Security Engineer + Database Optimizer + UX Architect. La
+    primera pasada del Security Engineer devolvió **NO APRUEBA** por 3 bloqueantes reales
+    (confirmar una acción destructiva no podía ser una tool del modelo; la tabla de propuestas
+    pendientes debía aislar también por usuario, no solo por empresa; ninguna conexión de base
+    de datos podía sostenerse durante todo un turno conversacional) — corregidos con las
+    soluciones exactas que los propios auditores especificaron, y reverificados como cerrados
+    por una segunda pasada del mismo especialista antes de pasar a ejecutar.
+  - **Fase 4 (ejecución), 8 micro-commits:** migración `0009_agente_acciones.sql` (tabla
+    `agente_acciones_pendientes`, RLS por empresa Y usuario); `rls_connection` (conexión corta
+    reutilizable, extraída de `db_rls`); `services/proyectos_service.py` (lógica extraída de
+    `routers/proyectos.py`, sin cambiar una línea de comportamiento — verificado creando y
+    borrando una tarea real en el navegador); el motor (`backend/agente/`: `registry.py`,
+    `confirmations.py`, `runtime.py`, `router.py`, `tools/proyectos.py`) con 3 tools piloto
+    (listar/crear/borrar tareas); página de prueba `web/src/pages/AgentePage.tsx` (`/agente`).
+    Confirmado con un spike real que el protocolo AG-UI funciona en Python puro (paquete
+    `ag-ui-protocol`), sin necesitar un runtime Node intermedio — el riesgo técnico más grande
+    que había señalado la planificación quedó despejado.
+  - **Fase 5 (auditoría del código ejecutado):** Code Reviewer + Backend Architect +
+    Accessibility Auditor, ninguno repetido de fases anteriores. Confirmaron que los 3
+    bloqueantes de seguridad quedaron genuinamente cerrados EN EL CÓDIGO (no solo en el plan,
+    verificado línea por línea contra el SQL real y el SDK instalado). Encontraron y se
+    corrigieron 4 hallazgos reales que la auditoría del plan no podía ver por ser de
+    implementación: (1) el motor bloqueaba el proceso entero por no usar `asyncio.to_thread` —
+    habría congelado TODA la app (no solo el agente) mientras cualquier usuario conversaba con
+    él, en el despliegue actual de un solo proceso; (2) el límite de pasos de razonamiento podía
+    agotarse en silencio sin avisar al usuario (Regla 8); (3) un mensaje de error engañoso si
+    una acción ya se había ejecutado antes de que un paso posterior fallara; (4) un bug latente
+    de coerción `float`→`int` en los argumentos que devuelve el modelo (encontrado leyendo el
+    propio código fuente del SDK `google-genai`, no solo el de Costo360). También encontró un
+    hallazgo de accesibilidad real y ya corregido: la tarjeta de confirmación no movía el foco
+    ni se anunciaba a un lector de pantalla, y los botones no decían qué se estaba confirmando —
+    justo el tipo de descuido que podría dejar a alguien confirmar un borrado sin darse cuenta.
+  - **Verificado en vivo:** el camino degradado (sin `GEMINI_AGENTE_API_KEY` configurada, que
+    sigue siendo un pendiente de sesiones anteriores) — el backend y el frontend responden con
+    un mensaje claro en vez de romperse, exactamente como exige la Regla 7. **No se pudo
+    verificar la conversación real con el modelo** por falta de esa clave — queda como el
+    primer pendiente real antes de dar el Ciclo 1 por completamente probado.
+  - **Decisiones tomadas en el camino:** Ciclo 2 (resto de dominios) y Ciclo 3 (las dos
+    superficies de UI completas) quedan para que el fundador decida cuándo arrancarlos, después
+    de ver el Ciclo 1 funcionando de verdad con el modelo real.
+
 - **Rediseño del modal de notificaciones del módulo de Proyectos (2026-09-04):**
   ciclo `/goal` completo (Fases 0-6), directo en `master` (cambio acotado, solo
   presentación, no ameritaba rama aparte). Fase 1 (plan) por un Frontend
@@ -391,6 +439,12 @@
    hoy `web/src/api/*.ts` están alineados a mano con el backend nuevo.
 
 ### Frente activo ahora mismo
+- **Configurar una `GEMINI_AGENTE_API_KEY` real** — es lo único que falta para probar de punta
+  a punta el Ciclo 1 del Objetivo 5 (el motor del agente) con una conversación real, no solo el
+  camino degradado ya verificado.
+- **Después de probarlo con el modelo real:** el fundador decide si arranca el Ciclo 2
+  (expandir el agente al resto de dominios) o el Ciclo 3 (las dos superficies de UI completas)
+  del Objetivo 5 — o si prefiere atacar otro frente del roadmap primero.
 - **El fundador confirma la ronda de bugs del 2026-09-03** (Proyectos + wizard de Cotización,
   ver entrada de "Hecho" arriba) — en particular el arrastre real con mouse, que no se pudo
   probar de forma automatizada.
@@ -398,13 +452,9 @@
   Kanban** (2026-09-04) — es un arreglo deliberado de accesibilidad ya auditado (ver nota en
   la entrada de "Hecho" del 2026-09-04); si en el futuro se quiere una zona de agarre más
   grande, hay que diseñarlo con cuidado de no reabrir el hallazgo WCAG 4.1.2 del 2026-09-02.
-- **Después:** el fundador decide el siguiente frente entre los objetivos que quedan abiertos
-  del roadmap (ver `docs/ROADMAP_COSTO360.md`) — landing page de alto impacto (Objetivo 2),
-  agentes de operación (Objetivos 3-4), o el asistente de IA dentro del producto (Objetivo 5,
-  que ahora también incluye el asistente del módulo de proyectos, diferido por decisión D2).
 
 ### Prototipo ya construido — pendientes menores
-- `GEMINI_API_KEY` en `backend/.env` está vencida/inválida — el chat de Parámetros responde con error controlado hasta que se renueve.
+- `GEMINI_API_KEY`/`GEMINI_AGENTE_API_KEY` sin configurar en `backend/.env` — afecta tanto el chat legado de Parámetros como el motor nuevo del Agente (Objetivo 5, Ciclo 1); ambos se degradan con gracia, pero sin una clave real no se puede probar la conversación real con el modelo.
 - Inventario, Dashboard y Historial no tienen pruebas automatizadas — solo verificación manual en vivo del 2026-08-23.
 
 ### Modelo financiero / negocio
@@ -426,4 +476,4 @@
 
 ---
 
-*Última actualización: 2026-09-04*
+*Última actualización: 2026-09-05*

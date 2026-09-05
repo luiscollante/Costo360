@@ -227,7 +227,7 @@ está bien pensado, y define el comportamiento exacto a replicar.
 
 ---
 
-## Fase 3 — Objetivo 5: Agente de IA dentro del producto
+## Fase 3 — Objetivo 5: Agente de IA dentro del producto  🔄 **Ciclo 1 COMPLETADO (2026-09-05)**
 
 Una vez la interfaz nueva del Objetivo 1 exista (✅ completada), evolucionar el agente actual
 de Parámetros hacia el asistente personal por usuario que navega la interfaz de forma autónoma
@@ -238,6 +238,35 @@ asistente de IA que el prototipo Base44 del módulo de gestión de proyectos def
 "asistente_costo360" (opera entidades por lenguaje natural con confirmación antes de borrar +
 asesora con resúmenes/análisis/riesgos). Cuando se construya, puede estrenarse acotado a
 proyectos (datos y UI ya existen desde el Objetivo 6) antes de cubrir el resto del producto.
+
+**El fundador eligió la versión más ambiciosa desde el día uno (2026-09-04):** todo el producto
+(no acotado a un módulo), capaz de asesorar Y operar datos (crear/editar/borrar con confirmación),
+en dos superficies (chat flotante + página dedicada). Los 3 planificadores (AI Engineer, Software
+Architect, Product Manager), sin ponerse de acuerdo entre ellos, coincidieron en que esto es más
+grande que cualquier objetivo anterior y recomendaron partirlo en 3 ciclos, empezando por un
+dominio piloto de bajo riesgo — decisión aprobada por el fundador.
+
+- **✅ Ciclo 1 — Motor + piloto en Proyectos/Tareas (2026-09-04/05):** el motor completo de
+  tool-calling (`backend/agente/`), la confirmación de dos fases antes de borrar
+  (`agente_acciones_pendientes`, migración `0009`), y una página mínima de prueba
+  (`/agente`). Auditado en 2 rondas — la primera del Security Engineer devolvió **NO APRUEBA**
+  por 3 bloqueantes reales (confirmar no debía ser una tool del modelo; RLS debía aislar
+  también por usuario, no solo por empresa; ninguna conexión de base de datos debía sostenerse
+  durante todo un turno conversacional), corregidos y reverificados como cerrados antes de
+  ejecutar. La Fase 5 (Code Reviewer + Backend Architect + Accessibility Auditor) encontró
+  además 2 bugs reales de implementación que ninguna auditoría de plan podía ver: el motor
+  bloqueaba el proceso entero por no usar `asyncio.to_thread` (habría congelado toda la app
+  para todos los usuarios mientras alguien conversaba con el agente, no solo la respuesta del
+  agente misma), y el límite de pasos de razonamiento podía agotarse en silencio sin avisar
+  (Regla 8) — ambos corregidos. Detalle completo: `ARQUITECTURA_MAESTRA.md` sección 8.
+  **Pendiente real, no de este ciclo:** configurar `GEMINI_AGENTE_API_KEY` para poder probar la
+  conversación real con el modelo — sin eso, solo se verificó el camino degradado (sin clave,
+  responde con gracia, no rompe nada).
+- **⬜ Ciclo 2 — Expansión al resto de dominios** (cotización, catálogo, inventario, retales,
+  nesting, parámetros): repetir el mismo patrón de tools ya probado y auditado en el Ciclo 1.
+- **⬜ Ciclo 3 — Las dos superficies de UI completas:** chat flotante global (hoy solo vive en
+  la página piloto) + "Centro del Agente" (bitácora de acciones, deshacer, modo BI con
+  exportación).
 
 ---
 

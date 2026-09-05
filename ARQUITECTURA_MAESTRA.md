@@ -5,7 +5,7 @@ componente, cada tabla de base de datos, cada dependencia y cada regla sin excep
 estado de avance día a día, ver `PROGRESS.md`/`SESSION.md`. Para el contexto de negocio, ver
 `CONTEXTO_COSTO360.md` y el cuaderno Notion "Costo360 — Base de Conocimiento Central".*
 
-*Última actualización: 2026-09-03.*
+*Última actualización: 2026-09-05.*
 
 > **⚠️ Fase 2.A ejecutada en la rama `goal/fase-2a-multitenant-auth` (aún NO fusionada a
 > `master`).** Cambia mucho de este documento: el backend del prototipo pasa a Supabase Auth
@@ -93,7 +93,10 @@ Cloud apuntan a `app.py` por ruta fija. Moverlo o romperlo tumba la operación r
 - **Framework:** FastAPI (Python), servido con `uvicorn[standard]`.
 - **Base de datos:** `psycopg2-binary` + `SQLAlchemy` sobre Supabase Postgres (mismo proyecto que el legado: `dilskbvmvywqohtswzdw`). Dev local: `docker-compose.yml` (postgres:15-alpine) — hay que tener Docker Desktop corriendo y hacer `docker compose up -d` antes de levantar el backend en local.
 - **Validación:** `pydantic`.
-- **IA del producto:** `google-genai` SDK — modelo `gemini-3.5-flash-lite` para el agente conversacional de Parámetros (`routers/agente.py`), rate-limited a 20/min vía `slowapi`. Variable de entorno `GEMINI_AGENTE_API_KEY` (o `GEMINI_API_KEY` como fallback) — **estaba vencida al 2026-08-24, verificar antes de usar el chat**.
+- **IA del producto:** `google-genai` SDK. Dos motores coexisten a propósito durante la migración del Objetivo 5:
+  - **Legado** (`routers/agente.py`, `/api/agente/chat`): modelo `gemini-3.5-flash-lite`, sin tool-calling, solo explica Parámetros — sigue intacto.
+  - **Nuevo, Ciclo 1** (`backend/agente/`, `/api/agente/stream` + `/propuestas/*`): motor de tool-calling con loop explícito (automatic function calling desactivado a propósito), modelo `gemini-3.5-flash`, protocolo **AG-UI** vía el paquete Python `ag-ui-protocol` (SSE nativo, sin runtime Node/CopilotCloud intermedio — verificado viable con un spike real). Acotado al dominio de Proyectos/Tareas. Ver sección 8 para el detalle de seguridad.
+  - Variable de entorno `GEMINI_AGENTE_API_KEY` (o `GEMINI_API_KEY` como fallback) — **sigue sin configurar en este entorno al 2026-09-05**; ambos motores se degradan con un mensaje claro (nunca tumban el backend) si falta.
 - **Anthropic:** dependencia `anthropic` presente en `requirements.txt` pero **sin uso confirmado activo en el backend nuevo** (posible remanente o preparación futura — verificar antes de asumir que algo la usa).
 - **PDF:** `reportlab` + `Pillow` (`motor/generador_pdf.py`).
 - **Rate limiting:** `slowapi` (login 5/min, recuperación por PIN 5/hora, agente 20/min).
@@ -104,10 +107,12 @@ Cloud apuntan a `app.py` por ruta fija. Moverlo o romperlo tumba la operación r
 
 | Carpeta/archivo | Contenido |
 |---|---|
-| `main.py` | Arranque de FastAPI, `CREATE TABLE IF NOT EXISTS` de todas las tablas (ver sección 4), registro de routers |
-| `routers/` | `admin.py`, `agente.py`, `auth.py`, `calculos.py`, `config.py`, `cotizacion.py`, `dashboard.py`, `finanzas.py`, `inventario.py`, `materiales.py`, `nesting.py`, `parametros.py`, `retales.py` |
+| `main.py` | Arranque de FastAPI, `CREATE TABLE IF NOT EXISTS` de todas las tablas (ver sección 4), registro de routers, `_self_test_rls` (fatal) + `_self_test_agente` (NO fatal — Objetivo 5) |
+| `routers/` | `admin.py`, `agente.py` (legado), `auth.py`, `calculos.py`, `config.py`, `cotizacion.py`, `dashboard.py`, `finanzas.py` (sin registrar), `inventario.py`, `materiales.py`, `nesting.py`, `parametros.py`, `retales.py`, `proyectos.py`, `proyectos_cron.py`, `session.py`, `bootstrap.py` |
+| `agente/` | **Nuevo (Objetivo 5, Ciclo 1).** Motor del agente con tool-calling: `router.py` (`/api/agente/stream`+`/propuestas/*`), `runtime.py` (loop de function-calling sobre `google-genai`, `asyncio.to_thread` para no bloquear el event loop), `registry.py` (catálogo de tools con doble candado de capacidad), `confirmations.py` (ciclo de vida proponer→confirmar), `tools/proyectos.py` (las 3 tools del piloto) |
 | `motor/` | `calculos.py` (motor de cálculo real — recetas por inductor), `parametros.py` (tipos de inductor: `por_m2_mano_obra`, `merma_pct`, etc.), `generador_pdf.py`, `motor_planos.py` (nesting), `asistente_ia.py` (**legado, con import roto a constantes ya eliminadas — confirmado que no se usa en ningún flujo vivo**) |
-| `db/`, `services/`, `models/`, `middleware/` | (referenciados desde `routers/auth.py`: `db.client.db_conn`, `services.auth_service`, `services.audit_service`, `models.auth`, `middleware.auth.get_current_user`, `middleware.rate_limiter.limiter`) |
+| `services/` | Capa de lógica de negocio reutilizable entre un router HTTP y el Agente de IA — patrón nuevo desde el Objetivo 5: `audit_service.py`, `cotizacion_service.py`, y `proyectos_service.py` (**nuevo**, extraído de `routers/proyectos.py` — recibe `(conn, usuario, ...)`, nunca llama `commit`/`rollback`, se reutiliza sin duplicar lógica) |
+| `db/`, `models/`, `middleware/` | (referenciados desde `routers/auth.py`: `db.client.db_conn`, `services.auth_service`, `services.audit_service`, `models.auth`, `middleware.auth.get_current_user`, `middleware.rate_limiter.limiter`) |
 | `seed_parametros.py` | Siembra inicial de tarifas por defecto |
 | `.env` | `DATABASE_URL`, `GEMINI_API_KEY`/`GEMINI_AGENTE_API_KEY` — nunca versionado |
 
@@ -144,6 +149,7 @@ Cloud apuntan a `app.py` por ruta fija. Moverlo o romperlo tumba la operación r
 | `pm_time_entries` | `empresa_id`, `task_id`, `project_id`, `usuario_id`, `horas`, `fecha`, `nota` | Registro de horas por tarea |
 | `pm_comments` | `empresa_id`, `task_id`, `autor_id`, `autor_nombre`, `contenido` | Comentarios por tarea |
 | `pm_notifications` | `empresa_id`, `titulo`, `tipo` (3 valores), `project_id`/`task_id`, `dedupe_key` (índice único parcial — idempotencia del barrido), `leida` | `leida` es a nivel taller (todos comparten el estado de lectura), heredado del prototipo Base44 por decisión explícita |
+| `agente_acciones_pendientes` | `empresa_id`, `usuario_id`, `herramienta`, `payload` (jsonb, entrada NO confiable del modelo), `filas_afectadas` (jsonb, snapshot verificado por el backend), `es_destructiva`, `estado` (4 valores, `CHECK`), `expira_en` | Objetivo 5, migración `0009`. RLS aísla por `empresa_id` **Y** `usuario_id` (a propósito distinto del patrón `pm_*`, que solo aísla por empresa) — nadie confirma la propuesta de otro. El modelo de IA solo puede `INSERT` (proponer); confirmar es un endpoint HTTP aparte, nunca una tool. Ver sección 8. |
 
 **Las 6 tablas `pm_*`** siguen el mismo patrón de aislamiento que el resto del esquema:
 `empresa_id NOT NULL REFERENCES empresas(id)`, RLS `enable`+`force`, una policy `FOR ALL TO
@@ -379,11 +385,51 @@ Tokens reales extraídos de `web/src/index.css` (verificado en código):
 
 ### Capa A — Agente del producto (dentro de `web/`+`backend/`)
 
-Hoy: un chat flotante en Parámetros (`AgenteChat.tsx` + `routers/agente.py`), Gemini 3.5
-Flash-Lite, solo explica/orienta, no modifica datos. **Objetivo 5 del roadmap** lo evoluciona a un
-asistente personal por usuario que navega la interfaz de forma autónoma (vía CopilotKit/AG-UI,
-decisión de la Ruta A) para maximizar la eficiencia en cotizaciones — sin reemplazar la navegación
-manual (Regla 7).
+**Legado, intacto:** chat flotante en Parámetros (`AgenteChat.tsx` + `routers/agente.py`), Gemini
+3.5 Flash-Lite, solo explica/orienta, no modifica datos.
+
+**Objetivo 5, Ciclo 1 — ✅ construido y auditado (2026-09-04/05), acotado a Proyectos/Tareas:**
+motor nuevo con tool-calling real (`backend/agente/`), que asesora **y** opera datos (crea/edita/
+borra con confirmación), vía CopilotKit/AG-UI (decisión de la Ruta A) — confirmado viable en
+Python puro con el paquete `ag-ui-protocol` (SSE nativo, sin runtime Node intermedio). Página
+piloto `web/src/pages/AgentePage.tsx` (ruta `/agente`, solo gestores).
+
+- **Tool-calling:** un `FunctionDeclaration` por acción de negocio concreta (nunca un tool
+  comodín de texto libre — es la lección directa del incidente de borrado por nombre ambiguo).
+  Parámetros de identidad siempre tipados (entero/UUID). El SDK corrige internamente `8.0`→`8`
+  en sus argumentos, pero solo en su camino de "automatic function calling", que este motor
+  desactiva a propósito (`AutomaticFunctionCallingConfig(disable=True)`) para controlar el loop
+  a mano — por eso `agente/tools/proyectos.py` trae su propia coerción `_como_entero`.
+- **Confirmación de dos fases, la pieza más auditada de todo el ciclo:** una tool destructiva
+  (`es_destructiva=True` en `registry.py`) SOLO puede leer y proponer — crea una fila en
+  `agente_acciones_pendientes` (sección 4) con un snapshot verificado de lo que va a afectar.
+  **El modelo NUNCA tiene una tool para confirmar** — el único camino a `estado='confirmada'` es
+  `POST /api/agente/propuestas/{id}/confirmar` (`agente/router.py`), un endpoint HTTP normal que
+  el frontend llama directamente cuando el usuario pulsa un botón real, fuera del loop de
+  function-calling por completo. Esto fue un bloqueante real: la primera auditoría de seguridad
+  (Fase 2) devolvió **NO APRUEBA** porque el diseño original sí dejaba `confirmar_accion` como
+  tool invocable por el modelo — se corrigió y se reverificó como cerrado antes de ejecutar.
+- **Conexiones cortas, nunca una transacción por turno completo:** `db/client.py` expone
+  `rls_connection(usuario)` (context manager, extraído de `db_rls`) — cada tool-call abre su
+  propia conexión, la usa, comitea y cierra antes de que el modelo razone el siguiente paso. El
+  "pensamiento" del modelo (latencia de red de Gemini) nunca ocurre con una conexión de base de
+  datos abierta — el pool (`pool_size=5, max_overflow=5`) no está dimensionado para sostener una
+  transacción durante todo un turno conversacional.
+- **El motor nunca bloquea el proceso:** `runtime.py` es `async` de verdad — la llamada síncrona
+  al SDK de Gemini y las consultas de `psycopg2` van envueltas en `asyncio.to_thread(...)`. Un
+  hallazgo real de la Fase 5 (Backend Architect) encontró que la primera versión ejecutada NO
+  hacía esto, lo que habría congelado TODO el backend (no solo el agente) mientras cualquier
+  turno estuviera en curso, en el despliegue actual de un solo proceso — corregido antes de
+  cerrar el ciclo.
+- **Reutiliza, no duplica, la lógica de negocio:** las tools llaman a `services/proyectos_service.py`
+  (extraído de `routers/proyectos.py`, mismo patrón previsto para el resto de dominios en el
+  Ciclo 2) — cualquier regla de negocio nueva se aplica automáticamente también al agente.
+- **Auditoría:** cada escritura del agente pasa por el mismo `log_accion()` que ya usa cualquier
+  mutación manual, con `metadata.origen = "agente"`.
+- **Roadmap de continuación:** Ciclo 2 (repetir el patrón sobre el resto de dominios: cotización,
+  catálogo, inventario, retales, nesting, parámetros) y Ciclo 3 (las dos superficies de UI
+  completas — chat flotante global + "Centro del Agente" con bitácora/deshacer/modo BI) —
+  ninguno arrancado todavía, decisión del fundador pendiente.
 
 ### Capa B — Agentes de operación de Costo360 S.A.S. (`agentes-operacion/`, sin construir)
 
@@ -442,6 +488,8 @@ el cuaderno Notion "Costo360 — Base de Conocimiento Central".
 | 2026-09-01 | Objetivo 1 (rediseño visual) fusionado a `master`; **Objetivo 6 añadido al roadmap** — módulo de gestión de proyectos, reimplementación nativa del prototipo Base44 del fundador |
 | 2026-09-02/03 | **Objetivo 6 ejecutado y fusionado a `master`** (rama `goal/modulo-proyectos`, ciclo `/goal` completo partido en Ciclo A datos+backend / Ciclo B interfaz, cada uno con su propia Fase 2 y Fase 5 con 3 agentes distintos). 6 tablas `pm_*` (migraciones `0007`/`0008`), 29 rutas en `routers/proyectos.py`, barrido diario en `routers/proyectos_cron.py`, tablero Kanban + detalle de proyecto + cronograma + parte de horas + notificaciones en el frontend (`@hello-pangea/dnd` nuevo). Regla 2/D6 ("el operativo ve todo, edita solo lo suyo") verificada en vivo con la cuenta operativa real, con llamadas directas al backend (no solo botones ocultos). El asistente de IA del módulo se funde con el Objetivo 5 (decisión D2, no construido todavía) |
 | 2026-09-03 (tarde) | **Ronda de bugs post-lanzamiento de Proyectos + wizard de Cotización**, directo en `master`. 4 causas de fondo corregidas: rendimiento del tablero (peticiones paralelas sin cancelar — `AbortController` + reintento ante fallo transitorio), arrastrar-y-soltar roto + columnas sin altura fija (mismo origen: el `Droppable` de `@hello-pangea/dnd` no tenía su propio scroll — resuelto replicando el patrón del prototipo Base44, solo `md:`), modal de sesión (período de gracia de 30s eliminado por decisión del fundador + contraste corregido), y un **bug real de navegación** en el wizard de cotización (`setPaso(3)` apuntaba al mismo paso en el que ya se estaba). Auditado en 2 rondas (Fase 2: Backend Architect + Frontend Developer + Minimal Change Engineer; Fase 5: Code Reviewer + Accessibility Auditor), con 2 commits de arreglos reales sobre hallazgos de la propia auditoría (contraste del modal sobre su fondo compuesto real, y una regla CSS sin `@layer` que le quitaba el cursor "grab" a las asas de arrastre) |
+| 2026-09-04 | Rediseño del modal de notificaciones (ciclo `/goal` acotado, directo en `master`): chip de color por categoría, encabezado unido, hover parejo, timestamp relativo con auto-refresco. Fase 2 (Accessibility Auditor + Code Reviewer) y Fase 5 (UI Designer + Minimal Change Engineer), sin bloqueantes |
+| 2026-09-04/05 | **Objetivo 5, Ciclo 1 ejecutado** (directo en `master`, sin rama aparte — cambio acotado a un dominio piloto): motor del Agente de IA con tool-calling real, confirmación de dos fases antes de borrar, acotado a Proyectos/Tareas. Plan de 3 especialistas (AI Engineer, Software Architect, Product Manager), auditado en 2 rondas: la primera del Security Engineer devolvió **NO APRUEBA** por 3 bloqueantes reales (confirmar no debía ser una tool del modelo; RLS debía aislar también por usuario; ninguna conexión debía sostenerse todo el turno) — corregidos y reverificados como cerrados antes de ejecutar. Fase 5 (Code Reviewer + Backend Architect + Accessibility Auditor, ninguno repetido de fases previas) encontró 2 bugs reales de implementación no vistos en la auditoría del plan: el motor bloqueaba el proceso entero por no usar `asyncio.to_thread` (habría congelado toda la app, no solo el agente, con solo un usuario conversando), y el límite de pasos de razonamiento podía agotarse en silencio sin avisar al usuario (Regla 8) — ambos corregidos y verificados. Migración `0009` (`agente_acciones_pendientes`). Extraído `services/proyectos_service.py` como patrón de reutilización de lógica entre routers HTTP y el agente. Confirmado viable el protocolo AG-UI en Python puro (`ag-ui-protocol`, sin runtime Node). **Pendiente real:** sin `GEMINI_AGENTE_API_KEY` configurada, no se pudo probar la conversación real con el modelo — solo el camino degradado (backend/frontend responden con gracia sin clave, verificado en vivo) |
 
 ---
 
@@ -454,9 +502,9 @@ Ver `docs/ROADMAP_COSTO360.md` para el detalle completo con fases y dependencias
 2. Landing page de alto impacto — independiente, puede avanzar en cualquier momento.
 3. Construcción de los 7 agentes de operación (Capa B).
 4. Infraestructura gratuita para los agentes, con ruta de migración a infraestructura de pago.
-5. Agente de IA dentro del producto (Capa A, evolucionado) — depende del Objetivo 1 (ya
-   cumplido); ahora también incluye el asistente del módulo de gestión de proyectos
-   (decisión D2 del Objetivo 6).
+5. 🔄 Agente de IA dentro del producto (Capa A, evolucionado) — **Ciclo 1 completado
+   (2026-09-04/05)**, acotado a Proyectos/Tareas (ver sección 8). Ciclo 2 (resto de dominios) y
+   Ciclo 3 (las dos superficies de UI completas) sin arrancar — decisión del fundador pendiente.
 6. ✅ Módulo de gestión de proyectos (datos + backend + interfaz; el asistente de IA propio
    del módulo queda para el Objetivo 5).
 

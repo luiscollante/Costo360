@@ -107,3 +107,27 @@ parche) / **Checklist accionable** (qué revisar la próxima vez para no repetir
   "nominal" de la clase que se ve en el JSX. Si el elemento es compartido por toda la app (como
   `<main>` en `AppLayout.tsx`), preferir fijar el override explícito también en el breakpoint
   conflictivo (`sm:pt-[...]`) antes que ajustar cada consumidor externo al valor real.
+
+## 7. Una función `async def` que llama código síncrono directo (SDK de IA, `psycopg2`) bloquea TODO el proceso, no solo esa petición
+
+- **Síntoma:** con un solo usuario usando una función lenta (un turno de agente de IA con varias
+  llamadas al modelo, por ejemplo), el resto de la aplicación se congela para TODOS los demás
+  usuarios — cotizar, iniciar sesión, cualquier pantalla — mientras esa función está en curso.
+  No hay ningún error ni excepción: todo simplemente deja de responder un rato.
+- **Causa raíz:** el backend corre como un único proceso `uvicorn` (`ARQUITECTURA_MAESTRA.md`
+  sección 3.4 — long-lived, no serverless, sin múltiples workers). Una función `async def` que
+  llama directamente a una librería síncrona (el SDK `google-genai` con `client.models.generate_content(...)`,
+  o cualquier consulta de `psycopg2`) sin envolverla en `await asyncio.to_thread(...)` bloquea el
+  único hilo del event loop de `asyncio` — mientras esa llamada no retorna, ninguna otra corrutina
+  del proceso entero puede avanzar, sin importar que sean requests de otros usuarios totalmente
+  ajenos a esa función. Declarar la función `async def` no la vuelve asíncrona por sí sola: solo
+  lo es el código que de verdad usa `await` sobre algo no bloqueante. Encontrado en el motor del
+  Agente de IA (`backend/agente/runtime.py`, Objetivo 5) — la primera versión ejecutada llamaba a
+  Gemini y a las conexiones RLS de forma síncrona dentro de un generador `async`.
+- **Checklist accionable:** cualquier función `async def` que llame a una librería sin soporte
+  nativo de `asyncio` (SDKs sin variante `.aio.*`, `psycopg2`, cualquier I/O bloqueante clásico)
+  debe envolver esa llamada puntual en `await asyncio.to_thread(fn, *args)` — nunca invocarla
+  directo. Verificar esto explícitamente para cualquier endpoint/generador nuevo que sea
+  potencialmente lento (llamadas a modelos de IA, reportes pesados, PDFs grandes): la pregunta de
+  auditoría correcta no es "¿la función es `async`?" sino "¿todo lo que hace dentro usa `await`
+  sobre algo que de verdad libera el event loop?".

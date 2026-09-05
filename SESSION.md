@@ -2,6 +2,122 @@
 
 ---
 
+## Sesión: 2026-09-04/05 — Objetivo 5, Ciclo 1: motor del Agente de IA (piloto en Proyectos)
+
+### Qué se hizo
+El fundador pidió revisar el roadmap y eligió atacar el Objetivo 5 (agente de IA dentro del
+producto). Ante 3 preguntas de alcance, eligió la versión más ambiciosa desde el día uno: todo
+el producto (no acotado a un módulo), capaz de asesorar Y operar datos (crear/editar/borrar con
+confirmación), en dos superficies (chat flotante + página dedicada). Se le señaló el riesgo real
+(un agente con permiso de borrar datos es la pieza más delicada del roadmap, más aún tras el
+incidente histórico de un borrado accidental) antes de seguir. Ciclo `/goal` completo (Fases
+0-6), directo en `master`. Detalle técnico exhaustivo: `ARQUITECTURA_MAESTRA.md` sección 8.
+
+- **Fase 0-1 (mapa + plan):** se leyó el agente actual (`routers/agente.py`,
+  `AgenteChat.tsx` — chat simple, sin tool-calling, solo Parámetros) como línea base. 3
+  planificadores en paralelo (AI Engineer: motor/tool-calling; Software Architect: integración
+  de sistema; Product Manager: flujo de producto/UX), cada uno con contexto completo del código
+  real. Los 3, sin coordinarse entre sí, coincidieron en empezar por Proyectos como dominio
+  piloto y en partir el trabajo en al menos 3 ciclos — más grande que el rediseño visual o el
+  módulo de Proyectos, que ya habían necesitado 2 ciclos cada uno.
+- **Fase 2 (auditoría del plan), 2 rondas:**
+  - Ronda 1 — Security Engineer, Database Optimizer y UX Architect en paralelo. El Security
+    Engineer devolvió **NO APRUEBA** con 3 bloqueantes estructurales: (1) `confirmar_accion` no
+    podía ser una tool invocable por el modelo — debía ser un endpoint HTTP separado, llamado
+    directamente por el frontend, para que ni una inyección de prompt pudiera cerrar el círculo
+    "proponer + autoconfirmar"; (2) la tabla de propuestas pendientes debía aislar por
+    `usuario_id` además de `empresa_id` (el patrón `pm_*` que se iba a copiar solo aísla por
+    empresa); (3) ninguna conexión `db_rls` podía sostenerse durante todo un turno de streaming
+    — el pool (`pool_size=5, max_overflow=5`) no aguanta eso. El Database Optimizer y el UX
+    Architect devolvieron "aprueba con cambios" (CHECK constraints, índices, snapshot de filas
+    afectadas en columna propia, reutilizar el patrón de confirmación de dos pasos ya probado en
+    `TareaDialog.tsx` en vez de inventar uno nuevo).
+  - Las correcciones se incorporaron al plan con las soluciones exactas que los propios
+    auditores especificaron (no hubo que rediseñar el enfoque general).
+  - Ronda 2 — reverificación puntual, solo de los 3 bloqueantes, por otra instancia del Security
+    Engineer: **APRUEBA**, los 3 cerrados, con 2 notas de implementación a cumplir en la
+    ejecución (UPDATE atómico para confirmar, sin ventana de doble-clic; `db_rls` reutilizable
+    como conexión corta, no solo como dependencia de FastAPI).
+- **Fase 3:** se explicó el plan corregido en lenguaje simple; el fundador aprobó arrancar
+  **solo el Ciclo 1**, dejando Ciclo 2 y 3 para decidir después de ver algo funcionando.
+- **Fase 4 (ejecución), 8 micro-commits:** migración `0009_agente_acciones.sql`; `rls_connection`
+  (conexión corta reutilizable, extraída de `db_rls` en `db/client.py`); `services/proyectos_service.py`
+  (lógica extraída de `routers/proyectos.py` sin cambiar comportamiento — verificado en vivo
+  creando y borrando una tarea real); paquete `backend/agente/` (motor completo); página piloto
+  `web/src/pages/AgentePage.tsx`. Un spike real confirmó que el protocolo AG-UI funciona en
+  Python puro (paquete `ag-ui-protocol`, sin runtime Node) — el riesgo técnico más grande de
+  todo el plan quedó despejado con evidencia, no con una suposición.
+- **Fase 5 (auditoría del código ejecutado):** Code Reviewer + Backend Architect + Accessibility
+  Auditor, ninguno repetido de fases anteriores. Confirmaron los 3 bloqueantes de seguridad
+  cerrados EN EL CÓDIGO real (no solo en el plan) — verificado contra el SQL exacto de la
+  migración y el código fuente instalado del SDK. Encontraron 4 hallazgos reales de
+  implementación que ninguna auditoría de plan podía anticipar:
+  1. **El motor bloqueaba el proceso entero** — `runtime.py` era `async def` pero nunca hacía
+     `await` de verdad; las llamadas síncronas a Gemini y a `psycopg2` corrían sobre el mismo
+     hilo del event loop. En el despliegue actual (un solo proceso), esto habría congelado TODA
+     la app — cotizaciones, login, cualquier pantalla — mientras cualquier usuario tuviera una
+     conversación con el agente en curso. Corregido con `asyncio.to_thread(...)` en ambos
+     puntos.
+  2. **El límite de pasos de razonamiento (`_MAX_PASOS=6`) podía agotarse en silencio** —
+     si el modelo encadenaba tool-calls sin nunca llegar a una respuesta final, el turno
+     terminaba con la misma señal que un éxito normal, sin avisar al usuario (viola la Regla 8).
+     Corregido con `for...else` + un mensaje explícito.
+  3. Un mensaje de error genérico ("no pudo responder") que no avisaba si una acción SÍ se
+     había ejecutado y comiteado antes de que un paso posterior fallara. Corregido con una
+     lista de acciones ya ejecutadas que cambia el mensaje si aplica.
+  4. Un bug latente de coerción `float`→`int`: Gemini puede devolver `8.0` en vez de `8` para un
+     argumento entero; el propio SDK `google-genai` trae un parche para esto pero solo se aplica
+     en su camino de "automatic function calling", que este motor desactiva a propósito.
+     Corregido con un helper `_como_entero` propio.
+  5. **Hallazgo de accesibilidad real** (no solo cosmético): la tarjeta de confirmación no
+     movía el foco ni se anunciaba a un lector de pantalla (`role="alertdialog"` sin ninguna de
+     las garantías que ese rol promete), y los botones "Confirmar"/"Cancelar" no decían qué se
+     estaba confirmando — el mismo tipo de descuido que ya se había corregido antes en
+     `TareaDialog.tsx` para el borrado de tareas, no reutilizado aquí. Corregido replicando ese
+     patrón exacto (foco acotado + `aria-label` contextual + `role="alert"`).
+- **Fase 6:** grafo reindexado; `ARQUITECTURA_MAESTRA.md` (secciones 3.3, 4, 8, 11, 12),
+  `docs/ROADMAP_COSTO360.md` (Fase 3), `PROGRESS.md` y este archivo actualizados.
+
+### Archivos tocados
+- **Backend nuevos:** `backend/migrations/0009_agente_acciones.sql`, `backend/agente/`
+  (`__init__.py`, `registry.py`, `confirmations.py`, `runtime.py`, `router.py`,
+  `tools/__init__.py`, `tools/proyectos.py`), `backend/models/agente.py`,
+  `backend/services/proyectos_service.py`.
+- **Backend modificados:** `backend/db/client.py` (`rls_connection`), `backend/main.py`
+  (`_self_test_agente`, registro del router nuevo), `backend/routers/proyectos.py` (3 endpoints
+  delegan al servicio nuevo, resto sin cambios de comportamiento), `backend/requirements.txt`
+  (`ag-ui-protocol`).
+- **Frontend nuevos:** `web/src/pages/AgentePage.tsx`.
+- **Frontend modificados:** `web/src/api/agente.ts` (`streamAgente`, `confirmarPropuesta`,
+  `descartarPropuesta`), `web/src/App.tsx` (ruta `/agente`), `web/src/components/Sidebar.tsx`
+  (ítem "Asistente (beta)").
+- **Docs:** `ARQUITECTURA_MAESTRA.md`, `docs/ROADMAP_COSTO360.md`, `PROGRESS.md`, este archivo.
+
+### Decisiones tomadas
+- Alcance máximo desde el día uno (todo el producto, asesora+opera, dos superficies) — decisión
+  explícita del fundador tras conocer el riesgo real.
+- Partir en 3 ciclos (Motor+piloto / Expansión de dominios / UI completa), recomendación
+  convergente de los 3 planificadores, aprobada por el fundador.
+- Confirmar una acción destructiva es un endpoint HTTP separado, nunca una tool del modelo —
+  no negociable, es la corrección del bloqueante de seguridad más serio de la Fase 2.
+- La tabla `agente_acciones_pendientes` aísla por usuario Y empresa (no el patrón `pm_*`,
+  que es intencionalmente compartido a nivel de taller).
+
+### Pendiente / primera tarea de la próxima sesión
+1. **Configurar `GEMINI_AGENTE_API_KEY` real** en `backend/.env` — es lo único que falta para
+   probar la conversación real con el modelo (el camino degradado sin clave ya se verificó en
+   vivo, backend y frontend responden con gracia).
+2. Con la clave configurada, probar en el navegador (`/agente`, cuenta gestora): listar tareas
+   de un proyecto real, crear una tarea, y sobre todo el flujo completo de borrar una tarea
+   (proponer → ver la tarjeta de confirmación → confirmar → verificar que se borró de verdad).
+3. Después de esa prueba real: decidir si se arranca el Ciclo 2 (expandir a más dominios) o el
+   Ciclo 3 (las dos superficies de UI completas) del Objetivo 5, o si se prioriza otro frente
+   del roadmap (landing page, agentes de operación).
+4. Sigue pendiente desde antes: confirmar el arrastre real de mouse en el tablero de Proyectos
+   (2026-09-03) — no se tocó esta sesión, y el fundador pidió explícitamente no tocar esa zona.
+
+---
+
 ## Sesión: 2026-09-04 — Rediseño del modal de notificaciones + servidor levantado para pruebas
 
 ### Qué se hizo
