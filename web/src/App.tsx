@@ -28,6 +28,7 @@ import CotizacionExpressPage from '@/pages/CotizacionExpressPage'
 import CotizacionAIUPage from '@/pages/CotizacionAIUPage'
 import ToastHost from '@/components/ToastHost'
 import LandingPage from '@/pages/LandingPage'
+import AgentePage from '@/pages/AgentePage'
 import SessionGuard from '@/components/SessionGuard'
 
 const queryClient = new QueryClient({
@@ -111,6 +112,7 @@ export default function App() {
               <Route path="/nesting" element={<Private><NestingPage /></Private>} />
               <Route path="/parametros" element={<Private><RoleRoute><ParametrosPage /></RoleRoute></Private>} />
               <Route path="/materiales" element={<Private><MaterialesPage /></Private>} />
+              <Route path="/agente" element={<Private><RoleRoute><AgentePage /></RoleRoute></Private>} />
               <Route path="/configuracion" element={<Private><RoleRoute><ConfigPage /></RoleRoute></Private>} />
               <Route path="/admin" element={<AdminRoute><SessionGuard /><AdminPage /></AdminRoute>} />
               <Route path="*" element={<HomeRedirect />} />

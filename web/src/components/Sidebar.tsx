@@ -20,6 +20,7 @@ import {
   HardHat,
   BookMarked,
   FolderKanban,
+  Sparkles,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -59,6 +60,8 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { to: '/parametros',    label: 'Parámetros',    Icon: SlidersHorizontal, requiereDashboard: true },
       { to: '/configuracion', label: 'Configuración', Icon: Settings2,         requiereDashboard: true },
+      // Piloto del Objetivo 5 (Ciclo 1) — solo Proyectos/Tareas por ahora, gestor únicamente.
+      { to: '/agente',        label: 'Asistente (beta)', Icon: Sparkles,       requiereDashboard: true },
     ],
   },
 ]
