@@ -74,6 +74,58 @@ def cambiar_estado_cotizacion(conn, usuario: dict, cot_id: int, estado: str, *,
     return {"id": row[0], "numero": row[1], "cliente": row[2], "precio": row[3], "estado": row[4]}
 
 
+def listar_historial(conn, usuario: dict, *, busqueda: str = "", estado: str = "",
+                      fecha_desde: str = "", fecha_hasta: str = "", limite: int = 200) -> list[dict]:
+    restringido, uid = scope_propio(usuario)
+    cur = conn.cursor()
+    cols = "id,numero,fecha,cliente,material,tipo,ml,precio,margen,estado"
+    condiciones, params = [], []
+    if restringido:
+        condiciones.append("usuario_id = %s")
+        params.append(uid)
+    if busqueda:
+        condiciones.append("(cliente ILIKE %s OR numero ILIKE %s OR material ILIKE %s)")
+        params += [f"%{busqueda}%", f"%{busqueda}%", f"%{busqueda}%"]
+    if estado:
+        condiciones.append("estado = %s")
+        params.append(estado)
+    if fecha_desde:
+        condiciones.append("fecha::date >= %s")
+        params.append(fecha_desde)
+    if fecha_hasta:
+        condiciones.append("fecha::date <= %s")
+        params.append(fecha_hasta)
+    where_sql = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
+    cur.execute(f"SELECT {cols} FROM cotizaciones {where_sql} ORDER BY id DESC LIMIT %s",
+                params + [limite])
+    rows = cur.fetchall()
+    cur.close()
+    col_names = cols.split(",")
+    return [dict(zip(col_names, row)) for row in rows]
+
+
+def obtener_cotizacion_datos(conn, usuario: dict, cot_id: int) -> dict | None:
+    """`datos_json` completo (piezas, materiales, desglose de costos) — para
+    ver el detalle a fondo, a diferencia de `obtener_cotizacion_resumen`."""
+    import json
+    restringido, uid = scope_propio(usuario)
+    cur = conn.cursor()
+    if restringido:
+        cur.execute(
+            "SELECT datos_json, numero FROM cotizaciones WHERE id = %s AND usuario_id = %s",
+            (cot_id, uid),
+        )
+    else:
+        cur.execute("SELECT datos_json, numero FROM cotizaciones WHERE id = %s", (cot_id,))
+    row = cur.fetchone()
+    cur.close()
+    if row is None:
+        return None
+    datos_json_str, numero = row
+    datos = json.loads(datos_json_str) if isinstance(datos_json_str, str) else datos_json_str
+    return {"datos": datos, "numero": numero}
+
+
 def obtener_cotizacion_resumen(conn, usuario: dict, cot_id: int) -> dict | None:
     """Fila resumida (para tarjetas de confirmación y respuestas de tools) —
     nunca el `datos_json` completo, que puede ser grande."""

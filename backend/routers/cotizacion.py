@@ -142,44 +142,10 @@ def historial_cotizaciones(
     conn=Depends(db_rls),
     usuario=Depends(get_current_user),
 ):
-    cur = conn.cursor()
-    restringido, uid = scope_propio(usuario)
-
-    cols = "id,numero,fecha,cliente,material,tipo,ml,precio,margen,estado"
-
-    condiciones = []
-    params: list = []
-
-    if restringido:
-        condiciones.append("usuario_id = %s")
-        params.append(uid)
-
-    if busqueda:
-        condiciones.append("(cliente ILIKE %s OR numero ILIKE %s OR material ILIKE %s)")
-        params += [f"%{busqueda}%", f"%{busqueda}%", f"%{busqueda}%"]
-
-    if estado:
-        condiciones.append("estado = %s")
-        params.append(estado)
-
-    if fecha_desde:
-        condiciones.append("fecha::date >= %s")
-        params.append(fecha_desde)
-
-    if fecha_hasta:
-        condiciones.append("fecha::date <= %s")
-        params.append(fecha_hasta)
-
-    where_sql = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
-    cur.execute(
-        f"SELECT {cols} FROM cotizaciones {where_sql} ORDER BY id DESC LIMIT 200",
-        params,
+    return cotizacion_service.listar_historial(
+        conn, usuario, busqueda=busqueda, estado=estado,
+        fecha_desde=fecha_desde, fecha_hasta=fecha_hasta,
     )
-
-    rows = cur.fetchall()
-    cur.close()
-    col_names = cols.split(",")
-    return [dict(zip(col_names, row)) for row in rows]
 
 
 @router.get("/{cot_id}/datos")
@@ -189,25 +155,10 @@ def obtener_datos_cotizacion(
     usuario=Depends(get_current_user),
 ):
     """Retorna datos_json de una cotización para poder editarla."""
-    restringido, uid = scope_propio(usuario)
-    cur = conn.cursor()
-    if restringido:
-        cur.execute(
-            "SELECT datos_json, numero FROM cotizaciones WHERE id = %s AND usuario_id = %s",
-            (cot_id, uid),
-        )
-    else:
-        cur.execute("SELECT datos_json, numero FROM cotizaciones WHERE id = %s", (cot_id,))
-    row = cur.fetchone()
-    cur.close()
-    if not row:
+    resultado = cotizacion_service.obtener_cotizacion_datos(conn, usuario, cot_id)
+    if resultado is None:
         raise HTTPException(status_code=404, detail="Cotización no encontrada")
-    datos_json_str, numero = row
-    try:
-        datos = json.loads(datos_json_str) if isinstance(datos_json_str, str) else datos_json_str
-    except Exception:
-        raise HTTPException(status_code=500, detail="datos_json inválido")
-    return {"datos": datos, "numero": numero}
+    return resultado
 
 
 @router.delete("/{cot_id}")
