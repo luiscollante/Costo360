@@ -124,9 +124,12 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <aside className="glass-emerald w-56 shrink-0 flex flex-col h-screen sticky top-0 relative z-10">
-      {/* Logo — negro carbón real del logo (identidad de marca), separado del
-          verde esmeralda de navegación por el propio cambio de color. */}
-      <div className="bg-brand-carbon px-4 py-2.5 flex flex-col items-center gap-0.5 shrink-0">
+      {/* Logo — vive sobre el extremo negro carbón del degradado continuo de
+          `.glass-emerald` (no un bloque sólido propio). El filo dorado marca
+          la costura real hacia la navegación, igual que el dorado traza los
+          bordes de color en el isotipo real (decisión validada con 3 agentes
+          de diseño tras el primer intento en bloques sólidos). */}
+      <div className="border-b border-brand-gold/35 px-4 py-2.5 flex flex-col items-center gap-0.5 shrink-0">
         <Logo variant="light" className="w-[132px] h-auto object-contain" />
         <p className="text-[10px] text-[#E4D8BF] leading-none">Sistema Integral de Cotizaciones</p>
       </div>
@@ -166,9 +169,10 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         )}
       </nav>
 
-      {/* Usuario — mismo negro carbón del encabezado, para que la barra quede
-          "encuadrada" en negro arriba y abajo, con el verde de navegación en medio. */}
-      <div className="bg-brand-carbon px-4 py-2.5 shrink-0">
+      {/* Usuario — vive sobre el extremo negro carbón inferior del degradado
+          continuo. Filo dorado en la costura hacia la navegación (misma
+          lógica que el encabezado). */}
+      <div className="border-t border-brand-gold/35 px-4 py-2.5 shrink-0">
         <p className="text-xs text-white font-medium truncate">{usuario?.nombre_completo}</p>
         <p className="text-[10px] text-[#E4D8BF] capitalize">{usuario?.cargo_visible || usuario?.rol_codigo}</p>
         <button

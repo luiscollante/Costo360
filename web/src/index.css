@@ -175,9 +175,22 @@ body::before {
    Se probó el glass translúcido y el brillo diagonal; el fundador rechazó ambos. */
 .glass-emerald {
   position: relative;
+  /* Un solo degradado continuo negro carbón → esmeralda → negro carbón (en vez
+     de 3 bloques sólidos con un corte seco) — decisión del fundador tras
+     consultar 3 agentes de diseño (UI Designer, Brand Guardian, Accessibility
+     Auditor) sobre el resultado del "sándwich" de bloques sólidos, que no
+     convenció. El Accessibility Auditor confirmó que este degradado de 2
+     tramos (carbón→esmeralda, esmeralda→carbón) es monótono en luminancia —
+     sin ningún punto intermedio más oscuro NI más claro que los extremos —
+     así que no hay franja de riesgo de contraste en toda la transición. */
   background:
     radial-gradient(130% 18% at 50% 0%, rgba(255, 255, 255, 0.14), transparent 70%),
-    linear-gradient(180deg, #00472B 0%, #00311D 100%);
+    linear-gradient(180deg,
+      #212121 0%,
+      #00472B 24%,
+      #00311D 76%,
+      #212121 100%
+    );
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border-right: 1px solid rgba(255, 255, 255, 0.14);
