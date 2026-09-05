@@ -21,12 +21,26 @@ export default function AgenteChat() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const contenedorRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [mensajes, loading, open])
+
+  // Clic fuera del botón/panel cierra el modal (el botón ya maneja su propio
+  // toggle en su onClick, así que un clic ahí nunca dispara este cierre).
+  useEffect(() => {
+    if (!open) return
+    function alClicFuera(e: MouseEvent) {
+      if (contenedorRef.current && !contenedorRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', alClicFuera)
+    return () => document.removeEventListener('mousedown', alClicFuera)
+  }, [open])
 
   async function enviar(texto?: string) {
     const contenido = (texto ?? input).trim()
@@ -56,7 +70,7 @@ export default function AgenteChat() {
   }
 
   return (
-    <>
+    <div ref={contenedorRef}>
       {/* Botón flotante */}
       <motion.button
         onClick={() => setOpen((v) => !v)}
@@ -164,6 +178,6 @@ export default function AgenteChat() {
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </div>
   )
 }
