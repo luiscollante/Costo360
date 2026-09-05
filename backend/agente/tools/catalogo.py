@@ -227,7 +227,9 @@ registrar(ToolSpec(
         description=(
             "Prepara una edición de un material existente (precio, nombre, categoría, "
             "proveedor, activo/inactivo). NUNCA la ejecuta de inmediato: siempre crea una "
-            f"propuesta que el usuario debe confirmar en pantalla. {_AVISO_ANTIENCADENAMIENTO}"
+            "propuesta que el usuario debe confirmar en pantalla. NUNCA uses esta tool si el "
+            "usuario dice 'borra', 'elimina' o 'quita' un material — eso es "
+            f"catalogo_eliminar_material, no un cambio de precio. {_AVISO_ANTIENCADENAMIENTO}"
         ),
         parameters={
             "type": "OBJECT",
@@ -286,9 +288,12 @@ registrar(ToolSpec(
     declaracion=gtypes.FunctionDeclaration(
         name="catalogo_eliminar_material",
         description=(
-            "Prepara el borrado de un material del catálogo del taller. NUNCA borra de "
-            "inmediato: crea una propuesta que el usuario debe confirmar explícitamente "
-            f"en pantalla. {_AVISO_ANTIENCADENAMIENTO}"
+            "Prepara el borrado de un material del catálogo del taller — úsala siempre que "
+            "el usuario diga 'borra', 'elimina' o 'quita' un material, sin importar qué "
+            "precio tenga o haya tenido antes; nunca interpretes 'borrar' como volver a un "
+            "precio anterior (eso sería catalogo_editar_material, una tool distinta). NUNCA "
+            "borra de inmediato: crea una propuesta que el usuario debe confirmar "
+            f"explícitamente en pantalla. {_AVISO_ANTIENCADENAMIENTO}"
         ),
         parameters={
             "type": "OBJECT",
