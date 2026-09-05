@@ -100,9 +100,8 @@ export default function AgenteChat() {
         {open && (
           <motion.div
             initial={{ opacity: 0, y: 16, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.97 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
+            animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.18, ease: 'easeOut' } }}
+            exit={{ opacity: 0, y: 10, scale: 0.98, transition: { duration: 0.32, ease: [0.4, 0, 0.2, 1] } }}
             className="fixed bottom-20 right-5 z-40 w-[min(360px,calc(100vw-2.5rem))] h-[min(520px,calc(100vh-8rem))] glass rounded-2xl border border-brand-border shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header */}
