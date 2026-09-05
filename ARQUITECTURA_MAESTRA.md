@@ -273,8 +273,17 @@ Tokens reales extraídos de `web/src/index.css` (verificado en código):
   NO se usa (se quitó en el Ciclo 1).
 - **Modo de color:** light-mode estricto (`html{color-scheme:light}`) — la app NO tiene ni debe
   tener modo oscuro. El toggle sol/luna, `useTheme`, `data-theme`/`cm-theme` y el `<script>` de
-  tema en `index.html` se **eliminaron** en el Ciclo 1. `@media (prefers-reduced-motion)` +
-  `<MotionConfig reducedMotion="user">` respetan la preferencia del sistema.
+  tema en `index.html` se **eliminaron** en el Ciclo 1.
+- **Animaciones — decisión revertida (2026-09-05):** hasta esta fecha, `@media
+  (prefers-reduced-motion)` + `<MotionConfig reducedMotion="user">` + un chequeo `matchMedia` en
+  `useCountUp` respetaban la preferencia "reducir movimiento" del sistema operativo (accesibilidad
+  real para trastornos vestibulares). El fundador pidió revertirlo: en Windows ese mismo
+  interruptor lo usa mucha gente solo por rendimiento/batería, sin necesitar accesibilidad, y
+  apagaba TODAS las animaciones de la app sin que el usuario lo notara — no es un caso aislado de
+  un componente, es un `MotionConfig` global. Decisión consciente: las animaciones de Costo360
+  ahora se muestran siempre (`reducedMotion="never"`), sin importar la preferencia del sistema.
+  Trade-off aceptado explícitamente: un usuario que sí necesite reducir movimiento por salud ya no
+  tiene esa protección automática en esta app.
 - **Barra lateral (`.glass-emerald`):** **actualizado 2026-09-05.** Un solo degradado vertical
   continuo de 4 paradas — `#212121` (negro carbón, real de la tinta del wordmark) → `#00472B`
   (esmeralda, 24%) → `#00311D` (esmeralda profundo, 76%) → `#212121` (100%) — + halo de luz

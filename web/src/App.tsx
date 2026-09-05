@@ -92,7 +92,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <MotionConfig reducedMotion="user">
+      <MotionConfig reducedMotion="never">
         <ToastHost />
         <AuthGate>
           <BrowserRouter>

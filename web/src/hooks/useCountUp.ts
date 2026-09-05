@@ -6,15 +6,6 @@ export function useCountUp(target: number, duration = 700): number {
   const prevRef = useRef(0)
 
   useEffect(() => {
-    // Respeta "reducir movimiento" del sistema: salta al valor final sin animar.
-    const reduce = typeof window !== 'undefined'
-      && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    if (reduce) {
-      prevRef.current = target
-      setValue(target)
-      return
-    }
-
     const from = prevRef.current
     const start = performance.now()
     const tick = (now: number) => {

@@ -129,17 +129,14 @@ body::before {
   outline-color: var(--color-brand-bg);
 }
 
-/* Respeta la preferencia del sistema de reducir movimiento. El movimiento en JS
-   se corta aparte con <MotionConfig reducedMotion="user"> y matchMedia en
-   useCountUp (ver R2). */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
+/* Decisión del fundador (2026-09-05): las animaciones de Costo360 se muestran
+   siempre, sin importar la preferencia "reducir movimiento" del sistema
+   operativo — ese ajuste de Windows lo usa mucha gente solo por rendimiento,
+   no por necesidad de accesibilidad, y apagaba TODAS las animaciones de la
+   app sin que el usuario lo notara. Antes se respetaba vía este media query +
+   <MotionConfig reducedMotion="user"> + matchMedia en useCountUp (regla R2 del
+   rediseño visual) — revertido a propósito por decisión explícita del fundador.
+*/
 
 /* Números tabulares — una sola clase para todo dato numérico (hallazgo G) */
 .num {
