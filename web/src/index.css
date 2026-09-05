@@ -37,6 +37,10 @@
   --color-brand-emerald: #00472B;
   --color-brand-emerald-deep: #00311D;
 
+  /* Negro carbón real del logo (muestreado de assets/marca/logo-versiones-oscuras-original.png
+     — es el color de relleno exacto de la tinta oscura del wordmark, no un negro inventado). */
+  --color-brand-carbon: #212121;
+
   --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
 }

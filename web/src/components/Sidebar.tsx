@@ -124,10 +124,11 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <aside className="glass-emerald w-56 shrink-0 flex flex-col h-screen sticky top-0 relative z-10">
-      {/* Logo */}
-      <div className="px-4 py-2.5 border-b border-white/15 flex flex-col items-center gap-0.5 shrink-0">
+      {/* Logo — negro carbón real del logo (identidad de marca), separado del
+          verde esmeralda de navegación por el propio cambio de color. */}
+      <div className="bg-brand-carbon px-4 py-2.5 flex flex-col items-center gap-0.5 shrink-0">
         <Logo variant="light" className="w-[132px] h-auto object-contain" />
-        <p className="text-[10px] text-[#E4D8BF] leading-none">Sistema de Cotizaciones</p>
+        <p className="text-[10px] text-[#E4D8BF] leading-none">Sistema Integral de Cotizaciones</p>
       </div>
 
       {/* Nav */}
@@ -165,8 +166,9 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         )}
       </nav>
 
-      {/* Usuario */}
-      <div className="px-4 py-2.5 border-t border-white/15 shrink-0">
+      {/* Usuario — mismo negro carbón del encabezado, para que la barra quede
+          "encuadrada" en negro arriba y abajo, con el verde de navegación en medio. */}
+      <div className="bg-brand-carbon px-4 py-2.5 shrink-0">
         <p className="text-xs text-white font-medium truncate">{usuario?.nombre_completo}</p>
         <p className="text-[10px] text-[#E4D8BF] capitalize">{usuario?.cargo_visible || usuario?.rol_codigo}</p>
         <button
