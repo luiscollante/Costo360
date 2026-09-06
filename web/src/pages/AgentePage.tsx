@@ -22,7 +22,7 @@ import {
 // valor real "gana" para ESA fila puntual (nunca se oculta toda la lista:
 // solo el campo que de verdad ganó, para no esconder p. ej. "Categoría" de
 // una lámina que sí tiene referencia y por eso usó "referencia" como título).
-const _CAMPOS_PRINCIPAL = ['numero', 'titulo', 'referencia', 'material_categoria'] as const
+const _CAMPOS_PRINCIPAL = ['numero', 'titulo', 'referencia', 'material_categoria', 'nombre_interno', 'concepto'] as const
 // Ids/flags internos sin valor para que un humano confirme una acción —
 // estos SÍ se ocultan siempre, sin importar qué ganó como principal.
 const _CAMPOS_OCULTOS = new Set(['id', 'base_id', 'es_propio', 'activo', 'actualizado_en'])
@@ -35,7 +35,8 @@ function _tieneValor(v: unknown): boolean {
 }
 const _CAMPOS_MONEDA = new Set([
   'precio', 'precio_m2', 'precio_lamina', 'costo_unitario',
-  'precio_recuperacion', 'precio_mercado_m2',
+  'precio_recuperacion', 'precio_mercado_m2', 'valor_cop',
+  'terminada', 'acabados', 'estructura', 'comercial',
 ])
 
 /** true tanto para 'precio_m2' como para su variante 'precio_m2_propuesto' —
@@ -47,6 +48,16 @@ const _CAMPOS_MONEDA = new Set([
 function _esCampoMoneda(campo: string): boolean {
   const base = campo.endsWith('_propuesto') ? campo.slice(0, -'_propuesto'.length) : campo
   return _CAMPOS_MONEDA.has(base)
+}
+
+// Parámetros es el único dominio con campos de PORCENTAJE de verdad (guardados
+// como fracción 0.05=5% en la base, pero mostrados ×100 con signo % — nunca la
+// fracción cruda, que sería justo la ambigüedad que este dominio busca evitar).
+const _CAMPOS_PORCENTAJE = new Set(['valor_pct'])
+
+function _esCampoPorcentaje(campo: string): boolean {
+  const base = campo.endsWith('_propuesto') ? campo.slice(0, -'_propuesto'.length) : campo
+  return _CAMPOS_PORCENTAJE.has(base)
 }
 const _ETIQUETAS: Record<string, string> = {
   cliente: 'Cliente', precio: 'Precio', fecha: 'Fecha', estado: 'Estado',
@@ -60,6 +71,10 @@ const _ETIQUETAS: Record<string, string> = {
   m2_disponibles: 'm² disponibles', m2_original: 'm² original',
   precio_recuperacion: 'Precio de recuperación', precio_mercado_m2: 'Precio de mercado (m²)',
   fecha_ingreso: 'Fecha de ingreso',
+  material: 'Material', nombre_interno: 'Tarifa', concepto: 'Concepto',
+  inductor: 'Tipo de cálculo', unidad: 'Unidad', valor_cop: 'Valor', valor_pct: 'Valor (%)',
+  terminada: 'Casa terminada', acabados: 'En acabados', estructura: 'En estructura',
+  comercial: 'Local comercial',
 }
 
 /** Cualquier "<campo>_propuesto" (no solo precio_m2_propuesto) recibe una
@@ -93,6 +108,7 @@ function _mensajeConfirmacion(p: Propuesta): string {
 
 function _valorLegible(campo: string, valor: unknown): string {
   if (_esCampoMoneda(campo) && typeof valor === 'number') return formatCOP(valor)
+  if (_esCampoPorcentaje(campo) && typeof valor === 'number') return `${valor}%`
   if (campo === 'fecha' && typeof valor === 'string') return formatFecha(valor)
   if (typeof valor === 'boolean') return valor ? 'Sí' : 'No'
   return String(valor)
