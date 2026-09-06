@@ -192,13 +192,17 @@ def _editar_material(conn, usuario: dict, args: dict) -> dict:
     if actual is None:
         return {"error": f"No existe ningún material con id {material_id} en este taller"}
 
-    payload = {"material_id": material_id, **body.model_dump(exclude_unset=True, exclude_none=True)}
-    precio_propuesto = body.precio_m2 if body.precio_m2 is not None else actual["precio_m2"]
+    cambios = body.model_dump(exclude_unset=True, exclude_none=True)
+    payload = {"material_id": material_id, **cambios}
+    # Un "<campo>_propuesto" por cada campo que de verdad cambia — no solo precio_m2 —
+    # para que la tarjeta de confirmación muestre siempre el antes/después real de
+    # CUALQUIER edición, no solo la de precio (hallazgo de la Fase 5).
+    propuestos = {f"{campo}_propuesto": valor for campo, valor in cambios.items()}
     propuesta = confirmations.crear_propuesta(
         conn, usuario,
         herramienta="catalogo_editar_material",
         payload=payload,
-        filas_afectadas=[{**actual, "precio_m2_propuesto": precio_propuesto}],
+        filas_afectadas=[{**actual, **propuestos}],
         es_destructiva=False,
     )
     return {

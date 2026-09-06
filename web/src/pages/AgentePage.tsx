@@ -26,8 +26,20 @@ const _CAMPOS_MONEDA = new Set(['precio', 'precio_m2', 'precio_m2_propuesto', 'p
 const _ETIQUETAS: Record<string, string> = {
   cliente: 'Cliente', precio: 'Precio', fecha: 'Fecha', estado: 'Estado',
   project_id: 'Proyecto', categoria: 'Categoría', proveedor: 'Proveedor',
-  precio_m2: 'Precio actual', precio_m2_propuesto: 'Precio propuesto',
+  referencia: 'Referencia', precio_m2: 'Precio actual', precio_m2_propuesto: 'Precio propuesto',
   es_override: 'Es copia de Costo360', activo: 'Activo',
+}
+
+/** Cualquier "<campo>_propuesto" (no solo precio_m2_propuesto) recibe una
+ * etiqueta legible automáticamente — así una tool nueva que proponga cambiar
+ * cualquier campo no necesita venir a agregar una entrada aquí. */
+function _etiqueta(campo: string): string {
+  if (_ETIQUETAS[campo]) return _ETIQUETAS[campo]
+  if (campo.endsWith('_propuesto')) {
+    const base = campo.slice(0, -'_propuesto'.length)
+    return `${_ETIQUETAS[base] ?? base} (nuevo)`
+  }
+  return campo
 }
 
 function _valorLegible(campo: string, valor: unknown): string {
@@ -261,7 +273,7 @@ export default function AgentePage() {
                       </div>
                       {detalles.length > 0 && (
                         <div className="text-xs text-brand-text-secondary">
-                          {detalles.map(([k, v]) => `${_ETIQUETAS[k] ?? k}: ${_valorLegible(k, v)}`).join(' · ')}
+                          {detalles.map(([k, v]) => `${_etiqueta(k)}: ${_valorLegible(k, v)}`).join(' · ')}
                         </div>
                       )}
                     </li>
