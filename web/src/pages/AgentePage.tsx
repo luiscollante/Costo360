@@ -265,7 +265,7 @@ export default function AgentePage() {
         <PageHeader
           kicker="Objetivo 5 · Ciclo 2"
           title="Cost"
-          subtitle="Tu asistente de Costo360 — hoy entiende de Proyectos, Tareas, Cotización, Catálogo, Inventario, Retales y Nesting."
+          subtitle="Tu asistente de Costo360 — hoy entiende de Proyectos, Tareas, Cotización, Catálogo, Inventario, Retales, Nesting y Parámetros."
         />
 
         <Card className="flex h-[65vh] flex-col overflow-hidden">
