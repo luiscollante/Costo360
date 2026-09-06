@@ -2,6 +2,63 @@
 
 ---
 
+## 🔄 En progreso (2026-09-06) — Objetivo 5, Ciclo 2, dominio Retales
+
+Ciclo `/goal` corrido completo (Fase 0 grafo → Fase 1 Software Architect → Fase 2 Security
+Engineer, 1 bloqueante real cerrado → Fase 4 ejecución, 6 commits → Fase 5 Code Reviewer, 2
+rondas, ambas APRUEBA). Código nuevo: `backend/services/retales_service.py`,
+`backend/models/retales.py`, `backend/agente/tools/retales.py` (4 tools: `retales_listar`,
+`retales_crear`, `retales_editar`, `retales_eliminar`), router adelgazado. Primera vez que Cost
+opera un dominio con doble aislamiento (empresa + `scope_propio` por usuario: un operativo solo
+ve/edita/borra SUS PROPIOS retales) y con un DELETE físico real de Postgres (sin soft-delete,
+a diferencia de Inventario). Detalle técnico completo en `ARQUITECTURA_MAESTRA.md` sección 8
+(pendiente de escribir la próxima sesión) y en `SESSION.md` de hoy.
+
+**Bloqueante real cerrado en Fase 2 (Security Engineer):** la primera versión del plan dejaba
+que `retales_editar` aplicara directo (sin confirmación) los cambios "de bajo riesgo" (notas,
+estado→Disponible/Reservado). El auditor lo rechazó: reactivar un retal a "Disponible" es la
+transición riesgosa, no la segura, y la clasificación campo-por-campo era una superficie de bug
+nueva. Corregido: `retales_editar` SIEMPRE propone, sin excepción.
+
+**Hallazgo real en Fase 5, 2 rondas del mismo Code Reviewer:** ronda 1 encontró que mover la
+validación de `estado` a un `field_validator` de Pydantic cambiaba el contrato HTTP de 400 a
+422 en `PUT /api/retales/{id}` (el validador corre durante el parseo automático de FastAPI,
+antes del handler) — corregido moviendo la validación a la capa de servicio, mismo patrón que
+`cotizacion_service.cambiar_estado_cotizacion`. Ronda 2 (reverificación) aprobó el fix y señaló
+un matiz de orden de chequeos (no bloqueante, corregido igual por prolijidad): con doble error
+simultáneo (id inexistente + estado inválido) el 404 ganaba sobre el 400 original — reordenado
+para validar la forma del body antes de tocar la base, igual que el router viejo.
+
+**🔴 Bug real encontrado en la verificación en vivo (2026-09-06), sin cerrar todavía —
+primera tarea de la próxima sesión:** con las 4 tools registradas y aprobadas en Fase 5, Cost
+respondió "Por ahora no tengo cómo consultar los retales... todavía no tengo conectada esa
+parte" al preguntarle por retales — es decir, el modelo nunca invocó `retales_listar` a pesar de
+que la tool existe y está registrada (confirmado por script Python: las 4 tools aparecen en
+`registry.obtener()`). Se probó en paralelo preguntar por Inventario en la misma conversación y
+SÍ funcionó de punta a punta (tool invocada, respuesta correcta) — descarta un problema general
+del motor, apunta a algo específico de Retales. Hipótesis de causa (no verificada todavía):
+`backend/agente/runtime.py::_SYSTEM_PROMPT` nunca mencionaba Retales como capacidad — a
+diferencia de Cotización/Catálogo/Inventario, que sí están descritos ahí explícitamente — y sin
+esa mención el modelo puede no considerar razonable invocar esas tools aunque estén en su lista
+de funciones disponibles. Ya se editó `runtime.py` agregando un párrafo describiendo Retales
+(mismo estilo que el de Inventario) pero **el cambio quedó sin commitear y sin verificar** —
+el backend se reinició para forzar la recarga y la sesión se cortó (por `/cierre`) justo antes
+de poder reintentar la prueba en el navegador. El servidor de backend quedó **apagado** (los
+procesos `uvicorn --reload` se mataron a propósito para descartar un problema de hot-reload, y
+no se volvieron a levantar). El servidor de frontend (`vite`) también se cayó solo, por bajo
+uso de memoria del sistema, sin relación con este trabajo.
+
+**Próxima tarea lógica (en este orden):** 1) levantar backend (`uvicorn backend.main:app
+--reload --port 8000`) y frontend (`npm run dev` en `web/`); 2) probar de nuevo "¿qué retales
+tengo disponibles?" en `/agente` — si con el párrafo nuevo del system prompt ya funciona, ese
+era el bug real y hay que commitearlo con un mensaje que documente el hallazgo; si SIGUE
+fallando, investigar más a fondo (revisar logs del backend en `backend_dev.log`, confirmar que
+el proceso realmente cargó `backend/agente/tools/retales.py` sin excepciones silenciosas). 3)
+Completar la verificación en vivo de las 4 tools (crear/editar/eliminar con datos desechables,
+igual que en Inventario). 4) Fase 6 (documentación + memoria + reindexar grafo) — NO hecha
+todavía para este dominio. 5) Hay 6 commits locales sin subir a GitHub de este dominio, más lo
+que salga de cerrar el bug de arriba.
+
 ## ✅ Hecho (2026-09-05, tercera ronda)
 
 - **Objetivo 5, Ciclo 2 — dominio Inventario de láminas para Cost:** 4 tools nuevas

@@ -2,6 +2,93 @@
 
 ---
 
+## Sesión: 2026-09-06 — Objetivo 5, Ciclo 2: dominio Retales (Fases 0-5, con un bug real sin cerrar)
+
+### Qué se hizo
+El fundador pidió seguir con el siguiente dominio del Ciclo 2 (`/goal Sigue con Retales`),
+mismo ciclo completo (Fases 0-6) ya usado en Cotización/Catálogo/Inventario. Corrida en modo
+autónomo (goal), sin pausar a pedir aprobación en cada fase salvo cuando hizo falta.
+
+1. **Fase 0-1 (mapa + plan):** grafo del proyecto consultado; se encontró que Retales no tenía
+   capa de servicio (la lógica vivía inline en `backend/routers/retales.py`) y que introduce 2
+   diferencias reales frente a los otros 3 dominios ya operados por Cost: (a) aislamiento
+   **por usuario además de por empresa** (`scope_propio` — un operativo solo ve/edita/borra
+   SUS PROPIOS retales), y (b) `retales_eliminar` es un **DELETE físico real** de Postgres, sin
+   ninguna columna de soft-delete como sí tiene Inventario. Plan armado por un Software
+   Architect aparte, con 6 riesgos de seguridad anticipados de antemano.
+2. **Fase 2 (Security Engineer) — 1 bloqueante real cerrado:** la primera versión del plan de
+   `retales_editar` aplicaba directo (sin confirmación) los cambios "de bajo riesgo" (notas,
+   estado→Disponible/Reservado) y solo proponía para cambios de mayor impacto. El auditor lo
+   rechazó: reactivar un retal a "Disponible" es justo la transición riesgosa (puede hacer que
+   el mismo sobrante se prometa dos veces), no la segura, y la clasificación campo-por-campo era
+   una superficie de bug nueva sin precedente en el resto del proyecto. Corregido: `retales_editar`
+   SIEMPRE crea una propuesta, sin ninguna excepción, para cualquier combinación de campos.
+3. **Fase 4 (ejecución), 6 micro-commits:** `backend/services/retales_service.py` (capa de
+   servicio nueva, cada función aplica `scope_propio` internamente), `backend/models/retales.py`,
+   router adelgazado, `backend/agente/tools/retales.py` (4 tools: `retales_listar`,
+   `retales_crear`, `retales_editar`, `retales_eliminar`), `_CAMPOS_MONEDA` de `AgentePage.tsx`
+   ampliado con `precio_recuperacion`/`precio_mercado_m2`, y el subtítulo de la página de Cost
+   corregido (seguía diciendo "Proyectos, Tareas y Cotización" desde el Ciclo 1, nunca se
+   actualizó al agregar Catálogo/Inventario).
+4. **Fase 5 (Code Reviewer), 2 rondas — ambas APRUEBA:** ronda 1 encontró que mover la
+   validación de `estado` a un `field_validator` de Pydantic cambiaba el contrato HTTP de 400 a
+   422 en `PUT /api/retales/{id}` (corre durante el parseo automático de FastAPI, antes del
+   handler) — corregido moviendo la validación a la capa de servicio, mismo patrón que
+   `cotizacion_service.cambiar_estado_cotizacion`, y agregando el mismo chequeo en la tool antes
+   de proponer (con `enum` en el `FunctionDeclaration`, igual que `cotizacion_cambiar_estado`).
+   Ronda 2 (reverificación) aprobó el fix sin reservas, y de paso señaló un matiz de orden de
+   chequeos no bloqueante (con doble error simultáneo, id inexistente + estado inválido, el 404
+   ganaba sobre el 400 original) — corregido igual por prolijidad, reordenando para validar la
+   forma del body antes de tocar la base.
+5. **Verificación en vivo — encontró un bug real sin cerrar (ver "Pendiente" abajo):** al
+   preguntarle a Cost por los retales disponibles, respondió que no tenía esa parte conectada,
+   a pesar de que las 4 tools están registradas (confirmado con un script Python). Se probó
+   Inventario en la misma conversación para descartar un problema general del motor — funcionó
+   perfecto, así que el problema es específico de Retales. Hipótesis: `runtime.py::_SYSTEM_PROMPT`
+   nunca mencionaba Retales como capacidad (a diferencia de los otros 3 dominios, que sí están
+   descritos ahí) — se agregó el párrafo correspondiente, pero el fix quedó **sin verificar**
+   porque el backend se reinició para descartar un problema de hot-reload y la sesión se cerró
+   (`/cierre`) antes de poder reintentar la prueba.
+
+### Archivos tocados
+- **Backend nuevos:** `backend/services/retales_service.py`, `backend/models/retales.py`,
+  `backend/agente/tools/retales.py`.
+- **Backend modificados:** `backend/routers/retales.py` (adelgazado a delegar en el servicio),
+  `backend/agente/tools/__init__.py` (registra el import), `backend/agente/runtime.py`
+  (`_SYSTEM_PROMPT` — **cambio sin commitear todavía**, ver Pendiente).
+- **Frontend:** `web/src/pages/AgentePage.tsx` (`_CAMPOS_MONEDA`, `_ETIQUETAS`, subtítulo).
+- **Docs:** `PROGRESS.md`, este archivo (Fase 6 completa — `ARQUITECTURA_MAESTRA.md` y
+  `docs/ROADMAP_COSTO360.md` — pendiente para la próxima sesión).
+
+### Decisiones tomadas
+- `retales_editar` nunca aplica directo, para ningún campo, sin excepción — no se replica el
+  patrón de "confirmación condicional por campo" que se había propuesto, ni aquí ni en futuros
+  dominios, salvo que el fundador lo pida como decisión de producto explícita y separada.
+- La validación de un campo tipo enum (`estado`) en un modelo Pydantic compartido entre router y
+  tools del agente va en la capa de SERVICIO, nunca en un `field_validator` del modelo — evita
+  el cambio de contrato HTTP 400→422 que causó FastAPI al parsear el body automáticamente.
+
+### 🔴 Pendiente — bug real sin cerrar, primera tarea de la próxima sesión
+1. **Levantar backend y frontend** (ambos quedaron apagados al cierre de esta sesión — el
+   backend se mató a propósito para descartar un problema de recarga en caliente, el frontend
+   se cayó solo por bajo uso de memoria del sistema, sin relación con este trabajo).
+2. **Probar de nuevo "¿qué retales tengo disponibles?" en `/agente`.** Si el párrafo nuevo del
+   system prompt (ya escrito en `runtime.py`, sin commitear) resuelve el problema, commitearlo
+   con un mensaje que documente el hallazgo real (un dominio con tools registradas y aprobadas
+   en Fase 5 puede seguir siendo invisible para el modelo si el system prompt no lo menciona como
+   capacidad — vale la pena revisar si esto aplica a algo más). Si NO lo resuelve, investigar más
+   a fondo antes de asumir nada (revisar `backend_dev.log`, confirmar que el proceso cargó
+   `backend/agente/tools/retales.py` sin excepciones silenciosas).
+3. Completar la verificación en vivo de las 4 tools de Retales (crear/editar/eliminar con datos
+   desechables, igual que se hizo con Inventario) — no se alcanzó a hacer por el bug de arriba.
+4. **Fase 6** (documentación completa en `ARQUITECTURA_MAESTRA.md` sección 8 y
+   `docs/ROADMAP_COSTO360.md`, memoria persistente nueva) — no hecha todavía para este dominio.
+5. Hay 6 commits locales sin subir a GitHub de este dominio (más lo que salga del punto 2).
+6. Después: decidir con el fundador el siguiente dominio del Ciclo 2 (Nesting, Parámetros) o si
+   se aborda "crear cotización".
+
+---
+
 ## Sesión: 2026-09-05 (noche) — Personalidad de Cost, animaciones sin restricción del SO, y Ciclo 2 (Cotización)
 
 ### Qué se hizo
