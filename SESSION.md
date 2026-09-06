@@ -2,6 +2,96 @@
 
 ---
 
+## Sesión: 2026-09-06 (quinta parte) — Objetivo 5, Ciclo 2 COMPLETO: dominio Parámetros
+
+### Qué se hizo
+El fundador pidió subir los commits de Nesting y seguir con el último dominio del Ciclo 2
+(`/goal Sube los commits y sigue con el último dominio`), corrido en modo autónomo. Ciclo `/goal`
+completo (Fases 0-6) para **Parámetros** — el dominio de mayor riesgo financiero de todo el
+ciclo, ya que las tarifas de costo y los adicionales alimentan directamente el motor de cálculo
+de cada cotización futura del taller.
+
+1. **Fase 0:** se encontró que Parámetros es distinto a los 6 dominios anteriores: no hay ningún
+   `id` numérico de fila (identidad = `material`+`nombre_interno` o `concepto`, texto libre), y
+   `cfg_set` (el almacén JSONB por empresa) reemplaza el JSON COMPLETO de la clave — no hay UPDATE
+   parcial. Incluso LEER Parámetros ya está restringido al rol Admin/Gerencia.
+2. **Fase 1 (Software Architect):** diseñó una capa de servicio nueva con un único punto de
+   desambiguación de identidad (coincidencia exacta normalizada, fail-closed ante 0 o 2+
+   coincidencias), 7 tools sin comodín (nunca un parámetro `accion:str` — mismo criterio que ya
+   prohíbe `registry.py`), y la decisión de que TODAS las escrituras proponen sin excepción,
+   incluso "agregar" (porque cualquier escritura reescribe el JSON completo).
+3. **Fase 2 (Security Engineer) — 3 correcciones obligatorias:**
+   - `etiqueta_pdf` debía ser un catálogo cerrado de 4 valores — un valor libre hacía que
+     `motor/calculos.py` descartara la regla completa del costo en silencio (bug de costeo real,
+     no cosmético de PDF, verificado por el propio auditor en el código real del motor).
+   - `quitar_tarifa` debía **bloquear** (409), no solo advertir, borrar la última fila de % de
+     merma de una categoría — sin ella el motor cae a un valor de fábrica sin ningún aviso.
+   - Candado de concurrencia usando la columna `actualizado` que `app_config` ya tenía.
+4. **Fase 4 (ejecución), 4 micro-commits:** `backend/services/parametros_service.py`,
+   `backend/models/parametros.py`, router adelgazado, `backend/agente/tools/parametros.py` (7
+   tools), `_SYSTEM_PROMPT` actualizado desde el primer commit (lecciones de Retales y Nesting ya
+   aplicadas), `AgentePage.tsx` con `_CAMPOS_PORCENTAJE` nuevo (Parámetros es el único dominio con
+   porcentajes de verdad) y `nombre_interno`/`concepto` agregados a `_CAMPOS_PRINCIPAL` (sin id
+   numérico, la tarjeta habría mostrado "Esta acción" genérico sin esto).
+5. **Fase 5 (Code Reviewer, 2 rondas) — 1 hallazgo real cerrado más 2 mejoras aplicadas:** el
+   guardado manual (`PUT /api/parametros`, la pantalla normal) no tenía ninguna de las
+   protecciones nuevas — podía reintroducir en silencio los mismos 2 bugs financieros que se
+   cerraron para el agente. Corregido con `validar_invariantes_tarifas` compartida, aplicada
+   también al PUT manual. De paso: `agregar_tarifa` rechaza una segunda fila de merma en la misma
+   categoría; la tool de editar valida que venga al menos un campo antes de proponer.
+6. **Verificación en vivo — sin bugs nuevos, todo funcionó a la primera:** leer tarifas de Mármol
+   (porcentajes correctos, nunca fracción cruda) → subir la merma de 8% a 10% (verificado en la
+   BD real) → agregar una tarifa de prueba en Granito → **intentar quitar la única fila de merma
+   de Sinterizado: Cost anticipó el bloqueo en su propia respuesta, y al insistir, el backend lo
+   rechazó de verdad con 409** (confirmado en el log del servidor y en la pantalla real) → limpieza
+   de los datos de prueba y restauración de la merma de Mármol a 8% (el valor real del taller,
+   no un dato desechable). Único descuido propio, no del código: se me olvidó de nuevo agregar
+   Parámetros al subtítulo de `AgentePage.tsx` hasta la prueba en vivo — mismo patrón que ya pasó
+   con Nesting, corregido en un commit aparte.
+
+**🎉 Con esto, el Ciclo 2 del Objetivo 5 queda completo: Cotización, Catálogo, Inventario,
+Retales, Nesting y Parámetros — los 6 dominios planeados, todos auditados y verificados en vivo.**
+
+### Nota operativa: otra sesión trabajó en paralelo
+Durante esta sesión se detectó que otra sesión de Claude Code (mismo repo, mismo autor de git)
+trabajó en paralelo en un objetivo distinto — el Objetivo 2 (Landing Page desacoplada,
+`costo360.com`) — y comiteó directo a `master` de forma intercalada con los commits de esta
+sesión (ver la entrada de sesión de abajo, "cuarta parte"). No causó ningún conflicto ni pérdida
+de contenido (git manejó los commits intercalados sin problema, y este archivo/`PROGRESS.md` se
+releyeron frescos antes de escribir esta entrada para no pisar la suya) — se documenta aquí solo
+para que quede constancia, igual que el incidente similar de `feedback_multiagente_paralelo`
+(memoria persistente) de 2026-08-23, que se dio por resuelto pero puede repetirse si el fundador
+corre sesiones simultáneas sobre el mismo repo.
+
+### Archivos tocados
+- **Backend nuevos:** `backend/services/parametros_service.py`, `backend/models/parametros.py`,
+  `backend/agente/tools/parametros.py`.
+- **Backend modificados:** `backend/routers/parametros.py` (adelgazado + `validar_invariantes_tarifas`
+  en el PUT manual), `backend/agente/tools/__init__.py`, `backend/agente/runtime.py`.
+- **Frontend:** `web/src/pages/AgentePage.tsx` (`_CAMPOS_PRINCIPAL`, `_CAMPOS_PORCENTAJE`,
+  `_CAMPOS_MONEDA`, etiquetas, subtítulo).
+- **Docs:** `PROGRESS.md`, este archivo, `ARQUITECTURA_MAESTRA.md`, `docs/ROADMAP_COSTO360.md`.
+
+### Decisiones tomadas
+- Toda escritura de Parámetros propone sin excepción, incluso "agregar" — a diferencia de
+  Catálogo, porque aquí cualquier escritura reescribe el JSON completo de la clave, nunca una
+  fila aislada con su propio id.
+- Bloquear (nunca solo advertir) cualquier acción que dejaría un invariante financiero roto sin
+  aviso visible — el mismo criterio debería aplicarse a futuros hallazgos de esta clase.
+- El guardado manual y el camino del agente deben compartir las mismas validaciones de invariantes
+  cuando ambos escriben la misma clave de configuración — no basta con blindar un solo camino.
+
+### Pendiente / próxima tarea lógica
+1. Decidir con el fundador: abordar "crear cotización" (deferido por su complejidad, ~60
+   variables) o pasar al Ciclo 3 del Objetivo 5 (chat flotante global + "Centro del Agente").
+2. Commits locales de este dominio sin subir a GitHub — preguntar antes de subir.
+3. Hallazgos no bloqueantes registrados para el futuro (no urgentes): candado de concurrencia
+   optimista tiene una ventana angosta ante doble-clic verdaderamente simultáneo; existe un
+   `parametros.py` duplicado y desactualizado en la raíz del repo (no afecta el runtime real,
+   protegido por el `sys.path` de `backend/main.py`, pero podría confundir a un script suelto).
+
+---
+
 ## Sesión: 2026-09-06 (cuarta parte) — Objetivo 2: Landing Page desacoplada de alto impacto con AEO (costo360.com)
 
 ### Qué se hizo
@@ -607,198 +697,6 @@ de bugs del 2026-09-03 (arrastre real de mouse en el tablero de Proyectos).
 
 ---
 
-## Sesión: 2026-09-03 (tarde) — Ronda de bugs: tablero de Proyectos + wizard de Cotización
-
-### Qué se hizo
-Tras fusionar el módulo de gestión de proyectos, el fundador exploró la app en vivo (servidor
-local levantado para él) y reportó 6 problemas. Ciclo `/goal` completo (Fases 0-6), directo en
-`master` (correcciones puntuales, no ameritaba rama aparte). Investigación propia con evidencia
-real (consola del navegador, `performance.getEntriesByType`, lectura del prototipo Base44 a
-pedido explícito del fundador) antes de plan/auditoría — no se adivinó ningún diagnóstico.
-
-- **Fase 0-1 (mapa + plan):** los 6 reportes se agruparon en 4 causas de fondo reales.
-- **Fase 2 (auditoría del plan):** Backend Architect + Frontend Developer + Minimal Change
-  Engineer, los 3 "APRUEBA CON CAMBIOS". Decisiones del fundador tras la explicación: forzar el
-  cambio de sesión de inmediato (sin esperar 30s), y dejar el arrastre en móvil sin arreglar
-  por ahora (Proyectos no tiene versión de móvil probada).
-- **Fase 4 (ejecución), 4 commits + 3 de arreglos de auditoría:**
-  - **Rendimiento + error transitorio de columnas** (`af92749` es sesión, `b0de613` es este):
-    `useTableroProyectos.ts` cancela peticiones obsoletas con `AbortController` (antes solo
-    descartaba la respuesta tarde, sin cortar la petición HTTP — React StrictMode las
-    duplicaba en dev), distingue cancelación de error real, reintenta 1 vez ante fallos
-    transitorios (timeout/5xx, nunca 4xx). Medido con datos reales: picos de hasta 9.6s con 7
-    peticiones paralelas por carga. Se descartó combinar las peticiones en un endpoint nuevo
-    por ahora — los auditores recomendaron medir primero con este cambio más acotado.
-  - **Arrastrar-y-soltar + columnas fijas** (`0cc5d53`): causa raíz confirmada por un warning
-    real de `@hello-pangea/dnd` en consola ("nested scroll container") — el scroll vertical de
-    cada columna dependía de `<main>` de `AppLayout.tsx` en vez de tener el suyo propio.
-    Aplicado el patrón exacto del prototipo Base44 (`ProjectColumn.jsx`/`Projects.jsx`,
-    inspeccionado línea por línea): altura acotada (`--board-viewport-h`, variable CSS nueva) +
-    cada columna con `overflow-y-auto` propio. Solo `md:` y superior (decisión del fundador).
-  - **Modal de sesión en otro dispositivo** (`af92749`): `_GRACE_S` de 30s → 0 (backend +
-    frontend) por decisión del fundador; botones secundarios de `text-brand-muted` (documentado
-    para texto deshabilitado, no accionable) a fondo sólido.
-  - **Wizard de Cotización** (`fa641d8`): **bug real encontrado**, no solo cosmético — el botón
-    "Anterior"/"Ajustar parámetros" de la fase Resultado llamaba `setPaso(3)`, el mismo paso
-    "Resultado" en el que ya se está (paso 2 = Proyecto) — nunca navegaba a ningún lado, por
-    eso el fundador no encontraba cómo volver. Corregido a `setPaso(2)`, verificado en vivo.
-    Botón "Calcular" duplicado eliminado. Tarjetas de esa fase de `.glass` a superficie sólida;
-    "Guardar cotización" reforzado (antes 10% de opacidad, casi invisible).
-  - **Regla CSS global** `button:not(:disabled){cursor:pointer}` en vez de seguir parchando
-    botón por botón (ya se había hecho una vez en Proyectos, commit `23f7b8a`).
-- **Fase 5 (auditoría de la ejecución):** Code Reviewer + Accessibility Auditor, distintos a
-  los de la Fase 2, ambos "APRUEBA CON CAMBIOS". Hallazgos reales, no ruido:
-  - [Serio, a11y] Los párrafos del modal de sesión quedaron en `text-brand-text-secondary` —
-    insuficiente sobre el fondo compuesto real (`.glass` sobre `bg-black/60`), no sobre crema
-    plano como asume el contraste documentado de ese token. Corregido a `text-brand-text`.
-  - [Medio, code review] La regla global de cursor se escribió sin `@layer` — en CSS Cascade
-    Layers, una regla sin capa le gana a CUALQUIER regla en capa sin importar especificidad, así
-    que le quitaba el `cursor-grab` a las asas de arrastre. Envuelta en `@layer base`.
-  - [Medio, code review] `--board-viewport-h` asumía un padding-top de 4.5rem en el rango
-    640-1023px, pero `sm:p-6` gana sobre `pt-[calc(3.5rem+1rem)]` ahí (verificado contra el CSS
-    compilado real) — el padding real es 1.5rem. Corregido el bucket `sm:` de la variable.
-  - [Menor, a11y] 2 iconos SVG decorativos nuevos sin `aria-hidden="true"`. Agregado.
-  - Todo corregido en 2 commits de seguimiento (uno de a11y, uno de code review), ambos
-    verificados en el navegador real (`getComputedStyle`), no solo por lectura de código.
-- **Fase 6:** reindexar el grafo queda pendiente para el cierre de sesión; esta entrada +
-  `PROGRESS.md` actualizados ahora.
-
-### Archivos tocados
-- `web/src/hooks/useTableroProyectos.ts`, `web/src/api/proyectos.ts` — cancelación + reintento.
-- `web/src/pages/ProyectosPage.tsx`, `web/src/components/proyectos/tablero/TareaKanban.tsx` —
-  layout de columnas con scroll propio.
-- `web/src/components/SessionGuard.tsx`, `backend/routers/session.py` — modal de sesión.
-- `web/src/pages/CotizacionPage.tsx` — wizard de cotización (solo `Step4Resultado`, Step1/2/3
-  intactos a propósito).
-- `web/src/index.css` — `--board-viewport-h`, regla global de cursor (en `@layer base`).
-
-### Pendiente honesto
-No se logró simular un arrastre real de mouse con las herramientas de automatización del
-navegador disponibles en esta sesión (limitación conocida de `@hello-pangea/dnd` y libraries
-similares — necesitan movimiento incremental real del puntero, no un salto atómico). La
-corrección de raíz quedó verificada por: (a) el warning de consola de la librería desapareció
-por completo tras el fix, reproducido en las 3 vistas; (b) un arrastre completo con teclado
-(Espacio para levantar, flecha para mover, Espacio para soltar) sí movió una tarjeta de
-columna con éxito. Falta que el fundador confirme con un arrastre real de mouse en su propio
-navegador.
-
-### Primera tarea de la próxima sesión
-1. Confirmar con el fundador que el arrastre real con mouse funciona en Proyectos.
-2. Si todo queda conforme, reindexar el grafo (`codebase-memory-mcp`) contra el estado actual
-   de `master`.
-3. Preguntar cuál de los objetivos abiertos del roadmap ataca después (landing page, agentes de
-   operación, o el asistente de IA del producto).
-
----
-
-## Sesión: 2026-09-02/03 — Objetivo 6: módulo de gestión de proyectos, Ciclo A + Ciclo B completos
-
-### Qué se hizo
-Ciclo `/goal` completo (Fases 0-6) para el **Objetivo 6 del roadmap** (módulo de gestión de
-proyectos), partido en 2 ciclos por recomendación de los auditores — mismo patrón que el
-rediseño visual. Rama `goal/modulo-proyectos` (sobre `master`, con el rediseño visual ya
-fusionado). Plan vivo con el detalle completo de cada bloque, cada hallazgo de auditoría y
-cada verificación por SQL: `docs/PLAN_MODULO_GESTION_PROYECTOS.md`.
-
-- **Fase 0-1 (mapa + plan):** grafo del proyecto consultado; plan escrito por Software
-  Architect / Database Optimizer / Frontend Developer / Product Manager — 6 tablas nuevas
-  (`pm_*`), CRUD backend, automatizaciones, y toda la interfaz del tablero de proyectos. El
-  asistente de IA del módulo queda fuera de este ciclo (decisión D2: se funde con el Objetivo
-  5, que ahora se estrena acotado a proyectos cuando se construya).
-- **Fase 2 (auditoría del plan):** 3 agentes distintos — **Security Engineer**, **UX
-  Architect**, **Minimal Change Engineer** — los 3 "APRUEBA CON CAMBIOS". Hallazgos clave
-  incorporados antes de ejecutar: lista blanca de columnas que un no-gestor puede tocar en una
-  tarea propia (`estado`, `orden`, `descripcion`, `horas_estimadas`), `responsable_id`
-  evaluado siempre contra la fila en BD (nunca el payload), autoría server-side en
-  comentarios/horas, el barrido diario **set-based sin bucle** con `empresa_id` explícito en
-  cada sentencia (corre bajo BYPASSRLS), `X-Cron-Secret` con comparación constante-time,
-  `ProjectStatusBadge`/`TaskStatusBadge` nuevos (el `<StatusBadge>` genérico no sirve),
-  alternativa de teclado al arrastre, `<Dialog>` de tarea sin diálogo anidado para borrar.
-  El fundador decidió partir el ciclo en dos (Ciclo A = datos+backend, Ciclo B = interfaz).
-- **Ciclo A — G0-G3 (datos + backend), `aab3b55`…`280c61e`:**
-  - Migración `0007_gestion_proyectos.sql` aplicada a Supabase `hrmpyhixhbnkkpvxtuit`: 6
-    tablas `pm_projects/pm_tasks/pm_milestones/pm_time_entries/pm_comments/pm_notifications`,
-    `empresa_id` + RLS `force` + policy única por tabla (Regla 1), `UNIQUE(id,empresa_id)` +
-    FK compuestas para aislamiento estructural padre-hijo.
-  - `backend/routers/proyectos.py` (29 rutas, `db_rls`) + `backend/routers/proyectos_cron.py`
-    (barrido diario, router separado sin dependencias de sesión) + `web/src/api/proyectos.ts`.
-  - **Fase 5 del Ciclo A:** Code Reviewer + Backend Architect + Database Optimizer, los 3
-    "APRUEBA CON CAMBIOS", **sin bloqueantes**. Arreglos en `ca5798c` + migración `0008`
-    (endurecimiento: `completado_en`, `numeric(7,2)`, FK compuesta de `milestone_id`, índices).
-    Verificado por SQL con rollback: aislamiento entre empresas, `WITH CHECK`, FK cross-tenant,
-    fail-closed sin claims, idempotencia del barrido.
-- **Ciclo B — G4-G7 (interfaz), `663e642`+`0ea46b8`:**
-  - `@hello-pangea/dnd@18.0.1` (React 19 sin duplicados). Menú "Proyectos", rutas
-    `/proyectos`/`/proyectos/:id`. `ProyectosPage.tsx` (Kanban, vistas
-    Operativa/Cierre/Archivo, franja de resumen), `ProyectoDetallePage.tsx` (tablero de tareas,
-    cronograma, parte de horas), campana de notificaciones en `AppLayout`.
-  - **Fase 5 del Ciclo B:** Frontend Developer + Accessibility Auditor + Code Reviewer, los 3
-    "APRUEBA CON CAMBIOS". **2 bloqueantes de accesibilidad nivel A** (asa de arrastre
-    dedicada; `aria-label` de "Mover a" con el texto visible al frente) + serios/medios
-    (trampa de foco con diálogos apilados, anuncios de arrastre en español, manejo de error
-    por columna). Todo corregido en `9fc7414`.
-- **Prueba en vivo (cuenta admin "Ana"):** crear proyecto, hito + tarea dependiente que nace
-  bloqueada, completar hito → desbloqueo, mover tarjetas, registrar horas, comentar, barrido
-  diario con 2ª corrida idempotente, campana. **Bug real encontrado y corregido** (`b1825a5`):
-  el `%` literal de "% de avance" colisionaba con el parseo de parámetros de psycopg2 en el
-  SQL del barrido — la prueba SQL previa no lo cazó porque el MCP `execute_sql` no interpola.
-- **Ronda de pulido de UI** (feedback en vivo del fundador, `23f7b8a`): cursor de mano en
-  tarjetas; modal de tarea con doble scroll/recorte corregido **en el primitivo `Dialog`**
-  (aplica a toda la app); foco visible desbordado del modal; cronograma y parte de horas con
-  mejor jerarquía visual.
-- **Documentación puesta al día (2026-09-03):** `PROGRESS.md` y este archivo no reflejaban
-  nada de lo anterior — el Ciclo A y el Ciclo B se ejecutaron y auditaron por completo sin que
-  el harness se actualizara en el camino (solo vivía en `docs/PLAN_MODULO_GESTION_PROYECTOS.md`).
-  Corregido ahora.
-- **Limpieza:** 2 archivos basura de 0 bytes en la raíz del repo (`30`, `v_cupo` — restos de
-  redirects de shell de sesiones anteriores) revisados contra el grafo del proyecto
-  (`codebase-memory-mcp`: sin nodos, sin referencias, `v_cupo` además gitignored y sin
-  historial de git) y borrados por ser irrelevantes.
-
-### Archivos tocados
-- **Backend nuevos:** `backend/migrations/0007_gestion_proyectos.sql`,
-  `backend/migrations/0008_gestion_proyectos_endurecimiento.sql`,
-  `backend/routers/proyectos.py`, `backend/routers/proyectos_cron.py`,
-  `backend/models/proyectos.py`.
-- **Backend modificados:** `backend/main.py` (router + `_self_test_rls` extendido),
-  `backend/ENV_SETUP.md` (`CRON_SECRET`).
-- **Frontend nuevos:** `web/src/api/proyectos.ts`, `web/src/pages/ProyectosPage.tsx`,
-  `web/src/pages/ProyectoDetallePage.tsx`, `web/src/hooks/useTableroProyectos.ts`,
-  `web/src/components/proyectos/*` (tarjetas, Kanban de tareas, diálogo de tarea, cronograma,
-  parte de horas, notificaciones, badges).
-- **Frontend modificados:** `web/src/App.tsx`, `web/src/components/Sidebar.tsx`,
-  `web/src/components/AppLayout.tsx`, `web/src/components/CommandPalette.tsx`,
-  `web/src/components/ui/Dialog.tsx` (scroll del panel — cambio transversal),
-  `web/src/api/materiales.ts` (`getCategoriasMaterial`), `web/src/lib/utils.ts`
-  (`formatFecha`/`formatFechaHora`/`diasHasta`), `web/package.json` (`@hello-pangea/dnd`).
-- **Docs:** `docs/PLAN_MODULO_GESTION_PROYECTOS.md` (vivo, todo el detalle), este archivo,
-  `PROGRESS.md`.
-- **Raíz:** borrados `30` y `v_cupo` (basura, 0 bytes).
-
-### Decisiones tomadas
-- El asistente de IA del módulo se funde con el Objetivo 5 — no se construye en este ciclo (D2).
-- Ciclo partido en dos (Ciclo A datos+backend, Ciclo B interfaz) — decisión del fundador tras
-  la Fase 2, siguiendo la recomendación de los 3 auditores.
-- `pm_tasks` sin columna `responsable` de texto libre — solo `responsable_id` ligado a
-  `usuarios` (decisión D8, confirmada por el fundador el 2026-09-02).
-- Barrido diario = endpoint idempotente protegido por secreto, sin planificador todavía (D3) —
-  el disparo real se cablea cuando el backend tenga hosting propio.
-
-### Pendiente / primera tarea de la próxima sesión
-1. **Prueba en vivo con la cuenta operativa** (Regla 2/D6: ve el tablero completo del taller,
-   sin botones de gestión, 403 real al forzar crear un proyecto o editar una tarea ajena).
-2. Si pasa, **fusionar `goal/modulo-proyectos` a `master`**.
-3. Tras la fusión: reindexar el grafo (`codebase-memory-mcp`) contra `master`, y actualizar
-   `ARQUITECTURA_MAESTRA.md` (§3 dependencia `@hello-pangea/dnd`, §4 las 6 tablas `pm_*`, §11
-   historial, §12) + `docs/ROADMAP_COSTO360.md` (Fase 2.D) — quedaron pendientes de esta
-   sesión porque el pedido explícito del fundador fue actualizar solo `PROGRESS.md`/
-   `SESSION.md` antes de la prueba con la cuenta operativa.
-4. Renovar `GEMINI_API_KEY` en `backend/.env` (el chat de Parámetros sigue en error
-   controlado) — pendiente de sesiones anteriores, sigue sin resolver.
-
-
----
-
-*Sesiones del 2026-09-01 al 2026-08-27 movidas a `SESSION_ARCHIVO.md` el 2026-09-05 (regla de
-las 800 líneas de `HARNESS_INICIO.md`). Sesiones anteriores al 2026-08-23 ya estaban ahí desde
-el 2026-09-03.*
+*Sesiones del 2026-09-02/03 al 2026-08-27 movidas a `SESSION_ARCHIVO.md` el 2026-09-06 (regla de
+las 800 líneas de `HARNESS_INICIO.md`). Sesiones anteriores ya estaban ahí desde rotaciones previas
+(2026-09-03 y 2026-09-05).*

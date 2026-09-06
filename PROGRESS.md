@@ -2,6 +2,57 @@
 
 ---
 
+## ✅ Hecho (2026-09-06) — Objetivo 5, Ciclo 2 COMPLETO: dominio Parámetros (último del ciclo)
+
+Ciclo `/goal` completo (Fase 0 grafo → Fase 1 Software Architect → Fase 2 Security Engineer,
+3 correcciones obligatorias + 2 recomendadas → Fase 4 ejecución → Fase 5 Code Reviewer, 2 rondas
+→ verificación en vivo). **Dominio de mayor riesgo financiero de todo el Ciclo 2**: las tarifas de
+costo y los adicionales alimentan DIRECTAMENTE el motor de cálculo de CADA cotización futura del
+taller — un error aquí no afecta una fila, afecta todas las cotizaciones hasta que alguien lo note.
+
+**Diferencias estructurales frente a los 6 dominios anteriores:** no hay ningún `id` numérico de
+fila (identidad = `material`+`nombre_interno` para tarifas, `concepto` para adicionales, resuelta
+por coincidencia exacta normalizada, fail-closed ante 0 o 2+ coincidencias); `cfg_set` reemplaza el
+JSON COMPLETO de la clave (no hay UPDATE parcial de JSONB), así que toda escritura hace el ciclo
+"leer completo fresco → mutar fila puntual → reescribir completo"; `requiere_capacidad=
+"puede_ver_dashboard"` en las 7 tools, incluida la de lectura (ni siquiera ver Parámetros es
+abierto a cualquier usuario, a diferencia de los demás dominios).
+
+**7 tools sin comodín** (`parametros_ver`, `parametros_tarifa_editar/agregar/quitar`,
+`parametros_adicional_editar/agregar/quitar`) — **TODAS las escrituras proponen sin excepción,
+incluso "agregar"**, porque cualquier escritura aquí reescribe el JSON completo, no una fila
+aislada con su propio id. Conversión %-vs-fracción siempre en el handler (el modelo habla en
+puntos de porcentaje, 5=5%; el service recibe el valor ya convertido a fracción, 0.05).
+
+**3 correcciones obligatorias de la auditoría de seguridad, todas cerradas:**
+1. `etiqueta_pdf` como catálogo cerrado de 4 valores — un valor libre hacía que
+   `motor/calculos.py` descartara la regla completa del `costo_total` en silencio (bug de costeo
+   real, no cosmético de PDF).
+2. `quitar_tarifa` **bloquea** (409), no solo advierte, borrar la última fila `merma_pct` de una
+   categoría — sin ella el motor cae a un % de fábrica sin ningún aviso.
+3. Candado de concurrencia barato usando la columna `actualizado` que `app_config` ya tenía: cada
+   propuesta captura su "marca" al proponer, se vuelve a comparar al confirmar.
+
+**Hallazgo real de Fase 5, cerrado tras 2 rondas del Code Reviewer:** el guardado manual
+(`PUT /api/parametros`, la pantalla de edición normal) no tenía ninguna de las protecciones
+nuevas — podía reintroducir en silencio los mismos 2 bugs financieros cerrados para el agente.
+Corregido con `validar_invariantes_tarifas` compartida, aplicada también al PUT manual. De paso:
+`agregar_tarifa` rechaza una segunda fila `merma_pct` en la misma categoría; la tool de editar
+valida que venga al menos un campo antes de proponer, no solo al confirmar.
+
+**Verificado en vivo (2026-09-06)** contra el taller demo real: leer tarifas de Mármol (porcentajes
+mostrados correctamente, nunca la fracción cruda) → subir la merma de 8% a 10% (confirmado,
+verificado en la BD real vía `/parametros`) → agregar una tarifa de prueba en Granito (creada,
+verificada) → **intentar quitar la única fila de merma de Sinterizado — Cost anticipó el bloqueo
+en su respuesta, y al insistir, el backend lo rechazó con 409 de verdad** (confirmado en el log y
+verificado que la fila sigue intacta) → limpieza de los datos de prueba y restauración de la merma
+de Mármol a su valor original (8%), dejando el taller demo exactamente como estaba antes de probar.
+
+**🎉 CICLO 2 DEL OBJETIVO 5 QUEDA COMPLETO: Cotización, Catálogo, Inventario, Retales, Nesting,
+Parámetros — los 6 dominios planeados, todos auditados y verificados en vivo.** Pendiente:
+decidir con el fundador si se aborda "crear cotización" (deferido por su complejidad) o se pasa al
+Ciclo 3 (las dos superficies de UI completas — chat flotante global + "Centro del Agente").
+
 ## ✅ Hecho (2026-09-06) — Objetivo 2: Landing Page de alto impacto con AEO (costo360.com)
 
 Ciclo `/goal` completo (Fases 0 a 6). Por decisión estratégica del fundador, **la landing page no comparte dominio con el producto SaaS** (`costo360.com` vs `app.costo360.com`). Se construyó como proyecto desacoplado en la carpeta dedicada `landing/` con React 19 + TypeScript + Tailwind CSS v4 + Framer Motion + Lenis:

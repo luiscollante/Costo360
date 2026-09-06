@@ -718,8 +718,71 @@ diseñó desde cero para esta forma distinta.
   (aprovechamiento real, nunca inventado), oferta proactiva de guardar el sobrante citando el
   área exacta calculada, confirmación de `retales_crear` reutilizando ese valor literal, borrado
   del dato de prueba, y el caso de una pieza que no cabe (0% de aprovechamiento, aviso claro).
-- **Roadmap de continuación:** dentro del Ciclo 2 queda parámetros (mismo patrón a
-  repetir); "crear cotización" (`cotizacion_crear`) se difirió
+**Objetivo 5, Ciclo 2 — dominio Parámetros ✅ completo (2026-09-06), ÚLTIMO dominio del ciclo:**
+las tarifas de costo de producción y los adicionales que alimentan DIRECTAMENTE el motor de
+cálculo de cada cotización futura del taller — el dominio de mayor riesgo financiero de todo el
+Ciclo 2. Un error aquí no afecta una fila, afecta todas las cotizaciones hasta que alguien lo note.
+
+- **Por qué es distinto a los 6 dominios anteriores:** no hay ningún `id` numérico de fila —
+  identidad = `material`+`nombre_interno` para tarifas, `concepto` para adicionales, texto libre,
+  resuelta por `parametros_service._buscar_indice` (coincidencia exacta normalizada trim+casefold,
+  nunca substring/fuzzy/índice de lista; 0 o 2+ coincidencias falla cerrado con 404/409). `cfg_set`
+  (`db/config_helpers.py`) reemplaza el JSON COMPLETO de la clave `tarifas`/`adicionales` — no hay
+  UPDATE parcial de JSONB, así que toda escritura hace "leer completo fresco → mutar fila puntual →
+  reescribir completo", nunca deja que el caller (router o tool) arme el JSON a mano.
+  `requiere_capacidad="puede_ver_dashboard"` en las 7 tools, incluida `parametros_ver` — ni
+  siquiera leer Parámetros es abierto a cualquier usuario, mismo campo de rol que ya protege
+  `GET /api/parametros` vía `require_dashboard`.
+- **7 tools sin comodín** (`parametros_ver`, `parametros_tarifa_editar/agregar/quitar`,
+  `parametros_adicional_editar/agregar/quitar`) — rechazado explícitamente un diseño de 2 tools
+  genéricas con un parámetro `accion:str`, mismo criterio que `registry.py` ya documenta contra
+  tools comodín (causa del incidente histórico de un DELETE ambiguo). **TODAS las escrituras
+  proponen sin excepción, incluso "agregar"** — a diferencia de `catalogo_crear_material` (que a
+  veces ejecuta directo), aquí cualquier escritura reescribe el JSON completo de la clave, nunca
+  una fila aislada con su propio id, así que el radio de un error se propaga a TODAS las
+  categorías de material si algo ejecutara directo.
+- **Conversión %-vs-fracción siempre en el handler, nunca en el modelo ni en el service:** 2 de
+  los 7 valores de `inductor` (`porcentaje_material`, `merma_pct`) guardan `valor` como fracción
+  (0.05 = 5%). El modelo siempre habla/recibe puntos de porcentaje (5, no 0.05); el handler de
+  `parametros_tarifa_editar` LEE la fila actual primero (no le llega el `inductor` en sus
+  argumentos) para saber si debe dividir entre 100 antes de llamar al service, que recibe siempre
+  el valor ya convertido.
+- **Candado de concurrencia barato:** cada propuesta captura la columna `app_config.actualizado`
+  (que `cfg_set` ya mantenía) al proponer; al confirmar, `parametros_service` la vuelve a comparar
+  contra la real antes de escribir — si alguien más guardó Parámetros en el medio (desde la
+  pantalla manual o desde otra propuesta), la confirmación falla con 409 en vez de pisar ese
+  cambio en silencio.
+- **Auditoría (Security Engineer) — APRUEBA CON CAMBIOS, 3 correcciones obligatorias:**
+  1. `etiqueta_pdf` debía ser un catálogo cerrado de 4 valores (`c2_mano_obra`, `c3_zocalos`,
+     `c4_insumos`, `""`), validado en Pydantic (`Literal`) y de nuevo en el service (doble
+     candado). **No es un detalle cosmético de PDF**: `motor/calculos.py` descarta en silencio
+     (`continue`) toda regla cuya `etiqueta_pdf` no esté en el set de buckets conocidos — un valor
+     libre hace que ese costo deje de cobrarse en cada cotización futura, sin ningún error visible.
+  2. `quitar_tarifa` debía **bloquear** (409), no solo advertir, borrar la última fila
+     `inductor="merma_pct"` de una categoría — evidencia real en
+     `motor/calculos.py::_obtener_merma_pct`: sin ninguna fila de merma, el motor cae a
+     `PROPIEDADES_MATERIAL[categoria]["merma_base"]` sin lanzar ningún error.
+  3. Candado de concurrencia con `app_config.actualizado` (arriba).
+- **Fase 5 (Code Reviewer, 2 rondas) — 1 hallazgo real cerrado:** el guardado manual
+  (`PUT /api/parametros`, la pantalla de edición normal, que sigue siendo un reemplazo directo sin
+  pasar por editar/agregar/quitar fila por fila) no tenía NINGUNA de las 3 protecciones nuevas —
+  podía reintroducir en silencio los mismos 2 bugs financieros que se cerraron para el agente.
+  Corregido con `parametros_service.validar_invariantes_tarifas` (valida `inductor`/`etiqueta_pdf`
+  de cada fila y que cada categoría conserve al menos una fila `merma_pct`), aplicada también en
+  el router del PUT manual antes de `cfg_set`. De paso: `agregar_tarifa` rechaza una segunda fila
+  `merma_pct` en la misma categoría (el motor solo usa la primera, una segunda quedaría inerte);
+  la tool de editar valida que venga al menos un campo antes de crear la propuesta, no solo al
+  confirmar; `editar_tarifa`/`editar_adicional` recortan espacios al renombrar.
+- **Verificado en vivo (2026-09-06)** contra el taller demo real: leer tarifas (porcentajes
+  mostrados correctamente, nunca la fracción cruda) → subir la merma de Mármol de 8% a 10%
+  (confirmado, verificado en `/parametros`) → agregar una tarifa de prueba en Granito → **intentar
+  quitar la única fila de merma de Sinterizado — Cost anticipó el bloqueo en su respuesta, y al
+  insistir, el backend lo rechazó con 409 real** (confirmado en el log del servidor y en la
+  pantalla real, la fila sigue intacta) → limpieza de los datos de prueba y restauración de la
+  merma de Mármol a su valor original.
+- **Roadmap de continuación:** 🎉 con Parámetros, el Ciclo 2 del Objetivo 5 queda COMPLETO — los
+  6 dominios planeados (Cotización, Catálogo, Inventario, Retales, Nesting, Parámetros), todos
+  auditados y verificados en vivo. "Crear cotización" (`cotizacion_crear`) se difirió
   a propósito por su complejidad (el motor `calcular_cotizacion_directa` tiene ~60 variables:
   merma, logística, viáticos, zócalos geométricos) y el riesgo financiero de que la IA cotice mal
   a un cliente real — cuando se aborde, el cálculo puede ser una tool directa y pura, pero el

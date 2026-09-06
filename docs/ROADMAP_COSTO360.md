@@ -227,7 +227,7 @@ está bien pensado, y define el comportamiento exacto a replicar.
 
 ---
 
-## Fase 3 — Objetivo 5: Agente de IA dentro del producto  🔄 **Ciclo 2 en curso (2026-09-05)**
+## Fase 3 — Objetivo 5: Agente de IA dentro del producto  🎉 **Ciclo 2 completo (2026-09-06)**
 
 Una vez la interfaz nueva del Objetivo 1 exista (✅ completada), evolucionar el agente actual
 de Parámetros hacia el asistente personal por usuario que navega la interfaz de forma autónoma
@@ -343,7 +343,23 @@ dominio piloto de bajo riesgo — decisión aprobada por el fundador.
     en vez de llamar al algoritmo real. Corregido reforzando la `description` de la tool y el
     system prompt para prohibir explícitamente el cálculo manual. Las 4 pruebas completas contra
     el taller demo con datos desechables. Detalle completo: `ARQUITECTURA_MAESTRA.md` sección 8.
-  - **⬜ Pendientes del Ciclo 2:** parámetros.
+  - **✅ Parámetros (2026-09-06) — ÚLTIMO dominio, Ciclo 2 completo:** 7 tools — `parametros_ver`
+    (lectura, único dominio donde ni siquiera leer es abierto a cualquier usuario), `parametros_
+    tarifa_editar/agregar/quitar`, `parametros_adicional_editar/agregar/quitar` — TODAS las
+    escrituras proponen sin excepción, incluso "agregar" (cualquier escritura reescribe el JSON
+    completo de tarifas/adicionales, no una fila aislada). Dominio de mayor riesgo financiero del
+    ciclo: alimenta directamente el motor de cálculo de cada cotización futura. Auditado por
+    Security Engineer (3 correcciones obligatorias: `etiqueta_pdf` como catálogo cerrado —un valor
+    libre hacía que el motor descartara la regla completa del costo en silencio—, bloquear en vez
+    de solo advertir el borrado de la última fila de % de merma, candado de concurrencia con la
+    columna `actualizado` ya existente) + Code Reviewer en Fase 5, 2 rondas (1 hallazgo real: el
+    guardado manual no tenía ninguna de las protecciones nuevas y podía reintroducir los mismos 2
+    bugs financieros — corregido con una validación compartida aplicada también al PUT manual).
+    Verificado en vivo contra el taller demo real, incluido el bloqueo real (409) al intentar
+    borrar la única fila de merma de una categoría. Detalle completo: `ARQUITECTURA_MAESTRA.md`
+    sección 8.
+  - **🎉 Ciclo 2 completo:** los 6 dominios planeados (Cotización, Catálogo, Inventario, Retales,
+    Nesting, Parámetros), todos auditados y verificados en vivo.
 - **⬜ Ciclo 3 — Las dos superficies de UI completas:** chat flotante global (hoy solo vive en
   la página piloto) + "Centro del Agente" (bitácora de acciones, deshacer, modo BI con
   exportación).
