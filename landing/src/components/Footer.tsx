@@ -64,7 +64,6 @@ export function Footer() {
                 </a>
               </li>
               <li><a href="https://app.costo360.com/registro" className="hover:text-white transition-colors">Crear Cuenta Taller</a></li>
-              <li><a href="/llms.txt" target="_blank" className="hover:text-white transition-colors font-mono">Archivo AEO (/llms.txt)</a></li>
               <li><a href="#faq" className="hover:text-white transition-colors">Centro de Ayuda / FAQ</a></li>
             </ul>
           </div>
