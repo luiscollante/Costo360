@@ -2,6 +2,43 @@
 
 ---
 
+## ✅ Hecho (2026-09-05, tercera ronda)
+
+- **Objetivo 5, Ciclo 2 — dominio Inventario de láminas para Cost:** 4 tools nuevas
+  (`inventario_listar_laminas`, `inventario_crear_lamina`, `inventario_editar_lamina`,
+  `inventario_eliminar_lamina`), mismo patrón ya auditado varias veces (capa de servicio
+  compartida `backend/services/inventario_service.py`, modelos nuevos `backend/models/inventario.py`
+  con validación de campos físicos —`ancho_cm`/`alto_cm`/`espesor_cm` exigen `>0`, nunca `>=0`,
+  porque una lámina de 0cm no es un dato válido, a diferencia de un precio en $0 en otro
+  dominio—, router adelgazado a delegar en el servicio). Ciclo `/goal` completo sin atajos: Fase 0
+  con el grafo del proyecto, Fase 1 delegada a un Software Architect aparte (incluyó
+  `material_categoria` desde el primer plan — confirmado con el fundador antes de ejecutar), Fase 2
+  con Security Engineer (corrigió que `inventario_crear_lamina` ejecutaba directo en vez de
+  proponer — "stock fantasma en un solo turno" —, ahora las 3 tools de escritura siempre pasan por
+  confirmación humana), Fase 5 con Code Reviewer en 2 rondas (cerró un hallazgo real: el chequeo de
+  "esta lámina ya está borrada" solo vivía en el handler de la tool al proponer, no en el servicio
+  al confirmar — dejaba una ventana de carrera de minutos donde una edición o un segundo borrado
+  podían colarse sobre una fila ya inactiva; movido a `inventario_service.editar_lamina`/
+  `eliminar_lamina`, verificado que compone bien con el rollback transaccional existente).
+  Tratamiento deliberado: el borrado de Inventario es técnicamente un soft-delete (`activo=FALSE`,
+  el dato sobrevive) pero se trata con la MISMA severidad que un borrado real porque la app no
+  tiene ninguna pantalla para reactivarlo — el criterio correcto es "¿el usuario puede deshacerlo
+  desde la app?", no "¿sobrevive el dato en la base?". Verificado en vivo contra el taller demo real
+  (crear → editar → borrar → reconsultar, filas de prueba desechables). 4 bugs reales encontrados y
+  corregidos en el camino, 2 reportados por el fundador probando por su cuenta: (1) al confirmar
+  una acción no aparecía ningún mensaje avisando qué había pasado — Cost "parecía tener amnesia" al
+  preguntarle después; corregido inyectando un mensaje de confirmación genérico al chat justo tras
+  confirmar. (2) tras ese fix, Cost aún podía contradecir su propia confirmación al reverificar
+  (interpretaba una búsqueda vacía tras un borrado como "nunca existió"); corregido con una regla
+  nueva en el system prompt: confiar en lo que ya confirmó antes en la misma conversación. (3) la
+  tarjeta de confirmación de una lámina nueva (sin id todavía) mostraba literalmente "(id
+  undefined)"; corregido con un chequeo condicional. (4) el costo unitario propuesto no se
+  formateaba como moneda (solo `precio_m2_propuesto` estaba en la lista fija de campos de moneda);
+  corregido de forma genérica reconociendo el sufijo `_propuesto` en cualquier campo de moneda
+  conocido, para que futuros dominios no necesiten repetir el registro. Próxima tarea lógica: seguir
+  con el resto de dominios del Ciclo 2 (retales, nesting, parámetros) o pasar a "crear cotización"
+  (deferido por su complejidad).
+
 ## ✅ Hecho (2026-09-05, continuación)
 
 - **Objetivo 5, Ciclo 2 — dominio Catálogo de materiales para Cost:** 5 tools nuevas

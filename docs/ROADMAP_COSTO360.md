@@ -300,7 +300,21 @@ dominio piloto de bajo riesgo — decisión aprobada por el fundador.
     `editar_material` ignora silenciosamente `proveedor`/`activo` al editar una fila base sin
     sombrear todavía — pendiente como tarea aparte. Detalle completo: `ARQUITECTURA_MAESTRA.md`
     sección 8.
-  - **⬜ Pendientes del Ciclo 2:** inventario, retales, nesting, parámetros.
+  - **✅ Inventario de láminas (2026-09-05):** 4 tools — `inventario_listar_laminas` (lectura),
+    `inventario_crear_lamina`, `inventario_editar_lamina`, `inventario_eliminar_lamina` (las 3 de
+    escritura siempre proponen, nunca ejecutan directo). Auditado por Security Engineer (1
+    bloqueante real: `inventario_crear_lamina` ejecutaba directo, permitiendo "stock fantasma" en
+    un solo turno sin confirmación humana — corregido) + Code Reviewer en Fase 5, 2 rondas (1
+    bloqueante real: el chequeo de "lámina ya inactiva" solo vivía en el handler de la tool al
+    proponer, no en el servicio al confirmar, dejando una ventana de carrera real — movido a
+    `inventario_service.py`). Decisión de criterio documentada: el borrado (soft-delete técnico,
+    `activo=FALSE`) se trata con la severidad de un borrado real en toda la UX del agente porque
+    la app no tiene pantalla de reactivación. **Verificado en vivo con datos reales del taller
+    demo:** crear → editar → borrar → reconsultar con filas desechables. 2 hallazgos más
+    corregidos en la tarjeta de confirmación (id undefined en una lámina nueva; costo unitario sin
+    formato de moneda, ahora genérico para cualquier campo `_propuesto`). Detalle completo:
+    `ARQUITECTURA_MAESTRA.md` sección 8.
+  - **⬜ Pendientes del Ciclo 2:** retales, nesting, parámetros.
 - **⬜ Ciclo 3 — Las dos superficies de UI completas:** chat flotante global (hoy solo vive en
   la página piloto) + "Centro del Agente" (bitácora de acciones, deshacer, modo BI con
   exportación).

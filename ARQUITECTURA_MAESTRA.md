@@ -538,8 +538,57 @@ proyecto consultado primero, plan armado por un Software Architect aparte, no di
 - **Verificado en vivo (2026-09-05)** contra datos reales del taller demo: las 5 tools completas,
   usando materiales de prueba desechables creados y borrados por el propio Cost — nunca se tocó
   el catálogo base compartido real.
-- **Roadmap de continuación:** dentro del Ciclo 2 quedan inventario, retales, nesting y
-  parámetros (mismo patrón a repetir); "crear cotización" (`cotizacion_crear`) se difirió
+**Objetivo 5, Ciclo 2 — dominio Inventario de láminas ✅ completo (2026-09-05):** mismo patrón,
+ciclo `/goal` completo sin atajos desde el inicio (Fase 0 con grafo, Fase 1 con Software Architect
+aparte).
+
+- **Capa de servicio y modelos:** `backend/services/inventario_service.py` (`listar_inventario`,
+  `obtener_lamina` —deliberadamente SIN filtrar `activo`, para que la vista previa de una
+  propuesta distinga "no existe" de "ya está inactiva"—, `crear_lamina`, `editar_lamina`,
+  `eliminar_lamina`) + `backend/models/inventario.py` (`LaminaIn`/`LaminaUpdate`, movidos del
+  router). Validación nueva que no existía antes: `cantidad_laminas`/`stock_minimo`/
+  `costo_unitario` → `ge=0`; `ancho_cm`/`alto_cm`/`espesor_cm` → `gt=0` (a propósito, no `ge=0` —
+  una lámina de 0cm de cualquier dimensión no es un dato físico válido, a diferencia de un precio
+  en $0 que sí puede tener sentido en otro dominio).
+- **4 tools:** `inventario_listar_laminas` (lectura), `inventario_crear_lamina`,
+  `inventario_editar_lamina`, `inventario_eliminar_lamina` — las 3 de escritura SIEMPRE proponen,
+  nunca ejecutan directo (corrección de un bloqueante real de Fase 2, ver abajo).
+- **Auditoría (Security Engineer) — 1 bloqueante real:** la primera versión de
+  `inventario_crear_lamina` ejecutaba directo en vez de proponer — permitía "stock fantasma" en
+  un solo turno sin que ningún humano confirmara la cantidad o el costo antes de que quedara
+  escrito. Corregido: las 3 tools de escritura pasan siempre por el flujo de propuesta de dos
+  fases, igual que Cotización y Catálogo.
+- **Fase 5 (Code Reviewer, 2 rondas) — aprobado, 1 hallazgo real de fondo cerrado:** el chequeo de
+  "esta lámina ya está inactiva" (`activo is False`) vivía SOLO en el handler de la tool, en el
+  momento de proponer — no en `inventario_service.py`, en el momento real de confirmar. Eso dejaba
+  una ventana de carrera real (los minutos entre proponer y confirmar) donde una edición o un
+  segundo borrado podían colarse sobre una fila ya inactiva sin que nada lo detuviera. Corregido
+  moviendo el chequeo a `editar_lamina`/`eliminar_lamina` en el service — verificado que compone
+  bien con el rollback transaccional existente de `db_rls`/`rls_connection` (si la escritura falla
+  después, el estado de la propuesta también revierte). El reviewer también encontró 2 hallazgos
+  menores en la tarjeta de confirmación (ver `AgentePage.tsx` abajo).
+- **Decisión de criterio, aplicable a futuros dominios con soft-delete:** el borrado de Inventario
+  es técnicamente `activo=FALSE` (el dato sobrevive en la base), pero se trata con la MISMA
+  severidad que un borrado real en toda la UX del agente (lenguaje, tarjeta de confirmación,
+  `es_destructiva=True`) porque la app no tiene ninguna pantalla de reactivación — el criterio
+  correcto es "¿el usuario puede deshacerlo desde la propia app?", no "¿sobrevive el dato en la
+  base de datos?".
+- **`AgentePage.tsx` — 2 fixes más generalizados (no solo para Inventario):** (1) la tarjeta de una
+  lámina recién propuesta (sin `id` todavía, porque la fila no existe hasta confirmar) mostraba
+  literalmente "(id undefined)" — corregido con un chequeo condicional (`f.id != null`). (2) el
+  costo unitario propuesto no se formateaba como moneda porque la lista de campos de moneda era un
+  set fijo que solo conocía `precio_m2_propuesto` — corregido con `_esCampoMoneda()`, que reconoce
+  el sufijo `_propuesto` en cualquier campo de moneda conocido, para que un futuro dominio no
+  necesite volver a tocar este componente para su propia variante.
+- **2 bugs reales encontrados por el fundador probando en vivo por su cuenta** (documentados con
+  detalle en la entrada de Catálogo de arriba porque el primero se originó ahí, pero ambos aplican
+  a los 3 dominios por igual): falta de mensaje de confirmación en el chat tras confirmar, y
+  autocontradicción de Cost al reverificar una acción ya confirmada. Ambos ya corregidos antes de
+  iniciar Inventario — se reverificaron de nuevo aquí sin regresión.
+- **Verificado en vivo (2026-09-05)** contra datos reales del taller demo: crear → editar → borrar
+  → reconsultar, con filas de prueba desechables (nunca sobre inventario real del taller).
+- **Roadmap de continuación:** dentro del Ciclo 2 quedan retales, nesting y parámetros (mismo
+  patrón a repetir); "crear cotización" (`cotizacion_crear`) se difirió
   a propósito por su complejidad (el motor `calcular_cotizacion_directa` tiene ~60 variables:
   merma, logística, viáticos, zócalos geométricos) y el riesgo financiero de que la IA cotice mal
   a un cliente real — cuando se aborde, el cálculo puede ser una tool directa y pura, pero el
