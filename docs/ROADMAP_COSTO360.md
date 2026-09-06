@@ -279,7 +279,28 @@ dominio piloto de bajo riesgo — decisión aprobada por el fundador.
     modelo) y se generalizó la tarjeta de confirmación del agente para cualquier dominio futuro
     (antes solo sabía mostrar `{titulo, id}`, el molde de las tareas). Detalle completo:
     `ARQUITECTURA_MAESTRA.md` sección 8.
-  - **⬜ Pendientes del Ciclo 2:** catálogo, inventario, retales, nesting, parámetros.
+  - **✅ Catálogo de materiales (2026-09-05):** 5 tools — `catalogo_listar_materiales`/`categorias`
+    (lectura), `catalogo_crear_material` (directo si es genuinamente nuevo; propone si colisiona
+    con uno propio existente, porque en la práctica sería actualizar un precio), `catalogo_editar_material`
+    (siempre propone, sin excepción — el precio de un material alimenta cualquier cotización
+    futura y un error ahí es silencioso y diferido), y `catalogo_eliminar_material` (siempre
+    propone; el aviso distingue si borrar solo restablece un override de una fila base de
+    Costo360 o borra de verdad un material propio del taller). Auditado en 2 rondas por Security
+    Engineer (2 bloqueantes reales: faltaba validar los argumentos de la tool con los mismos
+    modelos Pydantic del router antes de tocar la base, y faltaba el aviso anti-encadenamiento) +
+    1 ronda de Code Reviewer en Fase 5 (aprobado, con 1 hallazgo nuevo corregido: la tarjeta de
+    confirmación de editar solo mostraba antes/después del precio, no de categoría/proveedor/
+    activo — generalizado). **Verificado en vivo con datos reales del taller demo:** las 5
+    tools completas, incluyendo un hallazgo real de comportamiento del modelo — al pedir "borra
+    el material X", Cost interpretó la solicitud como revertir el precio y llamó a la tool de
+    editar en vez de la de borrar (la tarjeta de confirmación mostró la verdad, así que un
+    humano atento lo habría detectado antes de confirmar); corregido con desambiguación cruzada
+    explícita en las descripciones de ambas tools, reverificado en vivo tras el fix. Bug
+    preexistente encontrado de paso (no de hoy, no bloqueante): la rama de copy-on-write de
+    `editar_material` ignora silenciosamente `proveedor`/`activo` al editar una fila base sin
+    sombrear todavía — pendiente como tarea aparte. Detalle completo: `ARQUITECTURA_MAESTRA.md`
+    sección 8.
+  - **⬜ Pendientes del Ciclo 2:** inventario, retales, nesting, parámetros.
 - **⬜ Ciclo 3 — Las dos superficies de UI completas:** chat flotante global (hoy solo vive en
   la página piloto) + "Centro del Agente" (bitácora de acciones, deshacer, modo BI con
   exportación).

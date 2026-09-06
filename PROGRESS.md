@@ -2,6 +2,31 @@
 
 ---
 
+## ✅ Hecho (2026-09-05, continuación)
+
+- **Objetivo 5, Ciclo 2 — dominio Catálogo de materiales para Cost:** 5 tools nuevas
+  (`catalogo_listar_materiales`, `catalogo_listar_categorias`, `catalogo_crear_material`,
+  `catalogo_editar_material`, `catalogo_eliminar_material`), mismo patrón auditado ya varias veces
+  (capa de servicio compartida `backend/services/catalogo_service.py`, modelos movidos a
+  `backend/models/materiales.py`, tipado `INTEGER` estricto, dos fases para lo destructivo/alto
+  impacto). Auditado por Security Engineer en 2 rondas (2 bloqueantes reales cerrados: faltaba
+  validar los argumentos de la tool con los mismos modelos Pydantic del router antes de tocar la
+  base — los argumentos de una tool-call nunca pasan por FastAPI —, y faltaba el aviso
+  anti-encadenamiento) + Code Reviewer en Fase 5 (aprobado, con 1 hallazgo corregido: la tarjeta
+  de confirmación de editar solo mostraba antes/después del precio, generalizado a cualquier
+  campo). Verificado en vivo con datos reales del taller demo: las 5 tools completas — incluido
+  un hallazgo real de comportamiento del modelo, no de código: al pedir "borra el material X",
+  Cost llamó a la tool de EDITAR en vez de la de BORRAR (interpretó "borrar" como revertir el
+  precio). La tarjeta de confirmación mostró la verdad de lo que iba a pasar (un cambio de
+  precio, no un borrado), así que la defensa estructural funcionó — pero se corrigió también la
+  causa de raíz con desambiguación cruzada explícita en las descripciones de ambas tools, y se
+  reverificó en vivo que Cost ya elige la tool correcta. Bug preexistente encontrado de paso (no
+  de hoy, no bloqueante): la rama de copy-on-write de `editar_material` ignora silenciosamente
+  `proveedor`/`activo` al editar una fila base sin sombrear todavía — pendiente como tarea
+  aparte, igual que el de `calcular_merma` de la entrada anterior. Próxima tarea lógica: seguir
+  con el resto de dominios del Ciclo 2 (inventario, retales, nesting, parámetros) o pasar a
+  "crear cotización" (deferido por su complejidad).
+
 ## ✅ Hecho (2026-09-05)
 
 - **Objetivo 5, Ciclo 2 — dominio Cotización para Cost:** 4 tools nuevas (`cotizacion_listar_historial`,

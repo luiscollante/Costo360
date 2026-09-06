@@ -36,19 +36,41 @@ micro-commits por cada avance.
    Bugs reales encontrados y corregidos en el camino: serialización de `Decimal`/`date` de
    Postgres al pasarle una tool al modelo, y la tarjeta de confirmación del agente que solo sabía
    mostrar `{titulo, id}` (generalizada para cualquier dominio).
+5. **Objetivo 5, Ciclo 2 — dominio Catálogo, ciclo `/goal` completo (Fases 0-6), esta vez sin
+   atajos:** el fundador preguntó explícitamente si se había seguido el ciclo completo en
+   Cotización — la respuesta honesta fue que las Fases 0 y 1 se habían acortado (exploración
+   manual sin consultar el grafo primero, plan armado directamente sin un agente planificador
+   aparte). Para Catálogo se corrigió: Fase 0 con `codebase-memory-mcp` primero, Fase 1
+   delegada a un Software Architect real (2 rondas hasta que su plan quedó completo), Fase 2 con
+   Security Engineer (2 rondas, 2 bloqueantes reales: validación Pydantic faltante en los
+   handlers de tool, aviso anti-encadenamiento faltante), Fase 5 con Code Reviewer (aprobado, 1
+   hallazgo corregido: tarjeta de confirmación de editar generalizada a cualquier campo, no solo
+   precio). Verificado en vivo con datos reales: las 5 tools completas contra materiales de
+   prueba desechables (creados y borrados por el propio Cost, nunca tocando el catálogo base
+   real). Hallazgo real de comportamiento del modelo, no de código: Cost interpretó "borra el
+   material X" como revertir su precio y llamó a la tool de editar en vez de la de borrar — la
+   tarjeta de confirmación mostró la verdad (un cambio de precio, no un borrado), así que la
+   defensa estructural funcionó, pero se corrigió también la causa de raíz con desambiguación
+   cruzada en las descriptions de ambas tools, reverificado en vivo. Detalle completo:
+   `PROGRESS.md` y `ARQUITECTURA_MAESTRA.md` sección 8.
 
 ### Decisiones tomadas
 - Personalidad de Cost cerrada (ver `AGENTE_PERSONALIDAD.md`).
 - Burbuja flotante vieja se deja intacta hasta el Ciclo 3 — no mezclar identidades a medio camino.
 - Animaciones de la app ignoran la preferencia del sistema operativo, a partir de hoy.
-- Ciclo 2 arranca por Cotización (no todos los dominios a la vez); "crear cotización" se difiere
-  a una segunda pasada por su complejidad (motor de ~60 variables) y riesgo financiero.
+- Ciclo 2 arranca por Cotización, luego Catálogo (no todos los dominios a la vez); "crear
+  cotización" se difiere a una segunda pasada por su complejidad (motor de ~60 variables) y
+  riesgo financiero.
+- A partir de Catálogo, el ciclo `/goal` se sigue completo sin atajos: Fase 0 con el grafo del
+  proyecto primero, Fase 1 delegada a un agente planificador aparte (nunca armada directamente).
 
 ### Pendiente / próxima tarea lógica
-- Bug preexistente encontrado de paso (no de hoy): `calcular_merma` no pasa `tarifas_src`, ignora
-  la merma personalizada configurada por el taller — no bloqueante, pendiente como tarea aparte.
-- Decidir con el fundador: seguir el Ciclo 2 con los demás dominios (catálogo, inventario,
-  retales, nesting, parámetros) o abordar "crear cotización" primero.
+- 2 bugs preexistentes encontrados de paso (no introducidos en esta sesión), ambos no
+  bloqueantes, pendientes como tareas aparte: `calcular_merma` no pasa `tarifas_src` (ignora la
+  merma personalizada del taller); la rama de copy-on-write de `catalogo_service.editar_material`
+  ignora silenciosamente `proveedor`/`activo` al editar una fila base sin sombrear todavía.
+- Decidir con el fundador: seguir el Ciclo 2 con los demás dominios (inventario, retales,
+  nesting, parámetros) o abordar "crear cotización" primero.
 
 ---
 

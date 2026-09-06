@@ -484,7 +484,53 @@ de tools + confirmación de dos fases del Ciclo 1, aplicado al dominio de Cotiza
   — listar, ver detalle, cambiar estado (directo y con confirmación hacia "Aprobada"), y borrar
   (autorizado explícitamente por el fundador sobre una fila de prueba QA, no un cliente real) —
   con los cambios reflejados de verdad en el Historial y la auditoría.
-- **Roadmap de continuación:** dentro del Ciclo 2 quedan catálogo, inventario, retales, nesting y
+**Objetivo 5, Ciclo 2 — dominio Catálogo de materiales ✅ completo (2026-09-05):** mismo patrón
+que Cotización, ejecutado esta vez sin los atajos de Fase 0/1 del dominio anterior (grafo del
+proyecto consultado primero, plan armado por un Software Architect aparte, no directamente).
+
+- **Capa de servicio y modelos:** `backend/services/catalogo_service.py` (`listar_materiales`,
+  `listar_categorias`, `obtener_material`, `buscar_material_propio`, `crear_material`,
+  `editar_material`, `eliminar_material`) + `backend/models/materiales.py` (`MaterialIn`/
+  `MaterialUpdate`, movidos desde el router). `routers/materiales.py` delega a ambos. De paso se
+  agregó `log_accion()` a las 3 escrituras — antes el catálogo no dejaba ningún rastro de
+  auditoría, ni para uso humano.
+- **5 tools:** `catalogo_listar_materiales`/`categorias` (lectura), `catalogo_crear_material`
+  (directo si es genuinamente nuevo; propone si colisiona con un material propio existente —
+  en la práctica sería actualizar un precio, no crear), `catalogo_editar_material` (SIEMPRE
+  propone, sin excepción — el precio de un material alimenta cualquier cotización futura, un
+  error ahí es silencioso y se nota semanas después), y `catalogo_eliminar_material` (siempre
+  propone; el `es_destructiva` de la propuesta se calcula por fila: borrar un override de una
+  fila base de Costo360 solo "restablece" el original, borrar un material genuinamente propio
+  del taller es irreversible de verdad — la fila afectada incluye el dato crudo `es_override`,
+  no solo el flag ya derivado).
+- **Auditoría en 2 rondas (Security Engineer) — 2 bloqueantes reales:** (1) faltaba que los
+  handlers de tool validaran sus argumentos con los mismos modelos Pydantic del router antes de
+  tocar el service — los argumentos de una tool-call de Gemini NUNCA pasan por FastAPI, así que
+  sin esto un precio negativo llegaría crudo a la base vía el agente (patrón de corrección:
+  envolver en `MaterialIn`/`MaterialUpdate` con try/except, igual que `proyectos.py::_crear_tarea`).
+  (2) faltaba el aviso anti-encadenamiento en las 3 tools de escritura. Ambos cerrados y
+  reverificados antes de ejecutar.
+- **Fase 5 (Code Reviewer) — aprobado, 1 hallazgo corregido:** la tarjeta de confirmación de
+  `catalogo_editar_material` solo generaba `precio_m2_propuesto` — si el usuario cambiaba
+  categoría/proveedor/activo, la tarjeta no mostraba ningún valor nuevo, debilitando la defensa
+  de "la tarjeta siempre muestra la verdad". Corregido generalizando a un `"<campo>_propuesto"`
+  por cada campo que de verdad cambia; `AgentePage.tsx` etiqueta cualquier variante `_propuesto`
+  automáticamente. Encontró también un bug preexistente no introducido hoy: la rama de
+  copy-on-write de `editar_material` ignora silenciosamente `proveedor`/`activo` al editar una
+  fila base sin sombrear todavía — pendiente como tarea aparte.
+- **Hallazgo real de comportamiento del modelo (no de código), encontrado en la verificación en
+  vivo:** al pedir "borra el material X", Cost interpretó la solicitud como revertir el precio a
+  un valor anterior y llamó a `catalogo_editar_material` en vez de `catalogo_eliminar_material` —
+  confirmado consultando directamente `agente_acciones_pendientes` en Supabase. La tarjeta de
+  confirmación mostró la verdad de lo que iba a pasar (un cambio de precio, no un borrado), así
+  que un humano atento lo habría detectado antes de confirmar — la defensa estructural funcionó.
+  Se corrigió también la causa de raíz con desambiguación cruzada explícita en las `description`
+  de ambas tools ("borrar/eliminar/quita" siempre es `catalogo_eliminar_material`, nunca una
+  reversión de precio), reverificado en vivo tras el cambio.
+- **Verificado en vivo (2026-09-05)** contra datos reales del taller demo: las 5 tools completas,
+  usando materiales de prueba desechables creados y borrados por el propio Cost — nunca se tocó
+  el catálogo base compartido real.
+- **Roadmap de continuación:** dentro del Ciclo 2 quedan inventario, retales, nesting y
   parámetros (mismo patrón a repetir); "crear cotización" (`cotizacion_crear`) se difirió
   a propósito por su complejidad (el motor `calcular_cotizacion_directa` tiene ~60 variables:
   merma, logística, viáticos, zócalos geométricos) y el riesgo financiero de que la IA cotice mal
