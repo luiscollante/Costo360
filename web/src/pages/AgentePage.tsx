@@ -33,7 +33,10 @@ const _CAMPOS_OCULTOS = new Set(['id', 'base_id', 'es_propio', 'activo', 'actual
 function _tieneValor(v: unknown): boolean {
   return v != null && v !== ''
 }
-const _CAMPOS_MONEDA = new Set(['precio', 'precio_m2', 'precio_lamina', 'costo_unitario'])
+const _CAMPOS_MONEDA = new Set([
+  'precio', 'precio_m2', 'precio_lamina', 'costo_unitario',
+  'precio_recuperacion', 'precio_mercado_m2',
+])
 
 /** true tanto para 'precio_m2' como para su variante 'precio_m2_propuesto' —
  * mismo espíritu que `_etiqueta()`: una tool nueva que proponga cambiar un
@@ -54,6 +57,9 @@ const _ETIQUETAS: Record<string, string> = {
   costo_unitario: 'Costo unitario', stock_minimo: 'Stock mínimo',
   ancho_cm: 'Ancho (cm)', alto_cm: 'Alto (cm)', espesor_cm: 'Espesor (cm)',
   ubicacion: 'Ubicación', notas: 'Notas',
+  m2_disponibles: 'm² disponibles', m2_original: 'm² original',
+  precio_recuperacion: 'Precio de recuperación', precio_mercado_m2: 'Precio de mercado (m²)',
+  fecha_ingreso: 'Fecha de ingreso',
 }
 
 /** Cualquier "<campo>_propuesto" (no solo precio_m2_propuesto) recibe una
