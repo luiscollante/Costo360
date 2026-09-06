@@ -2,6 +2,60 @@
 
 ---
 
+## Sesión: 2026-09-06 (continuación) — Resolución del bug de Retales, verificación en vivo completa
+
+### Qué se hizo
+Continuación directa de la sesión anterior del mismo día (cerrada con `/cierre` justo antes de
+poder reprobar el fix candidato). El fundador pidió explícitamente levantar backend y frontend
+y probar Retales.
+
+1. **Backend levantado limpio** (`uvicorn backend.main:app --reload --port 8000`, log a
+   `backend_dev.log`) — arrancó sin errores. El frontend (`vite`) seguía corriendo solo, no hizo
+   falta levantarlo (se había caído la sesión anterior por bajo uso de memoria del sistema, pero
+   ya estaba de vuelta al retomar).
+2. **Bug real cerrado y verificado:** con el párrafo nuevo del system prompt (commiteado la
+   sesión anterior como `wip` sin verificar), Cost reconoció Retales de inmediato — preguntar
+   "¿qué retales tengo disponibles?" ahora invoca `retales_listar` correctamente. Confirma la
+   causa raíz: una tool registrada y aprobada en auditoría de código puede seguir siendo
+   invisible para el modelo si el system prompt no la menciona como capacidad explícita — el
+   registro técnico (`ToolSpec`) no es suficiente por sí solo.
+3. **Verificación en vivo completa de las 4 tools**, datos desechables contra el taller demo:
+   - `retales_listar`: vacío inicialmente, respuesta correcta.
+   - `retales_crear`: "PRUEBA-RET-01", Mármol, 3.5 m², precio recuperación $120.000, precio
+     mercado $200.000 — tarjeta de confirmación con ambos precios en formato COP (confirma el
+     fix de `_CAMPOS_MONEDA`), confirmado y verificado en `/retales` que quedó creado de verdad.
+   - `retales_editar`: cambiar precio de recuperación a $150.000 — Cost buscó primero el id
+     (anti-encadenamiento funcionando: nunca asumió cuál retal sin listar antes), tarjeta mostró
+     "$120.000 → $150.000" lado a lado, confirmado.
+   - Intento de **estado inválido** ("Perdido"): rechazado con un mensaje claro listando los 3
+     estados válidos (Disponible/Reservado/Usado) y ofreciendo alternativas — nunca se creó
+     ninguna propuesta con datos corruptos. Verifica en vivo el fix de la Fase 5 (validación en
+     la tool antes de proponer, no solo al confirmar).
+   - `retales_eliminar`: tarjeta roja "Confirma antes de borrar" con los datos actuales
+     (incluido el precio ya editado), confirmado. Pregunta de seguimiento "¿ya lo borraste?"
+     respondida con coherencia total (sin decir "nunca existió"), y verificado en `/retales` que
+     el DELETE físico real ocurrió (tabla vacía de nuevo).
+   - Ningún hallazgo nuevo — las 4 tools funcionan exactamente como se diseñaron y auditaron.
+
+### Archivos tocados
+Ninguno nuevo — esta sesión fue puramente de verificación. Se actualizó `PROGRESS.md` y este
+archivo para cerrar el hallazgo documentado como pendiente en la sesión anterior.
+
+### Decisiones tomadas
+- Nueva regla de proceso para futuros dominios de Cost: al hacer Fase 5/6, revisar explícitamente
+  que `runtime.py::_SYSTEM_PROMPT` mencione el dominio nuevo como capacidad — no basta con que
+  las tools estén registradas técnicamente, el modelo necesita la mención explícita para
+  considerar razonable invocarlas.
+
+### Pendiente / próxima tarea lógica
+1. Decidir con el fundador el siguiente dominio del Ciclo 2 (Nesting, Parámetros) o si se aborda
+   "crear cotización" (deferido por su complejidad).
+2. Fase 6 completa: actualizar `ARQUITECTURA_MAESTRA.md` sección 8 y `docs/ROADMAP_COSTO360.md`
+   con el detalle de Retales, memoria persistente, reindexar el grafo.
+3. 7 commits locales de este dominio sin subir a GitHub — preguntar antes de subir.
+
+---
+
 ## Sesión: 2026-09-06 — Objetivo 5, Ciclo 2: dominio Retales (Fases 0-5, con un bug real sin cerrar)
 
 ### Qué se hizo

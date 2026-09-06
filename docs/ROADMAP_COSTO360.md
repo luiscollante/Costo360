@@ -314,7 +314,22 @@ dominio piloto de bajo riesgo — decisión aprobada por el fundador.
     corregidos en la tarjeta de confirmación (id undefined en una lámina nueva; costo unitario sin
     formato de moneda, ahora genérico para cualquier campo `_propuesto`). Detalle completo:
     `ARQUITECTURA_MAESTRA.md` sección 8.
-  - **⬜ Pendientes del Ciclo 2:** retales, nesting, parámetros.
+  - **✅ Retales (2026-09-06):** 4 tools — `retales_listar` (lectura), `retales_crear` (siempre
+    propone — riesgo de "m² fantasma"), `retales_editar` (siempre propone, sin excepción para
+    ningún campo — corrección de auditoría: la clasificación inicial "de bajo riesgo" para
+    notas/estado tenía la severidad invertida, reactivar un retal a Disponible es la transición
+    riesgosa, no la segura), `retales_eliminar` (`es_destructiva=True`, DELETE físico real de
+    Postgres sin soft-delete, a diferencia de Inventario). Primer dominio con aislamiento por
+    USUARIO además de por empresa (`scope_propio`) — un operativo solo ve/edita/borra sus propios
+    retales. Auditado por Security Engineer (1 bloqueante real cerrado) + Code Reviewer en Fase 5,
+    2 rondas (1 hallazgo real: validar `estado` con Pydantic cambiaba el contrato HTTP de 400 a
+    422, corregido moviendo la validación a la capa de servicio). **Bug real de integración
+    encontrado en la verificación en vivo:** las tools estaban registradas y aprobadas pero Cost
+    no las invocaba porque el system prompt nunca mencionaba Retales como capacidad — corregido y
+    reverificado en vivo. Las 4 tools probadas de punta a punta contra el taller demo con datos
+    desechables, incluido el DELETE físico real confirmado en la base de datos. Detalle completo:
+    `ARQUITECTURA_MAESTRA.md` sección 8.
+  - **⬜ Pendientes del Ciclo 2:** nesting, parámetros.
 - **⬜ Ciclo 3 — Las dos superficies de UI completas:** chat flotante global (hoy solo vive en
   la página piloto) + "Centro del Agente" (bitácora de acciones, deshacer, modo BI con
   exportación).

@@ -587,8 +587,67 @@ aparte).
   iniciar Inventario — se reverificaron de nuevo aquí sin regresión.
 - **Verificado en vivo (2026-09-05)** contra datos reales del taller demo: crear → editar → borrar
   → reconsultar, con filas de prueba desechables (nunca sobre inventario real del taller).
-- **Roadmap de continuación:** dentro del Ciclo 2 quedan retales, nesting y parámetros (mismo
-  patrón a repetir); "crear cotización" (`cotizacion_crear`) se difirió
+**Objetivo 5, Ciclo 2 — dominio Retales ✅ completo (2026-09-06):** mismo patrón, con 2
+diferencias arquitectónicas reales frente a Cotización/Catálogo/Inventario: aislamiento por
+usuario ADEMÁS de por empresa, y un DELETE físico real sin soft-delete.
+
+- **Capa de servicio y modelos:** `backend/services/retales_service.py` — cada función
+  (`listar_retales`, `obtener_retal`, `crear_retal`, `editar_retal`, `eliminar_retal`) aplica
+  `scope_propio(usuario)` internamente (función ya existente en `backend/db/deps.py`): un
+  operativo sin `puede_ver_dashboard` SOLO ve/edita/borra SUS PROPIOS retales, un gestor ve los
+  de todo el taller — ninguna función acepta un parámetro para que el llamador elija de quién
+  quiere leer/escribir, así el aislamiento se cierra una sola vez, no depende de que cada tool
+  "recuerde" filtrar. `obtener_retal` (usada para la vista previa de una propuesta) también
+  aplica el filtro — si no lo hiciera, un operativo podría ver en la tarjeta de confirmación
+  datos de un retal ajeno con solo adivinar un id, aunque la escritura final se bloqueara igual
+  al confirmar. `backend/models/retales.py` (`RetalIn`/`RetalUpdate`, con `ESTADOS_RETAL` como
+  constante exportada, no un `field_validator` — ver hallazgo de Fase 5 abajo).
+- **4 tools:** `retales_listar` (lectura, respeta `scope_propio` sin exponer ningún parámetro de
+  alcance al modelo), `retales_crear` (siempre propone — riesgo de "m² fantasma", mismo criterio
+  que `inventario_crear_lamina`), `retales_editar` (siempre propone, SIN excepción para ningún
+  campo — ver bloqueante de Fase 2 abajo), `retales_eliminar` (`es_destructiva=True`, DELETE
+  físico real de Postgres sin ninguna columna de respaldo — a diferencia de
+  `inventario_eliminar_lamina`, soft-delete, aquí no queda ningún rastro recuperable en la base
+  de datos, y el aviso al modelo/usuario lo dice explícitamente).
+- **Auditoría (Security Engineer) — 1 bloqueante real:** la primera versión de `retales_editar`
+  aplicaba directo (sin confirmación) los cambios "de bajo riesgo" (notas, estado→Disponible/
+  Reservado) y solo proponía para cambios de mayor impacto (m², precios, estado→Usado). El
+  auditor lo rechazó: reactivar un retal a "Disponible" es justo la transición riesgosa (puede
+  hacer que el mismo sobrante se prometa dos veces a distintos trabajos), no la segura, y la
+  clasificación campo-por-campo introducía una superficie de bug nueva sin precedente en el
+  resto del proyecto. Corregido: `retales_editar` SIEMPRE crea una propuesta, para cualquier
+  combinación de campos, sin ninguna rama de aplicación directa.
+- **Fase 5 (Code Reviewer, 2 rondas) — ambas APRUEBA, 1 hallazgo real de contrato HTTP:** la
+  ronda 1 encontró que validar `estado` con un `@field_validator` de Pydantic en `RetalUpdate`
+  cambiaba el contrato HTTP de 400 a 422 en `PUT /api/retales/{id}` — el validador corre durante
+  el parseo automático del body por FastAPI, ANTES de que el handler del router se ejecute, así
+  que un valor inválido se traduce en un `RequestValidationError` (422, lista de errores) en vez
+  del `HTTPException(400, "estado inválido")` de texto plano que el contrato original daba.
+  Corregido moviendo la validación a la capa de servicio (`retales_service.editar_retal`), mismo
+  patrón ya usado en `cotizacion_service.cambiar_estado_cotizacion`, y agregando el mismo chequeo
+  en la tool antes de crear la propuesta (con `"enum": [...]` en el `FunctionDeclaration`, igual
+  que `cotizacion_cambiar_estado`). La ronda 2 (reverificación) aprobó el fix sin reservas y
+  señaló un matiz adicional no bloqueante: con un doble error simultáneo (id inexistente + estado
+  inválido), el 404 ganaba sobre el 400 original porque el chequeo de existencia corría antes que
+  el de forma del body — corregido igual por prolijidad, reordenando para validar la forma del
+  body (campos presentes, estado válido) antes de tocar la base, igual que hacía el router viejo.
+- **Bug real de integración encontrado en la verificación en vivo, no atrapable por ninguna
+  auditoría de código:** con las 4 tools registradas y aprobadas, Cost respondía que no tenía
+  Retales conectado — nunca invocaba `retales_listar`. Causa real: `runtime.py::_SYSTEM_PROMPT`
+  nunca mencionaba Retales como capacidad explícita (a diferencia de los otros 3 dominios, que sí
+  están descritos ahí) — una tool correctamente registrada en `ToolSpec`/`registry.py` puede
+  seguir siendo invisible para el modelo si el prompt no la presenta como algo que puede hacer.
+  Corregido agregando el párrafo correspondiente (mismo estilo que el de Inventario) y
+  reverificado en vivo que resuelve el problema por completo. **Lección de proceso para futuros
+  dominios:** la Fase 5/6 debe revisar explícitamente que el system prompt mencione el dominio
+  nuevo, no solo que las tools estén registradas técnicamente.
+- **Verificado en vivo (2026-09-06)** contra datos reales del taller demo, datos desechables:
+  crear → editar (precio con formato COP en la tarjeta, actual/propuesto lado a lado) → intento
+  de estado inválido (rechazado con mensaje claro, ninguna propuesta corrupta creada) → borrar
+  (tarjeta roja de confirmación) → reconsultar (respuesta coherente, sin autocontradecirse) →
+  confirmado en `/retales` que el DELETE físico ocurrió de verdad (fila ausente).
+- **Roadmap de continuación:** dentro del Ciclo 2 quedan nesting y parámetros (mismo patrón a
+  repetir); "crear cotización" (`cotizacion_crear`) se difirió
   a propósito por su complejidad (el motor `calcular_cotizacion_directa` tiene ~60 variables:
   merma, logística, viáticos, zócalos geométricos) y el riesgo financiero de que la IA cotice mal
   a un cliente real — cuando se aborde, el cálculo puede ser una tool directa y pura, pero el

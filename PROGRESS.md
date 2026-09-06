@@ -2,7 +2,7 @@
 
 ---
 
-## 🔄 En progreso (2026-09-06) — Objetivo 5, Ciclo 2, dominio Retales
+## ✅ Hecho (2026-09-06) — Objetivo 5, Ciclo 2, dominio Retales
 
 Ciclo `/goal` corrido completo (Fase 0 grafo → Fase 1 Software Architect → Fase 2 Security
 Engineer, 1 bloqueante real cerrado → Fase 4 ejecución, 6 commits → Fase 5 Code Reviewer, 2
@@ -29,35 +29,33 @@ un matiz de orden de chequeos (no bloqueante, corregido igual por prolijidad): c
 simultáneo (id inexistente + estado inválido) el 404 ganaba sobre el 400 original — reordenado
 para validar la forma del body antes de tocar la base, igual que el router viejo.
 
-**🔴 Bug real encontrado en la verificación en vivo (2026-09-06), sin cerrar todavía —
-primera tarea de la próxima sesión:** con las 4 tools registradas y aprobadas en Fase 5, Cost
-respondió "Por ahora no tengo cómo consultar los retales... todavía no tengo conectada esa
-parte" al preguntarle por retales — es decir, el modelo nunca invocó `retales_listar` a pesar de
-que la tool existe y está registrada (confirmado por script Python: las 4 tools aparecen en
-`registry.obtener()`). Se probó en paralelo preguntar por Inventario en la misma conversación y
-SÍ funcionó de punta a punta (tool invocada, respuesta correcta) — descarta un problema general
-del motor, apunta a algo específico de Retales. Hipótesis de causa (no verificada todavía):
-`backend/agente/runtime.py::_SYSTEM_PROMPT` nunca mencionaba Retales como capacidad — a
-diferencia de Cotización/Catálogo/Inventario, que sí están descritos ahí explícitamente — y sin
-esa mención el modelo puede no considerar razonable invocar esas tools aunque estén en su lista
-de funciones disponibles. Ya se editó `runtime.py` agregando un párrafo describiendo Retales
-(mismo estilo que el de Inventario) pero **el cambio quedó sin commitear y sin verificar** —
-el backend se reinició para forzar la recarga y la sesión se cortó (por `/cierre`) justo antes
-de poder reintentar la prueba en el navegador. El servidor de backend quedó **apagado** (los
-procesos `uvicorn --reload` se mataron a propósito para descartar un problema de hot-reload, y
-no se volvieron a levantar). El servidor de frontend (`vite`) también se cayó solo, por bajo
-uso de memoria del sistema, sin relación con este trabajo.
+**Bug real encontrado en la verificación en vivo y CERRADO (2026-09-06):** con las 4 tools
+registradas y aprobadas en Fase 5, Cost respondió "Por ahora no tengo cómo consultar los
+retales... todavía no tengo conectada esa parte" al preguntarle por retales — el modelo nunca
+invocó `retales_listar` a pesar de que la tool existe y está registrada (confirmado por script
+Python). Inventario probado en la misma conversación funcionó perfecto, descartando un problema
+general del motor. Causa real confirmada: `backend/agente/runtime.py::_SYSTEM_PROMPT` nunca
+mencionaba Retales como capacidad — a diferencia de Cotización/Catálogo/Inventario, que sí están
+descritos ahí explícitamente. Agregado el párrafo correspondiente y **verificado en vivo que
+resuelve el problema por completo** (backend y frontend reiniciados, sesión reautenticada,
+prueba repetida con éxito). Lección para futuros dominios: una tool registrada y aprobada en
+auditoría de código puede seguir siendo invisible para el modelo si el system prompt no la
+menciona como capacidad explícita — revisar esto como parte de la Fase 5/6 de cada dominio nuevo
+de aquí en adelante, no solo el registro técnico de la tool.
 
-**Próxima tarea lógica (en este orden):** 1) levantar backend (`uvicorn backend.main:app
---reload --port 8000`) y frontend (`npm run dev` en `web/`); 2) probar de nuevo "¿qué retales
-tengo disponibles?" en `/agente` — si con el párrafo nuevo del system prompt ya funciona, ese
-era el bug real y hay que commitearlo con un mensaje que documente el hallazgo; si SIGUE
-fallando, investigar más a fondo (revisar logs del backend en `backend_dev.log`, confirmar que
-el proceso realmente cargó `backend/agente/tools/retales.py` sin excepciones silenciosas). 3)
-Completar la verificación en vivo de las 4 tools (crear/editar/eliminar con datos desechables,
-igual que en Inventario). 4) Fase 6 (documentación + memoria + reindexar grafo) — NO hecha
-todavía para este dominio. 5) Hay 6 commits locales sin subir a GitHub de este dominio, más lo
-que salga de cerrar el bug de arriba.
+**Verificación en vivo completa (2026-09-06), las 4 tools contra el taller demo real, datos
+desechables:** listar (vacío inicialmente, correcto) → crear un retal de prueba (propuesta con
+precios en formato COP, confirmada, verificado que quedó en la base vía `/retales`) → editar su
+precio de recuperación (propuesta actual/propuesto correcta, confirmada) → intentar un estado
+inválido ("Perdido") — rechazado con mensaje claro listando los 3 estados válidos, sin crear
+ninguna propuesta corrupta → borrar el retal (tarjeta roja de "Confirma antes de borrar",
+confirmada) → preguntar "¿ya lo borraste?" — respuesta coherente, sin autocontradecirse →
+verificado en `/retales` que el DELETE físico real ocurrió (la fila ya no existe, "No hay
+retales registrados"). Ningún hallazgo nuevo en esta ronda de pruebas.
+
+**Próxima tarea lógica:** decidir con el fundador el siguiente dominio del Ciclo 2 (Nesting,
+Parámetros) o si se aborda "crear cotización" (deferido por su complejidad). 7 commits locales
+de este dominio, sin subir a GitHub todavía.
 
 ## ✅ Hecho (2026-09-05, tercera ronda)
 
