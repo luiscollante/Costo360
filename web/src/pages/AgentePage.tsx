@@ -18,12 +18,14 @@ import {
  * detalle genérico, para que la tarjeta funcione igual de bien con tareas,
  * cotizaciones o cualquier dominio futuro sin tener que tocar este
  * componente cada vez que se agrega una tool nueva. */
-// Campos usados como nombre principal (nunca se repiten en el detalle) o que
-// son ids/flags internos sin valor para que un humano confirme una acción.
-const _CAMPOS_PRINCIPAL = ['numero', 'titulo', 'referencia'] as const
-const _CAMPOS_OCULTOS = new Set([
-  'id', 'base_id', 'es_propio', 'activo', 'actualizado_en', ..._CAMPOS_PRINCIPAL,
-])
+// Candidatos a nombre principal, en orden de preferencia — el primero con
+// valor real "gana" para ESA fila puntual (nunca se oculta toda la lista:
+// solo el campo que de verdad ganó, para no esconder p. ej. "Categoría" de
+// una lámina que sí tiene referencia y por eso usó "referencia" como título).
+const _CAMPOS_PRINCIPAL = ['numero', 'titulo', 'referencia', 'material_categoria'] as const
+// Ids/flags internos sin valor para que un humano confirme una acción —
+// estos SÍ se ocultan siempre, sin importar qué ganó como principal.
+const _CAMPOS_OCULTOS = new Set(['id', 'base_id', 'es_propio', 'activo', 'actualizado_en'])
 
 /** `referencia` puede ser `""` en vez de `null` (ej. una lámina de inventario
  * sin referencia todavía) — sin este chequeo, un string vacío "gana" como
@@ -76,7 +78,8 @@ function _etiqueta(campo: string): string {
 function _mensajeConfirmacion(p: Propuesta): string {
   const fila = p.filas_afectadas[0] as Record<string, unknown> | undefined
   const campoPrincipal = fila && _CAMPOS_PRINCIPAL.find((c) => _tieneValor(fila[c]))
-  const principal = fila ? String(campoPrincipal ? fila[campoPrincipal] : fila.id) : 'la acción'
+  const idOFallback = fila && (_tieneValor(fila.id) ? String(fila.id) : 'lo solicitado')
+  const principal = fila ? String(campoPrincipal ? fila[campoPrincipal] : idOFallback) : 'la acción'
   return p.es_destructiva
     ? `Listo, ya borré **${principal}** — no debería aparecer más.`
     : `Listo, ya confirmé el cambio en **${principal}**.`
@@ -303,9 +306,11 @@ export default function AgentePage() {
               <ul className="mt-2 space-y-1.5 text-sm text-brand-text">
                 {propuesta.filas_afectadas.map((f, i) => {
                   const campoPrincipal = _CAMPOS_PRINCIPAL.find((c) => _tieneValor(f[c]))
-                  const principal = String(campoPrincipal ? f[campoPrincipal] : f.id)
+                  const principal = campoPrincipal
+                    ? String(f[campoPrincipal])
+                    : (_tieneValor(f.id) ? String(f.id) : 'Esta acción')
                   const detalles = Object.entries(f).filter(
-                    ([k, v]) => !_CAMPOS_OCULTOS.has(k) && _tieneValor(v)
+                    ([k, v]) => k !== campoPrincipal && !_CAMPOS_OCULTOS.has(k) && _tieneValor(v)
                   )
                   return (
                     <li key={i}>
