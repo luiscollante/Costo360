@@ -127,13 +127,14 @@ def crear_retal(conn, usuario, *, material_categoria: str, referencia: str = "",
 
 def editar_retal(conn, usuario, retal_id: int, *, ip: str | None = None,
                   metadata_extra: dict | None = None, **cambios) -> dict:
-    actual = obtener_retal(conn, usuario, retal_id)
-    if actual is None:
-        raise HTTPException(status_code=404, detail="Retal no encontrado o sin permiso")
     if not cambios:
         raise HTTPException(status_code=400, detail="Sin campos para actualizar")
     if "estado" in cambios and cambios["estado"] not in ESTADOS_RETAL:
         raise HTTPException(status_code=400, detail="estado inválido")
+
+    actual = obtener_retal(conn, usuario, retal_id)
+    if actual is None:
+        raise HTTPException(status_code=404, detail="Retal no encontrado o sin permiso")
 
     restringido, uid = scope_propio(usuario)
     campos = []
