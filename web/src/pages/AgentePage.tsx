@@ -24,9 +24,25 @@ const _CAMPOS_PRINCIPAL = ['numero', 'titulo', 'referencia'] as const
 const _CAMPOS_OCULTOS = new Set([
   'id', 'base_id', 'es_propio', 'activo', 'actualizado_en', ..._CAMPOS_PRINCIPAL,
 ])
-const _CAMPOS_MONEDA = new Set([
-  'precio', 'precio_m2', 'precio_m2_propuesto', 'precio_lamina', 'costo_unitario',
-])
+
+/** `referencia` puede ser `""` en vez de `null` (ej. una lámina de inventario
+ * sin referencia todavía) — sin este chequeo, un string vacío "gana" como
+ * nombre principal y la tarjeta muestra un título en negrita vacío. */
+function _tieneValor(v: unknown): boolean {
+  return v != null && v !== ''
+}
+const _CAMPOS_MONEDA = new Set(['precio', 'precio_m2', 'precio_lamina', 'costo_unitario'])
+
+/** true tanto para 'precio_m2' como para su variante 'precio_m2_propuesto' —
+ * mismo espíritu que `_etiqueta()`: una tool nueva que proponga cambiar un
+ * campo de moneda no necesita venir a agregar la variante "_propuesto" aquí
+ * también (hallazgo real: `costo_unitario_propuesto` de Inventario no
+ * formateaba como moneda porque solo `precio_m2_propuesto` estaba listado
+ * a mano). */
+function _esCampoMoneda(campo: string): boolean {
+  const base = campo.endsWith('_propuesto') ? campo.slice(0, -'_propuesto'.length) : campo
+  return _CAMPOS_MONEDA.has(base)
+}
 const _ETIQUETAS: Record<string, string> = {
   cliente: 'Cliente', precio: 'Precio', fecha: 'Fecha', estado: 'Estado',
   project_id: 'Proyecto', categoria: 'Categoría', proveedor: 'Proveedor',
@@ -59,7 +75,7 @@ function _etiqueta(campo: string): string {
  * hubiera "olvidado" lo que él mismo preparó. */
 function _mensajeConfirmacion(p: Propuesta): string {
   const fila = p.filas_afectadas[0] as Record<string, unknown> | undefined
-  const campoPrincipal = fila && _CAMPOS_PRINCIPAL.find((c) => fila[c] != null)
+  const campoPrincipal = fila && _CAMPOS_PRINCIPAL.find((c) => _tieneValor(fila[c]))
   const principal = fila ? String(campoPrincipal ? fila[campoPrincipal] : fila.id) : 'la acción'
   return p.es_destructiva
     ? `Listo, ya borré **${principal}** — no debería aparecer más.`
@@ -67,7 +83,7 @@ function _mensajeConfirmacion(p: Propuesta): string {
 }
 
 function _valorLegible(campo: string, valor: unknown): string {
-  if (_CAMPOS_MONEDA.has(campo) && typeof valor === 'number') return formatCOP(valor)
+  if (_esCampoMoneda(campo) && typeof valor === 'number') return formatCOP(valor)
   if (campo === 'fecha' && typeof valor === 'string') return formatFecha(valor)
   if (typeof valor === 'boolean') return valor ? 'Sí' : 'No'
   return String(valor)
@@ -286,10 +302,10 @@ export default function AgentePage() {
               </p>
               <ul className="mt-2 space-y-1.5 text-sm text-brand-text">
                 {propuesta.filas_afectadas.map((f, i) => {
-                  const campoPrincipal = _CAMPOS_PRINCIPAL.find((c) => f[c] != null)
+                  const campoPrincipal = _CAMPOS_PRINCIPAL.find((c) => _tieneValor(f[c]))
                   const principal = String(campoPrincipal ? f[campoPrincipal] : f.id)
                   const detalles = Object.entries(f).filter(
-                    ([k, v]) => !_CAMPOS_OCULTOS.has(k) && v !== null && v !== undefined && v !== ''
+                    ([k, v]) => !_CAMPOS_OCULTOS.has(k) && _tieneValor(v)
                   )
                   return (
                     <li key={i}>

@@ -103,6 +103,8 @@ def editar_lamina(conn, usuario, lamina_id: int, *, ip: str | None = None,
     actual = obtener_lamina(conn, lamina_id)
     if actual is None:
         raise HTTPException(status_code=404, detail="Lámina no encontrada")
+    if actual["activo"] is False:
+        raise HTTPException(status_code=409, detail="Esta lámina fue eliminada del inventario, no se puede editar")
 
     campos = ["actualizado_en = NOW()"]
     vals = []
@@ -142,6 +144,8 @@ def eliminar_lamina(conn, usuario, lamina_id: int, *, ip: str | None = None,
     actual = obtener_lamina(conn, lamina_id)
     if actual is None:
         raise HTTPException(status_code=404, detail="Lámina no encontrada")
+    if actual["activo"] is False:
+        raise HTTPException(status_code=409, detail="Esta lámina ya está eliminada del inventario")
 
     cur = conn.cursor()
     cur.execute(
