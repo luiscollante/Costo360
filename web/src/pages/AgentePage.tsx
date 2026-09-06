@@ -42,6 +42,22 @@ function _etiqueta(campo: string): string {
   return campo
 }
 
+/** Genera el mensaje de Cost que se agrega a la conversación después de
+ * confirmar una propuesta — confirmar/descartar pasa por un endpoint HTTP
+ * aparte, NUNCA por el modelo (regla de seguridad), así que sin este mensaje
+ * la conversación se queda sin ningún rastro de que la acción ocurrió: si el
+ * usuario pregunta después "¿lo borraste?", el modelo no tiene forma de
+ * saberlo y busca la fila de nuevo (que ya no existe), sonando como si
+ * hubiera "olvidado" lo que él mismo preparó. */
+function _mensajeConfirmacion(p: Propuesta): string {
+  const fila = p.filas_afectadas[0] as Record<string, unknown> | undefined
+  const campoPrincipal = fila && _CAMPOS_PRINCIPAL.find((c) => fila[c] != null)
+  const principal = fila ? String(campoPrincipal ? fila[campoPrincipal] : fila.id) : 'la acción'
+  return p.es_destructiva
+    ? `Listo, ya borré **${principal}** — no debería aparecer más.`
+    : `Listo, ya confirmé el cambio en **${principal}**.`
+}
+
 function _valorLegible(campo: string, valor: unknown): string {
   if (_CAMPOS_MONEDA.has(campo) && typeof valor === 'number') return formatCOP(valor)
   if (campo === 'fecha' && typeof valor === 'string') return formatFecha(valor)
@@ -170,6 +186,8 @@ export default function AgentePage() {
     setResolviendo(true)
     try {
       await confirmarPropuesta(propuesta.propuesta_id)
+      setMensajes((m) => [...m, { role: 'assistant', content: _mensajeConfirmacion(propuesta) }])
+      scrollAbajo()
       showToast('success', 'Acción confirmada y ejecutada')
       setPropuesta(null)
     } catch {
