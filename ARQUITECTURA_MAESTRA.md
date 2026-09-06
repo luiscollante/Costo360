@@ -425,6 +425,14 @@ piloto `web/src/pages/AgentePage.tsx` (ruta `/agente`, solo gestores).
   function-calling por completo. Esto fue un bloqueante real: la primera auditoría de seguridad
   (Fase 2) devolvió **NO APRUEBA** porque el diseño original sí dejaba `confirmar_accion` como
   tool invocable por el modelo — se corrigió y se reverificó como cerrado antes de ejecutar.
+  **Consecuencia de esto que casi se pasó por alto (encontrada por el fundador probando en vivo,
+  2026-09-05):** como la confirmación nunca pasa por el modelo, la conversación se quedaba sin
+  ningún rastro de que la acción había ocurrido — Cost "olvidaba" que él mismo había borrado algo.
+  `confirmar()` en `AgentePage.tsx` ahora agrega un mensaje genérico de Cost a la conversación
+  real tras cada confirmación exitosa (reutilizando la misma fila que ya se le mostró al usuario
+  en la tarjeta), y el `_SYSTEM_PROMPT` tiene una regla explícita para no contradecir después lo
+  que él mismo ya confirmó (una búsqueda vacía tras un borrado confirma que funcionó, no que el
+  dato nunca existió). Aplica a los 3 dominios por igual, sin tocar nada específico de cada uno.
 - **Conexiones cortas, nunca una transacción por turno completo:** `db/client.py` expone
   `rls_connection(usuario)` (context manager, extraído de `db_rls`) — cada tool-call abre su
   propia conexión, la usa, comitea y cierra antes de que el modelo razone el siguiente paso. El

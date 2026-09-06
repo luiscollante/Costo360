@@ -54,6 +54,24 @@ micro-commits por cada avance.
    cruzada en las descriptions de ambas tools, reverificado en vivo. Detalle completo:
    `PROGRESS.md` y `ARQUITECTURA_MAESTRA.md` sección 8.
 
+### Hallazgo del fundador probando en vivo (post-entrega de Catálogo)
+El fundador probó el trabajo del día por su cuenta siguiendo una guía de prueba paso a paso, y
+encontró 2 bugs reales que ninguna auditoría había visto:
+1. Al confirmar un borrado (o cualquier propuesta) desde la tarjeta, la conversación se quedaba
+   sin ningún mensaje diciendo qué había pasado — el POST de confirmación va directo al backend,
+   nunca por el modelo (regla de seguridad), así que Cost no tenía forma de "saber" que la acción
+   ya había ocurrido. Si el usuario preguntaba después "¿lo borraste?", sonaba como si hubiera
+   olvidado lo que él mismo preparó. Corregido: `confirmar()` en `AgentePage.tsx` ahora agrega un
+   mensaje de Cost a la conversación real tras confirmar, genérico para cualquier dominio.
+2. Al reverificar el fix anterior, apareció una segunda grieta: con el mensaje ya en la
+   conversación, preguntar "¿ya borraste?" hacía que Cost volviera a consultar el catálogo, no
+   encontrara la fila (correcto, ya está borrada) pero narrara mal el resultado diciendo que
+   "nunca se alcanzó a crear" — contradiciendo su propio mensaje anterior en el mismo chat.
+   Corregido con una regla explícita en el system prompt: confiar en lo que él mismo ya confirmó
+   antes en la conversación, nunca reinterpretar una búsqueda vacía tras un borrado como "nunca
+   existió". Reverificado en vivo end-to-end: crear → borrar → preguntar después — respuesta
+   coherente en las dos vueltas.
+
 ### Decisiones tomadas
 - Personalidad de Cost cerrada (ver `AGENTE_PERSONALIDAD.md`).
 - Burbuja flotante vieja se deja intacta hasta el Ciclo 3 — no mezclar identidades a medio camino.
