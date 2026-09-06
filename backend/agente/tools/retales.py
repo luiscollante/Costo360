@@ -39,7 +39,7 @@ from google.genai import types as gtypes
 from backend.agente import confirmations
 from backend.agente.registry import ToolSpec, registrar
 from backend.agente.tools.proyectos import _como_entero
-from backend.models.retales import RetalIn, RetalUpdate
+from backend.models.retales import ESTADOS_RETAL, RetalIn, RetalUpdate
 from backend.services import retales_service
 
 _AVISO_ANTIENCADENAMIENTO = (
@@ -163,6 +163,9 @@ def _editar_retal(conn, usuario: dict, args: dict) -> dict:
             "m2_disponibles y los precios deben ser números."
         )}
 
+    if body.estado is not None and body.estado not in ESTADOS_RETAL:
+        return {"error": f"estado debe ser uno de {', '.join(ESTADOS_RETAL)}"}
+
     actual = retales_service.obtener_retal(conn, usuario, retal_id)
     if actual is None:
         return {"error": f"No existe ningún retal con id {retal_id} para este usuario"}
@@ -214,7 +217,7 @@ registrar(ToolSpec(
             "properties": {
                 "retal_id": {"type": "INTEGER", "description": "id numérico del retal"},
                 "m2_disponibles": {"type": "NUMBER"},
-                "estado": {"type": "STRING", "description": "Disponible, Reservado o Usado"},
+                "estado": {"type": "STRING", "enum": list(ESTADOS_RETAL)},
                 "notas": {"type": "STRING"},
                 "precio_recuperacion": {"type": "NUMBER"},
                 "precio_mercado_m2": {"type": "NUMBER"},

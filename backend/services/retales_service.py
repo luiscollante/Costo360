@@ -22,6 +22,7 @@ from datetime import date
 from fastapi import HTTPException
 
 from backend.db.deps import scope_propio
+from backend.models.retales import ESTADOS_RETAL
 from backend.services.audit_service import log_accion
 
 _COLS = (
@@ -131,6 +132,8 @@ def editar_retal(conn, usuario, retal_id: int, *, ip: str | None = None,
         raise HTTPException(status_code=404, detail="Retal no encontrado o sin permiso")
     if not cambios:
         raise HTTPException(status_code=400, detail="Sin campos para actualizar")
+    if "estado" in cambios and cambios["estado"] not in ESTADOS_RETAL:
+        raise HTTPException(status_code=400, detail="estado inválido")
 
     restringido, uid = scope_propio(usuario)
     campos = []
