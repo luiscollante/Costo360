@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.db.client import db_rls
-from backend.db.config_helpers import cfg_get, cfg_set
+from backend.db.config_helpers import cfg_set
 from backend.db.deps import require_dashboard, verificar_dispositivo
 from backend.middleware.auth import get_current_user
-
-from parametros import TARIFAS, ADICIONALES
+from backend.services.parametros_service import obtener_parametros
 
 router = APIRouter(prefix="/api/parametros", tags=["parametros"],
                    dependencies=[Depends(verificar_dispositivo)])
@@ -16,16 +15,18 @@ def get_parametros(conn=Depends(db_rls), usuario=Depends(require_dashboard)):
     """Parámetros activos: overrides de la empresa (app_config) fusionados con los defaults del motor.
     Requiere acceso de Admin/Gerencia — el rol operativo no ve Parámetros y no lo consume
     para cotizar (el motor lee las tarifas de la BD directamente en routers/cotizacion.py)."""
-    emp = usuario["empresa_id"]
-    return {
-        "tarifas":     cfg_get(conn, emp, "tarifas")     or TARIFAS,
-        "adicionales": cfg_get(conn, emp, "adicionales") or ADICIONALES,
-    }
+    return obtener_parametros(conn, usuario["empresa_id"])
 
 
 @router.put("")
 def set_parametros(body: dict, conn=Depends(db_rls), usuario=Depends(get_current_user)):
-    """Guarda parámetros personalizados de la empresa. Requiere acceso de Admin/Gerencia."""
+    """Guarda parámetros personalizados de la empresa. Requiere acceso de Admin/Gerencia.
+
+    Sigue siendo un reemplazo directo (no pasa por parametros_service): este
+    endpoint es el que ya usa la pantalla de edición manual, que siempre manda
+    el objeto tarifas/adicionales COMPLETO ya armado por el usuario en el
+    navegador — no hay ninguna fila puntual que desambiguar aquí, a diferencia
+    de las tools del agente."""
     if not usuario.get("puede_ver_dashboard"):
         raise HTTPException(status_code=403, detail="No tienes permiso para editar parámetros")
     emp = usuario["empresa_id"]
