@@ -2,6 +2,26 @@
 
 ---
 
+## Sesión: 2026-09-06 (cuarta parte) — Objetivo 2: Landing Page desacoplada de alto impacto con AEO (costo360.com)
+
+### Qué se hizo
+El fundador confirmó la separación de dominios (`costo360.com` independiente del producto SaaS en `app.costo360.com`) e instruyó ejecutar el ciclo `/goal` completo para diseñar y construir la landing page en una sola pasada, incorporando optimización para crawlers de IA (AEO).
+
+1. **Fase 0 y 1 (Mapa, agentes y diagnóstico):** Se identificó el código previo en `web/src/components/landing/` y la versión en vivo en Cloudflare Pages. Se estructuró el plan maestro en `landing_page_design_plan.md` con los 6 pilares tecnológicos solicitados.
+2. **Fase 2 (Auditoría independiente):** Evaluada por Software Architect (aprobó la arquitectura desacoplada por aislamiento de blast radius y performance), Accessibility Auditor (exigió contraste WCAG AA en Glassmorphism 2.0 y soporte alternativo en la losa 3D) y Performance Benchmarker (validó lazy loading para conexiones móviles).
+3. **Fase 4 (Ejecución):**
+   - Proyecto independiente inicializado en `landing/` con React 19 + TypeScript + Vite + Tailwind CSS v4 + Framer Motion + Lenis Smooth Scroll.
+   - Componentes construidos: `Navbar` (Glassmorphism 2.0 flotante), `Hero` (con visor interactivo 3D de losas de mármol Carrara/Granito/Sinterizado y física de luz especular), `MetricsBar`, `ScrollyStory` (narrativa del dolor y solución en 3 pasos), `InteractiveStudio` (simulador reactivo en COP con AIU), `BentoEcosystem` (módulos con spotlight), `RoiCalculator` (calculadora de dinero rescatado en merma), `PricingSection` (Starter, Pro, Enterprise), `FaqSection` y `Footer`.
+   - **AEO (Answer Engine Optimization):** Implementación de `landing/public/llms.txt`, `robots.txt` permitiendo GPTBot, ClaudeBot, PerplexityBot y Google-Extended, y marcado Schema.org JSON-LD (`SoftwareApplication`, `Organization`, `FAQPage`).
+4. **Fase 5 (Validación):** Compilación de producción con `npm run build` verificada con éxito (`dist/index.html` 5.97 kB, bundles optimizados sin errores en 21.95s).
+5. **Micro-commit:** `a0b5928`.
+
+### Archivos tocados
+- **Nuevos:** Carpeta completa `landing/` (`package.json`, `vite.config.ts`, `tsconfig.json`, `index.html`, `src/*`, `public/*`).
+- **Docs:** `PROGRESS.md`, `SESSION.md`, artefacto `landing_page_design_plan.md`.
+
+---
+
 ## Sesión: 2026-09-06 (tercera parte) — Objetivo 5, Ciclo 2: dominio Nesting
 
 ### Qué se hizo

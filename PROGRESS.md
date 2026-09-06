@@ -2,6 +2,18 @@
 
 ---
 
+## ✅ Hecho (2026-09-06) — Objetivo 2: Landing Page de alto impacto con AEO (costo360.com)
+
+Ciclo `/goal` completo (Fases 0 a 6). Por decisión estratégica del fundador, **la landing page no comparte dominio con el producto SaaS** (`costo360.com` vs `app.costo360.com`). Se construyó como proyecto desacoplado en la carpeta dedicada `landing/` con React 19 + TypeScript + Tailwind CSS v4 + Framer Motion + Lenis:
+- **Glassmorphism 2.0 y tactilidad mineral:** Superficies translúcidas multicapa (`backdrop-filter: blur(16px)`), micro-bordes dorados, sombras interiores y paleta oficial (crema `#F5E8D2`, esmeralda `#15612E`, dorado `#D4AF37`, negro carbón `#212121`).
+- **Hero Section con Losa 3D Interactiva:** Visor táctil en 3D con simulación de rotación e iluminación especular en tiempo real al mover el mouse, selector de materiales reales (Mármol Carrara, Granito San Gabriel, Piedra Sinterizada Calacatta Gold) y dimensiones comerciales de placas.
+- **Simulador de Cotización en Tiempo Real:** Cálculo reactivo instantáneo con receta por inductor (suministro, mano de obra, consumibles de disco/resina, merma monetizada, AIU 15% y utilidad neta) en pesos colombianos ($ COP).
+- **Ecosistema Bento Grid:** Tarjetas con efecto linterna (*spotlight cursor*) para Nesting 2D, Catálogo Vivo, Generador PDF y el Asistente Inteligente Cost.
+- **Scrollytelling & Calculadora de ROI:** El dolor del taller explicado en 3 pasos y cálculo interactivo del dinero en COP rescatado al mes por reducción de desperdicio.
+- **AEO (Answer Engine Optimization) & AI Crawlers:** Estándar moderno implementado con `landing/public/llms.txt`, `robots.txt` autorizando explícitamente a GPTBot, ClaudeBot, PerplexityBot y Google-Extended, y marcado Schema.org JSON-LD (`SoftwareApplication`, `Organization`, `FAQPage`).
+- **Validación técnica:** Compilación exitosa con `npm run build` en 21.95s sin errores de tipado ni de bundler (`dist/index.html`, `dist/assets/*`).
+- **Micro-commit:** `a0b5928`.
+
 ## ✅ Hecho (2026-09-06, continuación) — Objetivo 5, Ciclo 2, dominio Nesting
 
 Ciclo `/goal` completo (Fase 0 grafo → Fase 1 Software Architect → Fase 2 Security Engineer, 5
