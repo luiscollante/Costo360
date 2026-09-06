@@ -31,14 +31,18 @@ correcciones incorporadas:
    número mal citado sigue siendo la tarjeta de confirmación de
    `retales_crear` (que ya existe, no hace falta ninguna tool nueva para
    "guardar el sobrante como retal").
-5. Coerción `_como_entero` para `cantidad` (Gemini puede mandar `3.0` en
-   vez de `3` incluso en un campo `INTEGER`).
+5. `cantidad` se convierte con `int(...)` directo, NO con el `_como_entero`
+   que sí usan otros dominios (`proyectos.py`) — hallazgo real de la Fase 5:
+   `validar_entrada_nesting` ya usa `int(p.get("cantidad", 1))` para el tope
+   anti-DoS y garantiza que no lanza y da >=1; usar aquí una coerción más
+   estricta (que devuelve `None` para un string como `"3"`) abría una
+   ventana donde una pieza pasaba la validación contada como N copias pero
+   el motor real colocaba menos, sin ningún aviso al modelo.
 """
 from google.genai import types as gtypes
 from motor_planos import optimizar_corte_2d, validar_entrada_nesting
 
 from backend.agente.registry import ToolSpec, registrar
-from backend.agente.tools.proyectos import _como_entero
 
 _MAX_NOMBRES_MOSTRADOS = 8
 
@@ -57,7 +61,12 @@ def _calcular_nesting(conn, usuario: dict, args: dict) -> dict:
             "nombre":   str(p.get("nombre") or f"Pieza {i + 1}"),
             "largo":    float(p["largo"]),
             "ancho":    float(p["ancho"]),
-            "cantidad": _como_entero(p.get("cantidad")) or 1,
+            # int() directo, no _como_entero(): validar_entrada_nesting ya garantizó
+            # que esta misma conversión no lanza y da >=1 para cada pieza — usar una
+            # coerción más estricta aquí abriría una ventana donde una pieza pasa la
+            # validación (contada para el tope anti-DoS) pero el motor real coloca
+            # menos copias sin ningún aviso (hallazgo real de la Fase 5).
+            "cantidad": int(p.get("cantidad", 1)),
         }
         for i, p in enumerate(piezas)
     ]
