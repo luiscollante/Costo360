@@ -103,6 +103,8 @@ def _tarifa_editar(conn, usuario: dict, args: dict) -> dict:
         )
     except Exception as e:
         return {"error": f"Datos inválidos: {e}"}
+    if body.nuevo_valor is None and body.nuevo_nombre_interno is None:
+        return {"error": "No diste ningún campo para cambiar (nuevo_valor o nuevo_nombre_interno)"}
 
     actual, marca = parametros_service.obtener_fila_tarifa(conn, usuario["empresa_id"], body.material, body.nombre_interno)
 

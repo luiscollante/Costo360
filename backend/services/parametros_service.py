@@ -95,6 +95,37 @@ def _escribir(conn, empresa_id, clave: str, valor, usuario: dict, accion: str, m
     log_accion(conn, accion, metadata, empresa_id=empresa_id, usuario_id=usuario["id"])
 
 
+def validar_invariantes_tarifas(tarifas: dict) -> str | None:
+    """Chequeo de forma para el objeto `tarifas` COMPLETO — usado tanto por
+    `PUT /api/parametros` (reemplazo directo desde la pantalla manual, que no
+    pasa por editar/agregar/quitar_tarifa fila por fila) como, indirectamente,
+    ya garantizado por esas funciones cuando el camino es el agente. Sin esto,
+    el guardado manual podía reintroducir los 2 mismos bugs financieros que
+    la auditoría de seguridad cerró para el agente: un `etiqueta_pdf` fuera
+    del catálogo cerrado hace que `motor/calculos.py` descarte esa regla del
+    costo en silencio, y una categoría sin ninguna fila `merma_pct` hace que
+    el motor caiga a un % de fábrica sin ningún aviso. Devuelve `None` si es
+    válido, o un mensaje de error con el primer problema encontrado."""
+    if not isinstance(tarifas, dict):
+        return "tarifas debe ser un objeto {categoría: [filas]}"
+    for material, filas in tarifas.items():
+        if not isinstance(filas, list):
+            return f"Las tarifas de {material} deben ser una lista"
+        tiene_merma = False
+        for fila in filas:
+            if not isinstance(fila, dict):
+                return f"Una fila de tarifa de {material} no es un objeto válido"
+            if fila.get("inductor") not in INDUCTORES_VALIDOS:
+                return f"'{fila.get('nombre_interno', '?')}' en {material} tiene un inductor inválido"
+            if fila.get("etiqueta_pdf", "") not in ("c2_mano_obra", "c3_zocalos", "c4_insumos", ""):
+                return f"'{fila.get('nombre_interno', '?')}' en {material} tiene una etiqueta_pdf inválida"
+            if fila.get("inductor") == "merma_pct":
+                tiene_merma = True
+        if material in CATEGORIAS_MATERIAL and not tiene_merma:
+            return f"{material} se quedaría sin ninguna fila de % de merma — el motor usaría un valor de fábrica sin aviso"
+    return None
+
+
 def obtener_parametros(conn, empresa_id) -> dict:
     return {
         "tarifas":     _leer(conn, empresa_id, "tarifas", TARIFAS),
@@ -142,7 +173,7 @@ def editar_tarifa(conn, usuario, *, material: str, nombre_interno: str,
         if any(_normalizar(f["nombre_interno"]) == _normalizar(nuevo_nombre_interno)
                for i, f in enumerate(filas) if i != idx):
             raise HTTPException(status_code=409, detail=f"Ya existe una tarifa '{nuevo_nombre_interno}' en {material}")
-        filas[idx]["nombre_interno"] = nuevo_nombre_interno
+        filas[idx]["nombre_interno"] = nuevo_nombre_interno.strip()
 
     metadata = {
         "material": material,
@@ -176,6 +207,15 @@ def agregar_tarifa(conn, usuario, *, material: str, nombre_interno: str, inducto
 
     tarifas = _leer(conn, emp, "tarifas", TARIFAS)
     filas = tarifas.setdefault(material, [])
+    if inductor == "merma_pct" and any(f["inductor"] == "merma_pct" for f in filas):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"{material} ya tiene una fila de % de merma — el motor solo usa la primera "
+                "que encuentra, una segunda quedaría inerte y podría confundir a quien la "
+                "edite después. Edita la fila existente en vez de agregar otra."
+            ),
+        )
     if any(_normalizar(f["nombre_interno"]) == _normalizar(nombre_interno) for f in filas):
         raise HTTPException(status_code=409, detail=f"Ya existe una tarifa '{nombre_interno}' en {material} — usa editar_tarifa")
 
@@ -252,7 +292,7 @@ def editar_adicional(conn, usuario, *, concepto: str, nuevo_concepto: str | None
     if nuevo_concepto is not None:
         if any(_normalizar(f["concepto"]) == _normalizar(nuevo_concepto) for i, f in enumerate(adicionales) if i != idx):
             raise HTTPException(status_code=409, detail=f"Ya existe un adicional '{nuevo_concepto}'")
-        adicionales[idx]["concepto"] = nuevo_concepto
+        adicionales[idx]["concepto"] = nuevo_concepto.strip()
 
     metadata = {"concepto_anterior": anterior["concepto"], "anterior": anterior, "nuevo": adicionales[idx]}
     if metadata_extra:
