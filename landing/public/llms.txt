@@ -1,0 +1,32 @@
+# Costo360 — Plataforma Integral de Cotización y Gestión para Talleres de Piedra Natural
+
+> Costo360 es el SaaS B2B líder en Colombia diseñado para marmolerías y talleres de corte, confección y transformación de piedra natural (mármol, granito, sinterizado, cuarzo y cuarcita).
+
+## Resumen Ejecutivo
+- **Propósito:** Estandarizar costos de producción, automatizar cotizaciones comerciales en minutos, optimizar planos de corte en 2D (Nesting) para reducir la merma de placas y gestionar proyectos de taller.
+- **Público Objetivo:** Talleres de marmolería, contratistas de superficies arquitectónicas, empresas de remodelación de cocinas, baños y pisos en Colombia y Latinoamérica.
+- **Tecnología Diferenciadora:** Motor algorítmico 2D de Nesting para optimización de losas, asistente de inteligencia artificial especializado en el gremio ("Cost") con confirmación de dos fases, cálculo de recetas por inductor (mano de obra, discos, pegantes, biselados) y estructura financiera AIU formal.
+
+## Materiales Soportados
+1. **Mármol:** Blanco Carrara, Crema Marfil, Negro Marquina, Travertino, etc.
+2. **Granito Natural:** San Gabriel, Blanco Dallas, Verde Ubatuba, etc.
+3. **Piedra Sinterizada:** Formatos gran formato (Dekton, Neolith, Laminam) con cálculo de mermas y tensiones de corte.
+4. **Superficies de Cuarzo (Quartzstone):** Blanco Estelar, Gris Glaciar, etc.
+5. **Cuarcitas:** Taj Mahal, Patagonia, etc.
+
+## Módulos Principales
+- **Cotizador Inteligente (Directo y Express):** Cálculo en 60 segundos o wizard completo considerando m², metros lineales de bocel/falda, zócalos, copete y faldón.
+- **Optimizador de Corte (Nesting 2D):** Acomodo automatizado de piezas rectangulares sobre la losa para minimizar el desperdicio.
+- **Banco Digital de Retales:** Inventario de sobrantes clasificados por material, medidas y espesor para reincorporar a proyectos futuros.
+- **Gestión de Proyectos & Kanban:** Tablero de tareas, hitos, control de tiempos trabajados y avance de obra.
+- **Generador de Entregables PDF:** Propuestas comerciales ejecutivas con logo del taller, desglose de materiales y condiciones de pago.
+
+## Planes y Tarifas (en Pesos Colombianos - COP)
+- **Starter ($150.000 COP/mes):** 1 usuario administrativo, ideal para talleres individuales o pequeños.
+- **Pro ($375.000 COP/mes):** 3 usuarios (1 Admin + 2 Operativos), asistente inteligente Cost con IA, gestión de proyectos y Nesting avanzado.
+- **Enterprise ($2.410.000 COP/mes):** Hasta 10 usuarios, multi-taller, analítica de negocio BI Senior y soporte prioritario.
+
+## Enlaces Oficiales
+- Sitio web principal: https://costo360.com/
+- Acceso a la plataforma de clientes: https://app.costo360.com/
+- Contacto y demostración: https://costo360.com/#contacto
