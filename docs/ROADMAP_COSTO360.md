@@ -329,7 +329,21 @@ dominio piloto de bajo riesgo — decisión aprobada por el fundador.
     reverificado en vivo. Las 4 tools probadas de punta a punta contra el taller demo con datos
     desechables, incluido el DELETE físico real confirmado en la base de datos. Detalle completo:
     `ARQUITECTURA_MAESTRA.md` sección 8.
-  - **⬜ Pendientes del Ciclo 2:** nesting, parámetros.
+  - **✅ Nesting (2026-09-06):** 1 tool — `nesting_calcular` (`es_destructiva=False`, SIN
+    confirmación — es un cálculo puro sin escritura, primer dominio del agente sin tabla propia).
+    El SVG nunca toca el camino de texto del modelo (se reinyecta al contexto en cada paso del
+    turno); "guardar el sobrante como retal" reutiliza `retales_crear` tal cual, sin ninguna tool
+    nueva. Auditado por Security Engineer (5 correcciones: truncar `piezas_fuera`, topes anti-DoS
+    compartidos con el router HTTP —que no tenía ninguno—, `aviso_para_ti` con el área exacta,
+    rate limit nuevo en el endpoint, validar `cantidad >= 1` explícito) + Code Reviewer en Fase 5,
+    2 rondas (1 hallazgo real: una coerción de `cantidad` más estricta en la tool colapsaba en
+    silencio un valor que la validación compartida ya había aceptado, corregido). **Bug real de
+    comportamiento del modelo (no de código) encontrado en vivo:** con la tool aprobada y
+    mencionada en el system prompt, Cost seguía sin invocarla — ofrecía "hacer la cuenta a mano"
+    en vez de llamar al algoritmo real. Corregido reforzando la `description` de la tool y el
+    system prompt para prohibir explícitamente el cálculo manual. Las 4 pruebas completas contra
+    el taller demo con datos desechables. Detalle completo: `ARQUITECTURA_MAESTRA.md` sección 8.
+  - **⬜ Pendientes del Ciclo 2:** parámetros.
 - **⬜ Ciclo 3 — Las dos superficies de UI completas:** chat flotante global (hoy solo vive en
   la página piloto) + "Centro del Agente" (bitácora de acciones, deshacer, modo BI con
   exportación).

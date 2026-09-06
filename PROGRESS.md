@@ -2,6 +2,73 @@
 
 ---
 
+## ✅ Hecho (2026-09-06, continuación) — Objetivo 5, Ciclo 2, dominio Nesting
+
+Ciclo `/goal` completo (Fase 0 grafo → Fase 1 Software Architect → Fase 2 Security Engineer, 5
+correcciones exigidas → Fase 4 ejecución → Fase 5 Code Reviewer, 2 rondas → verificación en vivo).
+**Primer dominio del agente sin tabla propia ni escritura**: `/api/nesting/generar` es un cálculo
+puro (algoritmo Guillotine 2D, `motor_planos.optimizar_corte_2d`), así que la tool nueva
+`nesting_calcular` es `es_destructiva=False` **sin `handler_confirmar`** — no hay ninguna fila
+fantasma que un flujo de confirmación deba evitar (mismo precedente que `retales_listar`).
+
+**Plan (Fase 1):** el arquitecto identificó que el molde CRUD de los otros 5 dominios no aplica
+aquí y diseñó desde cero: 1 tool de cálculo (nunca expone el SVG al modelo — se reinyecta al
+contexto en cada paso del turno, quemaría dinero/contexto sin motivo), sin capa de servicio nueva
+(el router ya delega en `motor_planos`, no hay nada más que envolver), y "guardar el sobrante
+como retal" reutiliza `retales_crear` tal cual existe — sin ninguna tool ni mecanismo nuevo.
+
+**Fase 2 (Security Engineer) — APRUEBA CON CAMBIOS, 5 correcciones, todas incorporadas:** (1)
+truncar `piezas_fuera` a 8 nombres + conteo del resto (costo de contexto + superficie de
+inyección, un nombre de pieza es texto libre del usuario); (2) topes anti-DoS como constantes
+nombradas (`MAX_PIEZAS_DISTINTAS=200`, `MAX_UNIDADES_EXPANDIDAS=500`, estimación razonada
+documentada como tal — el empaquetador es ~O(n²)), aplicados en una validación COMPARTIDA entre
+el router HTTP (que no tenía ningún tope) y la tool; (3) `aviso_para_ti` en el dict de respuesta
+(no solo en la `description` estática) recordando usar `area_libre_m2` literal si se propone
+`retales_crear`; (4) `@limiter.limit("10/minute")` en `/api/nesting/generar`, que no tenía
+ninguno; (5) validar `cantidad >= 1` explícito en vez de la coerción silenciosa que el código
+original tenía.
+
+**Fase 5 (Code Reviewer, 2 rondas) — ambas APRUEBA:** 1 hallazgo real que ninguna fase anterior
+pudo haber visto (depende de la interacción entre dos piezas de código de esta misma ronda): si
+Gemini mandaba `cantidad` como string (ej. `"3"`), la validación compartida la contaba bien pero
+el handler de la tool usaba una coerción más estricta (`_como_entero`) que la colapsaba a 1 en
+silencio — exactamente el patrón de "coerción silenciosa sin aviso" que la corrección #5 de Fase
+2 había prohibido, reaparecido en un lugar nuevo. Corregido reutilizando la misma conversión ya
+validada, verificado y reconfirmado por el mismo revisor.
+
+**Bug real de comportamiento del modelo, encontrado en la verificación en vivo (no de código):**
+con la tool registrada, aprobada, y mencionada en el system prompt (lección de Retales ya
+aplicada), Cost seguía sin invocar `nesting_calcular` — en un intento respondió en inglés y a
+medias, en otro dijo explícitamente que "no tenía una herramienta automática" y ofreció "hacer la
+cuenta a mano". Diagnóstico: a diferencia de listar datos reales (que el modelo obviamente no
+puede inventar), un cálculo de empaquetado con pocas piezas y medidas redondas es algo que el
+modelo puede creer que sabe resolver mentalmente — mencionar el dominio en el prompt no basta si
+la tool no prohíbe explícitamente el atajo. Corregido reforzando tanto la `description` de la
+tool como una regla nueva en "Reglas estrictas, sin excepción" del system prompt: nunca calcular
+el empaquetado a mano, sin excepción, ni para casos que parezcan simples. **Lección de proceso
+para futuros dominios de cálculo (no CRUD):** no basta con que el modelo sepa que la capacidad
+existe — si la tarea es algo que el modelo podría creer que puede aproximar solo, la tool debe
+prohibirlo explícitamente, no solo describir qué hace.
+
+**Complicación operativa aparte, no de código:** durante la verificación se descubrieron 2-3
+procesos `uvicorn --reload` huérfanos de reinicios anteriores de esta sesión (más sus hijos
+`multiprocessing.spawn`) corriendo simultáneamente, causando que el navegador a veces golpeara
+código desactualizado sin ningún error visible. Diagnosticado con `Get-NetTCPConnection -LocalPort
+8000` (revela qué PID es dueño real del puerto, a diferencia de `Get-CimInstance`/`tasklist` que
+solo lista procesos vivos sin decir cuál escucha). Resuelto matando explícitamente todo proceso
+con `uvicorn` o `multiprocessing.spawn` en su línea de comando antes de reiniciar, no solo el PID
+que uno cree que inició. **Lección operativa:** verificar con `Get-NetTCPConnection` el dueño real
+del puerto antes de dar por buena una prueba en vivo tras reiniciar servidores en esta máquina.
+
+**Verificado en vivo (2026-09-06):** cálculo con 2 piezas que caben (aprovechamiento real
+calculado, nunca inventado), oferta proactiva de guardar el sobrante citando el área exacta,
+propuesta de `retales_crear` con el valor literal reutilizado, confirmación y borrado del dato de
+prueba, y el caso de una pieza que no cabe (0% de aprovechamiento, aviso claro). Ningún hallazgo
+nuevo en esta ronda.
+
+**Roadmap de continuación:** dentro del Ciclo 2 queda Parámetros. "Crear cotización" sigue
+diferida por su complejidad.
+
 ## ✅ Hecho (2026-09-06) — Objetivo 5, Ciclo 2, dominio Retales
 
 Ciclo `/goal` corrido completo (Fase 0 grafo → Fase 1 Software Architect → Fase 2 Security

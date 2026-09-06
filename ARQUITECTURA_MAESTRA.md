@@ -646,7 +646,79 @@ usuario ADEMÁS de por empresa, y un DELETE físico real sin soft-delete.
   de estado inválido (rechazado con mensaje claro, ninguna propuesta corrupta creada) → borrar
   (tarjeta roja de confirmación) → reconsultar (respuesta coherente, sin autocontradecirse) →
   confirmado en `/retales` que el DELETE físico ocurrió de verdad (fila ausente).
-- **Roadmap de continuación:** dentro del Ciclo 2 quedan nesting y parámetros (mismo patrón a
+**Objetivo 5, Ciclo 2 — dominio Nesting ✅ completo (2026-09-06):** primer dominio del agente sin
+tabla propia ni escritura — el molde CRUD de los otros 5 dominios NO aplica aquí, y el plan se
+diseñó desde cero para esta forma distinta.
+
+- **Por qué es distinto:** `POST /api/nesting/generar` es un cálculo puro y sin estado (algoritmo
+  Guillotine 2D, `motor_planos.optimizar_corte_2d`) — recibe una lámina y una lista de piezas y
+  devuelve un SVG + métricas, sin persistir nada. El único punto de contacto con una escritura
+  real es un botón del frontend que guarda el sobrante como retal llamando a la misma API que ya
+  usa `retales_crear`.
+- **1 tool: `nesting_calcular`, `es_destructiva=False` SIN `handler_confirmar`** — no hay ninguna
+  fila fantasma que un flujo de confirmación deba evitar, mismo precedente que las tools de solo
+  lectura de otros dominios (`retales_listar`). El SVG se descarta a propósito del dict que se le
+  devuelve al modelo (se reinyecta al contexto en cada paso siguiente del turno vía
+  `Part.from_function_response` — cargar ahí un SVG de cientos de KB quema contexto/dinero sin
+  motivo, no es solo un problema estético). Sin capa de servicio nueva: ni el router ni la tool
+  necesitan más que importar `motor_planos.optimizar_corte_2d` directamente.
+- **"Guardar el sobrante como retal" reutiliza `retales_crear` tal cual** — ninguna tool nueva ni
+  mecanismo de confirmación duplicado. `area_libre_m2` viaja en la respuesta de `nesting_calcular`
+  ya calculado y redondeado, con un `aviso_para_ti` explícito de usarlo literal (nunca
+  recalcularlo) — la garantía real contra un número mal citado sigue siendo la tarjeta de
+  confirmación de `retales_crear`, que ya existe y ya protege esto en los otros dominios.
+- **Auditoría (Security Engineer) — APRUEBA CON CAMBIOS, 5 correcciones:** (1) truncar
+  `piezas_fuera` a 8 nombres + conteo del resto en el handler de la tool — doble motivo: costo de
+  contexto en turnos largos, y superficie de inyección (un nombre de pieza es texto libre que el
+  usuario controla, reinyectado al modelo como si fuera dato de sistema); (2) topes anti-DoS
+  (`MAX_PIEZAS_DISTINTAS=200`, `MAX_UNIDADES_EXPANDIDAS=500` tras expandir por cantidad,
+  `MAX_LARGO_NOMBRE_PIEZA=60`) como constantes nombradas en `motor_planos.validar_entrada_nesting`
+  — compartida entre el router HTTP (que no tenía ningún tope) y la tool, documentadas
+  explícitamente como estimación razonada y no medida (el algoritmo de empaquetado es ~O(n²)
+  sobre piezas expandidas); (3) `aviso_para_ti` en el dict de respuesta, no solo en la
+  `description` estática de la `FunctionDeclaration`; (4) `@limiter.limit("10/minute")` en
+  `/api/nesting/generar`, que no tenía ninguno — el propio plan aumenta el tráfico directo a esa
+  ruta desde el frontend; (5) validar `cantidad >= 1` explícito en vez de la coerción silenciosa
+  que el código original tenía (`int(...) or 1`, que convertía un valor negativo en una pieza
+  descartada sin ningún aviso).
+- **Fase 5 (Code Reviewer, 2 rondas) — ambas APRUEBA, 1 hallazgo real que solo el código
+  ejecutado podía revelar:** `validar_entrada_nesting` usa `int(p.get("cantidad", 1))` (compartida
+  con el router HTTP, que no necesita coerción especial), pero el handler de la tool usaba
+  `_como_entero(...) or 1` (más estricto, pensado para el caso `3.0`→`3` de Gemini) — si Gemini
+  mandaba `cantidad: "3"` (string), la validación la contaba bien para el tope anti-DoS, pero el
+  handler la colapsaba a 1 sin ningún aviso al modelo: exactamente el patrón de "coerción
+  silenciosa" que la corrección #5 de la propia auditoría había prohibido, reaparecido sin querer
+  en un lugar nuevo. Corregido reutilizando la misma conversión `int(...)` ya validada por
+  `validar_entrada_nesting`, eliminando la ventana de inconsistencia por completo.
+- **Bug real de comportamiento del modelo, encontrado en la verificación en vivo — no de
+  código:** con la tool registrada, aprobada, y mencionada explícitamente en el `_SYSTEM_PROMPT`
+  desde el primer commit (lección aplicada de Retales), Cost seguía sin invocar
+  `nesting_calcular` — en un intento respondió en inglés y a medias, en otro dijo abiertamente
+  "no tengo una herramienta automática... pero hago la cuenta a mano". Diagnóstico: a diferencia
+  de listar datos reales (que el modelo obviamente no puede fingir saber), un cálculo de
+  empaquetado con pocas piezas y medidas redondas es algo que el modelo puede creer que sabe
+  resolver mentalmente — **mencionar el dominio en el prompt no basta si la tool no prohíbe
+  explícitamente el atajo.** Corregido reforzando tanto la `description` de `nesting_calcular`
+  como una regla nueva en "Reglas estrictas, sin excepción" del `_SYSTEM_PROMPT`: nunca calcular
+  el empaquetado a mano, ni para casos que parezcan simples — un número inventado puede hacer que
+  el taller crea que le rinde una lámina que en realidad no le alcanza. **Lección de proceso para
+  futuros dominios de cálculo (no CRUD):** si la tarea es algo que el modelo podría creer que
+  puede aproximar por su cuenta, la tool debe prohibirlo explícitamente, no solo describir qué
+  hace.
+- **Complicación operativa aparte, no de código, documentada para no repetirla:** durante la
+  verificación en vivo se descubrieron 2-3 procesos `uvicorn --reload` huérfanos de reinicios
+  previos de la sesión (con sus hijos `multiprocessing.spawn`) corriendo en paralelo, sirviendo
+  código desactualizado sin ningún error visible (`curl`/`Get-CimInstance` no lo revelan). Se
+  diagnosticó con `Get-NetTCPConnection -LocalPort 8000`, que sí muestra qué proceso es el dueño
+  real del puerto. **Regla operativa nueva:** antes de confiar en una prueba en vivo tras
+  reiniciar servidores en esta máquina, matar TODO proceso con `uvicorn` o `multiprocessing.spawn`
+  en su línea de comando (no solo el PID que se cree haber iniciado) y confirmar con
+  `Get-NetTCPConnection` que solo un proceso es dueño del puerto.
+- **Verificado en vivo (2026-09-06)** contra el taller demo real: cálculo con piezas que caben
+  (aprovechamiento real, nunca inventado), oferta proactiva de guardar el sobrante citando el
+  área exacta calculada, confirmación de `retales_crear` reutilizando ese valor literal, borrado
+  del dato de prueba, y el caso de una pieza que no cabe (0% de aprovechamiento, aviso claro).
+- **Roadmap de continuación:** dentro del Ciclo 2 queda parámetros (mismo patrón a
   repetir); "crear cotización" (`cotizacion_crear`) se difirió
   a propósito por su complejidad (el motor `calcular_cotizacion_directa` tiene ~60 variables:
   merma, logística, viáticos, zócalos geométricos) y el riesgo financiero de que la IA cotice mal

@@ -2,6 +2,86 @@
 
 ---
 
+## Sesión: 2026-09-06 (tercera parte) — Objetivo 5, Ciclo 2: dominio Nesting
+
+### Qué se hizo
+El fundador pidió seguir con el siguiente dominio del Ciclo 2 (`/goal Sigue con Nesting`),
+corrido en modo autónomo. Ciclo `/goal` completo (Fases 0-6).
+
+1. **Fase 0:** al explorar `backend/routers/nesting.py` se encontró que este dominio es
+   ESTRUCTURALMENTE distinto a los 5 anteriores: no tiene tabla propia, no escribe nada — es un
+   cálculo puro (algoritmo Guillotine 2D, `motor_planos.optimizar_corte_2d`) que recibe una
+   lámina y una lista de piezas y devuelve un SVG + métricas. El único punto de contacto con una
+   escritura real es un botón del FRONTEND que guarda el sobrante como retal llamando a la misma
+   API que ya usa `retales_crear`.
+2. **Fase 1 (Software Architect):** en vez de forzar el molde CRUD de los otros dominios, diseñó
+   una sola tool `nesting_calcular` sin capa de confirmación (no hay nada que confirmar), sin
+   capa de servicio nueva (el router ya delega en `motor_planos`), y decidió que "guardar el
+   sobrante como retal" reutiliza `retales_crear` tal cual — nunca una tool nueva.
+3. **Fase 2 (Security Engineer) — APRUEBA CON CAMBIOS, 5 correcciones:** truncar `piezas_fuera`
+   (costo de contexto + texto libre del usuario reinyectado al modelo); topes anti-DoS
+   compartidos entre router y tool (el router no tenía ninguno); `aviso_para_ti` en la respuesta
+   de la tool para que el modelo cite el área libre exacta al proponer un retal; rate limit en
+   `/api/nesting/generar` (no tenía ninguno — el plan aumenta el tráfico directo a esa ruta);
+   validar `cantidad >= 1` explícito.
+4. **Fase 4 (ejecución), 3 micro-commits:** `motor_planos.validar_entrada_nesting` (validación
+   compartida + constantes de tope), router adelgazado para usarla, `agente/tools/nesting.py`
+   (la tool), `_SYSTEM_PROMPT` actualizado mencionando Nesting explícitamente desde el primer
+   commit (lección aprendida de Retales, no repetida esta vez en el primer intento).
+5. **Fase 5 (Code Reviewer, 2 rondas) — ambas APRUEBA:** 1 hallazgo real que solo podía verse en
+   el código ejecutado: `cantidad` como string ("3") pasaba bien la validación compartida pero el
+   handler de la tool la colapsaba a 1 con una coerción más estricta — mismo patrón de "coerción
+   silenciosa" que la Fase 2 ya había prohibido, reaparecido sin querer. Corregido reutilizando
+   la misma conversión de la validación, reverificado por el mismo revisor.
+6. **Verificación en vivo — 2 bugs reales encontrados y corregidos, ninguno de código:**
+   - **Bug de comportamiento del modelo:** con la tool registrada, aprobada, y mencionada en el
+     prompt, Cost seguía sin invocarla — respondió una vez en inglés y a medias, otra vez dijo
+     explícitamente "no tengo una herramienta automática, pero hago la cuenta a mano". A
+     diferencia de listar datos reales (que el modelo no puede fingir saber), un cálculo de
+     empaquetado con pocas piezas puede sentirse "resoluble mentalmente" para el modelo — mencionar
+     el dominio no basta si la tool no prohíbe el atajo explícitamente. Corregido reforzando la
+     `description` de la tool y agregando una regla nueva en "Reglas estrictas, sin excepción":
+     nunca calcular el empaquetado a mano, ni para casos que parezcan simples.
+   - **Complicación operativa:** 2-3 procesos `uvicorn --reload` huérfanos de reinicios previos
+     de la sesión (con sus hijos `multiprocessing.spawn`) seguían corriendo en paralelo,
+     sirviendo código desactualizado sin ningún error visible — `curl`/`Get-CimInstance` no lo
+     revelan, hizo falta `Get-NetTCPConnection -LocalPort 8000` para ver qué proceso era el
+     dueño real del puerto. Resuelto matando explícitamente TODO proceso con `uvicorn` o
+     `multiprocessing.spawn` en su línea de comando antes de cada reinicio, no solo el PID que
+     se cree haber iniciado.
+   - Con ambos corregidos, las 4 pruebas completas pasaron: cálculo con piezas que caben
+     (aprovechamiento real, nunca inventado), oferta proactiva de guardar el sobrante citando el
+     área exacta calculada, confirmación de `retales_crear` con ese valor literal, borrado del
+     dato de prueba, y el caso de una pieza que no cabe (0%, aviso claro).
+
+### Archivos tocados
+- **Backend modificados:** `backend/motor/motor_planos.py` (`validar_entrada_nesting` +
+  constantes de tope), `backend/routers/nesting.py` (adelgazado + rate limit),
+  `backend/agente/runtime.py` (`_SYSTEM_PROMPT` — Nesting + regla anti-cálculo-manual).
+- **Backend nuevo:** `backend/agente/tools/nesting.py`.
+- **Frontend:** `web/src/pages/AgentePage.tsx` (subtítulo con los 6 dominios).
+- **Docs:** `PROGRESS.md`, este archivo, `ARQUITECTURA_MAESTRA.md`, `docs/ROADMAP_COSTO360.md`.
+
+### Decisiones tomadas
+- Un dominio de cálculo puro (sin tabla, sin escritura) NO fuerza el patrón de confirmación de
+  dos fases — `es_destructiva=False` sin `handler_confirmar` es correcto y tiene precedente real
+  (`retales_listar`).
+- Regla de proceso nueva para futuros dominios de cálculo: si el modelo podría creer que puede
+  aproximar el resultado sin la tool (a diferencia de datos reales que obviamente no puede
+  inventar), la `description` de la tool debe prohibir explícitamente el atajo, no solo describir
+  la función.
+- Regla operativa nueva para esta máquina: verificar con `Get-NetTCPConnection -LocalPort 8000`
+  qué proceso es el dueño real del puerto antes de confiar en una prueba en vivo tras reiniciar
+  servidores — matar por patrón de línea de comando (`uvicorn`, `multiprocessing.spawn`), no por
+  PID recordado.
+
+### Pendiente / próxima tarea lógica
+1. Decidir con el fundador el siguiente dominio del Ciclo 2 (Parámetros, el único que queda) o si
+   se aborda "crear cotización" (deferido por su complejidad).
+2. Commits locales de este dominio sin subir a GitHub — preguntar antes de subir.
+
+---
+
 ## Sesión: 2026-09-06 (continuación) — Resolución del bug de Retales, verificación en vivo completa
 
 ### Qué se hizo
