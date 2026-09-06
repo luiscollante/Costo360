@@ -645,6 +645,68 @@ _NEST_STROKES = [
 ]
 
 
+# Topes anti-DoS sobre el algoritmo de empaquetado (~O(n²) sobre piezas expandidas,
+# `_guillotine_pack` recorre `free_rects` por cada pieza). Estimación razonada, no
+# medida con carga real: quedan muy por encima de un caso real de taller (rara vez
+# más de 20-50 piezas por lámina) — auditado en la Fase 2 del Ciclo 2 del Objetivo 5
+# (dominio Nesting del Agente de IA), ajustar aquí si una medición real lo justifica.
+MAX_PIEZAS_DISTINTAS = 200
+MAX_UNIDADES_EXPANDIDAS = 500
+MAX_LARGO_NOMBRE_PIEZA = 60
+
+
+def validar_entrada_nesting(lamina_largo, lamina_ancho, piezas) -> str | None:
+    """
+    Valida los datos de entrada de un cálculo de nesting — compartida entre el
+    router HTTP `/api/nesting/generar` y la tool del agente `nesting_calcular`,
+    para no duplicar las mismas reglas (incluido el tope anti-DoS) en dos
+    lugares. Devuelve `None` si son válidos, o un string en español con el
+    primer error encontrado. Nunca lanza excepciones — cada llamador decide
+    cómo reportarlo (HTTPException 422 en el router, {"error": ...} en la tool).
+    """
+    try:
+        ll = float(lamina_largo)
+        la = float(lamina_ancho)
+    except (TypeError, ValueError):
+        return "Las dimensiones de la lámina deben ser números."
+    if ll <= 0 or la <= 0:
+        return "Las dimensiones de la lámina deben ser mayores que cero."
+
+    if not isinstance(piezas, list) or len(piezas) == 0:
+        return "Debes indicar al menos una pieza a cortar."
+    if len(piezas) > MAX_PIEZAS_DISTINTAS:
+        return f"Demasiadas piezas distintas (máximo {MAX_PIEZAS_DISTINTAS})."
+
+    total_unidades = 0
+    for i, p in enumerate(piezas):
+        if not isinstance(p, dict):
+            return f"La pieza en el índice {i} debe ser un objeto."
+        nombre = str(p.get("nombre", p.get("id", i)))
+        if len(nombre) > MAX_LARGO_NOMBRE_PIEZA:
+            return f"El nombre de la pieza '{nombre[:20]}...' es demasiado largo (máximo {MAX_LARGO_NOMBRE_PIEZA} caracteres)."
+        try:
+            largo = float(p.get("largo", 0))
+            ancho = float(p.get("ancho", 0))
+        except (TypeError, ValueError):
+            return f"Las dimensiones de la pieza '{nombre}' deben ser números."
+        if largo <= 0 or ancho <= 0:
+            return f"Las dimensiones de la pieza '{nombre}' deben ser mayores que cero."
+        try:
+            cantidad = int(p.get("cantidad", 1))
+        except (TypeError, ValueError):
+            return f"La cantidad de la pieza '{nombre}' debe ser un número entero."
+        if cantidad < 1:
+            return f"La cantidad de la pieza '{nombre}' debe ser al menos 1."
+        total_unidades += cantidad
+
+    if total_unidades > MAX_UNIDADES_EXPANDIDAS:
+        return (
+            f"Demasiadas piezas en total ({total_unidades}) — el máximo es "
+            f"{MAX_UNIDADES_EXPANDIDAS} unidades sumando todas las cantidades."
+        )
+    return None
+
+
 def optimizar_corte_2d(placa_ancho: float, placa_alto: float, lista_piezas: list) -> tuple:
     """
     Ejecuta el algoritmo Guillotine 2D sobre la lámina indicada y genera el SVG.
