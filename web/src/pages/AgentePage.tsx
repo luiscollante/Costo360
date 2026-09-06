@@ -21,13 +21,21 @@ import {
 // Campos usados como nombre principal (nunca se repiten en el detalle) o que
 // son ids/flags internos sin valor para que un humano confirme una acción.
 const _CAMPOS_PRINCIPAL = ['numero', 'titulo', 'referencia'] as const
-const _CAMPOS_OCULTOS = new Set(['id', 'base_id', 'es_propio', ..._CAMPOS_PRINCIPAL])
-const _CAMPOS_MONEDA = new Set(['precio', 'precio_m2', 'precio_m2_propuesto', 'precio_lamina'])
+const _CAMPOS_OCULTOS = new Set([
+  'id', 'base_id', 'es_propio', 'activo', 'actualizado_en', ..._CAMPOS_PRINCIPAL,
+])
+const _CAMPOS_MONEDA = new Set([
+  'precio', 'precio_m2', 'precio_m2_propuesto', 'precio_lamina', 'costo_unitario',
+])
 const _ETIQUETAS: Record<string, string> = {
   cliente: 'Cliente', precio: 'Precio', fecha: 'Fecha', estado: 'Estado',
   project_id: 'Proyecto', categoria: 'Categoría', proveedor: 'Proveedor',
   referencia: 'Referencia', precio_m2: 'Precio actual', precio_m2_propuesto: 'Precio propuesto',
   es_override: 'Es copia de Costo360', activo: 'Activo',
+  material_categoria: 'Categoría', cantidad_laminas: 'Cantidad de láminas',
+  costo_unitario: 'Costo unitario', stock_minimo: 'Stock mínimo',
+  ancho_cm: 'Ancho (cm)', alto_cm: 'Alto (cm)', espesor_cm: 'Espesor (cm)',
+  ubicacion: 'Ubicación', notas: 'Notas',
 }
 
 /** Cualquier "<campo>_propuesto" (no solo precio_m2_propuesto) recibe una
@@ -286,8 +294,10 @@ export default function AgentePage() {
                   return (
                     <li key={i}>
                       <div>
-                        <span className="font-medium">{principal}</span>{' '}
-                        <span className="text-brand-text-secondary">(id {String(f.id)})</span>
+                        <span className="font-medium">{principal}</span>
+                        {f.id != null && (
+                          <span className="text-brand-text-secondary"> (id {String(f.id)})</span>
+                        )}
                       </div>
                       {detalles.length > 0 && (
                         <div className="text-xs text-brand-text-secondary">
