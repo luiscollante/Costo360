@@ -15,30 +15,11 @@ from backend.db.deps import scope_propio, verificar_dispositivo
 from backend.db.config_helpers import cfg_get
 from backend.services import cotizacion_service
 
-from calculos import calcular_cotizacion_directa, calcular_aiu
-from parametros import ETAPAS_OBRA, ADICIONALES
+from calculos import calcular_aiu
 from generador_pdf import generar_pdf_cotizacion, generar_pdf_cotizacion_aiu, generar_cuenta_cobro
 
 router = APIRouter(prefix="/api/cotizacion", tags=["cotizacion"],
                    dependencies=[Depends(verificar_dispositivo)])
-
-
-def _siguiente_numero(conn, empresa_id, prefijo: str) -> str:
-    """Siguiente folio secuencial anual por empresa. Contador atómico (folio_seq) —
-    sin carrera (hallazgo D4). Formato: COT-2026-0001, AIU-2026-0001, ..."""
-    year = date.today().year
-    cur = conn.cursor()
-    cur.execute(
-        """INSERT INTO folio_seq (empresa_id, prefijo, anio, ultimo)
-        VALUES (%s, %s, %s, 1)
-        ON CONFLICT (empresa_id, prefijo, anio)
-        DO UPDATE SET ultimo = folio_seq.ultimo + 1
-        RETURNING ultimo""",
-        (empresa_id, prefijo, year),
-    )
-    n = cur.fetchone()[0]
-    cur.close()
-    return f"{prefijo}-{year}-{n:04d}"
 
 
 @router.post("/directa")
@@ -52,53 +33,10 @@ def cotizacion_directa(
     o sinterizado. Retorna el precio sugerido, costo total, utilidad y el
     desglose por componente (c1–c7).
     """
-    etapa = ETAPAS_OBRA.get(body.etapa_label, "terminada")
-
-    materiales_lista = [m.model_dump() for m in body.materiales_lista]
-    piezas = [p.model_dump() for p in body.piezas]
-
-    if piezas:
-        m2_real = sum(
-            float(p["ml"]) * float(p["ancho_custom"]) * int(p["cantidad"])
-            for p in piezas
-        )
-    else:
-        m2_real = body.area_placa_comprada
-
-    emp = usuario["empresa_id"]
-    tarifas_override  = cfg_get(conn, emp, "tarifas")
-    adicionales_lista = cfg_get(conn, emp, "adicionales") or ADICIONALES
-
-    cantidades_add = list(body.cantidades_add)
-    while len(cantidades_add) < len(adicionales_lista):
-        cantidades_add.append(0)
-
-    resultado = calcular_cotizacion_directa(
-        categoria=body.categoria,
-        referencia=body.referencia,
-        precio_m2=body.precio_m2,
-        area_placa_comprada=body.area_placa_comprada,
-        m2_real=m2_real,
-        m2_cortados=m2_real,
-        m2_usados=m2_real,
-        margen_pct=body.margen_pct,
-        dias=body.dias,
-        personas=body.personas,
-        zocalo_activo=body.zocalo_activo,
-        zocalo_ml=body.zocalo_ml,
-        adicionales_activos=body.adicionales_activos,
-        cantidades_add=cantidades_add,
-        etapa=etapa,
-        adicionales_lista=adicionales_lista,
-        tipo_proyecto=body.tipo_proyecto,
-        nombre_cliente=body.nombre_cliente,
-        materiales_lista=materiales_lista,
-        piezas=piezas,
-        incluir_iva=body.incluir_iva,
-        tarifas_override=tarifas_override,
-    )
-    resultado["incluir_iva"] = body.incluir_iva
-    return resultado
+    entrada = body.model_dump()
+    entrada["materiales_lista"] = [m.model_dump() for m in body.materiales_lista]
+    entrada["piezas"] = [p.model_dump() for p in body.piezas]
+    return cotizacion_service.calcular_directa(conn, usuario, entrada)
 
 
 @router.post("/guardar")
@@ -107,30 +45,9 @@ def guardar_cotizacion(
     conn=Depends(db_rls),
     usuario=Depends(get_current_user),
 ):
-    hoy = date.today().isoformat()
-    r = body.resultado
-    numero = body.numero or _siguiente_numero(conn, usuario["empresa_id"], "COT")
-    cliente = body.cliente or "Sin nombre"
-
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO cotizaciones "
-        "(empresa_id,numero,fecha,cliente,material,tipo,m2,ml,costo,precio,margen,estado,datos_json,usuario_id) "
-        "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id",
-        (
-            usuario["empresa_id"],
-            numero, hoy, cliente,
-            r.get("categoria", ""), r.get("tipo_proyecto", ""),
-            r.get("m2_real", 0), r.get("ml_proyecto", 0),
-            r.get("costo_total", 0), r.get("precio_sugerido", 0),
-            r.get("margen_pct", 0), "Pendiente",
-            json.dumps(r, ensure_ascii=False, default=str),
-            usuario["id"],
-        ),
+    return cotizacion_service.guardar_cotizacion(
+        conn, usuario, body.resultado, numero=body.numero, cliente=body.cliente,
     )
-    new_id = cur.fetchone()[0]
-    cur.close()
-    return {"id": new_id, "numero": numero}
 
 
 @router.get("/historial")
@@ -215,7 +132,7 @@ def guardar_aiu(
     """Guarda una cotización AIU en el historial."""
     hoy = date.today().isoformat()
     r = body.resultado
-    numero = body.numero or _siguiente_numero(conn, usuario["empresa_id"], "AIU")
+    numero = body.numero or cotizacion_service.siguiente_numero_folio(conn, usuario["empresa_id"], "AIU")
     cliente = body.cliente or "Sin nombre"
 
     cur = conn.cursor()
