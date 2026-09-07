@@ -368,13 +368,24 @@ def _normalizar_piezas_agente(piezas: list | None) -> list[dict]:
 
 
 def _preparar_entrada_cotizacion(args: dict) -> dict:
+    piezas = _normalizar_piezas_agente(args.get("piezas"))
+    area_placa_comprada = args.get("area_placa_comprada") or 0
+    if not area_placa_comprada and piezas:
+        # Bug real encontrado en Fase 5: `calculos.py` solo saca el costo de
+        # material de `area_placa_comprada` cuando `materiales_lista` viene
+        # vacía (el caso del agente, que en v1 nunca la puebla) — sin esto,
+        # cotizar con piezas dejaba el costo de material en $0 en silencio.
+        # El agente v1 no maneja aprovechamiento de placa ni varios
+        # materiales, así que asume "compra exacta lo que necesita, sin
+        # retal": el área comprada es la suma de las piezas mismas.
+        area_placa_comprada = sum(p["ml"] * p["ancho_custom"] * p["cantidad"] for p in piezas)
     return {
         "categoria": args.get("categoria", ""),
         "referencia": args.get("referencia") or "",
         "precio_m2": args.get("precio_m2", 0),
-        "area_placa_comprada": args.get("area_placa_comprada", 0),
+        "area_placa_comprada": area_placa_comprada,
         "materiales_lista": [],  # fuera de v1 del agente — solo el wizard humano lo usa
-        "piezas": _normalizar_piezas_agente(args.get("piezas")),
+        "piezas": piezas,
         "tipo_proyecto": args.get("tipo_proyecto", ""),
         "etapa_label": args.get("etapa_label") or _DEFAULT_ETAPA,
         "nombre_cliente": args.get("nombre_cliente") or "",
