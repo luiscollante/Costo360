@@ -367,18 +367,32 @@ def _normalizar_piezas_agente(piezas: list | None) -> list[dict]:
     ]
 
 
+_ALTURA_ZOCALO_M = 0.07  # 7cm — mismo default que PiezaItem.altura_zocalo_cm; el agente no expone este campo
+
+
 def _preparar_entrada_cotizacion(args: dict) -> dict:
     piezas = _normalizar_piezas_agente(args.get("piezas"))
     area_placa_comprada = args.get("area_placa_comprada") or 0
+    zocalo_activo = bool(args.get("zocalo_activo", False))
+    zocalo_ml = float(args.get("zocalo_ml") or 0)
     if not area_placa_comprada and piezas:
-        # Bug real encontrado en Fase 5: `calculos.py` solo saca el costo de
-        # material de `area_placa_comprada` cuando `materiales_lista` viene
-        # vacía (el caso del agente, que en v1 nunca la puebla) — sin esto,
-        # cotizar con piezas dejaba el costo de material en $0 en silencio.
-        # El agente v1 no maneja aprovechamiento de placa ni varios
+        # Bug real encontrado en Fase 5 (ronda 1): `calculos.py` solo saca el
+        # costo de material de `area_placa_comprada` cuando `materiales_lista`
+        # viene vacía (el caso del agente, que en v1 nunca la puebla) — sin
+        # esto, cotizar con piezas dejaba el costo de material en $0 en
+        # silencio. El agente v1 no maneja aprovechamiento de placa ni varios
         # materiales, así que asume "compra exacta lo que necesita, sin
         # retal": el área comprada es la suma de las piezas mismas.
         area_placa_comprada = sum(p["ml"] * p["ancho_custom"] * p["cantidad"] for p in piezas)
+        if zocalo_activo and zocalo_ml:
+            # Bug real encontrado en Fase 5 (ronda 2): en el camino de zócalo
+            # "global" (zocalo_activo/zocalo_ml, sin flags por pieza), el
+            # motor asume que `area_placa_comprada` YA incluye la franja del
+            # zócalo — así funciona en el wizard humano, donde ese número es
+            # la lámina real comprada, con margen de sobra. Como aquí el área
+            # es exacta y sin margen, hay que sumar el m² del zócalo a mano
+            # para no dejar esa piedra sin cobrar.
+            area_placa_comprada += zocalo_ml * _ALTURA_ZOCALO_M
     return {
         "categoria": args.get("categoria", ""),
         "referencia": args.get("referencia") or "",
@@ -392,8 +406,8 @@ def _preparar_entrada_cotizacion(args: dict) -> dict:
         "margen_pct": args.get("margen_pct") if args.get("margen_pct") is not None else _DEFAULT_MARGEN,
         "dias": args.get("dias") if args.get("dias") is not None else _DEFAULT_DIAS,
         "personas": 2,  # no afecta el precio (verificado en calculos.py) — se asume en silencio
-        "zocalo_activo": bool(args.get("zocalo_activo", False)),
-        "zocalo_ml": args.get("zocalo_ml") or 0.0,
+        "zocalo_activo": zocalo_activo,
+        "zocalo_ml": zocalo_ml,
         "adicionales_activos": False,  # fuera de v1 del agente — array posicional frágil para un LLM
         "cantidades_add": [],
         "incluir_iva": bool(args.get("incluir_iva", False)),
