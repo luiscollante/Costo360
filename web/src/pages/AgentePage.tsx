@@ -22,7 +22,7 @@ import {
 // valor real "gana" para ESA fila puntual (nunca se oculta toda la lista:
 // solo el campo que de verdad ganó, para no esconder p. ej. "Categoría" de
 // una lámina que sí tiene referencia y por eso usó "referencia" como título).
-const _CAMPOS_PRINCIPAL = ['numero', 'titulo', 'referencia', 'material_categoria', 'nombre_interno', 'concepto'] as const
+const _CAMPOS_PRINCIPAL = ['numero', 'cliente', 'titulo', 'referencia', 'material_categoria', 'nombre_interno', 'concepto'] as const
 // Ids/flags internos sin valor para que un humano confirme una acción —
 // estos SÍ se ocultan siempre, sin importar qué ganó como principal.
 const _CAMPOS_OCULTOS = new Set(['id', 'base_id', 'es_propio', 'activo', 'actualizado_en'])
@@ -37,6 +37,7 @@ const _CAMPOS_MONEDA = new Set([
   'precio', 'precio_m2', 'precio_lamina', 'costo_unitario',
   'precio_recuperacion', 'precio_mercado_m2', 'valor_cop',
   'terminada', 'acabados', 'estructura', 'comercial',
+  'precio_sugerido', 'costo_total',
 ])
 
 /** true tanto para 'precio_m2' como para su variante 'precio_m2_propuesto' —
@@ -53,7 +54,9 @@ function _esCampoMoneda(campo: string): boolean {
 // Parámetros es el único dominio con campos de PORCENTAJE de verdad (guardados
 // como fracción 0.05=5% en la base, pero mostrados ×100 con signo % — nunca la
 // fracción cruda, que sería justo la ambigüedad que este dominio busca evitar).
-const _CAMPOS_PORCENTAJE = new Set(['valor_pct'])
+// margen_pct de Cotización ya viene en puntos de porcentaje (40 = 40%), igual
+// que valor_pct — la misma función de formato sirve para los dos sin cambios.
+const _CAMPOS_PORCENTAJE = new Set(['valor_pct', 'margen_pct'])
 
 function _esCampoPorcentaje(campo: string): boolean {
   const base = campo.endsWith('_propuesto') ? campo.slice(0, -'_propuesto'.length) : campo
@@ -75,6 +78,8 @@ const _ETIQUETAS: Record<string, string> = {
   inductor: 'Tipo de cálculo', unidad: 'Unidad', valor_cop: 'Valor', valor_pct: 'Valor (%)',
   terminada: 'Casa terminada', acabados: 'En acabados', estructura: 'En estructura',
   comercial: 'Local comercial',
+  tipo_proyecto: 'Tipo de proyecto', precio_sugerido: 'Precio sugerido',
+  costo_total: 'Costo total', margen_pct: 'Margen',
 }
 
 /** Cualquier "<campo>_propuesto" (no solo precio_m2_propuesto) recibe una
