@@ -25,10 +25,12 @@ tools:
 """
 from fastapi import HTTPException
 from google.genai import types as gtypes
+from parametros import TARIFAS
 
 from backend.agente import confirmations
 from backend.agente.registry import ToolSpec, registrar
 from backend.agente.tools.proyectos import _como_entero
+from backend.db.config_helpers import cfg_get
 from backend.services import cotizacion_service
 
 _AVISO_ANTIENCADENAMIENTO = (
@@ -235,4 +237,276 @@ registrar(ToolSpec(
     handler=_preparar_borrar_cotizacion,
     es_destructiva=True,
     handler_confirmar=_confirmar_borrar_cotizacion,
+))
+
+
+# ── Crear cotización (calcular + guardar) — Objetivo 5, Ciclo 2, pieza diferida ──
+#
+# Diseñado (Fase 1, Software Architect) y auditado dos rondas (Fase 2, Security
+# Engineer) antes de escribir este código. Decisión central: dos tools, no una
+# sola ni una con parámetro `accion` comodín — `cotizacion_calcular` (pura, sin
+# confirmación, repetible tantas veces como el usuario quiera comparar
+# escenarios) y `cotizacion_guardar` (recalcula internamente con los MISMOS
+# argumentos que recibió, nunca confía en un `resultado` que el modelo pudiera
+# retipear, y congela ESE resultado recalculado en la propuesta de dos fases —
+# el confirm nunca vuelve a llamar al motor, así el folio nunca se asigna dos
+# veces por el mismo cálculo).
+#
+# `categoria` queda como texto libre (no `enum`) a propósito: a diferencia de
+# `tipo_proyecto` (lista fija de frontend), las categorías SÍ son configurables
+# por taller vía Parámetros (`cfg_get(..., "tarifas")`) — un enum cerrado le
+# negaría al agente cualquier categoría que un taller haya agregado por su
+# cuenta. En su lugar, `_validar_entrada` la resuelve contra las tarifas reales
+# del taller y rechaza con error explícito si no existe, en vez de dejar que
+# `calculos.py` caiga en silencio a Mármol (hallazgo real de la auditoría).
+
+_DEFAULT_MARGEN = 40.0
+_DEFAULT_ETAPA = "Casa terminada (limpia)"
+_DEFAULT_DIAS = 2
+
+_PROPIEDADES_COTIZACION = {
+    "categoria": {
+        "type": "STRING",
+        "description": (
+            "Categoría del material, EXACTAMENTE como existe en las tarifas de "
+            "este taller (ej. Mármol, Granito, Sinterizado, Quarztone, Quarzita, "
+            "o una categoría propia que el taller haya agregado en Parámetros). "
+            "Si no estás seguro cuáles existen, consulta antes con las tools de "
+            "Catálogo o Parámetros — nunca inventes una. Si la categoría no "
+            "existe para este taller, la tool te devuelve error en vez de "
+            "calcular con la equivocada."
+        ),
+    },
+    "referencia": {"type": "STRING", "description": "Nombre/referencia comercial de la lámina (solo descriptivo, no afecta el precio)."},
+    "precio_m2": {"type": "NUMBER", "description": "Precio de compra por m² de esa lámina. Si el material está en el Catálogo del taller, tráelo de ahí — nunca lo inventes."},
+    "area_placa_comprada": {"type": "NUMBER", "description": "m² totales del proyecto cuando NO se dan piezas individuales (ej. 'una encimera de 3x0.6m' = 1.8). Usa esto para el caso simple de una sola pieza implícita."},
+    "piezas": {
+        "type": "ARRAY",
+        "description": "Lista de piezas individuales, solo cuando el usuario las describe por separado (ej. varios mesones distintos). Si se usa, no uses area_placa_comprada.",
+        "items": {
+            "type": "OBJECT",
+            "properties": {
+                "nombre": {"type": "STRING"},
+                "largo": {"type": "NUMBER", "description": "metros lineales de la pieza"},
+                "ancho": {"type": "NUMBER", "description": "metros, si no se menciona usa 0.60"},
+                "cantidad": {"type": "INTEGER", "description": "copias idénticas; si no se menciona, usa 1"},
+                "unidad_venta": {"type": "STRING", "enum": ["ml", "m2"]},
+            },
+            "required": ["largo"],
+        },
+    },
+    "tipo_proyecto": {
+        "type": "STRING",
+        "enum": ["Meson", "Isla", "Baño", "Escalera", "Piso", "Fachada", "Revestimiento", "Otro"],
+        "description": (
+            "Tipo de proyecto — determina si se cobra por ML de borde (Meson, "
+            "Isla, Baño, Escalera) o por m² de área (Piso, Fachada, "
+            "Revestimiento). Usa 'Otro' si de verdad no encaja en ninguno."
+        ),
+    },
+    "etapa_label": {
+        "type": "STRING",
+        "enum": ["Casa terminada (limpia)", "En acabados", "En estructura", "Proyecto comercial"],
+        "description": f"Etapa de la obra — afecta el % de merma. Si no se menciona, se asume '{_DEFAULT_ETAPA}' y se avisa.",
+    },
+    "nombre_cliente": {"type": "STRING", "description": "Nombre del cliente. No es obligatorio para previsualizar, pero SÍ es obligatorio para guardar."},
+    "margen_pct": {"type": "NUMBER", "description": f"% de margen sobre el costo. Si no se menciona, se asume {_DEFAULT_MARGEN:.0f} (estándar del taller) y se avisa."},
+    "dias": {"type": "INTEGER", "description": f"Días estimados de trabajo — SÍ afecta el precio (costo de máquina cortadora por día). Si no se menciona, se asume {_DEFAULT_DIAS} y se avisa."},
+    "zocalo_activo": {"type": "BOOLEAN", "description": "Si el proyecto lleva zócalo. Default false si no se menciona."},
+    "zocalo_ml": {"type": "NUMBER", "description": "Metros lineales de zócalo — obligatorio si zocalo_activo=true, y debe omitirse (o ir en 0) si zocalo_activo=false."},
+    "incluir_iva": {"type": "BOOLEAN", "description": "Default false."},
+}
+
+
+def _params_cotizacion(requeridos: list[str]) -> dict:
+    return {"type": "OBJECT", "properties": _PROPIEDADES_COTIZACION, "required": requeridos}
+
+
+def _validar_entrada_cotizacion(conn, usuario: dict, args: dict) -> str | None:
+    """None si todo está bien; un mensaje de error listo para el usuario si no.
+    Se llama al principio de _calcular y de _guardar_cotizacion — cada una
+    valida por su cuenta, no hay ningún estado compartido entre llamadas."""
+    tarifas_override = cfg_get(conn, usuario["empresa_id"], "tarifas")
+    categorias_validas = set((tarifas_override or TARIFAS).keys())
+    categoria = args.get("categoria")
+    if categoria not in categorias_validas:
+        return (f"'{categoria}' no es una categoría válida para este taller. "
+                f"Categorías disponibles: {', '.join(sorted(categorias_validas))}.")
+
+    if not args.get("precio_m2"):
+        return "Necesito el precio por m² de este material para calcular."
+
+    zocalo_activo = bool(args.get("zocalo_activo", False))
+    zocalo_ml = float(args.get("zocalo_ml") or 0)
+    if zocalo_activo and zocalo_ml <= 0:
+        return "Si el proyecto lleva zócalo, dime cuántos metros lineales tiene."
+    if not zocalo_activo and zocalo_ml > 0:
+        return (f"Diste {zocalo_ml} ml de zócalo pero no marcaste que el "
+                f"proyecto lleva zócalo — ¿sí lleva o no?")
+
+    if not (args.get("area_placa_comprada") or args.get("piezas")):
+        return "Necesito un área total o al menos una pieza con medidas para calcular."
+
+    return None
+
+
+def _normalizar_piezas_agente(piezas: list | None) -> list[dict]:
+    """El agente describe cada pieza con `largo`/`ancho` (lenguaje natural);
+    `cotizacion_service.calcular_directa` espera el formato canónico que ya
+    produce el wizard humano (`ml`/`ancho_custom`, ver `PiezaItem`) — misma
+    idea que ya usan `calcular_totales`/`calcular_merma` de este archivo."""
+    return [
+        {
+            "nombre": p.get("nombre", ""),
+            "ml": float(p.get("largo", 0)),
+            "ancho_custom": float(p.get("ancho", 0.60)),
+            "cantidad": int(p.get("cantidad", 1)),
+            "unidad_venta": p.get("unidad_venta", "ml"),
+        }
+        for p in (piezas or [])
+    ]
+
+
+def _preparar_entrada_cotizacion(args: dict) -> dict:
+    return {
+        "categoria": args.get("categoria", ""),
+        "referencia": args.get("referencia") or "",
+        "precio_m2": args.get("precio_m2", 0),
+        "area_placa_comprada": args.get("area_placa_comprada", 0),
+        "materiales_lista": [],  # fuera de v1 del agente — solo el wizard humano lo usa
+        "piezas": _normalizar_piezas_agente(args.get("piezas")),
+        "tipo_proyecto": args.get("tipo_proyecto", ""),
+        "etapa_label": args.get("etapa_label") or _DEFAULT_ETAPA,
+        "nombre_cliente": args.get("nombre_cliente") or "",
+        "margen_pct": args.get("margen_pct") if args.get("margen_pct") is not None else _DEFAULT_MARGEN,
+        "dias": args.get("dias") if args.get("dias") is not None else _DEFAULT_DIAS,
+        "personas": 2,  # no afecta el precio (verificado en calculos.py) — se asume en silencio
+        "zocalo_activo": bool(args.get("zocalo_activo", False)),
+        "zocalo_ml": args.get("zocalo_ml") or 0.0,
+        "adicionales_activos": False,  # fuera de v1 del agente — array posicional frágil para un LLM
+        "cantidades_add": [],
+        "incluir_iva": bool(args.get("incluir_iva", False)),
+    }
+
+
+def _supuestos_usados_cotizacion(args: dict) -> list[str]:
+    """Campos que la tool asumió con un default en vez de exigirlos — el
+    modelo DEBE mencionarlos en su respuesta (regla del `_SYSTEM_PROMPT`),
+    nunca dejarlos pasar en silencio como si el usuario los hubiera dado."""
+    supuestos = []
+    if args.get("margen_pct") is None:
+        supuestos.append(f"margen del {_DEFAULT_MARGEN:.0f}%")
+    if not args.get("etapa_label"):
+        supuestos.append(f"etapa de obra '{_DEFAULT_ETAPA}'")
+    if args.get("dias") is None:
+        supuestos.append(f"{_DEFAULT_DIAS} días de trabajo")
+    return supuestos
+
+
+def _calcular(conn, usuario: dict, args: dict) -> dict:
+    error = _validar_entrada_cotizacion(conn, usuario, args)
+    if error:
+        return {"error": error}
+    entrada = _preparar_entrada_cotizacion(args)
+    resultado = cotizacion_service.calcular_directa(conn, usuario, entrada)
+    respuesta = {"resultado": resultado}
+    supuestos = _supuestos_usados_cotizacion(args)
+    if supuestos:
+        respuesta["supuestos_usados"] = supuestos
+        respuesta["aviso_para_ti"] = (
+            "Mencionale al usuario cada uno de los 'supuestos_usados' junto con "
+            "el precio — nunca los dejes en silencio como si él los hubiera dado."
+        )
+    return respuesta
+
+
+registrar(ToolSpec(
+    nombre="cotizacion_calcular",
+    declaracion=gtypes.FunctionDeclaration(
+        name="cotizacion_calcular",
+        description=(
+            "Calcula (SIN guardar nada) el precio sugerido de una cotización "
+            "directa de piedra natural o sinterizado. Es un cálculo puro — "
+            "invócala las veces que el usuario quiera comparar escenarios "
+            "(cambiar material, margen, etc.) antes de decidir guardar. SIEMPRE "
+            "muestra el precio resultante en el chat antes de ofrecer guardar. "
+            "Si la respuesta trae 'supuestos_usados' no vacío, menciona cada uno "
+            "al usuario en una frase simple, junto con el precio."
+        ),
+        parameters=_params_cotizacion(["categoria", "precio_m2", "tipo_proyecto"]),
+    ),
+    handler=_calcular,
+    es_destructiva=False,
+    requiere_capacidad=None,
+))
+
+
+def _guardar_cotizacion(conn, usuario: dict, args: dict) -> dict:
+    """SOLO calcula y propone — nunca guarda. El guardado real vive en
+    `_confirmar_guardar_cotizacion`, alcanzable únicamente desde el endpoint
+    HTTP de confirmación."""
+    if not (args.get("nombre_cliente") or "").strip():
+        return {"error": "Necesito el nombre del cliente antes de guardar la cotización."}
+    error = _validar_entrada_cotizacion(conn, usuario, args)
+    if error:
+        return {"error": error}
+
+    entrada = _preparar_entrada_cotizacion(args)
+    resultado = cotizacion_service.calcular_directa(conn, usuario, entrada)
+    preview = {
+        "cliente": args["nombre_cliente"],
+        "categoria": resultado.get("categoria"),
+        "tipo_proyecto": resultado.get("tipo_proyecto"),
+        "precio_sugerido": resultado.get("precio_sugerido"),
+        "costo_total": resultado.get("costo_total"),
+        "margen_pct": resultado.get("margen_pct"),
+    }
+    propuesta = confirmations.crear_propuesta(
+        conn, usuario,
+        herramienta="cotizacion_guardar",
+        payload={"resultado": resultado, "cliente": args["nombre_cliente"], "numero": ""},
+        filas_afectadas=[preview],
+        es_destructiva=False,
+    )
+    return {
+        "propuesta_creada": propuesta,
+        "aviso_para_ti": (
+            "Ya quedó preparada la propuesta. Dile al usuario que revise cliente "
+            "y precio en la tarjeta de confirmación antes de decidir — tú NUNCA "
+            "puedes confirmar el guardado por tu cuenta."
+        ),
+    }
+
+
+def _confirmar_guardar_cotizacion(conn, usuario: dict, payload: dict) -> dict:
+    """Invocado EXCLUSIVAMENTE por `agente/confirmations.py::confirmar_propuesta`.
+    Usa el `resultado` ya congelado en el payload — NUNCA vuelve a calcular,
+    así el folio (asignado aquí dentro, no antes) nunca se quema dos veces
+    por el mismo cálculo."""
+    resultado = cotizacion_service.guardar_cotizacion(
+        conn, usuario, resultado=payload["resultado"], cliente=payload["cliente"],
+        numero=payload.get("numero") or "", metadata_extra={"origen": "agente"},
+    )
+    return {"cotizacion_guardada": resultado}
+
+
+registrar(ToolSpec(
+    nombre="cotizacion_guardar",
+    declaracion=gtypes.FunctionDeclaration(
+        name="cotizacion_guardar",
+        description=(
+            "Prepara el guardado de una cotización nueva con los datos ya "
+            "calculados. NUNCA guarda de inmediato: crea una propuesta que el "
+            "usuario debe confirmar explícitamente en pantalla, viendo cliente, "
+            "precio, costo y margen antes de decidir. Requiere el nombre del "
+            "cliente (a diferencia de cotizacion_calcular, donde es opcional). "
+            "No la invoques en el mismo turno en que acabas de calcular salvo "
+            "que el usuario ya haya pedido guardar antes de que calcularas."
+        ),
+        parameters=_params_cotizacion(["categoria", "precio_m2", "tipo_proyecto", "nombre_cliente"]),
+    ),
+    handler=_guardar_cotizacion,
+    es_destructiva=False,
+    requiere_capacidad=None,
+    handler_confirmar=_confirmar_guardar_cotizacion,
 ))
