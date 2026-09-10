@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useCostStore } from '@/store/cost'
-import { CAMPOS_PRINCIPAL, CAMPOS_OCULTOS, tieneValor, etiqueta, valorLegible } from '@/lib/agenteFormato'
+import { resumirFila } from '@/lib/agenteFormato'
 
 const SUGERENCIAS = [
   'Lista las tareas del proyecto 8',
@@ -127,24 +127,16 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
             </p>
             <ul className={`mt-2 space-y-1.5 text-brand-text ${txt.burbuja}`}>
               {propuesta.filas_afectadas.map((f, i) => {
-                const campoPrincipal = CAMPOS_PRINCIPAL.find((c) => tieneValor(f[c]))
-                const principal = campoPrincipal
-                  ? String(f[campoPrincipal])
-                  : (tieneValor(f.id) ? String(f.id) : 'Esta acción')
-                const detalles = Object.entries(f).filter(
-                  ([k, v]) => k !== campoPrincipal && !CAMPOS_OCULTOS.has(k) && tieneValor(v)
-                )
+                const { principal, id, detalles } = resumirFila(f)
                 return (
                   <li key={i}>
                     <div>
                       <span className="font-medium">{principal}</span>
-                      {f.id != null && (
-                        <span className="text-brand-text-secondary"> (id {String(f.id)})</span>
-                      )}
+                      {id != null && <span className="text-brand-text-secondary"> (id {id})</span>}
                     </div>
                     {detalles.length > 0 && (
                       <div className="text-xs text-brand-text-secondary">
-                        {detalles.map(([k, v]) => `${etiqueta(k)}: ${valorLegible(k, v)}`).join(' · ')}
+                        {detalles.map(([k, v]) => `${k}: ${v}`).join(' · ')}
                       </div>
                     )}
                   </li>

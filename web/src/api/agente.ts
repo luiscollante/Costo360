@@ -94,3 +94,58 @@ export async function confirmarPropuesta(propuestaId: string): Promise<unknown> 
 export async function descartarPropuesta(propuestaId: string): Promise<void> {
   await api.post(`/api/agente/propuestas/${propuestaId}/descartar`)
 }
+
+// ── Centro del Agente (Ciclo 3) — bitácora, deshacer, modo BI ──────────────
+
+export interface AccionHistorial {
+  id: string
+  herramienta: string
+  payload: Record<string, unknown>
+  filas_afectadas: Array<Record<string, unknown>>
+  es_deshacible: boolean
+  creado_en: string
+  deshecha_en: string | null
+}
+
+/** Bitácora del usuario actual — nunca la de otro, sin importar su rol
+ * (RLS aísla por usuario_id, no solo por empresa; decisión del fundador). */
+export async function listarHistorial(): Promise<AccionHistorial[]> {
+  const { data } = await api.get('/api/agente/historial')
+  return data.acciones
+}
+
+export async function deshacerAccion(historialId: string): Promise<unknown> {
+  const { data } = await api.post(`/api/agente/historial/${historialId}/deshacer`)
+  return data
+}
+
+export interface AgregadoHistorial {
+  por_herramienta: Array<{ herramienta: string; total: number; deshechas: number }>
+  por_usuario: Array<{ usuario_id: string; nombre: string; total: number }>
+  usuarios_agrupados: number
+  acciones_agrupadas: number
+  umbral_k_anonimato: number
+}
+
+/** Modo BI — requiere `puede_pedir_datos_agregados_agente`. El backend nunca
+ * devuelve una fila individual: agrupa por usuario y omite cualquier grupo
+ * bajo el umbral de k-anonimato. */
+export async function obtenerAgregadoHistorial(): Promise<AgregadoHistorial> {
+  const { data } = await api.get('/api/agente/historial/agregado')
+  return data
+}
+
+/** El endpoint usa `Authorization: Bearer` (no cookies) — un `<a href>` normal
+ * nunca mandaría el token, así que se descarga como blob y se dispara la
+ * descarga desde JS. */
+export async function descargarCsvAgregado(): Promise<void> {
+  const { data } = await api.get('/api/agente/historial/agregado/exportar.csv', { responseType: 'blob' })
+  const url = URL.createObjectURL(data as Blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'agente_bi_costo360.csv'
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}

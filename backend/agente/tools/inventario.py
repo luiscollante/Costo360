@@ -218,6 +218,19 @@ def _confirmar_editar_lamina(conn, usuario: dict, payload: dict) -> dict:
     return {"lamina_editada": resultado}
 
 
+def _deshacer_editar_lamina(conn, usuario: dict, fila_antes: dict, payload_aplicado: dict) -> dict:
+    """`fila_antes` trae el valor previo de cada campo bajo su nombre normal
+    (`_editar_lamina` usa `<campo>_propuesto` para el nuevo, nunca sobrescribe
+    el original)."""
+    lamina_id = payload_aplicado["lamina_id"]
+    campos_editados = [c for c in payload_aplicado if c != "lamina_id"]
+    valores_antes = {campo: fila_antes[campo] for campo in campos_editados}
+    resultado = inventario_service.editar_lamina(
+        conn, usuario, lamina_id, metadata_extra={"origen": "agente_deshacer"}, **valores_antes,
+    )
+    return {"lamina_editada": resultado}
+
+
 registrar(ToolSpec(
     nombre="inventario_editar_lamina",
     declaracion=gtypes.FunctionDeclaration(
@@ -248,6 +261,8 @@ registrar(ToolSpec(
     handler=_editar_lamina,
     es_destructiva=False,
     handler_confirmar=_confirmar_editar_lamina,
+    es_deshacible=True,
+    handler_deshacer=_deshacer_editar_lamina,
 ))
 
 

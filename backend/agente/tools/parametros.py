@@ -129,6 +129,11 @@ def _tarifa_editar(conn, usuario: dict, args: dict) -> dict:
         **propuestos,
     }
     fila_mostrada.pop("valor", None)
+    # Guarda el valor "antes" SIN el redondeo de 1 decimal que sufre
+    # valor_pct/valor_cop al mostrarse — deshacer debe reponer el fraction/COP
+    # exacto que había, nunca una versión redondeada (esta tarifa alimenta
+    # cada cotización futura, ver aviso_para_ti debajo).
+    fila_mostrada["_valor_raw_antes"] = actual["valor"]
 
     payload = {
         "material": body.material, "nombre_interno": body.nombre_interno,
@@ -154,6 +159,25 @@ def _confirmar_tarifa_editar(conn, usuario: dict, payload: dict) -> dict:
         conn, usuario, material=payload["material"], nombre_interno=payload["nombre_interno"],
         nuevo_valor=payload.get("nuevo_valor"), nuevo_nombre_interno=payload.get("nuevo_nombre_interno"),
         marca_esperada=payload.get("marca_esperada"), metadata_extra={"origen": "agente"},
+    )
+    return {"tarifa_editada": resultado}
+
+
+def _deshacer_tarifa_editar(conn, usuario: dict, fila_antes: dict, payload_aplicado: dict) -> dict:
+    """La marca de concurrencia de la propuesta original ya no sirve (cambió
+    al confirmar) — se vuelve a leer la fila bajo esta misma conexión antes
+    de revertirla, mismo patrón TOCTOU que `handler_confirmar`."""
+    material = payload_aplicado["material"]
+    nombre_actual = payload_aplicado.get("nuevo_nombre_interno") or payload_aplicado["nombre_interno"]
+    _, marca_actual = parametros_service.obtener_fila_tarifa(conn, usuario["empresa_id"], material, nombre_actual)
+
+    nuevo_valor = fila_antes["_valor_raw_antes"] if payload_aplicado.get("nuevo_valor") is not None else None
+    nuevo_nombre_interno = fila_antes["nombre_interno"] if payload_aplicado.get("nuevo_nombre_interno") is not None else None
+
+    resultado = parametros_service.editar_tarifa(
+        conn, usuario, material=material, nombre_interno=nombre_actual,
+        nuevo_valor=nuevo_valor, nuevo_nombre_interno=nuevo_nombre_interno,
+        marca_esperada=marca_actual, metadata_extra={"origen": "agente_deshacer"},
     )
     return {"tarifa_editada": resultado}
 
@@ -184,6 +208,8 @@ registrar(ToolSpec(
     es_destructiva=False,
     requiere_capacidad="puede_ver_dashboard",
     handler_confirmar=_confirmar_tarifa_editar,
+    es_deshacible=True,
+    handler_deshacer=_deshacer_tarifa_editar,
 ))
 
 
@@ -370,6 +396,21 @@ def _confirmar_adicional_editar(conn, usuario: dict, payload: dict) -> dict:
     return {"adicional_editado": resultado}
 
 
+def _deshacer_adicional_editar(conn, usuario: dict, fila_antes: dict, payload_aplicado: dict) -> dict:
+    concepto_actual = payload_aplicado.get("nuevo_concepto") or payload_aplicado["concepto"]
+    _, marca_actual = parametros_service.obtener_fila_adicional(conn, usuario["empresa_id"], concepto_actual)
+
+    campos_valor = ("unidad", "terminada", "acabados", "estructura", "comercial")
+    valores_antes = {c: fila_antes[c] for c in campos_valor if c in payload_aplicado}
+    nuevo_concepto = fila_antes["concepto"] if payload_aplicado.get("nuevo_concepto") is not None else None
+
+    resultado = parametros_service.editar_adicional(
+        conn, usuario, concepto=concepto_actual, nuevo_concepto=nuevo_concepto,
+        marca_esperada=marca_actual, metadata_extra={"origen": "agente_deshacer"}, **valores_antes,
+    )
+    return {"adicional_editado": resultado}
+
+
 registrar(ToolSpec(
     nombre="parametros_adicional_editar",
     declaracion=gtypes.FunctionDeclaration(
@@ -397,6 +438,8 @@ registrar(ToolSpec(
     es_destructiva=False,
     requiere_capacidad="puede_ver_dashboard",
     handler_confirmar=_confirmar_adicional_editar,
+    es_deshacible=True,
+    handler_deshacer=_deshacer_adicional_editar,
 ))
 
 

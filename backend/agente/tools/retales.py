@@ -203,6 +203,16 @@ def _confirmar_editar_retal(conn, usuario: dict, payload: dict) -> dict:
     return {"retal_editado": resultado}
 
 
+def _deshacer_editar_retal(conn, usuario: dict, fila_antes: dict, payload_aplicado: dict) -> dict:
+    retal_id = payload_aplicado["retal_id"]
+    campos_editados = [c for c in payload_aplicado if c != "retal_id"]
+    valores_antes = {campo: fila_antes[campo] for campo in campos_editados}
+    resultado = retales_service.editar_retal(
+        conn, usuario, retal_id, metadata_extra={"origen": "agente_deshacer"}, **valores_antes,
+    )
+    return {"retal_editado": resultado}
+
+
 registrar(ToolSpec(
     nombre="retales_editar",
     declaracion=gtypes.FunctionDeclaration(
@@ -228,6 +238,8 @@ registrar(ToolSpec(
     handler=_editar_retal,
     es_destructiva=False,
     handler_confirmar=_confirmar_editar_retal,
+    es_deshacible=True,
+    handler_deshacer=_deshacer_editar_retal,
 ))
 
 

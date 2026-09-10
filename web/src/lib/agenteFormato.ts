@@ -17,7 +17,7 @@ import type { Propuesta } from '@/api/agente'
 export const CAMPOS_PRINCIPAL = ['numero', 'cliente', 'titulo', 'referencia', 'material_categoria', 'nombre_interno', 'concepto'] as const
 // Ids/flags internos sin valor para que un humano confirme una acción —
 // estos SÍ se ocultan siempre, sin importar qué ganó como principal.
-export const CAMPOS_OCULTOS = new Set(['id', 'base_id', 'es_propio', 'activo', 'actualizado_en'])
+export const CAMPOS_OCULTOS = new Set(['id', 'base_id', 'es_propio', 'activo', 'actualizado_en', '_valor_raw_antes'])
 
 /** `referencia` puede ser `""` en vez de `null` (ej. una lámina de inventario
  * sin referencia todavía) — sin este chequeo, un string vacío "gana" como
@@ -103,6 +103,24 @@ export function mensajeConfirmacion(p: Propuesta): string {
   return p.es_destructiva
     ? `Listo, ya borré **${principal}** — no debería aparecer más.`
     : `Listo, ya confirmé el cambio en **${principal}**.`
+}
+
+/** Reduce una `fila_afectada` cruda a lo que cualquier tarjeta necesita
+ * mostrar: un título principal, el id (si lo hay) y el resto de campos ya
+ * formateados como pares etiqueta/valor. Extraído para que la tarjeta de
+ * confirmación (`CostChat.tsx`) y la bitácora del Centro del Agente
+ * (`CentroAgentePage.tsx`) rindan exactamente igual, sin dos copias que
+ * puedan divergir cuando se agregue una tool nueva. */
+export function resumirFila(
+  f: Record<string, unknown>,
+): { principal: string; id: string | null; detalles: Array<[string, string]> } {
+  const campoPrincipal = CAMPOS_PRINCIPAL.find((c) => tieneValor(f[c]))
+  const principal = campoPrincipal ? String(f[campoPrincipal]) : (tieneValor(f.id) ? String(f.id) : 'Esta acción')
+  const id = tieneValor(f.id) ? String(f.id) : null
+  const detalles = Object.entries(f)
+    .filter(([k, v]) => k !== campoPrincipal && !CAMPOS_OCULTOS.has(k) && tieneValor(v))
+    .map(([k, v]) => [etiqueta(k), valorLegible(k, v)] as [string, string])
+  return { principal, id, detalles }
 }
 
 export function valorLegible(campo: string, valor: unknown): string {

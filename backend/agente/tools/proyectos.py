@@ -7,7 +7,7 @@ validación ni una regla de negocio por su cuenta.
 from fastapi import HTTPException
 from google.genai import types as gtypes
 
-from backend.agente import confirmations
+from backend.agente import bitacora, confirmations
 from backend.agente.registry import ToolSpec, registrar
 from backend.models.proyectos import TareaIn
 from backend.services import proyectos_service
@@ -73,6 +73,13 @@ def _crear_tarea(conn, usuario: dict, args: dict) -> dict:
         tarea = proyectos_service.crear_tarea(conn, usuario, project_id, body)
     except HTTPException as e:
         return {"error": e.detail}
+    # Misma conexión/transacción que la escritura de arriba. Alta nueva
+    # (no una edición de campo existente) → nunca deshacible.
+    bitacora.registrar_ejecucion(
+        conn, usuario, herramienta="proyectos_crear_tarea",
+        payload={"project_id": project_id, "titulo": titulo}, filas_afectadas=[tarea],
+        es_deshacible=False,
+    )
     return {"tarea_creada": tarea}
 
 

@@ -13,7 +13,7 @@ import json
 from fastapi import HTTPException
 from psycopg2.extras import Json
 
-from backend.agente import registry
+from backend.agente import bitacora, registry
 
 # Corto a propósito: acota la ventana de exposición si una sesión se ve
 # comprometida mientras hay una propuesta destructiva pendiente (hallazgo
@@ -80,7 +80,7 @@ def confirmar_propuesta(conn, usuario: dict, propuesta_id: str) -> dict:
     cur.execute(
         "update agente_acciones_pendientes set estado = 'confirmada' "
         "where id = %s and usuario_id = %s and estado = 'pendiente' and expira_en > now() "
-        "returning herramienta, payload",
+        "returning herramienta, payload, filas_afectadas",
         (propuesta_id, usuario["id"]),
     )
     row = cur.fetchone()
@@ -96,7 +96,7 @@ def confirmar_propuesta(conn, usuario: dict, propuesta_id: str) -> dict:
             detail="Esta propuesta ya no está disponible (expiró, se confirmó o se descartó antes).",
         )
     cur.close()
-    herramienta, payload = row
+    herramienta, payload, filas_afectadas = row
     spec = registry.obtener(herramienta)
     if spec is None or spec.handler_confirmar is None:
         raise HTTPException(status_code=500, detail="Herramienta de confirmación no disponible")
@@ -105,7 +105,21 @@ def confirmar_propuesta(conn, usuario: dict, propuesta_id: str) -> dict:
     # bajo esta misma conexión (`db_rls` del usuario actual) antes de
     # tocarla — mitiga la condición de carrera "TOCTOU" entre proponer y
     # confirmar sin necesitar código de comparación aparte.
-    return spec.handler_confirmar(conn, usuario, payload)
+    # Copia: varios `handler_confirmar` (p. ej. `_confirmar_editar_material`)
+    # hacen `payload.pop(...)` antes de llamar al service — sin esta copia,
+    # la bitácora de abajo guardaría un payload ya mutilado y
+    # `handler_deshacer` reventaría con KeyError (hallazgo real de la
+    # verificación en vivo de este ciclo).
+    resultado = spec.handler_confirmar(conn, usuario, dict(payload))
+    # Misma conexión/transacción que la escritura de arriba — bitácora y
+    # escritura real comiten o revierten juntas (requisito de la auditoría
+    # de este ciclo). `filas_afectadas` es el snapshot "antes" que ya se
+    # había leído al proponer, no algo reconstruido ahora.
+    bitacora.registrar_ejecucion(
+        conn, usuario, herramienta=herramienta, payload=payload,
+        filas_afectadas=filas_afectadas, es_deshacible=spec.es_deshacible,
+    )
+    return resultado
 
 
 def descartar_propuesta(conn, usuario: dict, propuesta_id: str) -> None:

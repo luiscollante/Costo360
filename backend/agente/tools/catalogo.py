@@ -34,7 +34,7 @@ tools:
 """
 from google.genai import types as gtypes
 
-from backend.agente import confirmations
+from backend.agente import bitacora, confirmations
 from backend.agente.registry import ToolSpec, registrar
 from backend.agente.tools.proyectos import _como_entero
 from backend.models.materiales import MaterialIn, MaterialUpdate
@@ -112,6 +112,13 @@ def _crear_material(conn, usuario: dict, args: dict) -> dict:
             precio_m2=body.precio_m2, precio_lamina=body.precio_lamina,
             ancho_lamina_cm=body.ancho_lamina_cm, alto_lamina_cm=body.alto_lamina_cm,
             proveedor=body.proveedor, metadata_extra={"origen": "agente"},
+        )
+        # Misma conexión/transacción que la escritura de arriba. Alta nueva
+        # (no una edición de campo existente) → nunca deshacible.
+        bitacora.registrar_ejecucion(
+            conn, usuario, herramienta="catalogo_crear_material",
+            payload={"categoria": body.categoria, "referencia": body.referencia},
+            filas_afectadas=[resultado], es_deshacible=False,
         )
         return {"material_creado": resultado}
 
@@ -224,6 +231,21 @@ def _confirmar_editar_material(conn, usuario: dict, payload: dict) -> dict:
     return {"material_editado": resultado}
 
 
+def _deshacer_editar_material(conn, usuario: dict, fila_antes: dict, payload_aplicado: dict) -> dict:
+    """Reaplica el valor "antes" de cada campo que se editó, con la MISMA
+    función de servicio — `fila_antes` (la `filas_afectadas` de la
+    propuesta original) trae el valor previo de CADA campo bajo su nombre
+    normal, ya que `_editar_material` nunca sobrescribe esas claves (usa
+    `<campo>_propuesto` para las nuevas)."""
+    material_id = payload_aplicado["material_id"]
+    campos_editados = [c for c in payload_aplicado if c != "material_id"]
+    valores_antes = {campo: fila_antes[campo] for campo in campos_editados}
+    resultado = catalogo_service.editar_material(
+        conn, usuario, material_id, metadata_extra={"origen": "agente_deshacer"}, **valores_antes,
+    )
+    return {"material_editado": resultado}
+
+
 registrar(ToolSpec(
     nombre="catalogo_editar_material",
     declaracion=gtypes.FunctionDeclaration(
@@ -251,6 +273,8 @@ registrar(ToolSpec(
     handler=_editar_material,
     es_destructiva=False,
     handler_confirmar=_confirmar_editar_material,
+    es_deshacible=True,
+    handler_deshacer=_deshacer_editar_material,
 ))
 
 

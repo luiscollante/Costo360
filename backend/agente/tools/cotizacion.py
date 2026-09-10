@@ -27,7 +27,7 @@ from fastapi import HTTPException
 from google.genai import types as gtypes
 from parametros import TARIFAS
 
-from backend.agente import confirmations
+from backend.agente import bitacora, confirmations
 from backend.agente.registry import ToolSpec, registrar
 from backend.agente.tools.proyectos import _como_entero
 from backend.db.config_helpers import cfg_get
@@ -142,6 +142,14 @@ def _cambiar_estado(conn, usuario: dict, args: dict) -> dict:
         )
     except HTTPException as e:
         return {"error": e.detail}
+    # Misma conexión/transacción que la escritura de arriba. Sin snapshot
+    # "antes" en esta rama (Pendiente/Rechazada/Borrador no lo capturan) →
+    # nunca deshacible desde aquí.
+    bitacora.registrar_ejecucion(
+        conn, usuario, herramienta="cotizacion_cambiar_estado",
+        payload={"cotizacion_id": cot_id, "estado": estado}, filas_afectadas=[resultado],
+        es_deshacible=False,
+    )
     return {"cotizacion_actualizada": resultado}
 
 
@@ -153,6 +161,16 @@ def _confirmar_cambiar_estado(conn, usuario: dict, payload: dict) -> dict:
     resultado = cotizacion_service.cambiar_estado_cotizacion(
         conn, usuario, payload["cotizacion_id"], payload["estado"],
         metadata_extra={"origen": "agente"},
+    )
+    return {"cotizacion_actualizada": resultado}
+
+
+def _deshacer_cambiar_estado(conn, usuario: dict, fila_antes: dict, payload_aplicado: dict) -> dict:
+    """`fila_antes` es el `resumen` leído ANTES de aprobar — su campo
+    `estado` es el estado real al que hay que volver."""
+    resultado = cotizacion_service.cambiar_estado_cotizacion(
+        conn, usuario, payload_aplicado["cotizacion_id"], fila_antes["estado"],
+        metadata_extra={"origen": "agente_deshacer"},
     )
     return {"cotizacion_actualizada": resultado}
 
@@ -180,6 +198,8 @@ registrar(ToolSpec(
     handler=_cambiar_estado,
     es_destructiva=False,
     handler_confirmar=_confirmar_cambiar_estado,
+    es_deshacible=True,
+    handler_deshacer=_deshacer_cambiar_estado,
 ))
 
 

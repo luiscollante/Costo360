@@ -42,6 +42,20 @@ class ToolSpec:
     # -> dict de resultado. Invocado únicamente por el endpoint de
     # confirmación — nunca alcanzable desde el loop del modelo.
     handler_confirmar: Optional[Callable[..., dict]] = None
+    # Ciclo 3 — bitácora/deshacer: True SOLO en tools que EDITAN un campo ya
+    # existente (nunca un alta ni un borrado), donde `filas_afectadas` de la
+    # propuesta ya trae el valor "antes". Si una tool mixta (p. ej.
+    # `catalogo_crear_material`) tiene una rama de alta que nunca pasa por
+    # `confirmar_propuesta`, esta bandera es inofensiva ahí: la bitácora de
+    # esa rama se escribe a mano con `es_deshacible=False` desde el propio
+    # handler de escritura directa, nunca desde este camino.
+    es_deshacible: bool = False
+    # SOLO para es_deshacible=True: (conn, usuario, fila_antes: dict,
+    # payload_aplicado: dict) -> dict de resultado. Reaplica el valor
+    # "antes" con la MISMA función de servicio que usó `handler_confirmar` —
+    # nunca reconstruye la fila a mano. Invocado únicamente desde el
+    # endpoint HTTP de deshacer, nunca por el modelo.
+    handler_deshacer: Optional[Callable[..., dict]] = None
 
 
 _REGISTRO: dict[str, ToolSpec] = {}
@@ -50,6 +64,8 @@ _REGISTRO: dict[str, ToolSpec] = {}
 def registrar(spec: ToolSpec) -> None:
     if spec.es_destructiva and spec.handler_confirmar is None:
         raise ValueError(f"Tool destructiva '{spec.nombre}' sin handler_confirmar")
+    if spec.es_deshacible and spec.handler_deshacer is None:
+        raise ValueError(f"Tool deshacible '{spec.nombre}' sin handler_deshacer")
     _REGISTRO[spec.nombre] = spec
 
 

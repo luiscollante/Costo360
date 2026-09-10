@@ -21,6 +21,7 @@ import {
   BookMarked,
   FolderKanban,
   Sparkles,
+  History,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -60,8 +61,13 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { to: '/parametros',    label: 'Parámetros',    Icon: SlidersHorizontal, requiereDashboard: true },
       { to: '/configuracion', label: 'Configuración', Icon: Settings2,         requiereDashboard: true },
-      // Piloto del Objetivo 5 (Ciclo 1) — solo Proyectos/Tareas por ahora, gestor únicamente.
-      { to: '/agente',        label: 'Cost (beta)',      Icon: Sparkles,       requiereDashboard: true },
+      // Desde el Ciclo 3, Cost ya cubre los 6 dominios y vive también en el
+      // widget flotante global — la página dedicada sigue solo para
+      // admin/gerencia (RoleRoute en App.tsx), pero el Centro del Agente de
+      // abajo es de CUALQUIER usuario: su propia bitácora es personal, no
+      // ligada al rol (solo el modo BI agregado adentro sí lo está).
+      { to: '/agente',        label: 'Cost (beta)',        Icon: Sparkles, requiereDashboard: true },
+      { to: '/centro-agente', label: 'Centro del Agente',  Icon: History   },
     ],
   },
 ]
