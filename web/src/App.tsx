@@ -27,7 +27,6 @@ import NestingPage from '@/pages/NestingPage'
 import CotizacionExpressPage from '@/pages/CotizacionExpressPage'
 import CotizacionAIUPage from '@/pages/CotizacionAIUPage'
 import ToastHost from '@/components/ToastHost'
-import LandingPage from '@/pages/LandingPage'
 import AgentePage from '@/pages/AgentePage'
 import SessionGuard from '@/components/SessionGuard'
 
@@ -97,7 +96,10 @@ export default function App() {
         <AuthGate>
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<LandingPage />} />
+              {/* La landing embebida se retiró a propósito (2026-09-09): ahora vive
+                  aparte en el proyecto `landing/`, con mejor diseño — este dominio
+                  es el producto, no la vidriera. */}
+              <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/dashboard" element={<Private><RoleRoute><DashboardPage /></RoleRoute></Private>} />

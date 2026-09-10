@@ -54,16 +54,15 @@ export function Footer() {
             <ul className="space-y-2 text-xs text-[#E8F0EB]">
               <li>
                 <a
-                  href="https://app.costo360.com/login"
+                  href="https://costo360-web.vercel.app/login"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-[#F0C447] transition-colors flex items-center gap-1.5"
                 >
                   <Sparkles size={12} className="text-[#F0C447]" />
-                  <span>Iniciar Sesión (app.costo360.com)</span>
+                  <span>Iniciar Sesión</span>
                 </a>
               </li>
-              <li><a href="https://app.costo360.com/registro" className="hover:text-white transition-colors">Crear Cuenta Taller</a></li>
               <li><a href="#faq" className="hover:text-white transition-colors">Centro de Ayuda / FAQ</a></li>
             </ul>
           </div>

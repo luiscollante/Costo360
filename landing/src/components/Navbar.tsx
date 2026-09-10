@@ -62,7 +62,7 @@ export function Navbar() {
         {/* Botón de Entrada a la Plataforma / Demostración */}
         <div className="flex items-center gap-3">
           <a
-            href="https://app.costo360.com"
+            href="https://costo360-web.vercel.app/login"
             target="_blank"
             rel="noopener noreferrer"
             className="hidden sm:inline-flex text-sm font-semibold text-[#15612E] hover:text-[#00311D] px-4 py-2 rounded-full transition-colors"
@@ -123,10 +123,10 @@ export function Navbar() {
             Planes y Precios
           </a>
           <a
-            href="https://app.costo360.com"
+            href="https://costo360-web.vercel.app/login"
             className="text-base font-bold text-[#15612E] py-2"
           >
-            Ir a la Plataforma (app.costo360.com) &rarr;
+            Ir a la Plataforma &rarr;
           </a>
         </div>
       )}
