@@ -1,10 +1,18 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
-import './index.css';
+import { StrictMode } from "react";
+import { createRoot, hydrateRoot } from "react-dom/client";
+import App from "./App";
+import "./index.css";
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
+const root = document.getElementById("root")!;
+const app = (
+  <StrictMode>
     <App />
-  </React.StrictMode>
+  </StrictMode>
 );
+// Production reçoit le même arbre déjà rendu au build; aucune API ni serveur SSR.
+if (root.hasChildNodes() && root.querySelector("main")) {
+  hydrateRoot(root, app);
+} else {
+  createRoot(root).render(app);
+}
+import "./process-film.css";

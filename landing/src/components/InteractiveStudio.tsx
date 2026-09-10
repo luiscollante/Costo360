@@ -1,360 +1,336 @@
-import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Calculator, Sparkles, FileText, Check } from 'lucide-react';
-import { formatCOP } from '@/lib/utils';
-import { BorderBeam } from './ui/BorderBeam';
-
-interface MaterialDef {
-  id: string;
-  name: string;
-  category: string;
-  basePriceM2: number;
-  baseWastePct: number;
-  image: string;
-}
-
-const MATERIALS: MaterialDef[] = [
-  {
-    id: 'marmol',
-    name: 'Mármol Blanco Carrara',
-    category: 'Mármol Italiano',
-    basePriceM2: 450000,
-    baseWastePct: 15,
-    image: '/Muestra Mármol Blanco Carrara Calacatta.png',
-  },
-  {
-    id: 'granito',
-    name: 'Granito Negro San Gabriel',
-    category: 'Granito Natural',
-    basePriceM2: 320000,
-    baseWastePct: 12,
-    image: '/Muestra Granito Negro San Gabriel Pulido.png',
-  },
-  {
-    id: 'cuarzo',
-    name: 'Cuarzo Blanco Estelar',
-    category: 'Superficie de Cuarzo',
-    basePriceM2: 520000,
-    baseWastePct: 10,
-    image: '/Muestra Cuarzo Blanco Estelar con Microdestellos.png',
-  },
-  {
-    id: 'sinterizado',
-    name: 'Piedra Sinterizada Gold',
-    category: 'Ultra Compacta (Dekton/Neolith)',
-    basePriceM2: 890000,
-    baseWastePct: 18,
-    image: '/Muestra Piedra Sinterizada Calacatta Gold (Estilo Neolith Dekton).png',
-  },
-];
-
+import { useState } from "react";
+import {
+  ArrowUpRight,
+  Info,
+  Layers3,
+  Minus,
+  Plus,
+  RotateCcw,
+  ScanLine,
+} from "lucide-react";
+import { materials } from "../lib/content";
+import { layoutPieces } from "../lib/nesting";
+const decimal = (value: number, digits = 2) =>
+  value.toLocaleString("es-CO", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
 export function InteractiveStudio() {
-  const [selectedMat, setSelectedMat] = useState<MaterialDef>(MATERIALS[0]);
-  const [areaM2, setAreaM2] = useState<number>(6.5);
-  const [wastePct, setWastePct] = useState<number>(15);
-  const [marginPct, setMarginPct] = useState<number>(35);
-  const [includeAIU, setIncludeAIU] = useState<boolean>(true);
-  const [pdfGenerated, setPdfGenerated] = useState<boolean>(false);
-
-  // Al cambiar material, adaptamos la merma típica
-  const handleSelectMaterial = (mat: MaterialDef) => {
-    setSelectedMat(mat);
-    setWastePct(mat.baseWastePct);
-  };
-
-  // Motor matemático en tiempo real (Costo360 logic)
-  const calculation = useMemo(() => {
-    const supplyBase = areaM2 * selectedMat.basePriceM2;
-    const wasteCost = supplyBase * (wastePct / 100);
-    const supplyTotal = supplyBase + wasteCost;
-
-    // Mano de obra por m² y acabado
-    const laborCost = areaM2 * 65000;
-
-    // Consumibles (desgaste de disco de diamante, resinas, lijas, pegante epóxico)
-    const consumablesCost = areaM2 * 28000;
-
-    const directCostTotal = supplyTotal + laborCost + consumablesCost;
-
-    // AIU: Administración 10%, Imprevistos 5%, Utilidad según margen
-    const aiuPct = includeAIU ? 0.15 : 0;
-    const aiuAmount = directCostTotal * aiuPct;
-
-    // Margen comercial
-    const costWithAIU = directCostTotal + aiuAmount;
-    const finalPrice = costWithAIU / (1 - marginPct / 100);
-    const estimatedProfit = finalPrice - directCostTotal;
-
-    return {
-      supplyBase,
-      wasteCost,
-      supplyTotal,
-      laborCost,
-      consumablesCost,
-      directCostTotal,
-      aiuAmount,
-      finalPrice,
-      estimatedProfit,
-    };
-  }, [selectedMat, areaM2, wastePct, marginPct, includeAIU]);
-
-  const handleGenerateSample = () => {
-    setPdfGenerated(true);
-    setTimeout(() => {
-      setPdfGenerated(false);
-    }, 4000);
-  };
-
+  const [material, setMaterial] = useState(0);
+  const [length, setLength] = useState(140);
+  const [width, setWidth] = useState(60);
+  const [count, setCount] = useState(4);
+  const result = layoutPieces(320, 160, length, width, count);
+  function reset() {
+    setMaterial(0);
+    setLength(140);
+    setWidth(60);
+    setCount(4);
+  }
   return (
-    <section id="simulador" className="py-24 relative overflow-hidden bg-white/50 backdrop-blur-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
-        {/* Cabecera de Sección */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#15612E]/10 border border-[#15612E]/20 text-[#15612E] font-bold text-xs mb-4">
-            <Calculator size={14} />
-            <span>Motor de Cotización en Tiempo Real</span>
+    <section
+      className="studio-section section"
+      id="simulador"
+      aria-labelledby="studio-title"
+    >
+      <div className="container">
+        <div className="section-heading split-heading">
+          <div>
+            <p className="eyebrow">02 / MENOS SUPOSICIONES. MÁS VISIBILIDAD.</p>
+            <h2 id="studio-title">
+              No lo imagines.
+              <br />
+              <span>Muévelo. Mídelo. Entiéndelo.</span>
+            </h2>
           </div>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-[#1A1A1A] mb-4">
-            Prueba el Simulador con las Tarifas de tu Taller
-          </h2>
-          <p className="text-base sm:text-lg text-[#5F5F5F] font-normal leading-relaxed">
-            Mueve los deslizadores y comprueba cómo Costo360 desglosa el costo real de suministro, mano de obra, consumibles de corte y AIU antes de entregar la cotización.
-          </p>
+          <div>
+            <span className="pill">
+              <span className="status-dot" /> DEMO INTERACTIVA
+            </span>
+            <p>
+              Una lámina. Tus decisiones.
+              <br />
+              Cambia las medidas y mira qué sucede.
+            </p>
+          </div>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Panel Izquierdo: Controles Táctiles */}
-          <div className="lg:col-span-7 glass-panel p-6 sm:p-8 rounded-3xl shadow-xl border border-[#E5D5BA] bg-white/90">
-            <h3 className="text-lg font-extrabold text-[#1A1A1A] mb-6 flex items-center justify-between">
-              <span>1. Configura el Trabajo</span>
-              <span className="text-xs font-semibold text-[#6E5410] bg-[#F5EBD5] px-2.5 py-1 rounded-full">
-                Receta Automática
-              </span>
-            </h3>
-
-            {/* Selector de Material con Muestras Reales */}
-            <div className="mb-8">
-              <label className="block text-xs font-bold text-[#1A1A1A] uppercase tracking-wider mb-3">
-                Material de la Placa
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {MATERIALS.map((mat) => (
-                  <button
-                    key={mat.id}
-                    onClick={() => handleSelectMaterial(mat)}
-                    className={`p-2.5 rounded-2xl text-left transition-all border relative overflow-hidden group ${
-                      selectedMat.id === mat.id
-                        ? 'border-[#15612E] bg-[#15612E]/5 shadow-md ring-2 ring-[#15612E]/30'
-                        : 'border-[#E5D5BA] bg-white hover:border-[#D4AF37]'
-                    }`}
-                  >
-                    <div className="aspect-square w-full rounded-xl overflow-hidden mb-2 bg-[#212121]">
-                      <img
-                        src={mat.image}
-                        alt={mat.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                    <p className="text-xs font-bold text-[#1A1A1A] truncate">{mat.name.split(' ')[0]} {mat.name.split(' ')[1]}</p>
-                    <p className="text-[11px] font-mono font-semibold text-[#15612E] mt-0.5">
-                      {formatCOP(mat.basePriceM2)}/m²
-                    </p>
-                  </button>
-                ))}
-              </div>
+        <div className="studio-window">
+          <div className="window-bar">
+            <div className="window-dots" aria-hidden="true">
+              <i />
+              <i />
+              <i />
             </div>
-
-            {/* Sliders de Parámetros */}
-            <div className="space-y-6">
-              {/* Área en m² */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-bold text-[#1A1A1A] uppercase tracking-wider">
-                    Área Total a Cubicar
-                  </label>
-                  <span className="font-mono text-sm font-bold text-[#15612E] bg-[#15612E]/10 px-2.5 py-0.5 rounded-md">
-                    {areaM2} m²
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min="1"
-                  max="25"
-                  step="0.5"
-                  value={areaM2}
-                  onChange={(e) => setAreaM2(parseFloat(e.target.value))}
-                  className="w-full h-2 bg-[#E5D5BA] rounded-lg appearance-none cursor-pointer accent-[#15612E]"
-                />
-                <div className="flex justify-between text-[11px] text-[#8A8A8A] mt-1">
-                  <span>1 m² (Vanity pequeño)</span>
-                  <span>12 m² (Cocina isla)</span>
-                  <span>25 m² (Proyecto comercial)</span>
-                </div>
-              </div>
-
-              {/* Porcentaje de Merma / Desperdicio */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-bold text-[#1A1A1A] uppercase tracking-wider flex items-center gap-1.5">
-                    Merma y Desperdicio Estimado
-                    <span className="text-[11px] text-[#6E5410] font-normal lowercase">(rotura + cortes)</span>
-                  </label>
-                  <span className="font-mono text-sm font-bold text-[#6E5410] bg-[#F5EBD5] px-2.5 py-0.5 rounded-md">
-                    {wastePct}%
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min="5"
-                  max="35"
-                  step="1"
-                  value={wastePct}
-                  onChange={(e) => setWastePct(parseInt(e.target.value))}
-                  className="w-full h-2 bg-[#E5D5BA] rounded-lg appearance-none cursor-pointer accent-[#D4AF37]"
-                />
-              </div>
-
-              {/* Margen de Utilidad Deseado */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-bold text-[#1A1A1A] uppercase tracking-wider">
-                    Margen de Utilidad del Taller
-                  </label>
-                  <span className="font-mono text-sm font-bold text-[#15612E] bg-[#15612E]/10 px-2.5 py-0.5 rounded-md">
-                    {marginPct}%
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min="15"
-                  max="60"
-                  step="1"
-                  value={marginPct}
-                  onChange={(e) => setMarginPct(parseInt(e.target.value))}
-                  className="w-full h-2 bg-[#E5D5BA] rounded-lg appearance-none cursor-pointer accent-[#15612E]"
-                />
-              </div>
-
-              {/* Toggle de AIU */}
-              <div className="pt-2 flex items-center justify-between p-3.5 rounded-2xl bg-[#F5E8D2]/60 border border-[#E5D5BA]">
-                <div>
-                  <p className="text-xs font-bold text-[#1A1A1A]">Estructura Formal AIU (15%)</p>
-                  <p className="text-[11px] text-[#5F5F5F]">Administración 10% + Imprevistos 5% para licitaciones</p>
-                </div>
+            <span>
+              Costo360 <span className="window-path">/ Material Studio</span>
+            </span>
+            <span className="demo-label">MODELO ILUSTRATIVO</span>
+          </div>
+          <div className="studio-body">
+            <div className="studio-controls">
+              <div className="control-heading">
+                <Layers3 size={19} />
+                <h3>Define tus piezas</h3>
                 <button
-                  onClick={() => setIncludeAIU(!includeAIU)}
-                  className={`relative w-12 h-6 rounded-full transition-colors duration-300 focus:outline-none ${
-                    includeAIU ? 'bg-[#15612E]' : 'bg-[#8A8A8A]'
-                  }`}
+                  type="button"
+                  className="icon-button"
+                  onClick={reset}
+                  aria-label="Restablecer demostración"
+                  title="Restablecer"
                 >
-                  <span
-                    className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 ${
-                      includeAIU ? 'translate-x-6' : 'translate-x-0'
-                    }`}
-                  />
+                  <RotateCcw size={17} />
                 </button>
               </div>
-            </div>
-          </div>
-
-          {/* Panel Derecho: Resumen Financiero y Cotización */}
-          <div className="lg:col-span-5 relative">
-            <div className="glass-emerald-dark p-6 sm:p-8 rounded-3xl shadow-2xl relative overflow-hidden border border-[#D4AF37]/30 text-white">
-              <BorderBeam size={80} duration={5} colorFrom="#D4AF37" colorTo="#F0C447" />
-
-              <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/15">
-                <span className="text-xs font-bold tracking-wider uppercase text-[#F5E8D2]">
-                  Resumen de Costos en Vivo
-                </span>
-                <span className="text-[10px] font-mono text-[#F0C447] bg-[#00311D] px-2 py-0.5 rounded-md">
-                  COP / es-CO
-                </span>
-              </div>
-
-              {/* Desglose de Costos */}
-              <div className="space-y-3.5 text-xs text-[#E8F0EB] mb-6">
-                <div className="flex justify-between py-1 border-b border-white/10">
-                  <span className="text-white/80">Suministro Base ({areaM2} m²):</span>
-                  <span className="font-mono font-semibold">{formatCOP(calculation.supplyBase)}</span>
-                </div>
-
-                <div className="flex justify-between py-1 border-b border-white/10 text-[#F0C447]">
-                  <span>+ Desperdicio / Merma ({wastePct}%):</span>
-                  <span className="font-mono font-semibold">{formatCOP(calculation.wasteCost)}</span>
-                </div>
-
-                <div className="flex justify-between py-1 border-b border-white/10">
-                  <span className="text-white/80">Mano de Obra (corte + brillado):</span>
-                  <span className="font-mono font-semibold">{formatCOP(calculation.laborCost)}</span>
-                </div>
-
-                <div className="flex justify-between py-1 border-b border-white/10">
-                  <span className="text-white/80">Consumibles (discos + pegantes):</span>
-                  <span className="font-mono font-semibold">{formatCOP(calculation.consumablesCost)}</span>
-                </div>
-
-                {includeAIU && (
-                  <div className="flex justify-between py-1 border-b border-white/10 text-[#F5E8D2]">
-                    <span>AIU Calculado (15%):</span>
-                    <span className="font-mono font-semibold">{formatCOP(calculation.aiuAmount)}</span>
-                  </div>
-                )}
-
-                <div className="flex justify-between pt-2 text-sm font-bold text-white">
-                  <span>Costo Directo Total:</span>
-                  <span className="font-mono text-[#F0C447]">{formatCOP(calculation.directCostTotal)}</span>
-                </div>
-              </div>
-
-              {/* Gran Total Sugerido */}
-              <div className="p-4 rounded-2xl bg-black/40 border border-[#D4AF37]/40 mb-6 text-center relative overflow-hidden">
-                <p className="text-xs uppercase tracking-widest text-[#F5E8D2] font-semibold mb-1">
-                  Precio de Cotización Sugerido
-                </p>
-                <p className="text-3xl sm:text-4xl font-extrabold text-white font-mono tracking-tight text-gold-gradient">
-                  {formatCOP(calculation.finalPrice)}
-                </p>
-                <p className="text-[11px] text-[#A8D5BA] mt-1 flex items-center justify-center gap-1 font-semibold">
-                  <Sparkles size={12} className="text-[#F0C447]" />
-                  Utilidad Neta Estimada para el Taller: {formatCOP(calculation.estimatedProfit)} ({marginPct}%)
-                </p>
-              </div>
-
-              {/* Botón de Generar Cotización de Muestra */}
-              <button
-                onClick={handleGenerateSample}
-                className="w-full py-3.5 px-6 rounded-full bg-[#15612E] hover:bg-[#1A7A3A] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all hover:scale-[1.02] border border-[#D4AF37]/50"
+              <label className="field-label" htmlFor="demo-material">
+                Material de referencia
+              </label>
+              <select
+                id="demo-material"
+                value={material}
+                onChange={(event) => setMaterial(Number(event.target.value))}
               >
-                {pdfGenerated ? (
-                  <>
-                    <Check size={18} className="text-[#F0C447]" />
-                    <span>¡Cotización de Muestra Preparada!</span>
-                  </>
-                ) : (
-                  <>
-                    <FileText size={18} />
-                    <span>Simular PDF Comercial con tu Marca</span>
-                  </>
-                )}
-              </button>
-
-              <AnimatePresence>
-                {pdfGenerated && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="mt-3 p-3 rounded-xl bg-white/10 text-xs text-center text-[#F5E8D2] border border-white/20"
+                {materials.map((item, index) => (
+                  <option value={index} key={item.name}>
+                    {item.name} · {item.reference}
+                  </option>
+                ))}
+              </select>
+              <div className="range-label">
+                <label htmlFor="piece-length">Largo de cada pieza</label>
+                <output htmlFor="piece-length">
+                  {length} <span>cm</span>
+                </output>
+              </div>
+              <input
+                id="piece-length"
+                type="range"
+                min="60"
+                max="260"
+                step="10"
+                value={length}
+                onChange={(event) => setLength(Number(event.target.value))}
+              />
+              <div className="range-extents">
+                <span>60 cm</span>
+                <span>260 cm</span>
+              </div>
+              <div className="range-label">
+                <label htmlFor="piece-width">Ancho de cada pieza</label>
+                <output htmlFor="piece-width">
+                  {width} <span>cm</span>
+                </output>
+              </div>
+              <input
+                id="piece-width"
+                type="range"
+                min="30"
+                max="100"
+                step="5"
+                value={width}
+                onChange={(event) => setWidth(Number(event.target.value))}
+              />
+              <div className="range-extents">
+                <span>30 cm</span>
+                <span>100 cm</span>
+              </div>
+              <div className="quantity-row">
+                <span id="quantity-label">Cantidad de piezas</span>
+                <div
+                  className="stepper"
+                  role="group"
+                  aria-labelledby="quantity-label"
+                >
+                  <button
+                    type="button"
+                    disabled={count <= 1}
+                    onClick={() => setCount(count - 1)}
+                    aria-label="Quitar una pieza"
                   >
-                    En el software real, este botón exporta instantáneamente un PDF ejecutivo con membrete de tu taller, listo para enviar por WhatsApp.
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    <Minus size={15} />
+                  </button>
+                  <output aria-live="polite">{count}</output>
+                  <button
+                    type="button"
+                    disabled={count >= 8}
+                    onClick={() => setCount(count + 1)}
+                    aria-label="Agregar una pieza"
+                  >
+                    <Plus size={15} />
+                  </button>
+                </div>
+              </div>
+              <div className="control-note">
+                <Info size={16} />
+                <p>
+                  Prueba libremente. Esta demo no guarda datos ni crea una
+                  cotización.
+                </p>
+              </div>
+            </div>
+            <div className="studio-canvas">
+              <div className="canvas-heading">
+                <span>
+                  <ScanLine size={17} /> Plano de distribución
+                </span>
+                <span className="mono">320 × 160 cm</span>
+              </div>
+              <div className="cutting-board">
+                <div className="dimension-top">320 cm</div>
+                <svg
+                  viewBox="0 0 320 160"
+                  role="img"
+                  aria-labelledby="cut-title cut-desc"
+                >
+                  <title id="cut-title">
+                    Distribución ilustrativa de piezas sobre una lámina
+                  </title>
+                  <desc id="cut-desc">
+                    {result.pieces.length} de {count} piezas ubicadas,
+                    aprovechamiento de área {decimal(result.utilization, 1)} por
+                    ciento. {result.unplaced} piezas sin ubicar.
+                  </desc>
+                  <defs>
+                    <pattern
+                      id="stone-pattern"
+                      width="320"
+                      height="160"
+                      patternUnits="userSpaceOnUse"
+                    >
+                      <image
+                        href={materials[material].image}
+                        width="320"
+                        height="320"
+                        preserveAspectRatio="xMidYMid slice"
+                      />
+                    </pattern>
+                    <pattern
+                      id="unused-pattern"
+                      width="6"
+                      height="6"
+                      patternUnits="userSpaceOnUse"
+                    >
+                      <path d="M0 6L6 0" stroke="#E5D5BA" strokeWidth="0.65" />
+                    </pattern>
+                  </defs>
+                  <rect width="320" height="160" fill="#F5E8D2" />
+                  <rect width="320" height="160" fill="url(#unused-pattern)" />
+                  {result.pieces.map((piece) => (
+                    <g key={piece.id} className="cut-piece">
+                      <rect
+                        x={piece.x + 1}
+                        y={piece.y + 1}
+                        width={piece.width - 2}
+                        height={piece.height - 2}
+                        rx="2"
+                        fill="url(#stone-pattern)"
+                      />
+                      <rect
+                        x={piece.x + 1}
+                        y={piece.y + 1}
+                        width={piece.width - 2}
+                        height={piece.height - 2}
+                        rx="2"
+                        fill="#15612E"
+                        fillOpacity="0.16"
+                        stroke="#15612E"
+                        strokeWidth="0.8"
+                      />
+                      <rect
+                        x={piece.x + piece.width / 2 - 23}
+                        y={piece.y + piece.height / 2 - 12}
+                        width="46"
+                        height="24"
+                        rx="3"
+                        fill="#00311D"
+                      />
+                      <text
+                        x={piece.x + piece.width / 2}
+                        y={piece.y + piece.height / 2 - 2}
+                        textAnchor="middle"
+                        fill="#FFFFFF"
+                        fontSize="6"
+                        fontFamily="JetBrains Mono, monospace"
+                      >
+                        PIEZA {piece.id}
+                      </text>
+                      <text
+                        x={piece.x + piece.width / 2}
+                        y={piece.y + piece.height / 2 + 7}
+                        textAnchor="middle"
+                        fill="#FFFFFF"
+                        fontSize="6"
+                        fontFamily="JetBrains Mono, monospace"
+                      >
+                        {piece.width} × {piece.height}
+                      </text>
+                    </g>
+                  ))}
+                </svg>
+                <div className="dimension-bottom">
+                  <span>
+                    <i className="legend-piece" /> Pieza ubicada
+                  </span>
+                  <span>
+                    <i className="legend-free" /> Área restante
+                  </span>
+                </div>
+              </div>
+              <div
+                className="simulation-results"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                <div>
+                  <span>Área aprovechada</span>
+                  <strong>
+                    {decimal(result.utilization, 1)}
+                    <small>%</small>
+                  </strong>
+                </div>
+                <div>
+                  <span>Área restante</span>
+                  <strong>
+                    {decimal(result.remainingArea)}
+                    <small>m²</small>
+                  </strong>
+                </div>
+                <div>
+                  <span>Piezas ubicadas</span>
+                  <strong>
+                    {result.pieces.length}
+                    <small>/ {count}</small>
+                  </strong>
+                </div>
+                <p
+                  className={
+                    result.unplaced ? "placement-warning" : "placement-ok"
+                  }
+                >
+                  {result.unplaced
+                    ? `${result.unplaced} ${result.unplaced === 1 ? "pieza no cabe" : "piezas no caben"} en esta distribución. Ajusta las medidas o la cantidad.`
+                    : "Todas las piezas caben en esta distribución ilustrativa."}
+                </p>
+              </div>
             </div>
           </div>
-
+          <div className="studio-disclaimer">
+            <Info size={16} />
+            <p>
+              <strong>Datos de ejemplo, no una promesa de ahorro.</strong>{" "}
+              Modelo local simplificado, sin rotación, ancho de disco ni
+              restricciones de veta. El material cambia solo la visualización.
+              El motor real de Costo360 usa Guillotine 2D; valida el plano antes
+              de cortar.
+            </p>
+          </div>
+        </div>
+        <div className="studio-bottom">
+          <p>
+            El material que queda también merece un lugar en tus decisiones.
+          </p>
+          <a href="#modulos" className="text-button">
+            Conoce el banco de retales <ArrowUpRight size={17} />
+          </a>
         </div>
       </div>
     </section>

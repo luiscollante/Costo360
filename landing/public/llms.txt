@@ -1,32 +1,27 @@
-# Costo360 — Plataforma Integral de Cotización y Gestión para Talleres de Piedra Natural
+# Costo360
 
-> Costo360 es el SaaS B2B líder en Colombia diseñado para marmolerías y talleres de corte, confección y transformación de piedra natural (mármol, granito, sinterizado, cuarzo y cuarcita).
+> Software SaaS B2B de cotización para marmolerías y talleres de transformación de piedra en Colombia: mármol, granito, sinterizado y cuarcita.
 
-## Resumen Ejecutivo
-- **Propósito:** Estandarizar costos de producción, automatizar cotizaciones comerciales en minutos, optimizar planos de corte en 2D (Nesting) para reducir la merma de placas y gestionar proyectos de taller.
-- **Público Objetivo:** Talleres de marmolería, contratistas de superficies arquitectónicas, empresas de remodelación de cocinas, baños y pisos en Colombia y Latinoamérica.
-- **Tecnología Diferenciadora:** Motor algorítmico 2D de Nesting para optimización de losas, asistente de inteligencia artificial especializado en el gremio ("Cost") con confirmación de dos fases, cálculo de recetas por inductor (mano de obra, discos, pegantes, biselados) y estructura financiera AIU formal.
+## Funciones del producto
+- Cotización Directa: material, largo/ancho/cantidad de piezas, mano de obra, zócalos y adicionales por etapa. Desglose de material, mano de obra, insumos y riesgo de rotura.
+- Cotización Express: modalidad simplificada de cotización.
+- Cotización AIU: Administración, Imprevistos y Utilidad, con IVA sobre la Utilidad según el Decreto 1372/92. No sustituye la revisión tributaria del contrato.
+- Generación de cotizaciones y cuentas de cobro en PDF profesional.
+- Catálogo propio por taller: categorías, referencias y precios por m² editables; referencias base que el taller puede personalizar sin perder el original.
+- Inventario de láminas: cantidad, dimensiones, costo, stock mínimo, proveedor y ubicación.
+- Banco de retales: sobrantes reutilizables, material, m² y precio de recuperación.
+- Nesting Guillotine 2D: distribuye piezas sobre la lámina, genera un plano SVG, calcula el aprovechamiento de esa distribución e identifica piezas que no caben. No garantiza un ahorro fijo ni una solución matemáticamente óptima global.
+- Parámetros de taller: mano de obra, maquinaria, consumibles, merma por categoría y adicionales por etapa que alimentan las cotizaciones.
+- Dashboard: ingresos por mes, distribución por proyecto, materiales más cotizados y margen promedio.
+- Historial filtrable por cliente, estado, fecha y material.
+- Proyectos: Kanban, tareas, hitos con dependencias, horas, comentarios y notificaciones de tareas desbloqueadas, plazos e hitos en riesgo.
+- Cost, asistente de IA conversacional: consulta, calcula y propone sobre cotización, proyectos/tareas, catálogo, inventario, retales, nesting y parámetros. Toda escritura o borrado exige confirmación humana.
+- Roles: Admin; Gerencia con acceso a dashboard pero sin gestión de usuarios; Operativo que cotiza y ve lo suyo.
 
-## Materiales Soportados
-1. **Mármol:** Blanco Carrara, Crema Marfil, Negro Marquina, Travertino, etc.
-2. **Granito Natural:** San Gabriel, Blanco Dallas, Verde Ubatuba, etc.
-3. **Piedra Sinterizada:** Formatos gran formato (Dekton, Neolith, Laminam) con cálculo de mermas y tensiones de corte.
-4. **Superficies de Cuarzo (Quartzstone):** Blanco Estelar, Gris Glaciar, etc.
-5. **Cuarcitas:** Taj Mahal, Patagonia, etc.
+## Planes y acceso
+Suscripción mensual: Starter (1 usuario), Pro (3 usuarios), Enterprise (hasta 10 usuarios). Precios, condiciones y funciones incluidas por plan pendientes de confirmación con el equipo. No publicar precios supuestos.
+El producto requiere invitación: no hay registro público, acceso instantáneo ni prueba gratuita anunciada. Canal público de solicitud de demos pendiente de confirmación.
 
-## Módulos Principales
-- **Cotizador Inteligente (Directo y Express):** Cálculo en 60 segundos o wizard completo considerando m², metros lineales de bocel/falda, zócalos, copete y faldón.
-- **Optimizador de Corte (Nesting 2D):** Acomodo automatizado de piezas rectangulares sobre la losa para minimizar el desperdicio.
-- **Banco Digital de Retales:** Inventario de sobrantes clasificados por material, medidas y espesor para reincorporar a proyectos futuros.
-- **Gestión de Proyectos & Kanban:** Tablero de tareas, hitos, control de tiempos trabajados y avance de obra.
-- **Generador de Entregables PDF:** Propuestas comerciales ejecutivas con logo del taller, desglose de materiales y condiciones de pago.
-
-## Planes y Tarifas (en Pesos Colombianos - COP)
-- **Starter ($150.000 COP/mes):** 1 usuario administrativo, ideal para talleres individuales o pequeños.
-- **Pro ($375.000 COP/mes):** 3 usuarios (1 Admin + 2 Operativos), asistente inteligente Cost con IA, gestión de proyectos y Nesting avanzado.
-- **Enterprise ($2.410.000 COP/mes):** Hasta 10 usuarios, multi-taller, analítica de negocio BI Senior y soporte prioritario.
-
-## Enlaces Oficiales
-- Sitio web principal: https://costo360.com/
-- Acceso a la plataforma de clientes: https://app.costo360.com/
-- Contacto y demostración: https://costo360.com/#contacto
+## Límites y honestidad
+Costo360 no ofrece facturación electrónica DIAN, contabilidad ni logística del taller. No se publican clientes, testimonios, certificaciones, porcentajes de ahorro ni métricas de resultados no verificados.
+La landing es estática, separada del producto. Sus visualizaciones son conceptuales, no capturas del producto. El simulador es un modelo local simplificado sin rotación, ancho de disco ni restricciones de veta. Sus porcentajes corresponden a las áreas del ejemplo, no a resultados de clientes. La demo de Cost es una conversación guiada local, no IA en vivo. Ninguna demo guarda datos ni contacta APIs.

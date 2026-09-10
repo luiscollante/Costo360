@@ -1,117 +1,70 @@
-<!DOCTYPE html>
-<html lang="es" class="scroll-smooth">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Costo360 · Software Integral de Cotización y Corte para Marmolerías</title>
-  <meta name="description" content="La plataforma de software especializada para talleres de transformación de piedra natural en Colombia (mármol, granito, cuarzo y sinterizado). Cotizaciones con IA, optimización 2D (Nesting) y control de mermas en minutos." />
-  <meta name="keywords" content="software marmolería Colombia, cotizador mármol granito, optimización corte piedra, nesting placas mármol, cálculo AIU construcción, Costo360" />
-  <link rel="canonical" href="https://costo360.com/" />
-
-  <!-- Open Graph / Redes Sociales -->
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://costo360.com/" />
-  <meta property="og:title" content="Costo360 · Software de Cotización y Corte para Talleres de Piedra" />
-  <meta property="og:description" content="Cotiza con precisión milimétrica, reduce la merma con IA y protege tu margen de utilidad en cada lámina de mármol y granito." />
-  <meta property="og:image" content="https://costo360.com/og-image.png" />
-  <meta property="og:locale" content="es_CO" />
-
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Costo360 · Precisión Industrial para Talleres de Piedra" />
-  <meta name="twitter:description" content="El SaaS B2B líder en Colombia para talleres de mármol, granito, cuarzo y sinterizado." />
-
-  <!-- Google Fonts: Plus Jakarta Sans + JetBrains Mono -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-
-  <!-- AEO / SEO: Marcado Estructurado Schema.org JSON-LD para Crawlers de IA y Buscadores -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "SoftwareApplication",
-        "@id": "https://costo360.com/#software",
-        "name": "Costo360",
-        "applicationCategory": "BusinessApplication",
-        "operatingSystem": "Web, Cloud, Android",
-        "offers": [
-          {
-            "@type": "Offer",
-            "name": "Plan Starter",
-            "price": "150000",
-            "priceCurrency": "COP",
-            "description": "1 usuario administrativo, cotizador inteligente directo y express, catálogo base y banco de retales."
-          },
-          {
-            "@type": "Offer",
-            "name": "Plan Pro",
-            "price": "375000",
-            "priceCurrency": "COP",
-            "description": "3 usuarios (1 Admin + 2 Operativos), asistente inteligente Cost con IA, Nesting 2D avanzado, gestión de proyectos y parte de horas."
-          },
-          {
-            "@type": "Offer",
-            "name": "Plan Enterprise",
-            "price": "2410000",
-            "priceCurrency": "COP",
-            "description": "Hasta 10 usuarios, multi-sucursal, auditoría en tiempo real, modo BI Senior y soporte prioritario."
-          }
-        ],
-        "description": "Software especializado en estimación de costos, cotización comercial, optimización de corte (Nesting 2D) y reducción de merma para talleres de transformación de piedra natural (mármol, granito, sinterizado, cuarcita y Quartzstone) en Colombia."
-      },
-      {
-        "@type": "Organization",
-        "@id": "https://costo360.com/#organization",
-        "name": "Costo360 S.A.S.",
-        "url": "https://costo360.com",
-        "logo": "https://costo360.com/logo.png",
-        "sameAs": [],
-        "contactPoint": {
-          "@type": "ContactPoint",
-          "contactType": "Customer Support",
-          "areaServed": "CO",
-          "availableLanguage": "Spanish"
-        }
-      },
-      {
-        "@type": "FAQPage",
-        "@id": "https://costo360.com/#faq",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "¿Qué es Costo360 y a quién está dirigido?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Costo360 es una plataforma SaaS B2B creada en Colombia para marmolerías y talleres que cortan y transforman piedra natural, sinterizados y cuarzo. Permite cotizar en minutos considerando m² exactos, desperdicio real, mano de obra, consumo de discos y estructura AIU."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "¿Cómo ayuda Costo360 a reducir la merma de material?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Integra un motor algorítmico 2D de Nesting que acomoda las piezas a cortar sobre las medidas reales de la lámina, calculando el % de aprovechamiento óptimo y registrando los sobrantes útiles directamente en el Banco Digital de Retales para no perderlos."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "¿Qué materiales contempla la plataforma?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Soporta Mármol (Carrara, Crema Marfil, Negro Marquina), Granitos naturales, Piedras Sinterizadas (Dekton, Neolith), Cuarzos (Quartzstone, Silestone) y Cuarcitas, con precios actualizables por taller."
-            }
-          }
-        ]
-      }
-    ]
-  }
-  </script>
-</head>
-<body class="bg-[#F5E8D2] text-[#4A4A4A] font-sans antialiased selection:bg-[#15612E] selection:text-white overflow-x-hidden">
-  <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
-</body>
+<!doctype html>
+<html lang="es-CO">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#F5E8D2" />
+    <meta name="color-scheme" content="light" />
+    <title>
+      Costo360 — Cotización y corte para talleres de piedra en Colombia
+    </title>
+    <meta
+      name="description"
+      content="Tu oficio es la piedra. Tu margen no se improvisa. Conoce Costo360: cotizaciones, nesting 2D, inventario, proyectos y el asistente Cost. Acceso por invitación."
+    />
+    <link rel="canonical" href="__PUBLIC_SITE_URL__/" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Costo360" />
+    <meta property="og:url" content="__PUBLIC_SITE_URL__/" />
+    <meta
+      property="og:title"
+      content="Costo360 — Tu oficio es la piedra. Tu margen no se improvisa."
+    />
+    <meta
+      property="og:description"
+      content="Cotizaciones con las reglas de tu taller, optimización de corte 2D y una IA que propone: tú confirmas. Software para talleres de piedra en Colombia."
+    />
+    <meta
+      property="og:image"
+      content="__PUBLIC_SITE_URL__/media/og-cover.jpg"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Costo360: del oficio a los datos. Software para talleres de piedra."
+    />
+    <meta property="og:locale" content="es_CO" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="Costo360 — Software para talleres de piedra"
+    />
+    <meta
+      name="twitter:description"
+      content="Conecta costos, cortes y proyectos con las reglas de tu taller. Explora las demostraciones de Costo360. Acceso por invitación."
+    />
+    <meta
+      name="twitter:image"
+      content="__PUBLIC_SITE_URL__/media/og-cover.jpg"
+    />
+    <meta
+      name="twitter:image:alt"
+      content="Costo360: del oficio a los datos. Software para talleres de piedra."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="preload" as="image" href="/media/marble.webp" />
+    <!--structured-data-->
+  </head>
+  <body>
+    <div id="root"><!--app-html--></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

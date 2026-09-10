@@ -30,4 +30,4 @@ User-agent: CCBot
 Allow: /
 Allow: /llms.txt
 
-Sitemap: https://costo360.com/sitemap.xml
+# El build agrega el sitemap del dominio definido en src/lib/content.ts.
