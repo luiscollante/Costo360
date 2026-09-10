@@ -7,15 +7,10 @@ export interface MensajeChat {
   content: string
 }
 
-export async function chatConAgente(mensaje: string, historial: MensajeChat[]): Promise<string> {
-  const { data } = await api.post<{ respuesta: string }>('/api/agente/chat', {
-    mensaje,
-    historial,
-  }, { timeout: 60_000 }) // el LLM puede tardar más que el default de 10 s
-  return data.respuesta
-}
-
-// ── Motor nuevo del agente (Objetivo 5, Ciclo 1) — protocolo AG-UI por SSE ──
+// ── Motor del agente Cost (Objetivo 5) — protocolo AG-UI por SSE ───────────
+// El asistente legado de Parámetros (`chatConAgente`, sin tool-calling) se
+// eliminó en el Ciclo 3: Cost ya cubre Parámetros también, y nada más en el
+// proyecto dependía de esa ruta (verificado antes de borrar).
 
 export interface Propuesta {
   propuesta_id: string

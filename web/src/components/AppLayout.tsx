@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, Search } from 'lucide-react'
 import Sidebar from './Sidebar'
-import AgenteChat from './AgenteChat'
+import CostFloating from './CostFloating'
 import CommandPalette from './CommandPalette'
 import Logo from './Logo'
 import { CampanaNotificaciones } from './proyectos/CampanaNotificaciones'
@@ -143,10 +143,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </main>
 
       <CommandPalette />
-      {/* La burbuja flotante del chat legado no tiene sentido dentro de la
-          propia página del asistente nuevo (Objetivo 5) — sería un segundo
-          punto de entrada al mismo agente, superpuesto sobre el primero. */}
-      {location.pathname !== '/agente' && <AgenteChat />}
+      {/* La burbuja flotante no tiene sentido dentro de la propia página
+          dedicada de Cost (Objetivo 5) — sería un segundo punto de entrada
+          al mismo agente, superpuesto sobre el primero. Desde el Ciclo 3 es
+          el mismo Cost de verdad en las dos superficies, ver CostFloating.tsx. */}
+      {location.pathname !== '/agente' && <CostFloating />}
     </div>
   )
 }

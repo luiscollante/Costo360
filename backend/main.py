@@ -25,9 +25,9 @@ from slowapi.errors import RateLimitExceeded
 from backend.middleware.rate_limiter import limiter
 from backend.routers import (
     auth, session, bootstrap, calculos, cotizacion, parametros, config, dashboard,
-    retales, admin, nesting, materiales, inventario, agente, proyectos, proyectos_cron,
+    retales, admin, nesting, materiales, inventario, proyectos, proyectos_cron,
 )
-from backend.agente import router as agente_ia  # Objetivo 5, Ciclo 1 — motor nuevo, /api/agente/*
+from backend.agente import router as agente_ia  # Objetivo 5 — motor de Cost, /api/agente/*
 # `finanzas` NO se registra en el prototipo nuevo: opera sobre `facturas_compra`, una
 # tabla que el fundador confirmó que NO es de Costo360 (sobra de otro proyecto) y que
 # no existe en el esquema multi-tenant. Ver docs/PLAN_FASE_2A.md (hallazgo R7).
@@ -194,7 +194,6 @@ app.include_router(admin.router)
 app.include_router(nesting.router)
 app.include_router(materiales.router)
 app.include_router(inventario.router)
-app.include_router(agente.router)
 app.include_router(agente_ia.router)
 app.include_router(proyectos.router)
 app.include_router(proyectos_cron.router)
