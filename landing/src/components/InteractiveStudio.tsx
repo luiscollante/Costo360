@@ -45,7 +45,7 @@ export function InteractiveStudio() {
           </div>
           <div>
             <span className="pill">
-              <span className="status-dot" /> DEMO INTERACTIVA
+              <span className="status-dot" /> SIMULADOR ILUSTRATIVO
             </span>
             <p>
               Una lámina. Tus decisiones.
@@ -62,7 +62,8 @@ export function InteractiveStudio() {
               <i />
             </div>
             <span>
-              Costo360 <span className="window-path">/ Material Studio</span>
+              Ejemplo local{" "}
+              <span className="window-path">/ Distribución de piezas</span>
             </span>
             <span className="demo-label">MODELO ILUSTRATIVO</span>
           </div>

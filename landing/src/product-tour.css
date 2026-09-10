@@ -1,0 +1,406 @@
+/* Product evidence: solid brand colors, real captures, no opacity on text. */
+.product-tour {
+  padding-bottom: 60px;
+}
+.tour-selector {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.tour-selector button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 14px 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: white;
+  color: var(--color-body);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  transition:
+    background 0.2s,
+    transform 0.2s;
+}
+.tour-selector .mono {
+  font-size: 11px;
+  color: var(--color-gold-text);
+}
+.tour-selector button:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-brand);
+}
+.tour-selector button[aria-pressed="true"] {
+  background: var(--color-brand);
+  color: white;
+  border-color: var(--color-brand);
+}
+.tour-selector button[aria-pressed="true"] .mono {
+  color: white;
+}
+.tour-panel {
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  overflow: hidden;
+  background: white;
+  margin-bottom: 18px;
+}
+.tour-panel:not([hidden]) {
+  animation: tour-enter 0.35s ease-out;
+}
+.tour-panel[hidden] {
+  display: none;
+}
+.tour-description {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 40px;
+  align-items: center;
+  padding: 28px 32px;
+}
+.tour-description h3 {
+  font-size: 25px;
+  line-height: 1.35;
+  letter-spacing: -0.7px;
+}
+.tour-description p {
+  font-size: 14px;
+}
+.product-capture {
+  margin: 0;
+  background: white;
+}
+.product-capture > a {
+  display: block;
+  position: relative;
+  background: var(--color-cream);
+}
+.product-capture > a:focus-visible {
+  outline-offset: -4px;
+}
+.product-capture img {
+  width: 100%;
+  height: auto;
+}
+.capture-zoom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: white;
+  color: var(--color-brand);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 12px 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  box-shadow: 0 4px 16px #00311d18;
+}
+.product-capture figcaption {
+  padding: 18px 24px;
+  color: var(--color-body);
+  background: white;
+  font-size: 12px;
+  line-height: 1.8;
+  border-top: 1px solid var(--color-border);
+}
+.product-capture figcaption strong {
+  color: var(--color-brand);
+}
+.tour-next {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 20px;
+}
+.tour-next p {
+  font-size: 14px;
+}
+.quote-modes {
+  padding-top: 40px;
+}
+.quote-modes > h3 {
+  font-size: 22px;
+  margin-bottom: 22px;
+}
+.quote-modes > div {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.quote-modes article {
+  border-left: 3px solid var(--color-gold);
+  padding-left: 20px;
+}
+.quote-modes h4 {
+  color: var(--color-brand);
+  font-size: 17px;
+  margin-bottom: 10px;
+}
+.quote-modes p {
+  font-size: 14px;
+}
+.quote-modes .mode-note {
+  margin-top: 24px;
+  font-size: 12px;
+}
+.module-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.module-card {
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 36px;
+}
+.module-card:first-child {
+  background: var(--color-deep);
+}
+.module-card:first-child :is(h3, p, li, .card-kicker) {
+  color: white;
+}
+.module-card:first-child .card-kicker svg {
+  color: var(--color-gold);
+}
+.module-card h3 {
+  font-size: 29px;
+  letter-spacing: -0.8px;
+  line-height: 1.35;
+  margin: 24px 0 16px;
+  max-width: 380px;
+}
+.module-card p {
+  font-size: 14px;
+}
+.module-card ul {
+  list-style: none;
+  margin: 24px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.module-card li {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.module-card li::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--color-gold);
+}
+.cost-real-layout {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 48px 70px;
+}
+.cost-workflow h3 {
+  color: white;
+  font-size: 24px;
+  letter-spacing: -0.6px;
+}
+.cost-workflow ol {
+  list-style: none;
+  padding: 0;
+  margin: 30px 0;
+  display: grid;
+  gap: 26px;
+}
+.cost-workflow li {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+.cost-workflow li > span {
+  background: white;
+  color: var(--color-brand);
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.cost-workflow h4 {
+  color: white;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+.cost-workflow p {
+  color: var(--color-cream);
+  font-size: 14px;
+}
+.cost-capture {
+  grid-column: 1 / -1;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+@keyframes tour-enter {
+  from {
+    transform: translateY(8px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* The old mobile layout used 7–11px for substantive copy. Keep it readable. */
+@media (max-width: 1000px) {
+  .tour-selector {
+    grid-template-columns: 1fr 1fr;
+  }
+  .cost-real-layout {
+    gap: 40px;
+  }
+  .module-card {
+    padding: 28px;
+  }
+  .hero-buttons {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 767px) {
+  .tour-description {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 24px;
+  }
+  .tour-selector button {
+    font-size: 12px;
+    padding: 12px;
+    gap: 8px;
+  }
+  .tour-description h3 {
+    font-size: 24px;
+  }
+  .capture-zoom {
+    position: static;
+    display: flex;
+    width: 100%;
+    border-radius: 0;
+    border: 0;
+    border-top: 1px solid var(--color-border);
+    box-shadow: none;
+    min-height: 44px;
+  }
+  .product-capture figcaption {
+    padding: 16px 20px;
+  }
+  .module-grid,
+  .cost-real-layout,
+  .quote-modes > div {
+    grid-template-columns: 1fr;
+  }
+  .module-card h3 {
+    font-size: 26px;
+  }
+  .hero-description,
+  .step p,
+  .cost-copy > p:not(.eyebrow),
+  .contact-copy > p:not(.eyebrow),
+  .plan-description,
+  .faq-list details > p,
+  .split-heading > p,
+  .split-heading > div > p:not(.eyebrow) {
+    font-size: 14px;
+  }
+  .hero-buttons .button,
+  .hero-buttons .text-button,
+  .contact-actions .button,
+  .plan-card .button,
+  .faq-list summary h3 {
+    font-size: 13px;
+  }
+  .hero-buttons {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .hero-notes {
+    flex-wrap: wrap;
+    font-size: 11px;
+  }
+  .hero h1 {
+    font-size: clamp(40px, 8.5vw, 58px);
+  }
+  .eyebrow,
+  .step-foot span,
+  .card-kicker,
+  .plan-heading > span {
+    font-size: 10px;
+  }
+  .capability h2 {
+    font-size: 12px;
+  }
+  .capability p {
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .capability {
+    align-items: flex-start;
+  }
+  .field-label,
+  .range-label,
+  .quantity-row,
+  select {
+    font-size: 13px;
+  }
+  .control-note p,
+  .studio-disclaimer p,
+  .studio-bottom p,
+  .parameters-strip p,
+  .human-rule p,
+  .plan-footnote,
+  .pricing-note,
+  .faq-heading > p:last-child,
+  .footer-brand p {
+    font-size: 12px;
+  }
+  .parameters-strip h3,
+  .human-rule strong {
+    font-size: 14px;
+  }
+  .simulation-results > div > span {
+    font-size: 10px;
+  }
+  .studio-section .split-heading > div:last-child {
+    flex-wrap: wrap;
+  }
+  .studio-section .pill,
+  .demo-label {
+    font-size: 9px;
+  }
+  .window-bar {
+    flex-wrap: wrap;
+  }
+  .contact-copy > p.contact-pending {
+    font-size: 12px;
+  }
+  .footer-main nav {
+    font-size: 12px;
+  }
+  .footer-bottom {
+    font-size: 11px;
+  }
+  .nav-actions .button {
+    font-size: 11px;
+    min-height: 44px;
+  }
+  .scene-caption {
+    font-size: 9px;
+  }
+}

@@ -71,7 +71,7 @@ export function PricingSection() {
                 href="#contacto"
                 className={`button ${name === "Pro" ? "" : "button-outline"}`}
               >
-                Acceso al plan {name} <ArrowUpRight size={17} />
+                Cómo acceder a {name} <ArrowUpRight size={17} />
               </a>
               <p className="plan-footnote">
                 <Check size={14} /> Alta por invitación

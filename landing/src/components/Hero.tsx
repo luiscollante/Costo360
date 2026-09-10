@@ -12,7 +12,7 @@ import {
 import { materials } from "../lib/content";
 import { Particles } from "./ui/Particles";
 
-export function Hero({ paused }: { paused: boolean }) {
+export function Hero() {
   const [selected, setSelected] = useState(0);
   const x = useMotionValue(0),
     y = useMotionValue(0);
@@ -20,7 +20,7 @@ export function Hero({ paused }: { paused: boolean }) {
   const rotateY = useSpring(y, { stiffness: 95, damping: 22 });
   const material = materials[selected];
   function tilt(event: PointerEvent<HTMLDivElement>) {
-    if (paused || event.pointerType === "touch") return;
+    if (event.pointerType === "touch") return;
     const box = event.currentTarget.getBoundingClientRect();
     x.set(-((event.clientY - box.top) / box.height - 0.5) * 10);
     y.set(((event.clientX - box.left) / box.width - 0.5) * 10);
@@ -46,19 +46,19 @@ export function Hero({ paused }: { paused: boolean }) {
           </span>
         </h1>
         <p className="hero-description">
-          De la primera medida a la cotización final. Conecta costos, cortes y
-          proyectos en un solo lugar, con las reglas de{" "}
+          Software de cotización para marmolerías y talleres de piedra en
+          Colombia. Conecta costos, cortes y proyectos con las reglas de{" "}
           <strong>tu taller.</strong>
         </p>
         <div className="hero-buttons">
-          <a className="button" href="#solucion">
-            Conoce Costo360 <ArrowUpRight size={19} />
+          <a className="button" href="#producto">
+            Ver el producto real <ArrowUpRight size={19} />
           </a>
           <a href="#simulador" className="text-button">
             <span className="play-icon">
               <Play size={13} fill="currentColor" />
             </span>{" "}
-            Explorar la demo
+            Probar el simulador
           </a>
         </div>
         <div className="hero-notes">
@@ -79,7 +79,7 @@ export function Hero({ paused }: { paused: boolean }) {
         }}
       >
         <div className="scene-grid" aria-hidden="true" />
-        <Particles paused={paused} />
+        <Particles paused={false} />
         <div className="scene-heading">
           <span>
             <span className="status-dot" /> DEL MATERIAL A LA DECISIÓN
@@ -91,8 +91,8 @@ export function Hero({ paused }: { paused: boolean }) {
         <motion.div
           className="slab-stage"
           style={{
-            rotateX: paused ? 0 : rotateX,
-            rotateY: paused ? 0 : rotateY,
+            rotateX: rotateX,
+            rotateY: rotateY,
           }}
         >
           <div className="slab-float">

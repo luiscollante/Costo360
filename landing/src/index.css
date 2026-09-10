@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./fonts.css";
 
 @theme {
   --color-cream: #f5e8d2;
@@ -8,6 +9,7 @@
   --color-deep: #00311d;
   --color-border: #e5d5ba;
   --color-ink: #1a1a1a;
+  --color-charcoal: #212121;
   --color-body: #4a4a4a;
   --color-gold: #d4af37;
   --color-gold-text: #6e5410;
@@ -1908,11 +1910,6 @@ input[type="range"] {
   display: grid;
   place-items: center;
   color: var(--color-brand);
-}
-.motion-paused *,
-.motion-paused *::before,
-.motion-paused *::after {
-  animation-play-state: paused !important;
 }
 @keyframes slab-float {
   0%,

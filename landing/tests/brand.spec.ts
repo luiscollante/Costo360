@@ -34,32 +34,43 @@ test("brand text pairs meet 4.5:1, including button hover and dark surfaces", ()
   }
 });
 
-test("animation runs regardless of system motion preference and has a manual pause", async ({
+test("visible text uses solid colors and fully opaque ancestors", async ({
   page,
 }) => {
-  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await expect(page.locator(".slab-float")).toHaveCSS(
-    "animation-play-state",
-    "running",
-  );
-  await page.locator(".process-film").scrollIntoViewIfNeeded();
-  await expect(page.locator(".process-film")).toHaveClass(/chapter-0/);
-  await expect(page.locator(".process-film")).toHaveClass(/chapter-1/, {
-    timeout: 9000,
+  const issues = await page.evaluate(() => {
+    const failures: string[] = [];
+    for (const element of document.querySelectorAll(
+      "h1,h2,h3,h4,p,a,button,span,figcaption,li",
+    )) {
+      if (
+        !element.getBoundingClientRect().width ||
+        ![...element.childNodes].some(
+          (n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim(),
+        )
+      )
+        continue;
+      const color = getComputedStyle(element).color;
+      if (color.startsWith("rgba") && !color.endsWith(", 1)"))
+        failures.push(`Transparent color: ${color}`);
+      let ancestor: Element | null = element;
+      while (ancestor) {
+        if (Number(getComputedStyle(ancestor).opacity) < 1) {
+          failures.push(
+            `Transparent ancestor: ${element.textContent?.slice(0, 60)}`,
+          );
+          break;
+        }
+        ancestor = ancestor.parentElement;
+      }
+    }
+    return failures;
   });
-  await page
-    .getByRole("button", { name: "Pausar recorrido", exact: true })
-    .click();
-  await expect(page.locator(".film-laser")).toHaveCSS(
-    "animation-play-state",
-    "paused",
-  );
-  await page
-    .getByRole("button", { name: "Pausar movimiento", exact: true })
-    .click();
-  await expect(page.locator(".slab-float")).toHaveCSS(
-    "animation-play-state",
-    "paused",
-  );
+  expect(issues).toEqual([]);
+  await page.evaluate(() => document.fonts.ready);
+  expect(
+    await page.evaluate(() =>
+      document.fonts.check('400 14px "Plus Jakarta Sans"'),
+    ),
+  ).toBeTruthy();
 });

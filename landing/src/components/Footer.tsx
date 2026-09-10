@@ -1,12 +1,6 @@
-import { ArrowUpRight, ArrowUp, Pause, Play } from "lucide-react";
+import { ArrowUpRight, ArrowUp } from "lucide-react";
 import { DEMO_CONTACT_URL, PRODUCT_LOGIN_URL } from "../lib/content";
-export function Footer({
-  paused,
-  onToggleMotion,
-}: {
-  paused: boolean;
-  onToggleMotion: () => void;
-}) {
+export function Footer() {
   return (
     <>
       <section
@@ -41,8 +35,8 @@ export function Footer({
                 Solicitar una demo <ArrowUpRight size={18} />
               </a>
             ) : (
-              <a className="button" href="#simulador">
-                Explorar demostración <ArrowUpRight size={18} />
+              <a className="button" href="#producto">
+                Ver el producto real <ArrowUpRight size={18} />
               </a>
             )}
             <a className="text-button" href={PRODUCT_LOGIN_URL}>
@@ -81,8 +75,9 @@ export function Footer({
               </p>
             </div>
             <nav aria-label="Enlaces del pie de página">
+              <a href="#producto">Producto real</a>
               <a href="#solucion">La solución</a>
-              <a href="#simulador">Demo interactiva</a>
+              <a href="#simulador">Simulador ilustrativo</a>
               <a href="#cost">Asistente Cost</a>
               <a href="#planes">Planes</a>
               <a href="#faq">Preguntas frecuentes</a>
@@ -94,15 +89,6 @@ export function Footer({
           <div className="footer-bottom">
             <p>© {new Date().getFullYear()} Costo360</p>
             <span>Del oficio a los datos.</span>
-            <button
-              type="button"
-              onClick={onToggleMotion}
-              aria-pressed={paused}
-              className="motion-toggle"
-            >
-              {paused ? <Play size={14} /> : <Pause size={14} />}
-              {paused ? "Reanudar movimiento" : "Pausar movimiento"}
-            </button>
             <a href="#inicio" className="back-top" aria-label="Volver arriba">
               <ArrowUp size={18} />
             </a>

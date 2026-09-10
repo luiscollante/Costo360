@@ -9,10 +9,10 @@ const app = (
     <App />
   </StrictMode>
 );
-// Production reçoit le même arbre déjà rendu au build; aucune API ni serveur SSR.
+// Producción hidrata el HTML generado durante el build, sin APIs ni servidor SSR.
 if (root.hasChildNodes() && root.querySelector("main")) {
   hydrateRoot(root, app);
 } else {
   createRoot(root).render(app);
 }
-import "./process-film.css";
+import "./product-tour.css";

@@ -1,3 +1,5 @@
+import { productScreens, costScreen } from "./productScreens";
+
 // Única fuente de URLs públicas. Nunca conectar esta landing al backend.
 export const SITE_URL = "https://costo360-landing.vercel.app";
 export const PRODUCT_LOGIN_URL = "https://costo360-web.vercel.app/login";
@@ -20,6 +22,11 @@ export const materials = [
 ];
 
 export const faqs = [
+  {
+    question: "¿Las imágenes muestran el producto real o una simulación?",
+    answer:
+      "El recorrido del producto y la pantalla de Cost son capturas reales de una cuenta de demostración, con datos de prueba. Sus cifras no representan resultados de clientes ni precios de suscripción. El simulador de distribución es un ejemplo local simplificado, separado del motor del producto: no guarda datos ni genera una cotización real.",
+  },
   {
     question: "¿Qué es Costo360 y para quién está diseñado?",
     answer:
@@ -76,6 +83,13 @@ export function structuredData() {
         url: SITE_URL,
         applicationCategory: "BusinessApplication",
         operatingSystem: "Web",
+        screenshot: [...productScreens, costScreen].map((screen) => ({
+          "@type": "ImageObject",
+          contentUrl: `${SITE_URL}${screen.src}`,
+          caption: `${screen.alt} Cuenta demo con datos de prueba, no resultados de clientes.`,
+          width: screen.width,
+          height: screen.height,
+        })),
         inLanguage: "es-CO",
         publisher: { "@id": `${SITE_URL}/#organization` },
         description:

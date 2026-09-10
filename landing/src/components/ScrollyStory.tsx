@@ -4,7 +4,6 @@ import {
   SlidersHorizontal,
   FileCheck2,
 } from "lucide-react";
-import { ProcessFilm } from "./ProcessFilm";
 const steps = [
   {
     icon: Ruler,
@@ -25,7 +24,7 @@ const steps = [
     label: "COTIZACIÓN + PROYECTO",
   },
 ];
-export function ScrollyStory({ paused }: { paused: boolean }) {
+export function ScrollyStory() {
   return (
     <section
       className="section container story"
@@ -65,7 +64,35 @@ export function ScrollyStory({ paused }: { paused: boolean }) {
           </article>
         ))}
       </div>
-      <ProcessFilm paused={paused} />
+      <div className="quote-modes" aria-labelledby="quote-modes-title">
+        <h3 id="quote-modes-title">Una modalidad para cada propuesta.</h3>
+        <div>
+          <article>
+            <h4>Directa</h4>
+            <p>
+              El detalle del proyecto: material, piezas, mano de obra, zócalos y
+              adicionales por etapa.
+            </p>
+          </article>
+          <article>
+            <h4>Express</h4>
+            <p>
+              Una versión rápida del asistente para preparar una cotización.
+            </p>
+          </article>
+          <article>
+            <h4>AIU</h4>
+            <p>
+              Administración, Imprevistos y Utilidad para licitaciones y obra
+              pública en Colombia. IVA sobre la Utilidad.
+            </p>
+          </article>
+        </div>
+        <p className="mode-note">
+          La modalidad AIU no sustituye la revisión tributaria que corresponda a
+          tu contrato.
+        </p>
+      </div>
     </section>
   );
 }

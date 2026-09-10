@@ -3,8 +3,8 @@ import { ArrowUpRight, Menu, X } from "lucide-react";
 import { DEMO_CONTACT_URL, PRODUCT_LOGIN_URL } from "../lib/content";
 
 const links = [
-  ["#solucion", "La solución"],
-  ["#simulador", "Explorar demo"],
+  ["#producto", "El producto"],
+  ["#simulador", "Simulador"],
   ["#cost", "Conoce a Cost"],
   ["#planes", "Planes"],
 ];
@@ -45,10 +45,10 @@ export function Navbar() {
             Iniciar sesión <ArrowUpRight size={15} />
           </a>
           <a
-            href={DEMO_CONTACT_URL ? "#contacto" : "#simulador"}
+            href={DEMO_CONTACT_URL ? "#contacto" : "#producto"}
             className="button button-small"
           >
-            {DEMO_CONTACT_URL ? "Hablemos" : "Ver demo"}{" "}
+            {DEMO_CONTACT_URL ? "Hablemos" : "Ver producto"}{" "}
             <ArrowUpRight size={16} />
           </a>
           <button
