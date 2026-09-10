@@ -2,6 +2,81 @@
 
 ---
 
+## ✅ Hecho (2026-09-10) — Objetivo 5, Ciclo 3 COMPLETO: chat flotante global + "Centro del Agente"
+
+Cierra el Ciclo 3 del Objetivo 5 (las dos superficies de UI pendientes), en dos mitades dentro de
+la misma sesión, por decisión explícita del fundador ("atacamos primero este ciclo con un '/goal'").
+
+**3.A — chat flotante global (commit `7076807`):** `CostFloating.tsx` reemplaza al asistente
+legado de Parámetros (`AgenteChat.tsx`, sin tool-calling, borrado) — desde ahora la burbuja
+flotante en TODA la app es el mismo Cost de verdad. Conversación compartida vía `useCostStore`
+(zustand a nivel de módulo) entre el widget flotante y la página dedicada `/agente`: cerrar el
+panel y abrir la página (o viceversa) nunca pierde el hilo. Invariante de seguridad verificada:
+minimizar el panel NUNCA confirma ni cancela una propuesta pendiente por su cuenta. Lógica de
+formato de tarjetas extraída a `web/src/lib/agenteFormato.ts` para que ambas superficies rindan
+igual. Verificado en vivo: el widget = Cost real (no el legado), conversación persistida al
+navegar entre superficies.
+
+**3.B — bitácora, deshacer y modo BI (commit `eb46792`):** migración `0010_agente_historial_acciones`
+— tabla que registra CADA acción que Cost EJECUTÓ de verdad, sin importar si llegó por
+`confirmar_propuesta` (dos fases) o por uno de los 3 handlers de escritura directa preexistentes
+(`proyectos_crear_tarea`, la rama de alta de `catalogo_crear_material`, la rama no-Aprobada de
+`cotizacion_cambiar_estado`) — siempre en la MISMA transacción que la escritura real.
+
+**Deshacer** solo para las 6 tools que EDITAN un campo ya existente (nunca altas ni borrados):
+`parametros_tarifa_editar`, `parametros_adicional_editar`, `catalogo_editar_material`,
+`inventario_editar_lamina`, `retales_editar`, `cotizacion_cambiar_estado`→Aprobada. Cada una con
+un `handler_deshacer` dedicado que reaplica el valor "antes" vía la MISMA función de servicio que
+usó la confirmación original (nunca una reconstrucción a mano) — `UPDATE ... WHERE deshecha_en IS
+NULL RETURNING` atómico, mismo patrón anti-doble-clic que `confirmar_propuesta`.
+
+**Nueva página `/centro-agente`:** bitácora propia (RLS aísla por `usuario_id`, ni admin/gerencia
+ve la de otro) + modo BI agregado, gated por el permiso `puede_pedir_datos_agregados_agente` que
+ya existía sin usar desde la migración 0001 — nunca se creó un permiso nuevo. El modo BI nunca
+expone una fila individual: agrupa por usuario y omite cualquier grupo bajo un umbral de
+k-anonimato (5 filas), con exportación CSV del mismo agregado.
+
+**Bug real encontrado y corregido en la verificación en vivo** (no lo vio ninguna auditoría de
+plan ni de código estático): varios `handler_confirmar` ya existentes (`_confirmar_editar_material`,
+`_confirmar_editar_lamina`, `_confirmar_editar_retal`, `_confirmar_adicional_editar`) hacen
+`payload.pop(...)` antes de llamar al service — como `confirmar_propuesta` reutilizaba el MISMO
+diccionario para escribir la bitácora después, esta guardaba un payload mutilado y
+`handler_deshacer` reventaba con `KeyError`. Corregido pasando una copia (`dict(payload)`) a
+`handler_confirmar`, dejando el original intacto para la bitácora.
+
+**Precisión numérica en Parámetros** (dominio de mayor riesgo financiero): el valor "antes" de una
+tarifa se guarda en un campo interno oculto (`_valor_raw_antes`, sin el redondeo de 1 decimal que
+sufre `valor_pct`/`valor_cop` al mostrarse) para que deshacer reponga el valor EXACTO, nunca una
+aproximación.
+
+**Verificado en vivo de punta a punta** contra el taller demo real (`Ana (Dueña)`, backend/frontend
+levantados localmente): edición de un adicional (Cost, propuesta, confirmación) → aparece en la
+bitácora con antes/después correctos → modo BI agregado y k-anonimato funcionando (`+1 usuario(s)
+con menos de 5 acciones... no se muestran por separado`) → clic en "Deshacer" → valor EXACTO
+restaurado (verificado leyendo `/parametros` directamente, no solo la respuesta del agente) → una
+segunda edición sobre la misma fila, deshecha independientemente, revierte solo esa acción puntual
+(no la cadena completa) → creación de una tarea de Proyectos (escritura directa) aparece en la
+bitácora SIN botón de deshacer, como se espera.
+
+**Hallazgo operativo real, no de código — el proyecto de Vercel no tenía conectado GitHub:**
+al hacer `git push` de ambos commits, ningún despliegue se disparó solo. `vercel project inspect`
+confirmó que ninguno de los 3 proyectos (`costo360-backend`, `costo360-web`, `costo360-landing`)
+tiene una sección "Git" — es decir, **nunca hubo integración real de auto-deploy**, a pesar de que
+sesiones anteriores lo dieron por hecho. Desplegado manualmente vía `vercel deploy --prod --token`
+(mismo patrón ya usado en sesiones previas) — ambos quedaron `READY` y con sus alias de producción
+(`costo360-backend.vercel.app`, `costo360-web.vercel.app`) actualizados. **Pendiente real: conectar
+de verdad el repositorio de GitHub en la configuración de cada proyecto de Vercel, o seguir
+desplegando a mano después de cada push** — ver memoria `feedback_vercel_sin_autodeploy`.
+
+**Commits `7076807` y `eb46792` subidos a `master` en GitHub.** Migración `0010` ya aplicada
+directamente al proyecto real de Supabase (`hrmpyhixhbnkkpvxtuit`) vía el MCP de Supabase.
+
+**🎉 Objetivo 5 completo: los 3 ciclos (motor + los 6 dominios + las dos superficies de UI) — el
+Agente Cost queda con su alcance funcional pleno.** Siguiente, por instrucción explícita del
+fundador: un segundo ciclo combinado (recarga desde cero de Proyectos/Tareas + limpieza del código
+muerto de `calcular_merma`); Objetivos 3/4 (agentes de operación de la empresa) quedan
+explícitamente en espera.
+
 ## ✅ Hecho (2026-09-06, sexta parte) — Objetivo 5, Ciclo 2: "crear cotización" vía el agente (pieza diferida de Cotización, ahora completa)
 
 Ciclo `/goal` completo (Fases 0-5, más verificación en vivo hecha directamente por Claude con su
@@ -597,12 +672,17 @@ de este dominio, sin subir a GitHub todavía.
 5. ⬜ Generación automática de cliente TypeScript desde el schema OpenAPI de FastAPI — nota:
    hoy `web/src/api/*.ts` están alineados a mano con el backend nuevo.
 
-### Frente activo ahora mismo (actualizado 2026-09-06)
-- **El Ciclo 2 del Objetivo 5 quedó completo**, incluida la pieza de "crear cotización" que
-  faltaba en Cotización (ver entrada de "Hecho" arriba) — el fundador decide si sigue con el
-  Ciclo 3 (chat flotante global + "Centro del Agente") o con otro frente del roadmap.
-- **Decidir si se suben a GitHub los commits locales acumulados** de varias sesiones recientes
-  (Ciclo 2 completo + Landing Page + "crear cotización") — nunca se subió nada todavía.
+### Frente activo ahora mismo (actualizado 2026-09-10)
+- **El Objetivo 5 completo (los 3 ciclos) queda cerrado** — ver entrada de "Hecho" arriba.
+  Siguiente, por instrucción explícita del fundador: un ciclo `/goal` combinado con dos frentes
+  (1) Proyectos/Tareas se recargan desde cero cada vez que se entra a esas secciones (sensación de
+  bug, deuda pendiente desde el Ciclo 2), (2) limpiar el código muerto de
+  `cotizacion_service.calcular_merma` (confirmado sin ningún consumidor real en el producto —
+  cero impacto en cotizaciones reales, cerrado con evidencia antes de tocar nada). Objetivos 3/4
+  (agentes de operación de la empresa) quedan explícitamente en espera ("Esperemos por ahora").
+- **Vercel sin auto-deploy real de GitHub** (descubierto 2026-09-10) — cada push a `master`
+  necesita un `vercel deploy --prod --token` manual hasta que se conecte de verdad el repo en la
+  configuración de cada proyecto. Ver memoria `feedback_vercel_sin_autodeploy`.
 - **El fundador confirma la ronda de bugs del 2026-09-03** (Proyectos + wizard de Cotización,
   ver entrada de "Hecho" correspondiente) — en particular el arrastre real con mouse, que no se
   pudo probar de forma automatizada (ver "🔄 En progreso" arriba).
@@ -636,4 +716,4 @@ de este dominio, sin subir a GitHub todavía.
 
 ---
 
-*Última actualización: 2026-09-07*
+*Última actualización: 2026-09-10*

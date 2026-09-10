@@ -360,9 +360,25 @@ dominio piloto de bajo riesgo — decisión aprobada por el fundador.
     sección 8.
   - **🎉 Ciclo 2 completo:** los 6 dominios planeados (Cotización, Catálogo, Inventario, Retales,
     Nesting, Parámetros), todos auditados y verificados en vivo.
-- **⬜ Ciclo 3 — Las dos superficies de UI completas:** chat flotante global (hoy solo vive en
-  la página piloto) + "Centro del Agente" (bitácora de acciones, deshacer, modo BI con
-  exportación).
+- **🎉 Ciclo 3 completo — Las dos superficies de UI (2026-09-09/10):**
+  - **3.A — chat flotante global:** `CostFloating.tsx` reemplaza al asistente legado de
+    Parámetros (`AgenteChat.tsx`, borrado); conversación compartida vía `useCostStore` entre
+    el widget flotante y la página dedicada `/agente` (la misma conversación sin importar
+    desde cuál superficie se abrió). Verificado en vivo.
+  - **3.B — "Centro del Agente" (`/centro-agente`):** tabla `agente_historial_acciones`
+    (migración 0010) que registra CADA acción que Cost ejecutó de verdad — vía
+    `confirmar_propuesta` o vía uno de los 3 handlers de escritura directa preexistentes —
+    siempre en la MISMA transacción que la escritura real. Deshacer solo para las 6 tools que
+    EDITAN un campo existente (nunca altas ni borrados), con `handler_deshacer` dedicado por
+    tool que reaplica el valor "antes" vía la misma función de servicio. Bitácora aislada por
+    usuario (ni admin/gerencia ve la de otro); modo BI agregado gated por el permiso ya
+    existente `puede_pedir_datos_agregados_agente`, con umbral de k-anonimato (5 filas) y
+    exportación CSV del mismo agregado. Bug real encontrado y corregido en verificación en
+    vivo: varios `handler_confirmar` mutaban el `payload` con `.pop(...)` antes de que la
+    bitácora lo guardara, rompiendo `handler_deshacer` con `KeyError` — corregido pasando una
+    copia a `handler_confirmar`. Verificado en vivo de punta a punta (edición → confirmación →
+    bitácora → deshacer, valor exacto restaurado) y el camino de escritura directa
+    (`proyectos_crear_tarea`, sin botón de deshacer, como se espera).
 
 ---
 

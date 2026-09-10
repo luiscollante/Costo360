@@ -2,6 +2,76 @@
 
 ---
 
+## Sesión: 2026-09-10 — Objetivo 5, Ciclo 3 COMPLETO (chat flotante global + Centro del Agente)
+
+### Qué se hizo
+El fundador retomó con "qué hace falta según el roadmap?" y, tras revisar dos deudas menores
+(recarga desde cero de Proyectos/Tareas; un bug preexistente en `calcular_merma` que lo asustó al
+mencionarlo sin evidencia clara), dio la secuencia exacta: primero el Ciclo 3 completo con un
+`/goal`, luego un segundo ciclo combinado con los otros dos puntos, y dejar Objetivos 3/4 en
+espera. Se presentó el plan auditado (2 rondas Software Architect + Security Engineer) y 5
+decisiones puntuales por `AskUserQuestion`, todas aprobadas con la opción recomendada, y luego
+aprobación final explícita ("Sí, dale, procede.").
+
+1. **3.A — chat flotante global** (commit `7076807`, ya hecho antes de este tramo de la sesión):
+   `CostFloating.tsx` reemplaza `AgenteChat.tsx` (legado, sin tool-calling, borrado);
+   `useCostStore` comparte conversación entre el widget y `/agente`; extraído
+   `web/src/lib/agenteFormato.ts`. Verificado en vivo.
+2. **3.B — bitácora, deshacer, modo BI** (commit `eb46792`): auditoría de las 6 tools domain
+   confirmando exactamente qué handlers hacen escritura directa (3: `proyectos_crear_tarea`,
+   rama de alta de `catalogo_crear_material`, rama no-Aprobada de `cotizacion_cambiar_estado`) y
+   cuáles son ediciones de campo genuinas (6, las únicas marcadas deshacibles). Migración `0010`
+   (`agente_historial_acciones`) aplicada en vivo al proyecto real de Supabase vía su MCP.
+   `backend/agente/bitacora.py` nuevo (`registrar_ejecucion`, `listar_historial`,
+   `obtener_agregado` con k-anonimato, `deshacer_accion`). 6 `handler_deshacer` nuevos, uno por
+   tool deshacible, cada uno reaplicando el valor "antes" con la MISMA función de servicio.
+   Página nueva `web/src/pages/CentroAgentePage.tsx` + ítem de sidebar "Centro del Agente".
+3. **Verificación en vivo con la extensión de Chrome, backend y frontend levantados localmente:**
+   primer intento de deshacer reventó con `503`/`KeyError: 'concepto'` — bug real: varios
+   `handler_confirmar` mutan el `payload` con `.pop(...)` antes de escribir el service, y
+   `confirmar_propuesta` reusaba ese mismo diccionario mutilado para la bitácora. Corregido
+   pasando `dict(payload)` a `handler_confirmar`, backend reiniciado, reverificado con éxito:
+   edición de un adicional → confirmación → aparece en bitácora → "Deshacer" → valor EXACTO
+   restaurado (comprobado leyendo `/parametros` directamente) → una segunda edición sobre la
+   misma fila se deshace de forma independiente (no revierte la cadena completa) → creación de
+   tarea vía Cost aparece en bitácora sin botón de deshacer, como se espera → modo BI agregado y
+   umbral de k-anonimato mostrando el desglose correcto.
+4. **Push y descubrimiento operativo real:** al subir ambos commits a `master`, ningún deploy se
+   disparó — `vercel project inspect` reveló que NINGUNO de los 3 proyectos de Vercel
+   (`costo360-backend`, `costo360-web`, `costo360-landing`) tiene conectado el repositorio de
+   GitHub (nunca hubo integración real de auto-deploy, a pesar de que sesiones previas lo dieron
+   por cerrado). Desplegado manualmente ambos (`backend`, `web`) vía `vercel deploy --prod
+   --token`, copiando el código fuente real a los directorios de despliegue ya vinculados a la
+   cuenta correcta (nunca tocando la vinculación `.vercel/` del propio repo, que sigue apuntando
+   por error a la cuenta de Mármoles Collante & Castro — riesgo ya conocido, mitigado desde antes
+   con este patrón de directorios aparte). Ambos deploys quedaron `READY` con sus alias de
+   producción actualizados.
+
+### Archivos modificados/creados
+- **Backend:** `backend/agente/bitacora.py` (nuevo), `backend/agente/confirmations.py`,
+  `backend/agente/registry.py`, `backend/agente/router.py`,
+  `backend/agente/tools/{catalogo,cotizacion,inventario,parametros,proyectos,retales}.py`,
+  `backend/migrations/0010_agente_historial_acciones.sql` (nuevo, aplicado en vivo).
+- **Frontend:** `web/src/pages/CentroAgentePage.tsx` (nuevo), `web/src/App.tsx`,
+  `web/src/api/agente.ts`, `web/src/components/{CostChat,Sidebar}.tsx`,
+  `web/src/lib/{agenteFormato,capabilities}.ts`.
+- **Docs:** `docs/ROADMAP_COSTO360.md` (Ciclo 3 marcado completo).
+
+### Decisiones tomadas
+- Bitácora aislada por usuario (ni admin/gerencia ve la de otro); modo BI reutiliza el permiso
+  `puede_pedir_datos_agregados_agente` ya existente (sin crear uno nuevo); umbral de k-anonimato
+  de 5 filas antes de desglosar por usuario; deshacer y confirmar comparten el mismo límite de
+  tasa (`10/hour`); minimizar el panel flotante nunca confirma ni descarta una propuesta.
+
+### Primera tarea de la próxima sesión
+El ciclo combinado ya aprobado por el fundador: (1) diagnosticar y corregir por qué
+Proyectos/Tareas se recargan desde cero cada vez que se entra a esas secciones, (2) limpiar
+`cotizacion_service.calcular_merma` (código muerto confirmado, sin consumidores reales). Además:
+considerar conectar de verdad el repositorio de GitHub en la configuración de los 3 proyectos de
+Vercel para que el auto-deploy funcione sin intervención manual en cada push.
+
+---
+
 ## Sesión: 2026-09-06 (sexta parte) — "Crear cotización" vía el agente + incidente de aprobación prematura
 
 ### Qué se hizo
