@@ -162,13 +162,15 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_handler)
 
 # Tokens Bearer (header que el JS fija explícitamente) → no se necesitan credenciales
-# (cookies) en CORS. Orígenes: solo desarrollo local por ahora; se añade el dominio de
-# despliegue del prototipo nuevo cuando exista (hallazgo S10).
+# (cookies) en CORS. Orígenes: desarrollo local + el dominio real de despliegue
+# (hallazgo S10, cerrado 2026-09-09 — sin esto el login se veía "funcionar" del
+# lado de Supabase pero la app nunca completaba sesión contra este backend).
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173", "http://127.0.0.1:5173",
         "https://localhost",  # WebView de Capacitor en el APK Android
+        "https://costo360-web.vercel.app",
     ],
     # En desarrollo, Vite puede tomar otro puerto (5174, 5175…) si 5173 está
     # ocupado. Aceptar cualquier puerto de localhost/127.0.0.1 para no romper
