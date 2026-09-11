@@ -14,8 +14,12 @@
   ],
   "crons": [
     {
-      "path": "/api/finanzas/cron/etl",
-      "schedule": "0 0 * * *"
+      "path": "/api/agente/cron/limpiar-historial",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/proyectos/cron/barrido-diario",
+      "schedule": "0 4 * * *"
     }
   ]
 }

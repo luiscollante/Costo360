@@ -12,9 +12,12 @@ de forma **set-based, sin bucle por empresa**: cada sentencia filtra
 por `dedupe_key` + `ON CONFLICT ... WHERE dedupe_key IS NOT NULL DO NOTHING`
 (hallazgo S5).
 
-El disparo real (cron del hosting / GitHub Action / cron-job.org apuntando a este
-endpoint con el secreto) se cablea cuando el backend se despliegue — ver
-`backend/ENV_SETUP.md`. `zona = America/Bogota` para el cálculo de "hoy".
+Disparador real conectado (ciclo `/goal` de conexión del cron, 2026-09-10):
+el cron nativo de Vercel (`backend/vercel.json`), que invoca SIEMPRE por GET
+y manda automáticamente `Authorization: Bearer <CRON_SECRET>` cuando existe
+una variable de entorno con ese nombre exacto (ya configurada en
+producción). Se acepta también `X-Cron-Secret` como alternativa manual
+(mismo secreto). `zona = America/Bogota` para el cálculo de "hoy".
 """
 import hmac
 import logging
@@ -22,6 +25,7 @@ import os
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi.responses import JSONResponse
 
 from backend.db.client import db_service
 from backend.middleware.rate_limiter import limiter
@@ -37,17 +41,28 @@ except Exception:  # pragma: no cover
 router = APIRouter(prefix="/api/proyectos/cron", tags=["proyectos-cron"])
 
 
-def verificar_secreto_cron(x_cron_secret: str | None = Header(default=None)) -> None:
+def verificar_secreto_cron(
+    authorization: str | None = Header(default=None),
+    x_cron_secret: str | None = Header(default=None),
+) -> None:
     """Dependencia — se resuelve ANTES de `db_service` en la firma del endpoint,
     para que un secreto ausente/inválido devuelva 401/503 SIN tomar una conexión
-    del pool (hallazgo Fase 5 BA#3)."""
+    del pool (hallazgo Fase 5 BA#3). Acepta el secreto por CUALQUIERA de dos
+    headers, mismo `CRON_SECRET`, comparación en tiempo constante en ambos
+    casos: `Authorization: Bearer <secreto>` (lo que Vercel Cron manda
+    automático) o `X-Cron-Secret: <secreto>` (alternativa manual/externa)."""
     esperado = os.environ.get("CRON_SECRET", "")
     if not esperado:
         # Fail-closed: sin secreto configurado, el endpoint no opera (S8).
         raise HTTPException(status_code=503, detail="Automatización no configurada")
-    if not x_cron_secret:
-        raise HTTPException(status_code=401, detail="Falta X-Cron-Secret")
-    if not hmac.compare_digest(x_cron_secret.encode(), esperado.encode()):
+
+    recibido = x_cron_secret
+    if authorization and authorization.startswith("Bearer "):
+        recibido = authorization[len("Bearer "):]
+
+    if not recibido:
+        raise HTTPException(status_code=401, detail="Falta el secreto del cron")
+    if not hmac.compare_digest(recibido.encode(), esperado.encode()):
         raise HTTPException(status_code=401, detail="Secreto inválido")
 
 
@@ -204,7 +219,7 @@ def ejecutar_barrido(cur, hoy) -> dict:
     return res
 
 
-@router.post("/barrido-diario")
+@router.get("/barrido-diario")
 @limiter.limit("6/hour")
 def barrido_diario(
     request: Request,
@@ -223,4 +238,9 @@ def barrido_diario(
     finally:
         cur.close()
     # El commit lo hace `db_service` al salir sin excepción (hallazgo S12).
-    return {"ok": True, "fecha": hoy.isoformat(), **resumen}
+    # Cache-Control: no-store — nunca servir una respuesta cacheada en vez de
+    # ejecutar el barrido de verdad (auditoría del ciclo de conexión del cron).
+    return JSONResponse(
+        {"ok": True, "fecha": hoy.isoformat(), **resumen},
+        headers={"Cache-Control": "no-store"},
+    )

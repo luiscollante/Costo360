@@ -15,6 +15,14 @@ disco — corre una vez al día porque el plan gratuito de Vercel Cron no
 permite más frecuencia, y no hace falta más: la garantía funcional para el
 usuario no depende de esta cadencia.
 
+Disparador real (ciclo `/goal` de conexión del cron, 2026-09-10): el cron
+nativo de Vercel invoca SIEMPRE por GET, y manda automáticamente
+`Authorization: Bearer <CRON_SECRET>` cuando existe una variable de entorno
+con ese nombre exacto (ya configurada en producción) — ver
+`backend/vercel.json`. Se acepta también `X-Cron-Secret` como alternativa
+manual (mismo secreto), por si en el futuro se prueba a mano o se conecta
+un servicio externo distinto.
+
 Reusa `bitacora.RETENCION_DIAS`/`RETENCION_DEFAULT_DIAS` — un solo lugar
 con el mapa plan→días, nunca una copia en SQL que pudiera desincronizarse.
 
@@ -28,6 +36,7 @@ import logging
 import os
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi.responses import JSONResponse
 
 from backend.agente.bitacora import RETENCION_DEFAULT_DIAS, RETENCION_DIAS
 from backend.db.client import db_service
@@ -38,16 +47,26 @@ _log = logging.getLogger("agente.cron")
 router = APIRouter(prefix="/api/agente/cron", tags=["agente-cron"])
 
 
-def verificar_secreto_cron(x_cron_secret: str | None = Header(default=None)) -> None:
-    """Mismo patrón que `proyectos_cron.verificar_secreto_cron` — se resuelve
-    ANTES de `db_service` para que un secreto ausente/inválido no tome una
-    conexión del pool."""
+def verificar_secreto_cron(
+    authorization: str | None = Header(default=None),
+    x_cron_secret: str | None = Header(default=None),
+) -> None:
+    """Se resuelve ANTES de `db_service` para que un secreto ausente/inválido
+    no tome una conexión del pool. Acepta el secreto por CUALQUIERA de dos
+    headers, mismo `CRON_SECRET`, comparación en tiempo constante en ambos
+    casos: `Authorization: Bearer <secreto>` (lo que Vercel Cron manda
+    automático) o `X-Cron-Secret: <secreto>` (alternativa manual/externa)."""
     esperado = os.environ.get("CRON_SECRET", "")
     if not esperado:
         raise HTTPException(status_code=503, detail="Automatización no configurada")
-    if not x_cron_secret:
-        raise HTTPException(status_code=401, detail="Falta X-Cron-Secret")
-    if not hmac.compare_digest(x_cron_secret.encode(), esperado.encode()):
+
+    recibido = x_cron_secret
+    if authorization and authorization.startswith("Bearer "):
+        recibido = authorization[len("Bearer "):]
+
+    if not recibido:
+        raise HTTPException(status_code=401, detail="Falta el secreto del cron")
+    if not hmac.compare_digest(recibido.encode(), esperado.encode()):
         raise HTTPException(status_code=401, detail="Secreto inválido")
 
 
@@ -80,7 +99,7 @@ def limpiar_historial(cur) -> dict:
     return {"filas_borradas": borradas}
 
 
-@router.post("/limpiar-historial")
+@router.get("/limpiar-historial")
 @limiter.limit("6/hour")
 def limpiar_historial_endpoint(
     request: Request,
@@ -95,4 +114,6 @@ def limpiar_historial_endpoint(
         raise HTTPException(status_code=500, detail="Error ejecutando la limpieza")
     finally:
         cur.close()
-    return {"ok": True, **resumen}
+    # Defensa en profundidad (auditoría de este ciclo): nunca servir una
+    # respuesta cacheada en vez de ejecutar el barrido de verdad.
+    return JSONResponse({"ok": True, **resumen}, headers={"Cache-Control": "no-store"})
