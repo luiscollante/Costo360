@@ -1,28 +1,60 @@
 """
-Bitácora de acciones EJECUTADAS del Agente de IA — Objetivo 5, Ciclo 3.
+Bóveda del Agente de IA — Objetivo 5, Ciclo 3 (rediseñado tras la revisión en
+vivo del fundador: ya NO es una pantalla de usuario, es memoria interna que
+Cost consulta bajo demanda en la conversación, nunca inyectada de forma
+automática en cada mensaje — así el costo de la API depende de cuántas veces
+se pregunta, no de cuántos días se retiene).
 
-Se llama desde dos lugares, siempre con la MISMA conexión de la transacción
-que hizo la escritura real (nunca en un `commit()` aparte):
+`registrar_ejecucion()` se llama desde dos lugares, siempre con la MISMA
+conexión de la transacción que hizo la escritura real (nunca en un
+`commit()` aparte):
   1. `confirmations.py::confirmar_propuesta`, tras invocar `handler_confirmar`.
   2. Los 3 handlers de escritura directa que ya existían antes de este ciclo
      (`proyectos_crear_tarea`, la rama de alta de `catalogo_crear_material`,
      la rama no-Aprobada de `cotizacion_cambiar_estado`), justo antes de
      retornar — todos con `es_deshacible=False` (son altas o transiciones sin
      snapshot "antes", nunca ediciones de un campo existente).
+
+`deshacer_accion()` ya NO es alcanzable por un endpoint HTTP directo — solo
+la invoca `_confirmar_deshacer` en `agente/tools/bitacora.py`, tras la MISMA
+confirmación de dos fases que cualquier otra escritura sensible del sistema
+(auditoría de este rediseño: exponerlo como botón sin que el modelo esté en
+el loop de decisión era, de hecho, MENOS estricto que esto).
 """
 from fastapi import HTTPException
 from psycopg2.extras import Json
 
 from backend.agente import registry
 
-# Modo BI del Centro del Agente (decisión del fundador, Ciclo 3: mismo
-# permiso `puede_pedir_datos_agregados_agente` que ya existía sin usar en
-# `roles_catalogo` desde la migración 0001). Nunca expone una fila
-# individual: agrupa por usuario y omite cualquier grupo con menos de este
-# umbral de filas — sin esto, un usuario con 1 sola acción quedaría
-# identificado igual que si el admin viera su bitácora fila por fila,
-# justo lo que la Regla 1 de este ciclo quiso evitar.
-UMBRAL_K_ANONIMATO = 5
+# Retención por plan (auditoría de este ciclo): un plan_codigo desconocido
+# (dato corrupto, o un plan nuevo agregado después sin actualizar este mapa)
+# cae al valor MÁS conservador — nunca "para siempre" en silencio, ni 0 días
+# por error de programación (borraría todo). Se loguea para que se note.
+# Públicas a propósito: `routers/agente_cron.py` las reusa para el barrido
+# de limpieza — un solo lugar con el mapa, nunca una copia separada en SQL
+# que pudiera desincronizarse de este criterio.
+RETENCION_DIAS = {"starter": 1, "pro": 30, "enterprise": 90}
+RETENCION_DEFAULT_DIAS = 1
+
+# Tope duro de filas por consulta — el modelo nunca recibe el historial
+# completo, solo un resumen acotado. Es este tope, no el plazo de
+# retención, el que controla el costo real de la API (auditoría de este
+# ciclo: con consulta bajo demanda, más días guardados no implica más
+# tokens gastados salvo que también se devolvieran más filas).
+_LIMITE_MAXIMO_FILAS = 15
+
+
+def dias_retencion(plan_codigo: str) -> int:
+    dias = RETENCION_DIAS.get(plan_codigo)
+    if dias is not None:
+        return dias
+    print(
+        f"[bitacora] ADVERTENCIA: plan_codigo desconocido '{plan_codigo}' — "
+        f"usando la retención más conservadora ({RETENCION_DEFAULT_DIAS} día) "
+        "en vez de fallar o de conservar indefinidamente.",
+        flush=True,
+    )
+    return RETENCION_DEFAULT_DIAS
 
 
 def registrar_ejecucion(conn, usuario: dict, herramienta: str, payload: dict,
@@ -38,76 +70,60 @@ def registrar_ejecucion(conn, usuario: dict, herramienta: str, payload: dict,
     cur.close()
 
 
-def listar_historial(conn, usuario: dict, limite: int = 50) -> list[dict]:
-    """RLS ya aísla por empresa Y usuario_id — cada usuario ve SOLO lo suyo,
-    sin importar su rol (decisión del fundador, Ciclo 3: ni admin ni
-    gerencia ven la bitácora de otro por este camino — el modo BI agregado
-    de abajo es la única ventana cruzada, y nunca fila por fila)."""
+def consultar(conn, usuario: dict, dias_atras: int, herramienta: str | None,
+              limite: int) -> dict:
+    """
+    Bajo demanda, invocada SOLO por la tool `agente_bitacora_consultar` — el
+    modelo la llama cuando el usuario pregunta por historial o antes de
+    intentar deshacer algo, nunca se precarga en el contexto de cada turno.
+
+    Dos topes duros aparte de RLS (defensa en profundidad, auditoría de este
+    ciclo): `usuario_id = %s` explícito (no confiar solo en la policy), y
+    `creado_en > ahora - retención del plan` — Cost NUNCA ve ni usa una
+    acción fuera del plazo prometido al taller, sin importar si el barrido
+    diario de limpieza ya la borró físicamente o todavía no.
+    """
+    plan = usuario.get("plan_codigo") or "starter"
+    tope_dias = dias_retencion(plan)
+    dias_atras = max(1, min(dias_atras, tope_dias))
+    limite = max(1, min(limite, _LIMITE_MAXIMO_FILAS))
+
+    filtro_herramienta = ""
+    params: list = [usuario["empresa_id"], usuario["id"], dias_atras]
+    if herramienta is not None:
+        # El argumento de una tool-call es tan hostil como un input de
+        # usuario — nunca se interpola en el SQL, y se valida contra el
+        # registro real de tools antes de usarse como filtro.
+        if registry.obtener(herramienta) is None:
+            return {"error": f"'{herramienta}' no es el nombre de una herramienta real"}
+        filtro_herramienta = "and herramienta = %s"
+        params.append(herramienta)
+    params.append(limite)
+
     cur = conn.cursor()
     cur.execute(
-        "select id, herramienta, payload, filas_afectadas, es_deshacible, "
-        "creado_en, deshecha_en from agente_historial_acciones "
+        "select id, herramienta, filas_afectadas, es_deshacible, creado_en, deshecha_en "
+        "from agente_historial_acciones "
+        "where empresa_id = %s and usuario_id = %s "
+        "and creado_en > now() - make_interval(days => %s) "
+        f"{filtro_herramienta} "
         "order by creado_en desc limit %s",
-        (limite,),
+        params,
     )
     filas = cur.fetchall()
     cur.close()
-    return [
-        {
-            "id": str(r[0]), "herramienta": r[1], "payload": r[2], "filas_afectadas": r[3],
-            "es_deshacible": r[4], "creado_en": r[5].isoformat(),
-            "deshecha_en": r[6].isoformat() if r[6] else None,
-        }
-        for r in filas
-    ]
-
-
-def obtener_agregado(conn, usuario: dict) -> dict:
-    """
-    Modo BI del Centro del Agente — SOLO alcanzable con
-    `puede_pedir_datos_agregados_agente` (verificado en el router antes de
-    llegar aquí). Corre bajo `db_service` (bypassa RLS a propósito, como
-    `require_dashboard`) — por eso TODO filtra por `empresa_id` a mano en
-    cada consulta, nunca se confía en RLS para el aislamiento aquí.
-    """
-    emp = usuario["empresa_id"]
-    cur = conn.cursor()
-    cur.execute(
-        "select herramienta, count(*), count(*) filter (where deshecha_en is not null) "
-        "from agente_historial_acciones where empresa_id = %s "
-        "group by herramienta order by count(*) desc",
-        (emp,),
-    )
-    por_herramienta = [
-        {"herramienta": r[0], "total": r[1], "deshechas": r[2]} for r in cur.fetchall()
-    ]
-
-    cur.execute(
-        "select h.usuario_id, u.nombre_completo, count(*) as total "
-        "from agente_historial_acciones h join usuarios u on u.id = h.usuario_id "
-        "where h.empresa_id = %s group by h.usuario_id, u.nombre_completo "
-        "having count(*) >= %s order by total desc",
-        (emp, UMBRAL_K_ANONIMATO),
-    )
-    por_usuario = [
-        {"usuario_id": str(r[0]), "nombre": r[1], "total": r[2]} for r in cur.fetchall()
-    ]
-
-    cur.execute(
-        "select count(*), coalesce(sum(total), 0) from ("
-        "  select usuario_id, count(*) as total from agente_historial_acciones "
-        "  where empresa_id = %s group by usuario_id having count(*) < %s"
-        ") t",
-        (emp, UMBRAL_K_ANONIMATO),
-    )
-    usuarios_agrupados, acciones_agrupadas = cur.fetchone()
-    cur.close()
     return {
-        "por_herramienta": por_herramienta,
-        "por_usuario": por_usuario,
-        "usuarios_agrupados": usuarios_agrupados,
-        "acciones_agrupadas": acciones_agrupadas,
-        "umbral_k_anonimato": UMBRAL_K_ANONIMATO,
+        "acciones": [
+            {
+                "historial_id": str(r[0]), "herramienta": r[1],
+                "resumen": (r[2][0] if r[2] else {}),
+                "es_deshacible": r[3] and r[5] is None,
+                "creado_en": r[4].isoformat(),
+                "deshecha_en": r[5].isoformat() if r[5] else None,
+            }
+            for r in filas
+        ],
+        "retencion_dias_del_plan": tope_dias,
     }
 
 
@@ -115,8 +131,8 @@ def deshacer_accion(conn, usuario: dict, historial_id: str) -> dict:
     """
     UPDATE atómico condicionado a `deshecha_en IS NULL AND es_deshacible` con
     RETURNING — mismo patrón que `confirmations.confirmar_propuesta`: un
-    doble clic nunca deshace dos veces, la segunda petición ve 0 filas y
-    responde 409.
+    doble clic (o una doble confirmación) nunca deshace dos veces, la
+    segunda petición ve 0 filas y responde 409.
     """
     cur = conn.cursor()
     cur.execute(
@@ -141,3 +157,22 @@ def deshacer_accion(conn, usuario: dict, historial_id: str) -> dict:
     # `handler_deshacer` vuelve a leer la fila objetivo bajo esta misma
     # conexión antes de revertirla (mismo patrón TOCTOU que `handler_confirmar`).
     return spec.handler_deshacer(conn, usuario, filas_afectadas[0], payload)
+
+
+def obtener_fila(conn, usuario: dict, historial_id: str) -> dict | None:
+    """Lectura puntual para `_preparar_deshacer` — arma la tarjeta de
+    confirmación ANTES de intentar el UPDATE atómico de `deshacer_accion`."""
+    cur = conn.cursor()
+    cur.execute(
+        "select herramienta, filas_afectadas, es_deshacible, deshecha_en, creado_en "
+        "from agente_historial_acciones where id = %s and usuario_id = %s",
+        (historial_id, usuario["id"]),
+    )
+    row = cur.fetchone()
+    cur.close()
+    if row is None:
+        return None
+    return {
+        "herramienta": row[0], "filas_afectadas": row[1], "es_deshacible": row[2],
+        "deshecha_en": row[3], "creado_en": row[4],
+    }

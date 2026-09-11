@@ -9,3 +9,4 @@ from backend.agente.tools import inventario as _inventario  # noqa: F401
 from backend.agente.tools import retales as _retales  # noqa: F401
 from backend.agente.tools import nesting as _nesting  # noqa: F401
 from backend.agente.tools import parametros as _parametros  # noqa: F401
+from backend.agente.tools import bitacora as _bitacora  # noqa: F401

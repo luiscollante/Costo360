@@ -1,4 +1,4 @@
-import { formatCOP, formatFecha } from '@/lib/utils'
+import { formatCOP, formatFecha, formatFechaHora } from '@/lib/utils'
 import type { Propuesta } from '@/api/agente'
 
 /** Campos de una fila afectada que YA se muestran aparte (título/nombre
@@ -74,6 +74,9 @@ const ETIQUETAS: Record<string, string> = {
   comercial: 'Local comercial',
   tipo_proyecto: 'Tipo de proyecto', precio_sugerido: 'Precio sugerido',
   costo_total: 'Costo total', margen_pct: 'Margen',
+  // Solo aparecen en la tarjeta de "deshacer" de la Bóveda (Ciclo 3) —
+  // ver `agente/tools/bitacora.py::_preparar_deshacer`.
+  herramienta: 'Acción original', fecha_original: 'Cuándo se hizo',
 }
 
 /** Cualquier "<campo>_propuesto" (no solo precio_m2_propuesto) recibe una
@@ -107,10 +110,10 @@ export function mensajeConfirmacion(p: Propuesta): string {
 
 /** Reduce una `fila_afectada` cruda a lo que cualquier tarjeta necesita
  * mostrar: un título principal, el id (si lo hay) y el resto de campos ya
- * formateados como pares etiqueta/valor. Extraído para que la tarjeta de
- * confirmación (`CostChat.tsx`) y la bitácora del Centro del Agente
- * (`CentroAgentePage.tsx`) rindan exactamente igual, sin dos copias que
- * puedan divergir cuando se agregue una tool nueva. */
+ * formateados como pares etiqueta/valor. Usada por `CostChat.tsx` para
+ * CUALQUIER propuesta de confirmación — incluida la de deshacer una acción
+ * de la Bóveda (Ciclo 3), que reusa esta misma tarjeta sin necesitar un
+ * template aparte. */
 export function resumirFila(
   f: Record<string, unknown>,
 ): { principal: string; id: string | null; detalles: Array<[string, string]> } {
@@ -127,6 +130,7 @@ export function valorLegible(campo: string, valor: unknown): string {
   if (esCampoMoneda(campo) && typeof valor === 'number') return formatCOP(valor)
   if (esCampoPorcentaje(campo) && typeof valor === 'number') return `${valor}%`
   if (campo === 'fecha' && typeof valor === 'string') return formatFecha(valor)
+  if (campo === 'fecha_original' && typeof valor === 'string') return formatFechaHora(valor)
   if (typeof valor === 'boolean') return valor ? 'Sí' : 'No'
   return String(valor)
 }
