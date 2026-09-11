@@ -25,6 +25,27 @@ function colVacia(): ColumnaState {
   return { items: [], cargando: true, error: false, hayMas: false, topeAlcanzado: false }
 }
 
+// Caché en memoria a nivel de módulo (vive mientras la pestaña esté abierta,
+// como `abortController` en `store/cost.ts`) — el hook se remonta entero cada
+// vez que se navega a /proyectos, así que sin esto SIEMPRE se veía la pantalla
+// de carga de nuevo aunque se acabara de visitar la misma vista/orden/búsqueda
+// hace segundos (hallazgo real reportado por el fundador, 2026-09-10). Al
+// reentrar con la misma `key`, se pinta de inmediato lo último visto mientras
+// se refresca en segundo plano — nunca un vaciado + "cargando" de nuevo.
+// Tope de entradas para no crecer sin límite si el usuario prueba muchas
+// búsquedas distintas en la misma sesión (LRU simple por orden de reinserción).
+const MAX_CACHE_TABLERO = 8
+const cacheTablero = new Map<string, Record<string, ColumnaState>>()
+
+function guardarEnCache(key: string, state: Record<string, ColumnaState>): void {
+  cacheTablero.delete(key)
+  cacheTablero.set(key, state)
+  if (cacheTablero.size > MAX_CACHE_TABLERO) {
+    const masAntigua = cacheTablero.keys().next().value
+    if (masAntigua !== undefined) cacheTablero.delete(masAntigua)
+  }
+}
+
 /**
  * Carga el tablero columna por columna, paginando en el backend (nunca se trae
  * el catálogo entero). Reescritura de `useBoardData` del prototipo Base44 contra
@@ -104,8 +125,12 @@ export function useTableroProyectos(columns: EstadoProyecto[], filtros: Filtros)
   useEffect(() => {
     const token = ++reqRef.current
     const controladores = controladoresRef.current
+    // Si ya se vio esta misma combinación de columnas/búsqueda/orden, se
+    // pinta de inmediato (sin pantalla de carga) mientras se refresca en
+    // segundo plano — si no, se comporta como antes (vacío → cargando).
+    const cacheada = cacheTablero.get(key)
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setState(Object.fromEntries(columns.map((c) => [c, colVacia()])))
+    setState(cacheada ?? Object.fromEntries(columns.map((c) => [c, colVacia()])))
     columns.forEach((estado) => {
       void fetchPage(estado, 0, token)
     })
@@ -115,6 +140,18 @@ export function useTableroProyectos(columns: EstadoProyecto[], filtros: Filtros)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
+
+  // Mantiene la caché al día con cada cambio real de estado (páginas
+  // cargadas, errores, movimientos) — así la próxima vez que se entre con
+  // la misma `key` hay algo fresco para mostrar de inmediato. Se salta el
+  // valor inicial `{}` de `useState` (antes de que el efecto de montaje de
+  // arriba corra en el mismo commit) — si no, ese valor vacío pisaría por
+  // un instante la caché buena que el efecto de montaje ya leyó.
+  useEffect(() => {
+    if (Object.keys(state).length === 0) return
+    guardarEnCache(key, state)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, state])
 
   const cargarMas = useCallback(
     (estado: EstadoProyecto) => {

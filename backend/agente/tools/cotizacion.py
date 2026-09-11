@@ -374,7 +374,7 @@ def _normalizar_piezas_agente(piezas: list | None) -> list[dict]:
     """El agente describe cada pieza con `largo`/`ancho` (lenguaje natural);
     `cotizacion_service.calcular_directa` espera el formato canónico que ya
     produce el wizard humano (`ml`/`ancho_custom`, ver `PiezaItem`) — misma
-    idea que ya usan `calcular_totales`/`calcular_merma` de este archivo."""
+    idea que ya usa `calcular_totales` en `cotizacion_service.py`."""
     return [
         {
             "nombre": p.get("nombre", ""),

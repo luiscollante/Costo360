@@ -15,11 +15,6 @@ class TotalesPiezasIn(BaseModel):
     piezas: List[PiezaIn]
 
 
-class MermaIn(BaseModel):
-    piezas: List[PiezaIn]
-    categoria: str = "Mármol"
-
-
 # ── Modelos para Cotización Directa ──────────────────────────────────────────
 
 class MaterialItem(BaseModel):
