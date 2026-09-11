@@ -2,6 +2,30 @@
 
 ---
 
+## ✅ Hecho (2026-09-10, continuación) — Rediseño de 3.B: "Centro del Agente" → la Bóveda
+
+El fundador probó en el navegador la primera versión de 3.B (entrada de abajo) y pidió un
+rediseño grande: **la página `/centro-agente` desaparece por completo** — ni pantalla, ni botón
+"Deshacer", ni el "modo BI" agregado con CSV (que resultó ser una confusión de nombres: el
+fundador se refería al Modo BI Senior real del diseño original del producto — Cost usando un
+modelo más potente para analizar el negocio, exclusivo de admin — un ciclo futuro aparte, todavía
+sin construir). La bitácora (misma tabla `agente_historial_acciones`, sin cambios de esquema) pasa
+a ser **"la Bóveda"**: memoria interna que Cost consulta bajo demanda en la conversación (nunca
+inyectada en cada mensaje, para no encarecer cada llamada a la API), con 2 tools nuevas
+(`agente_bitacora_consultar`, `agente_bitacora_deshacer` — esta última reemplaza el botón HTTP
+directo por una propuesta de dos fases, reusando el mecanismo de confirmación ya existente, más
+estricto que antes). Retención automática por plan (`empresas.plan_codigo`): Starter 1 día, Pro 30,
+Enterprise 90, aplicada en la propia consulta (Cost nunca usa datos vencidos) más un barrido físico
+diario (`backend/routers/agente_cron.py`, mismo patrón que `proyectos_cron.py` — **pendiente real:
+falta enganchar el disparador automático**, igual que el cron de proyectos). Plan auditado por un
+Security Engineer independiente antes de ejecutar (APRUEBA CON CAMBIOS, 5 correcciones
+incorporadas). Verificado en vivo: "¿qué cambiaste en los últimos días?" y "deshaz el cambio de
+Parámetros que sigue activo" funcionando de punta a punta, con tarjeta de confirmación legible.
+Commit `9e6913d`, subido y desplegado a producción (backend + web).
+
+Detalle técnico completo en memoria persistente: `project_costo360_objetivo5_ciclo3.md` (ya
+actualizada con el diseño final — la entrada de abajo describe la PRIMERA versión, descartada).
+
 ## ✅ Hecho (2026-09-10) — Objetivo 5, Ciclo 3 COMPLETO: chat flotante global + "Centro del Agente"
 
 Cierra el Ciclo 3 del Objetivo 5 (las dos superficies de UI pendientes), en dos mitades dentro de
@@ -683,6 +707,12 @@ de este dominio, sin subir a GitHub todavía.
 - **Vercel sin auto-deploy real de GitHub** (descubierto 2026-09-10) — cada push a `master`
   necesita un `vercel deploy --prod --token` manual hasta que se conecte de verdad el repo en la
   configuración de cada proyecto. Ver memoria `feedback_vercel_sin_autodeploy`.
+- **Falta enganchar el disparador real del barrido de limpieza de la Bóveda**
+  (`POST /api/agente/cron/limpiar-historial`, protegido con `X-Cron-Secret`) — mismo problema
+  preexistente que ya tenía `proyectos_cron.py`: ninguno está en el `crons` de `vercel.json`
+  (que además solo tiene una entrada muerta apuntando a un router `finanzas` que ni siquiera está
+  montado). Falta decidir cron-job.org, un GitHub Action programado, o corregir el mismatch
+  GET/POST para usar el cron nativo de Vercel.
 - **El fundador confirma la ronda de bugs del 2026-09-03** (Proyectos + wizard de Cotización,
   ver entrada de "Hecho" correspondiente) — en particular el arrastre real con mouse, que no se
   pudo probar de forma automatizada (ver "🔄 En progreso" arriba).

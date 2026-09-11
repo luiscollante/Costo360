@@ -2,6 +2,62 @@
 
 ---
 
+## Sesión: 2026-09-10 (continuación) — Rediseño de 3.B: "Centro del Agente" → la Bóveda
+
+### Qué se hizo
+El fundador pidió revisar en el navegador la primera versión de 3.B (entrada de abajo) y explicarle
+en simple para qué servía. Reportó un error real al probar "Deshacer" — resultó ser una fila de
+dato de prueba corrupta de ANTES del fix de payload del ciclo anterior (no un bug nuevo), explicado
+y confirmado. Luego pidió un rediseño grande: quitar `/centro-agente` de la interfaz por completo y
+convertir la bitácora en una "Bóveda" — memoria interna que el propio agente usa como historial,
+con borrado automático por plazo (sugirió 10 días, delegó la decisión final en Claude, atada a no
+subir el costo de la API del agente). Se hicieron 4 rondas de `AskUserQuestion` para calibrar el
+diseño antes de planear: consulta bajo demanda (no inyectar en cada mensaje) vs. siempre en
+contexto → bajo demanda; "Deshacer" conversacional vs. eliminado → conversacional; Starter con
+Bóveda de 24h (el fundador reconsideró su plan inicial de excluirlo) vs. sin Bóveda; y una
+corrección importante: lo que el fundador llama "Modo BI" es en realidad el "Modo BI Senior" ya
+previsto en el diseño original del producto (Cost con un modelo más potente para analizar el
+Dashboard, exclusivo de admin) — NO las estadísticas de uso del agente que se habían construido; se
+acordó eliminar esas estadísticas de este ciclo y dejar el Modo BI Senior real para un ciclo futuro
+aparte. Se armó un ciclo `/goal` completo: plan propio (Fase 1) auditado por un Security Engineer
+independiente (Fase 2, APRUEBA CON CAMBIOS — 5 correcciones: contenido legible de la propuesta de
+deshacer, regla de ambigüedad en el system prompt, fallback seguro del mapa plan→días,
+parametrizar el filtro de herramienta, y separar la garantía funcional de retención del borrado
+físico del disco por la limitación de cadencia del cron gratuito de Vercel), 2 preguntas más de
+aprobación explícita (Fase 3) sobre esa separación y sobre si un taller inactivo se limpia igual —
+ambas aprobadas con la opción recomendada. Ejecutado (Fase 4): 2 tools nuevas
+(`agente_bitacora_consultar`, `agente_bitacora_deshacer`, esta última reutilizando el mecanismo de
+propuesta de dos fases ya existente en vez de un endpoint HTTP directo), retención por plan
+(`empresas.plan_codigo`, ya existía), nuevo router de limpieza (`agente_cron.py`, mismo patrón que
+`proyectos_cron.py`), se borró la página/endpoints/modo BI viejos. Verificado en vivo con la
+extensión de Chrome: "¿qué cambiaste en los últimos días?" (Cost resumió correctamente catálogo,
+cotizaciones, tareas y parámetros) y "deshaz el cambio de Parámetros que sigue activo" (tarjeta de
+confirmación con contenido legible exacto — herramienta, fecha, antes→después). Comiteado
+(`9e6913d`), subido a GitHub y desplegado a producción (backend + web) a mano, ya que el
+auto-deploy de Vercel sigue sin estar conectado.
+
+### Archivos modificados/creados
+- **Backend:** `backend/agente/bitacora.py` (reescrito: `consultar`/`obtener_fila` reemplazan
+  `listar_historial`/`obtener_agregado`, retención pública `RETENCION_DIAS`),
+  `backend/agente/tools/bitacora.py` (nuevo: las 2 tools), `backend/agente/router.py` (4 endpoints
+  viejos eliminados), `backend/agente/runtime.py` (system prompt), `backend/agente/tools/__init__.py`,
+  `backend/routers/agente_cron.py` (nuevo), `backend/main.py`, `backend/middleware/auth.py`
+  (`plan_codigo` agregado al perfil del usuario).
+- **Frontend:** `web/src/pages/CentroAgentePage.tsx` (borrado), `web/src/App.tsx`,
+  `web/src/components/Sidebar.tsx`, `web/src/api/agente.ts`, `web/src/lib/agenteFormato.ts`
+  (etiquetas nuevas para la tarjeta de deshacer), `web/src/lib/capabilities.ts`.
+
+### Decisiones tomadas
+Ver la lista de `AskUserQuestion` arriba. Retención definida por Claude (delegada por el fundador):
+Starter 1 día, Pro 30 días, Enterprise 90 días.
+
+### Primera tarea de la próxima sesión
+Sigue pendiente el ciclo combinado ya aprobado (Proyectos/Tareas recargando desde cero +
+`calcular_merma` código muerto). Aparte: decidir cómo enganchar el disparador real del cron de
+limpieza de la Bóveda (mismo problema preexistente que `proyectos_cron.py`, nunca resuelto).
+
+---
+
 ## Sesión: 2026-09-10 — Objetivo 5, Ciclo 3 COMPLETO (chat flotante global + Centro del Agente)
 
 ### Qué se hizo
