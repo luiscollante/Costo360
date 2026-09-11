@@ -2,6 +2,45 @@
 
 ---
 
+## ✅ Hecho (2026-09-10/11) — Disparador real de los 2 barridos (cron) conectado
+
+Ciclo `/goal` completo desde Fase 0, pedido explícitamente por el fundador ("resolvamos el
+disparador, arma un ciclo completo desde la fase 0"). Cierra un pendiente operativo real: ni el
+barrido de limpieza de la Bóveda del Agente ni el barrido diario de Proyectos tenían un disparador
+automático conectado — ambos existían y funcionaban, pero nadie los llamaba solos.
+
+**Fase 0 (investigación):** confirmado con la documentación oficial de Vercel (2026-08-11) que su
+cron nativo invoca SIEMPRE por GET, manda automáticamente `Authorization: Bearer <CRON_SECRET>`
+(variable ya configurada en producción desde antes), y el plan gratuito permite 100 crons por
+proyecto una vez al día — de sobra para los 2 que hacían falta. Se descartaron cron-job.org
+(exigiría que el fundador cree una cuenta nueva) y GitHub Actions (exige el CLI `gh`, no instalado
+en esta máquina). `backend/vercel.json` solo tenía una entrada muerta apuntando a un router
+`finanzas` que ni siquiera está montado en `main.py`.
+
+**Fase 1-2:** plan propio auditado por un Security Engineer independiente — **APRUEBA CON
+CAMBIOS**, 2 correcciones de implementación (extraer el prefijo `"Bearer "` antes de comparar el
+secreto; `Cache-Control: no-store` en ambas respuestas), ninguna bloqueante arquitectónica.
+Confirmó además que ambos barridos ya eran genuinamente idempotentes (verificado leyendo el SQL
+real, no solo los comentarios).
+
+**Fase 3:** aprobación explícita del fundador, incluyendo conectar también `proyectos_cron.py`
+(mismo problema, no pedido al inicio pero con el mismo fix).
+
+**Fase 4 (ejecución):** `POST`→`GET` en los 2 endpoints (`/api/agente/cron/limpiar-historial`,
+`/api/proyectos/cron/barrido-diario`); `verificar_secreto_cron` acepta el secreto por
+`Authorization: Bearer` (nativo de Vercel) O `X-Cron-Secret` (alternativa manual), mismo
+`CRON_SECRET`, comparación en tiempo constante en ambos casos; `vercel.json` con las 2 entradas
+reales, sin la entrada muerta de finanzas. Ninguna lógica de negocio de los barridos cambió.
+
+**Verificado en vivo:** local (sin secreto → 401, secreto incorrecto → 401, `Authorization: Bearer`
+correcto → 200, `X-Cron-Secret` correcto → 200, `POST` → 405, `Cache-Control: no-store` presente en
+los 2 endpoints) y en producción real — `vercel crons ls` confirma las 2 entradas registradas, y
+`vercel crons run` disparó ambos crons de verdad contra producción (confirmado en los logs de
+runtime: `GET /api/agente/cron/limpiar-historial` y `GET /api/proyectos/cron/barrido-diario`, nivel
+`info`, sin errores).
+
+Commit `a35b0a8`, subido y desplegado a producción.
+
 ## ✅ Hecho (2026-09-10, cierre de sesión) — Tablero de Proyectos sin recarga + limpieza de código muerto
 
 Ciclo combinado ya aprobado por el fundador tras cerrar el Ciclo 3, con dos frentes:
@@ -725,12 +764,6 @@ de este dominio, sin subir a GitHub todavía.
 - **Vercel sin auto-deploy real de GitHub** (descubierto 2026-09-10) — cada push a `master`
   necesita un `vercel deploy --prod --token` manual hasta que se conecte de verdad el repo en la
   configuración de cada proyecto. Ver memoria `feedback_vercel_sin_autodeploy`.
-- **Falta enganchar el disparador real del barrido de limpieza de la Bóveda**
-  (`POST /api/agente/cron/limpiar-historial`, protegido con `X-Cron-Secret`) — mismo problema
-  preexistente que ya tenía `proyectos_cron.py`: ninguno está en el `crons` de `vercel.json`
-  (que además solo tiene una entrada muerta apuntando a un router `finanzas` que ni siquiera está
-  montado). Falta decidir cron-job.org, un GitHub Action programado, o corregir el mismatch
-  GET/POST para usar el cron nativo de Vercel.
 - **El fundador confirma la ronda de bugs del 2026-09-03** (Proyectos + wizard de Cotización,
   ver entrada de "Hecho" correspondiente) — en particular el arrastre real con mouse, que no se
   pudo probar de forma automatizada (ver "🔄 En progreso" arriba).
@@ -764,4 +797,4 @@ de este dominio, sin subir a GitHub todavía.
 
 ---
 
-*Última actualización: 2026-09-10 (cierre de sesión)*
+*Última actualización: 2026-09-11 (cierre de sesión)*

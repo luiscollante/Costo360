@@ -2,6 +2,37 @@
 
 ---
 
+## Sesión: 2026-09-10/11 — Disparador real de los 2 barridos (cron) conectado
+
+### Qué se hizo
+El fundador pidió resolver el pendiente del disparador de la Bóveda con "un ciclo completo desde la
+fase 0" — se siguió el método completo (Fase 0-6), incluida una auditoría de un Security Engineer
+independiente, tal como pidió explícitamente. Fase 0: se investigó a fondo con la documentación
+oficial de Vercel (no de memoria) el comportamiento real de su cron nativo — GET siempre,
+`Authorization: Bearer $CRON_SECRET` automático si la variable existe con ese nombre exacto (ya
+configurada en producción), 100 crons por proyecto en el plan gratuito. Se descartaron las
+alternativas externas por requerir una cuenta nueva del fundador o el CLI `gh` (no disponible en
+esta máquina). Plan propio (Fase 1) auditado por un Security Engineer aparte (Fase 2) — APRUEBA CON
+CAMBIOS, 2 correcciones de implementación menores, ninguna arquitectónica. Presentado al fundador
+(Fase 3), que aprobó y además pidió conectar también `proyectos_cron.py` (mismo problema, no en el
+pedido original). Ejecutado (Fase 4): `POST`→`GET` en los 2 endpoints, autenticación dual
+(`Authorization: Bearer` nativo de Vercel + `X-Cron-Secret` como alternativa manual), `vercel.json`
+con las 2 entradas reales sin la entrada muerta de finanzas. Verificado en vivo local (todos los
+casos de auth + método) Y en producción real: `vercel crons ls` confirma el registro, `vercel crons
+run` disparó ambos de verdad contra producción, logs de runtime confirmando éxito sin errores.
+Comiteado (`a35b0a8`), subido y desplegado.
+
+### Archivos modificados
+`backend/routers/agente_cron.py`, `backend/routers/proyectos_cron.py`, `backend/vercel.json`.
+
+### Primera tarea de la próxima sesión
+Nada urgente pendiente de este frente — quedó resuelto de punta a punta, incluida verificación
+contra producción real. Los cabos sueltos que quedan documentados: el auto-deploy de Vercel sigue
+sin conectar (cada push necesita un `vercel deploy --prod --token` manual), y los Objetivos 3/4
+siguen en espera por instrucción del fundador.
+
+---
+
 ## Sesión: 2026-09-10 (cierre) — Tablero de Proyectos sin recarga + limpieza de calcular_merma
 
 ### Qué se hizo
