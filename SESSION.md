@@ -2,6 +2,35 @@
 
 ---
 
+## Sesión: 2026-09-10 (cierre) — Tablero de Proyectos sin recarga + limpieza de calcular_merma
+
+### Qué se hizo
+Tras cerrar el rediseño de la Bóveda, el fundador dio luz verde ("vamos con el punto 1") al ciclo
+combinado que ya había aprobado antes: (1) Proyectos/Tareas recargándose desde cero, (2) limpiar
+`calcular_merma`. Investigación (Fase 0) antes de tocar código: `calcular_merma` confirmado sin
+consumidores reales (solo alcanzable por un endpoint que tampoco llamaba nadie); causa raíz real
+del reload encontrada en `useTableroProyectos.ts` (hook sin ninguna caché entre montajes, a
+diferencia de `ProyectoDetallePage.tsx`/Tareas, que ya usa `react-query` con caché real). Plan
+presentado en el chat (sin subagentes — riesgo bajo, cambio acotado) y aprobado explícitamente
+antes de ejecutar. Ejecutado: caché en memoria a nivel de módulo en el hook del tablero
+(stale-while-revalidate, tope de 8 entradas), y eliminación completa de `calcular_merma` +
+su endpoint + su modelo Pydantic. Verificado en vivo con la extensión de Chrome (segunda visita a
+/proyectos sin parpadeo de carga, refetch de fondo confirmado en la red) y con el schema OpenAPI
+real (`/api/calculos/merma` ya no existe). Comiteado (`da7fcbd`), subido y desplegado a producción
+a mano.
+
+### Archivos modificados
+`web/src/hooks/useTableroProyectos.ts`, `backend/services/cotizacion_service.py`,
+`backend/routers/calculos.py`, `backend/models/cotizacion.py`, `backend/agente/tools/cotizacion.py`
+(comentario desactualizado corregido de paso).
+
+### Primera tarea de la próxima sesión
+Nada urgente pendiente de este frente. Recordar los cabos sueltos operativos ya documentados:
+disparador del cron de limpieza de la Bóveda sin enganchar, y el auto-deploy de Vercel sin
+conectar. Objetivos 3/4 siguen en espera.
+
+---
+
 ## Sesión: 2026-09-10 (continuación) — Rediseño de 3.B: "Centro del Agente" → la Bóveda
 
 ### Qué se hizo

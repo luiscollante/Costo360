@@ -2,6 +2,28 @@
 
 ---
 
+## ✅ Hecho (2026-09-10, cierre de sesión) — Tablero de Proyectos sin recarga + limpieza de código muerto
+
+Ciclo combinado ya aprobado por el fundador tras cerrar el Ciclo 3, con dos frentes:
+
+1. **Tablero de Proyectos (`/proyectos`) ya no se recarga desde cero al reentrar.** Causa raíz
+   real: `useTableroProyectos.ts` montaba el hook entero en cada navegación a la sección,
+   vaciando el tablero y pidiendo la página 1 de cada columna otra vez, sin importar cuánto
+   hiciera que se había visitado. Fix: caché en memoria a nivel de módulo (vive mientras la
+   pestaña esté abierta), keyed por columnas+búsqueda+orden — al reentrar con la misma
+   combinación se pinta de inmediato lo último visto mientras se refresca en segundo plano
+   (stale-while-revalidate), tope de 8 entradas (LRU simple) para no crecer sin límite.
+   La pantalla de detalle de un proyecto (`/proyectos/:id`, Tareas) ya usaba `react-query` con
+   caché real — no era parte del problema. Verificado en vivo (extensión de Chrome): segunda
+   visita sin parpadeo de carga, refetch de fondo confirmado en la red (5 columnas).
+2. **`cotizacion_service.calcular_merma` eliminado** — código muerto confirmado (cero
+   consumidores en el frontend, solo alcanzable vía `POST /api/calculos/merma`, que tampoco
+   llamaba nadie), junto con el endpoint y el modelo `MermaIn` que solo él usaba.
+   `/api/calculos/totales` (el otro endpoint del mismo router) no se tocó. Verificado con el
+   schema OpenAPI real: la ruta ya no existe.
+
+Commit `da7fcbd`, subido y desplegado a producción (backend + web) a mano.
+
 ## ✅ Hecho (2026-09-10, continuación) — Rediseño de 3.B: "Centro del Agente" → la Bóveda
 
 El fundador probó en el navegador la primera versión de 3.B (entrada de abajo) y pidió un
@@ -697,13 +719,9 @@ de este dominio, sin subir a GitHub todavía.
    hoy `web/src/api/*.ts` están alineados a mano con el backend nuevo.
 
 ### Frente activo ahora mismo (actualizado 2026-09-10)
-- **El Objetivo 5 completo (los 3 ciclos) queda cerrado** — ver entrada de "Hecho" arriba.
-  Siguiente, por instrucción explícita del fundador: un ciclo `/goal` combinado con dos frentes
-  (1) Proyectos/Tareas se recargan desde cero cada vez que se entra a esas secciones (sensación de
-  bug, deuda pendiente desde el Ciclo 2), (2) limpiar el código muerto de
-  `cotizacion_service.calcular_merma` (confirmado sin ningún consumidor real en el producto —
-  cero impacto en cotizaciones reales, cerrado con evidencia antes de tocar nada). Objetivos 3/4
-  (agentes de operación de la empresa) quedan explícitamente en espera ("Esperemos por ahora").
+- **El Objetivo 5 (los 3 ciclos) y el ciclo combinado que le seguía quedan cerrados** — ver
+  entradas de "Hecho" arriba. Objetivos 3/4 (agentes de operación de la empresa) siguen
+  explícitamente en espera ("Esperemos por ahora") hasta que el fundador decida retomarlos.
 - **Vercel sin auto-deploy real de GitHub** (descubierto 2026-09-10) — cada push a `master`
   necesita un `vercel deploy --prod --token` manual hasta que se conecte de verdad el repo en la
   configuración de cada proyecto. Ver memoria `feedback_vercel_sin_autodeploy`.
@@ -720,9 +738,9 @@ de este dominio, sin subir a GitHub todavía.
   Kanban** (2026-09-04) — es un arreglo deliberado de accesibilidad ya auditado; si en el futuro
   se quiere una zona de agarre más grande, hay que diseñarlo con cuidado de no reabrir el
   hallazgo WCAG 4.1.2 del 2026-09-02.
-- **Bugs preexistentes no bloqueantes, pendientes como tareas aparte:** `cotizacion_service.calcular_merma`
-  ignora `tarifas_src` (merma personalizada del taller); `catalogo_service.editar_material` ignora
-  `proveedor`/`activo` en la rama copy-on-write sobre una fila base sin sombrear.
+- **Bug preexistente no bloqueante, pendiente como tarea aparte:** `catalogo_service.editar_material`
+  ignora `proveedor`/`activo` en la rama copy-on-write sobre una fila base sin sombrear.
+  (El de `calcular_merma` se cerró eliminando el código muerto, ver entrada de "Hecho" arriba.)
 
 ### Prototipo ya construido — pendientes menores
 - Inventario, Dashboard y Historial no tienen pruebas automatizadas — solo verificación manual en vivo del 2026-08-23.
@@ -746,4 +764,4 @@ de este dominio, sin subir a GitHub todavía.
 
 ---
 
-*Última actualización: 2026-09-10*
+*Última actualización: 2026-09-10 (cierre de sesión)*
