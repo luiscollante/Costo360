@@ -50,7 +50,9 @@ _AVISO_ANTIENCADENAMIENTO = (
 
 
 def _listar_retales(conn, usuario: dict, args: dict) -> dict:
-    return {"retales": retales_service.listar_retales(conn, usuario)}
+    retales = retales_service.listar_retales(conn, usuario)
+    # `total` explícito — ver mismo hallazgo en catalogo.py::_listar_materiales.
+    return {"total": len(retales), "retales": retales}
 
 
 registrar(ToolSpec(
@@ -62,7 +64,9 @@ registrar(ToolSpec(
             "usuario actual — cantidad de m² disponibles, material, estado "
             "(Disponible/Reservado/Usado), precios. Si el usuario es operativo, solo "
             "ve SUS PROPIOS retales, nunca los de otros usuarios del taller — esto no "
-            "es configurable desde esta tool."
+            "es configurable desde esta tool. La respuesta trae un campo `total` — para "
+            "'¿cuántos retales tengo?' usá ese número directo, nunca cuentes la lista "
+            "vos mismo."
         ),
         parameters={"type": "OBJECT", "properties": {}},
     ),

@@ -49,7 +49,10 @@ _AVISO_ANTIENCADENAMIENTO = (
 
 def _listar_materiales(conn, usuario: dict, args: dict) -> dict:
     materiales = catalogo_service.listar_materiales(conn, args.get("categoria") or "")
-    return {"materiales": materiales}
+    # `total` explícito — nunca hagas que el modelo cuente la lista él mismo
+    # para "¿cuántos tengo?" (hallazgo real: eso sube el riesgo de que la
+    # respuesta se corte por longitud en catálogos grandes).
+    return {"total": len(materiales), "materiales": materiales}
 
 
 registrar(ToolSpec(
@@ -59,7 +62,9 @@ registrar(ToolSpec(
         description=(
             "Lista los materiales del catálogo del taller (propios + los de Costo360 "
             "que el taller no haya personalizado), con precio por m², proveedor y si "
-            "es propio del taller. Admite filtrar por categoría."
+            "es propio del taller. Admite filtrar por categoría. La respuesta trae un "
+            "campo `total` — para '¿cuántos materiales tengo?' usá ese número directo, "
+            "nunca cuentes la lista vos mismo."
         ),
         parameters={
             "type": "OBJECT",

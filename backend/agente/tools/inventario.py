@@ -48,7 +48,8 @@ _AVISO_ANTIENCADENAMIENTO = (
 
 def _listar_laminas(conn, usuario: dict, args: dict) -> dict:
     laminas = inventario_service.listar_inventario(conn, args.get("material_categoria") or "")
-    return {"laminas": laminas}
+    # `total` explícito — ver mismo hallazgo en catalogo.py::_listar_materiales.
+    return {"total": len(laminas), "laminas": laminas}
 
 
 registrar(ToolSpec(
@@ -57,7 +58,9 @@ registrar(ToolSpec(
         name="inventario_listar_laminas",
         description=(
             "Lista las láminas en inventario del taller (cantidad, medidas, costo, "
-            "proveedor, ubicación). Admite filtrar por categoría de material."
+            "proveedor, ubicación). Admite filtrar por categoría de material. La "
+            "respuesta trae un campo `total` — para '¿cuántas láminas tengo?' usá ese "
+            "número directo, nunca cuentes la lista vos mismo."
         ),
         parameters={
             "type": "OBJECT",

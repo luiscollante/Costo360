@@ -49,7 +49,14 @@ def _listar_historial(conn, usuario: dict, args: dict) -> dict:
         fecha_hasta=args.get("fecha_hasta") or "",
         limite=50,
     )
-    return {"cotizaciones": cotizaciones}
+    # `total` explícito (ver mismo hallazgo en catalogo.py::_listar_materiales),
+    # más un aviso honesto de que esta lista tiene un tope fijo de 50 — a
+    # diferencia de las otras tools "listar", esta SÍ puede no traer todo.
+    return {
+        "total": len(cotizaciones),
+        "hay_mas_de_las_mostradas": len(cotizaciones) >= 50,
+        "cotizaciones": cotizaciones,
+    }
 
 
 registrar(ToolSpec(
@@ -59,7 +66,11 @@ registrar(ToolSpec(
         description=(
             "Lista cotizaciones del taller con número, cliente, fecha, precio, "
             "margen y estado. Admite filtrar por texto de búsqueda (cliente, "
-            "número o material), estado, y rango de fechas."
+            "número o material), estado, y rango de fechas. La respuesta trae un campo "
+            "`total` (usalo directo para '¿cuántas cotizaciones tengo?', nunca cuentes "
+            "la lista vos mismo) y `hay_mas_de_las_mostradas` — esta lista tiene un tope "
+            "fijo de 50, si ese campo es true decile al usuario que hay más de las que "
+            "ves y que afine la búsqueda si necesita verlas todas."
         ),
         parameters={
             "type": "OBJECT",

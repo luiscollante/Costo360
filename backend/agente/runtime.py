@@ -41,6 +41,16 @@ from backend.db.client import rls_connection
 
 _MODELO = "gemini-3.5-flash"  # ver auditoría: Flash-Lite queda corto para tool-calling real
 _MAX_PASOS = 6  # tope de idas-y-vueltas modelo↔tools por turno
+# Hallazgo real (2026-09-12): con 800 tokens, cualquier respuesta que
+# necesitara más (ej. contar un catálogo grande) se cortaba a la mitad de
+# una palabra, sin que el código lo detectara ni el modelo supiera por qué
+# — al preguntarle después, inventaba una excusa técnica falsa ("se cortó
+# la conexión"). 2048 cubre la enorme mayoría de casos sin cambiar el
+# comportamiento normal (la personalidad de Cost ya pide brevedad por su
+# cuenta); `_MAX_OUTPUT_TOKENS_REINTENTO` es el único reintento permitido,
+# ver `_generar_con_reintento`.
+_MAX_OUTPUT_TOKENS = 2048
+_MAX_OUTPUT_TOKENS_REINTENTO = 4096
 
 _SYSTEM_PROMPT = """Te llamas Cost. Eres el asistente de IA de Costo360, un SaaS de cotización \
 para talleres de piedra natural (mármol, granito, sinterizado, cuarcita) en Colombia.
@@ -138,6 +148,10 @@ y `agente_bitacora_consultar` te muestra más de una acción reciente que podrí
 mostráselas TODAS con su fecha y qué cambiaron, y esperá a que el humano te diga cuál — nunca \
 elijas vos ni encadenes directo a `agente_bitacora_deshacer` en el mismo turno.
 - Nunca inventes que ya hiciste algo sin haber invocado la herramienta correspondiente.
+- Si el usuario te dice que tu mensaje anterior quedó incompleto o cortado, NUNCA inventes una \
+excusa técnica (nunca digas "se cortó la conexión", "hubo un error de red" o algo similar) — vos \
+no tenés forma de saber eso, y probablemente sea falso. Simplemente disculpate con naturalidad y \
+continuá donde quedaste.
 - Para calcular un plano de corte/nesting, SIEMPRE usa la herramienta `nesting_calcular` — \
 nunca calcules el empaquetado ni estimes el % de aprovechamiento tú mismo, ni siquiera si te \
 parece un cálculo simple (pocas piezas, medidas redondas). El algoritmo real considera \
@@ -170,6 +184,21 @@ def _cliente():
     if not api_key:
         return None
     return genai.Client(api_key=api_key)
+
+
+async def _generar(client, contents, tools, tope_tokens):
+    return await asyncio.to_thread(
+        client.models.generate_content,
+        model=_MODELO,
+        contents=contents,
+        config=gtypes.GenerateContentConfig(
+            system_instruction=_SYSTEM_PROMPT,
+            tools=tools,
+            automatic_function_calling=gtypes.AutomaticFunctionCallingConfig(disable=True),
+            max_output_tokens=tope_tokens,
+            temperature=0.3,
+        ),
+    )
 
 
 def _contenido_historial(historial: list[dict]) -> list[gtypes.Content]:
@@ -213,27 +242,32 @@ async def ejecutar_turno(usuario: dict, mensaje: str, historial: list[dict],
     agotado = False
     try:
         for _paso in range(_MAX_PASOS):
-            response = await asyncio.to_thread(
-                client.models.generate_content,
-                model=_MODELO,
-                contents=contents,
-                config=gtypes.GenerateContentConfig(
-                    system_instruction=_SYSTEM_PROMPT,
-                    tools=tools,
-                    automatic_function_calling=gtypes.AutomaticFunctionCallingConfig(disable=True),
-                    max_output_tokens=800,
-                    temperature=0.3,
-                ),
-            )
+            response = await _generar(client, contents, tools, _MAX_OUTPUT_TOKENS)
             candidatos = response.candidates or []
             if not candidatos or not candidatos[0].content:
                 break
             candidato = candidatos[0]
+
+            # Se reintenta UNA vez con más espacio ANTES de mostrarle nada al
+            # usuario — como todavía no se emitió ningún delta de texto de
+            # este paso, el reintento es invisible: el usuario nunca ve la
+            # versión cortada (ver hallazgo real arriba, junto a las constantes).
+            if candidato.finish_reason == gtypes.FinishReason.MAX_TOKENS:
+                response = await _generar(client, contents, tools, _MAX_OUTPUT_TOKENS_REINTENTO)
+                candidatos = response.candidates or []
+                if candidatos and candidatos[0].content:
+                    candidato = candidatos[0]
+
             parts = candidato.content.parts or []
 
             texto = "".join(p.text for p in parts if getattr(p, "text", None))
             if texto:
                 texto_emitido = True
+                if candidato.finish_reason == gtypes.FinishReason.MAX_TOKENS:
+                    # Incluso con el reintento la respuesta es genuinamente
+                    # enorme (rarísimo) — nunca inventar una excusa técnica,
+                    # ser honesto en vez de dejarla cortada en silencio.
+                    texto += "\n\n*(mi respuesta es más larga de lo normal — decime si querés que siga)*"
                 yield encoder.encode(ag.TextMessageContentEvent(
                     type=ag.EventType.TEXT_MESSAGE_CONTENT, message_id=msg_id, delta=texto,
                 ))

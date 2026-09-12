@@ -24,9 +24,20 @@ function TextoAsistente({ texto }: { texto: string }) {
         ol: ({ children }) => <ol className="mb-1.5 list-decimal space-y-0.5 pl-4 last:mb-0">{children}</ol>,
         li: ({ children }) => <li>{children}</li>,
         a: ({ children, href }) => (
-          <a href={href} target="_blank" rel="noreferrer" className="underline text-brand-primary">{children}</a>
+          <a href={href} target="_blank" rel="noreferrer" className="underline text-brand-primary break-all">{children}</a>
         ),
         code: ({ children }) => <code className="rounded bg-brand-border/40 px-1 py-0.5 text-[12px]">{children}</code>,
+        // Cost no debería responder con bloques de código (ver system prompt:
+        // "nunca jerga de software"), pero si igual lo hace, sin esto un
+        // bloque sin saltos de línea se salía del recuadro del mensaje —
+        // hallazgo real reportado por el fundador (2026-09-12). `max-w-full`
+        // + `overflow-x-auto` lo contienen con scroll propio en vez de romper
+        // el ancho de la burbuja.
+        pre: ({ children }) => (
+          <pre className="mb-1.5 max-w-full overflow-x-auto rounded-lg bg-brand-border/30 p-2 text-[12px] last:mb-0">
+            {children}
+          </pre>
+        ),
       }}
     >
       {texto}
@@ -93,7 +104,7 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
         {mensajes.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
-              className={`max-w-[85%] rounded-xl px-3 py-2 ${txt.burbuja} ${
+              className={`min-w-0 max-w-[85%] overflow-hidden break-words rounded-xl px-3 py-2 ${txt.burbuja} ${
                 m.role === 'user'
                   ? 'whitespace-pre-wrap bg-brand-primary text-white'
                   : 'border border-brand-border bg-brand-bg text-brand-text'

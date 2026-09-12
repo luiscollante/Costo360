@@ -37,14 +37,19 @@ def _listar_tareas(conn, usuario: dict, args: dict) -> dict:
         tareas = proyectos_service.listar_tareas(conn, project_id)
     except HTTPException as e:
         return {"error": e.detail}
-    return {"tareas": tareas}
+    # `total` explícito — ver mismo hallazgo en catalogo.py::_listar_materiales.
+    return {"total": len(tareas), "tareas": tareas}
 
 
 registrar(ToolSpec(
     nombre="proyectos_listar_tareas",
     declaracion=gtypes.FunctionDeclaration(
         name="proyectos_listar_tareas",
-        description="Lista las tareas de un proyecto de Costo360, con su estado, prioridad y responsable.",
+        description=(
+            "Lista las tareas de un proyecto de Costo360, con su estado, prioridad y "
+            "responsable. La respuesta trae un campo `total` — para '¿cuántas tareas "
+            "hay?' usá ese número directo, nunca cuentes la lista vos mismo."
+        ),
         parameters={
             "type": "OBJECT",
             "properties": {"project_id": {"type": "INTEGER", "description": "id numérico del proyecto"}},
