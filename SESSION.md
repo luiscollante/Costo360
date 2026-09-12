@@ -2,6 +2,37 @@
 
 ---
 
+## Sesión: 2026-09-12 — Cost: mensajes largos cortados + desborde visual con código
+
+### Qué se hizo
+El fundador reportó dos problemas usando Cost en el día a día: (1) respuestas largas quedan
+incompletas de vez en cuando, con Cost disculpándose y diciendo que "se cortó la conexión" al
+señalárselo — ejemplo puntual, preguntarle cuántos materiales hay en el catálogo; (2) un mensaje
+con código se salió del recuadro del chat en texto plano (no recordaba el contenido exacto). Pidió
+armar un ciclo para resolver ambos. Fase 0: se leyó `runtime.py` a fondo y se encontró
+`max_output_tokens=800` sin ningún chequeo de `finish_reason` — la causa real y determinística del
+primer bug, no un problema de red; se confirmó además que las 5 tools "listar" devuelven la lista
+cruda sin conteo, obligando al modelo a contar él mismo (agrava el riesgo con catálogos grandes).
+Para el segundo bug, se encontró que `CostChat.tsx` no tenía componente `pre` en `ReactMarkdown` ni
+protección de overflow en la burbuja del mensaje. Plan presentado y aprobado sin subagente de
+auditoría (riesgo bajo, ajuste de configuración + CSS, sin tocar seguridad ni datos). Ejecutado:
+tope de tokens a 2048 + reintento automático transparente a 4096 si aún se corta, regla anti-excusas
+en el system prompt, campo `total` en las 5 tools de listar, y `pre`/burbuja con overflow contenido
+en `CostChat.tsx`. Verificado en vivo con la extensión de Chrome: la pregunta exacta que fallaba
+(contra un catálogo real de 255 materiales) respondió limpia; un bloque de código forzado con una
+línea de 200+ caracteres quedó contenido con su propio scroll (confirmado con zoom visual).
+Comiteado (`ba8b4b5`), subido y desplegado a producción.
+
+### Archivos modificados
+`backend/agente/runtime.py`, `backend/agente/tools/{catalogo,cotizacion,inventario,proyectos,retales}.py`,
+`web/src/components/CostChat.tsx`.
+
+### Primera tarea de la próxima sesión
+Nada urgente pendiente de este frente — verificado en vivo de punta a punta. Revisar
+`PROGRESS.md` § Siguiente para el próximo frente que el fundador priorice.
+
+---
+
 ## Sesión: 2026-09-10/11 — Disparador real de los 2 barridos (cron) conectado
 
 ### Qué se hizo

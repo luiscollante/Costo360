@@ -2,6 +2,39 @@
 
 ---
 
+## ✅ Hecho (2026-09-12) — Cost: mensajes largos ya no se cortan, chat contiene código/texto largo
+
+Ciclo `/goal` completo (Fase 0-6), 2 bugs reales reportados por el fundador probando la app.
+
+**Bug 1 — mensajes largos se cortaban ("se cortó la conexión" era una excusa falsa del modelo):**
+causa raíz real encontrada en Fase 0: `max_output_tokens=800` en `runtime.py` — un tope duro de la
+propia API de Gemini, nunca un problema de red. El código tampoco revisaba `finish_reason`, así que
+ni el backend ni el modelo sabían que había pasado; al preguntarle después, Cost inventaba una
+excusa técnica falsa por no tener la razón real. Reproducido exactamente con el ejemplo del
+fundador: "¿cuántos materiales tengo en mi catálogo?" contra un catálogo real de 255 materiales.
+
+Fix: `max_output_tokens` sube a 2048; si aun así el modelo corta por longitud
+(`finish_reason == MAX_TOKENS`), se reintenta UNA vez con 4096 ANTES de emitirle nada al usuario —
+invisible, nunca ve la versión cortada. Nueva regla en el system prompt: nunca inventar una excusa
+técnica por una respuesta propia incompleta. Además, las 5 tools "listar" (catálogo, inventario,
+retales, tareas, historial de cotización) devolvían la lista cruda completa sin ningún campo de
+conteo — se agrega `total` (y `hay_mas_de_las_mostradas` en cotización, que tiene tope fijo de 50)
+a las 5, con una nota en la `description` de cada tool para que Cost lo use directo en vez de
+contar la lista él mismo.
+
+**Bug 2 — un mensaje con código se salía del recuadro del chat:** `CostChat.tsx` no tenía ningún
+componente `pre` en `ReactMarkdown` (se renderizaba sin ancho máximo ni scroll propio), y la
+burbuja del mensaje no tenía `overflow-hidden`/`min-w-0`/`break-words` como defensa contra
+cualquier contenido ancho sin espacios. Fix: `pre` ahora es un recuadro con scroll horizontal
+propio; la burbuja gana las 3 clases de defensa en profundidad.
+
+**Verificado en vivo con la extensión de Chrome:** la pregunta exacta que fallaba (255 materiales)
+responde limpia y completa, sin cortes; un bloque de código forzado con una línea de 200+
+caracteres queda contenido en su propio recuadro con scroll, confirmado con zoom visual, sin
+desbordar el panel del chat.
+
+Commit `ba8b4b5`, subido y desplegado a producción (backend + web).
+
 ## ✅ Hecho (2026-09-10/11) — Disparador real de los 2 barridos (cron) conectado
 
 Ciclo `/goal` completo desde Fase 0, pedido explícitamente por el fundador ("resolvamos el
@@ -797,4 +830,4 @@ de este dominio, sin subir a GitHub todavía.
 
 ---
 
-*Última actualización: 2026-09-11 (cierre de sesión)*
+*Última actualización: 2026-09-12*
