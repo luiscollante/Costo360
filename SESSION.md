@@ -2,6 +2,51 @@
 
 ---
 
+## Sesión: 2026-09-13 — Transparencia de modales, barrido `.glass` completo y Nesting a color de marca
+
+### Qué se hizo
+Sesión de tres ciclos encadenados, todos verificados en vivo y desplegados. (1) El fundador reportó
+que el panel flotante de Cost y el modal de "Agregar retal" se veían transparentes — ambos usaban la
+clase `.glass` legacy (glassmorphism, 60% blanco + blur), remanente de antes del rediseño visual que
+ya movió el resto de la app a superficies sólidas. Se pasaron a `bg-brand-surface` sólido, mismo
+tratamiento que `Dialog.tsx`. (2) Al mencionar que `.glass` seguía en 11 archivos más, el fundador
+pidió revisar y corregir todos en paralelo, con una explicación resumida de qué significa la clase.
+Barrido mecánico con regex (`\bglass\b(?!-)` → `bg-brand-surface`, excluyendo a propósito
+`glass-emerald`/`glass-gold`, que son gradientes sólidos reales del sidebar mal nombrados) en 12
+archivos, 53 reemplazos. `LandingPage.tsx` quedó fuera a propósito — código muerto, sin ruta real en
+`App.tsx`. (3) El fundador pidió terminar de adaptar el resultado del plan de Nesting a los colores
+de marca. Investigación de código encontró que `_generar_svg_nesting` en `motor_planos.py` es la
+única función realmente usada (vía `optimizar_corte_2d`) — el archivo también tiene ~700 líneas de
+código muerto heredado de Streamlit (`generar_plano_svg` y helpers), no tocado, fuera de alcance.
+Se preguntó al fundador si mantener el estilo "plano técnico oscuro" recoloreado a marca o rediseñar
+a superficie clara — eligió mantener oscuro con los colores reales de Costo360. Recoloreo completo
+(placa a esmeralda profundo, acentos/cotas a esmeralda clara, dorado real de marca) más una paleta
+nueva de 10 tonos cálidos/tierra para la rotación por pieza (encabezando esmeralda y dorado, sin
+colapsar a un solo color — eso habría destruido la distinción entre piezas). Colores de advertencia
+semántica (ROTADA, piezas que no caben) intactos a propósito. Verificado en vivo con un plan real
+(placa 3.20×1.60m, piezas "Mesón cocina" + "Isla").
+
+### Archivos modificados
+`web/src/components/CostFloating.tsx`, `web/src/pages/RetalesPage.tsx` (transparencia); 12 archivos
+más (`SessionGuard.tsx`, `LoginPage.tsx`, `ResetPasswordPage.tsx`, `CotizacionPage.tsx`,
+`CotizacionExpressPage.tsx`, `CotizacionAIUPage.tsx`, `ParametrosPage.tsx`, `NestingPage.tsx`,
+`InventarioPage.tsx`, `HistorialPage.tsx`, `ConfigPage.tsx`, `AdminPage.tsx`) (barrido `.glass`);
+`backend/motor/motor_planos.py` (recoloreo de Nesting).
+
+### Decisiones tomadas
+Mantener el plano de Nesting con estética "plano técnico oscuro" en vez de migrar a superficie
+clara — el fundador prefirió conservar la identidad visual ya validada del plano, solo recoloreada
+a marca real. La paleta rotativa por pieza se trata distinto de los colores estructurales: variedad
+curada, no un solo color de marca repetido.
+
+### Primera tarea de la próxima sesión
+Nada urgente pendiente de estos tres frentes — todos verificados en vivo de punta a punta y
+desplegados a producción. Revisar `PROGRESS.md` § Siguiente para el próximo frente que el fundador
+priorice. Pendiente opcional (no pedido aún): limpiar el código muerto de `motor_planos.py`
+(~700 líneas heredadas de Streamlit), igual que se hizo con `calcular_merma` en un ciclo anterior.
+
+---
+
 ## Sesión: 2026-09-12 — Cost: mensajes largos cortados + desborde visual con código
 
 ### Qué se hizo

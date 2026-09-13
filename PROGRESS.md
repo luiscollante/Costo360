@@ -2,6 +2,31 @@
 
 ---
 
+## ✅ Hecho (2026-09-13) — Nesting: el plano de corte pasa a los colores reales de Costo360
+
+El resultado del plan de Nesting (`backend/motor/motor_planos.py`, función `_generar_svg_nesting` —
+la única realmente invocada por `optimizar_corte_2d`, usada por `agente/tools/nesting.py` y
+`routers/nesting.py`) usaba una paleta azul-marino/dorado-genérico sin relación con la marca, herencia
+del prototipo original. El fundador eligió mantener la estética de "plano técnico oscuro" pero
+recolorearla con los tokens reales de Costo360 (`web/src/index.css` `:root`): fondo/placa a esmeralda
+profundo, acentos/cotas a esmeralda clara, dorado real de marca en vez del dorado genérico anterior.
+
+La paleta rotativa por pieza (`_NEST_FILLS`/`_NEST_STROKES`, 10 tonos) no se colapsó a un solo
+color — eso habría destruido la distinción visual entre piezas, que es su propósito. Se curó una
+paleta nueva de 10 tonos cálidos/tierra que encabeza con esmeralda y dorado reales de marca y
+conserva la distinguibilidad pieza a pieza. Los colores de advertencia semántica (pieza ROTADA en
+rojo, panel de "piezas que no caben") se dejaron intactos a propósito — son alerta universal, no
+identidad de marca.
+
+Verificado en vivo en `/nesting` con un plan real (placa 3.20×1.60m, piezas "Mesón cocina"
+2.40×0.65m + "Isla" 1.20×0.90m): título, placa, piezas, cotas y tabla de leyenda renderizan
+correctamente con la paleta nueva. Commit `62c20bd`, subido y desplegado a producción (backend).
+
+**Nota aparte, no corregida en este ciclo (fuera de lo pedido):** el archivo tiene ~700 líneas de
+código muerto heredado del prototipo Streamlit (`generar_plano_svg`, `wrap_svg_streamlit`,
+`exportar_svg_a_pdf` y sus helpers) sin ningún caller real en `backend/` — candidato a limpieza en
+un ciclo futuro, igual que `calcular_merma` en un ciclo anterior.
+
 ## ✅ Hecho (2026-09-13, continuación) — Barrido completo: quita `.glass` de otros 12 archivos
 
 Tras el arreglo puntual de Cost/RetalesPage, el fundador pidió revisar el resto de la app. Barrido
