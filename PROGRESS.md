@@ -2,6 +2,20 @@
 
 ---
 
+## ✅ Hecho (2026-09-13) — Quita la transparencia del panel de Cost y del modal de "Agregar retal"
+
+Ambos usaban la clase `.glass` (60% blanco + blur de 20px), remanente del diseño glassmorphism
+anterior al rediseño visual (que ya movió el resto de la app a superficies sólidas vía `Card.tsx`).
+El modal de "Agregar retal" ni siquiera usa el `Dialog.tsx` compartido — es un modal hecho a mano en
+`RetalesPage.tsx` que se quedó con el estilo viejo. Los dos pasan a `bg-brand-surface` sólido (blanco
+real, sin alfa), mismo tratamiento que ya usa `Dialog.tsx` para cualquier otro modal de la app — el
+fondo oscuro detrás del modal (`bg-black/50 backdrop-blur-sm`, que sí es intencional) no se tocó.
+Verificado en vivo con la extensión de Chrome: ambos quedan completamente opacos. Commit `fe7e65a`,
+subido y desplegado a producción.
+
+**Nota aparte, no corregida en este ciclo (fuera de lo pedido):** `.glass` sigue usándose en otros
+11 archivos — si se quiere migrar el resto también, es un frente aparte.
+
 ## ✅ Hecho (2026-09-12) — Cost: mensajes largos ya no se cortan, chat contiene código/texto largo
 
 Ciclo `/goal` completo (Fase 0-6), 2 bugs reales reportados por el fundador probando la app.
@@ -830,4 +844,4 @@ de este dominio, sin subir a GitHub todavía.
 
 ---
 
-*Última actualización: 2026-09-12*
+*Última actualización: 2026-09-13*
