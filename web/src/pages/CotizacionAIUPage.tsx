@@ -241,7 +241,7 @@ function Step0Items({
         <StepHeader step="01" title="Ítems del Contrato" subtitle="Define el cliente y los ítems del Costo Directo" />
 
         {/* Client info */}
-        <div className="glass rounded-lg border border-brand-border/60 p-5 mb-6">
+        <div className="bg-brand-surface rounded-lg border border-brand-border/60 p-5 mb-6">
           <p className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold mb-4">Datos del Contratante</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
@@ -260,7 +260,7 @@ function Step0Items({
         </div>
 
         {/* Items del Costo Directo — una tarjeta clara por ítem, igual en celular y escritorio */}
-        <div className="glass rounded-lg border border-brand-border/60 p-5 mb-4">
+        <div className="bg-brand-surface rounded-lg border border-brand-border/60 p-5 mb-4">
           <span className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold">Ítems del Costo Directo</span>
           <p className="text-xs text-brand-text-secondary mt-1 mb-4">Agrega cada material o actividad por separado. El subtotal se calcula solo.</p>
 
@@ -379,7 +379,7 @@ function Step1AIU({
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
           {/* Left: inputs */}
           <div className="space-y-6">
-            <div className="glass rounded-lg border border-brand-border/60 p-5 space-y-5">
+            <div className="bg-brand-surface rounded-lg border border-brand-border/60 p-5 space-y-5">
               <PctPills label="Administración (A%)" value={pctA} onChange={setPctA} presets={PCT_A_PRESETS} />
               <PctPills label="Imprevistos (I%)" value={pctI} onChange={setPctI} presets={PCT_I_PRESETS} />
               <PctPills label="Utilidad (U%)" value={pctU} onChange={setPctU} presets={PCT_U_PRESETS} />
@@ -396,7 +396,7 @@ function Step1AIU({
           </div>
 
           {/* Right: live preview */}
-          <div className="glass rounded-xl border border-brand-border/60 p-5 h-fit sticky top-6">
+          <div className="bg-brand-surface rounded-xl border border-brand-border/60 p-5 h-fit sticky top-6">
             <p className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold mb-4">Preview AIU</p>
             <div className="divide-y divide-brand-border/30">
               <PreviewRow label={`CD (Base)`} value={cd} />
@@ -443,7 +443,7 @@ function CCModalAIU({ cotId, onClose }: { cotId: number; onClose: () => void }) 
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ duration: 0.15 }}
-        className="relative glass rounded-xl border border-brand-border shadow-2xl p-6 w-80 z-10"
+        className="relative bg-brand-surface rounded-xl border border-brand-border shadow-2xl p-6 w-80 z-10"
         onClick={e => e.stopPropagation()}
       >
         <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-brand-text-secondary mb-4">Cuenta de Cobro</p>
@@ -511,7 +511,7 @@ function Step2Resultado({
 
           {/* Hero price card */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}
-            className="relative glass rounded-xl p-8 mb-6 border border-brand-gold/20 text-center overflow-hidden">
+            className="relative bg-brand-surface rounded-xl p-8 mb-6 border border-brand-gold/20 text-center overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-brand-gold/4 to-transparent pointer-events-none" />
             <div className="absolute top-3 left-3 w-6 h-6 border-t border-l border-brand-gold/30" />
             <div className="absolute top-3 right-3 w-6 h-6 border-t border-r border-brand-gold/30" />
@@ -536,7 +536,7 @@ function Step2Resultado({
 
           {/* Breakdown */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}
-            className="glass rounded-lg border border-brand-border/60 overflow-hidden mb-4">
+            className="bg-brand-surface rounded-lg border border-brand-border/60 overflow-hidden mb-4">
             <div className="px-5 py-3 border-b border-brand-border/50">
               <span className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold">Desglose AIU</span>
             </div>

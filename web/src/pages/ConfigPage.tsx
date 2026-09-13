@@ -86,7 +86,7 @@ export default function ConfigPage() {
         ) : (
           <div className="space-y-5">
             {/* Datos de la empresa */}
-            <div className="glass rounded-xl border border-brand-border p-6">
+            <div className="bg-brand-surface rounded-xl border border-brand-border p-6">
               <h2 className="text-[9px] font-semibold text-brand-text-secondary uppercase tracking-widest mb-5">Datos de la empresa</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="col-span-2">
@@ -153,7 +153,7 @@ export default function ConfigPage() {
             </div>
 
             {/* Datos bancarios */}
-            <div className="glass rounded-xl border border-brand-border p-6">
+            <div className="bg-brand-surface rounded-xl border border-brand-border p-6">
               <h2 className="text-[9px] font-semibold text-brand-text-secondary uppercase tracking-widest mb-5">Datos bancarios</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -201,7 +201,7 @@ export default function ConfigPage() {
             </div>
 
             {/* Condiciones comerciales */}
-            <div className="glass rounded-xl border border-brand-border p-6">
+            <div className="bg-brand-surface rounded-xl border border-brand-border p-6">
               <h2 className="text-[9px] font-semibold text-brand-text-secondary uppercase tracking-widest mb-5">Condiciones comerciales</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -242,7 +242,7 @@ export default function ConfigPage() {
             </div>
 
             {/* Logo de empresa */}
-            <div className="glass rounded-xl border border-brand-border p-6">
+            <div className="bg-brand-surface rounded-xl border border-brand-border p-6">
               <h2 className="text-[9px] font-semibold text-brand-text-secondary uppercase tracking-widest mb-5">Logo de empresa</h2>
               <div className="flex items-center gap-5">
                 <div className="w-24 h-24 rounded-xl border border-brand-border bg-brand-surface flex items-center justify-center overflow-hidden shrink-0">
@@ -300,7 +300,7 @@ export default function ConfigPage() {
             </div>
 
             {/* Acceso rápido */}
-            <div className="glass rounded-xl border border-brand-border p-6">
+            <div className="bg-brand-surface rounded-xl border border-brand-border p-6">
               <h2 className="text-[9px] font-semibold text-brand-text-secondary uppercase tracking-widest mb-5">Acceso rápido</h2>
               <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
                 <div className="bg-white p-3 rounded-xl shrink-0">

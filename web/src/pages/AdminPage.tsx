@@ -111,7 +111,7 @@ export default function AdminPage() {
         />
 
         {enlace && (
-          <div className="mb-6 glass rounded-xl border border-brand-primary/30 p-4">
+          <div className="mb-6 bg-brand-surface rounded-xl border border-brand-primary/30 p-4">
             <p className="text-xs text-brand-text-secondary mb-2">
               Envía este enlace a la persona para que defina su contraseña (el correo automático puede no estar
               configurado todavía):
@@ -133,11 +133,11 @@ export default function AdminPage() {
         )}
 
         {isPending ? (
-          <div className="glass rounded-xl border border-brand-border p-12 text-center">
+          <div className="bg-brand-surface rounded-xl border border-brand-border p-12 text-center">
             <p className="text-sm text-brand-text-secondary">Cargando usuarios…</p>
           </div>
         ) : (
-          <div className="glass rounded-xl border border-brand-border overflow-hidden">
+          <div className="bg-brand-surface rounded-xl border border-brand-border overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-brand-border">
@@ -203,7 +203,7 @@ export default function AdminPage() {
         {invitaciones.length > 0 && (
           <div className="mt-6">
             <h2 className="text-xs font-semibold text-brand-text-secondary uppercase tracking-widest mb-2">Invitaciones pendientes</h2>
-            <div className="glass rounded-xl border border-brand-border divide-y divide-brand-border/50">
+            <div className="bg-brand-surface rounded-xl border border-brand-border divide-y divide-brand-border/50">
               {invitaciones.map((inv) => (
                 <div key={inv.id} className="px-5 py-3 flex items-center justify-between text-sm">
                   <span className="font-mono text-xs text-brand-text">{inv.email}</span>

@@ -188,7 +188,7 @@ function CCModalExpress({ cotId, onClose }: { cotId: number; onClose: () => void
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 8 }}
         transition={{ duration: 0.15 }}
-        className="relative glass rounded-xl border border-brand-border shadow-2xl p-5 w-80 z-10"
+        className="relative bg-brand-surface rounded-xl border border-brand-border shadow-2xl p-5 w-80 z-10"
         onClick={(e) => e.stopPropagation()}
       >
         <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-brand-text-secondary mb-4">Cuenta de Cobro</p>
@@ -266,7 +266,7 @@ function ResultPanel({
       className="flex flex-col gap-4"
     >
       {/* Price hero */}
-      <div className="glass rounded-xl border border-brand-primary/30 p-6 text-center">
+      <div className="bg-brand-surface rounded-xl border border-brand-primary/30 p-6 text-center">
         <p className="text-[9px] tracking-[0.22em] uppercase text-brand-text-secondary mb-2">
           {incluirIva ? 'Total con IVA' : 'Precio sugerido al cliente'}
         </p>
@@ -294,7 +294,7 @@ function ResultPanel({
           { label: 'Utilidad neta',    value: formatCOP(utilidad),                       color: 'text-brand-gold-text' },
           { label: 'Aprovechamiento',  value: formatPct(result.aprovechamiento, 1),   color: 'text-brand-text' },
         ].map(({ label, value, color }) => (
-          <div key={label} className="glass rounded-xl border border-brand-border p-3 text-center">
+          <div key={label} className="bg-brand-surface rounded-xl border border-brand-border p-3 text-center">
             <p className="text-[8px] tracking-widest uppercase text-brand-text-secondary mb-1.5">{label}</p>
             <p className={`text-xs font-bold font-mono ${color}`}>{value}</p>
           </div>
@@ -313,7 +313,7 @@ function ResultPanel({
       )}
 
       {/* Cost breakdown */}
-      <div className="glass rounded-xl border border-brand-border overflow-hidden">
+      <div className="bg-brand-surface rounded-xl border border-brand-border overflow-hidden">
         <button
           type="button"
           onClick={() => setExpanded((e) => !e)}
@@ -573,7 +573,7 @@ export default function CotizacionExpressPage() {
           <div className="flex flex-col gap-5">
 
             {/* Material */}
-            <div className="glass rounded-xl border border-brand-border/60 p-5">
+            <div className="bg-brand-surface rounded-xl border border-brand-border/60 p-5">
               <SectionTitle>Material</SectionTitle>
               <div className="space-y-3">
                 <div>
@@ -642,7 +642,7 @@ export default function CotizacionExpressPage() {
             </div>
 
             {/* Project type + dimensions */}
-            <div className="glass rounded-xl border border-brand-border/60 p-5">
+            <div className="bg-brand-surface rounded-xl border border-brand-border/60 p-5">
               <SectionTitle>Proyecto</SectionTitle>
               <div className="space-y-4">
 
@@ -716,7 +716,7 @@ export default function CotizacionExpressPage() {
             </div>
 
             {/* Config */}
-            <div className="glass rounded-xl border border-brand-border/60 p-5">
+            <div className="bg-brand-surface rounded-xl border border-brand-border/60 p-5">
               <SectionTitle>Configuración</SectionTitle>
               <div className="space-y-4">
 
@@ -829,7 +829,7 @@ export default function CotizacionExpressPage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="glass rounded-xl border border-brand-border/60 flex flex-col items-center justify-center min-h-[520px] gap-4 text-center p-8"
+                  className="bg-brand-surface rounded-xl border border-brand-border/60 flex flex-col items-center justify-center min-h-[520px] gap-4 text-center p-8"
                 >
                   <div className="w-16 h-16 rounded-2xl bg-brand-surface/80 border border-brand-border flex items-center justify-center">
                     <Zap size={26} className="text-brand-text-secondary" />

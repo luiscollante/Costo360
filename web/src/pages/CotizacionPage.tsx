@@ -842,7 +842,7 @@ function PlacaCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.2 }}
-      className="glass rounded-lg border border-brand-border/60 overflow-hidden"
+      className="bg-brand-surface rounded-lg border border-brand-border/60 overflow-hidden"
       style={{ borderLeft: `3px solid ${color.hex}` }}
     >
       {/* Header */}
@@ -1152,7 +1152,7 @@ function Step1Material({ dir }: { dir: number }) {
         </button>
 
         {placas.length > 1 && totalArea > 0 && (
-          <div className="mt-4 glass rounded-lg px-5 py-4 border border-brand-border/60">
+          <div className="mt-4 bg-brand-surface rounded-lg px-5 py-4 border border-brand-border/60">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[9px] tracking-[0.2em] uppercase font-semibold text-brand-text-secondary">
                 Resumen total
@@ -1203,7 +1203,7 @@ function ConsumoIndicador({
   if (areaDisponible <= 0) return null
 
   return (
-    <div className="glass rounded-lg border border-brand-border/60 p-4">
+    <div className="bg-brand-surface rounded-lg border border-brand-border/60 p-4">
       <div className="flex items-center justify-between mb-2">
         <span className="text-[9px] tracking-[0.15em] uppercase font-semibold text-brand-text-secondary">
           Consumo Placa {placaIdx + 1}
@@ -1300,7 +1300,7 @@ function ResumenGlobal({
   const totalConsumido = piezas.reduce((s, p) => s + piezaM2(p), 0)
 
   return (
-    <div className="glass rounded-xl border border-brand-border/60 overflow-hidden">
+    <div className="bg-brand-surface rounded-xl border border-brand-border/60 overflow-hidden">
       <div
         className="px-5 py-3 border-b border-brand-border/40"
         style={{ background: 'linear-gradient(180deg, rgba(30,127,255,0.04) 0%, transparent 100%)' }}
@@ -1506,7 +1506,7 @@ function Step2Piezas({ dir }: { dir: number }) {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="glass rounded-lg p-12 text-center border border-dashed border-brand-border"
+                  className="bg-brand-surface rounded-lg p-12 text-center border border-dashed border-brand-border"
                 >
                   <div className="text-brand-text-secondary text-4xl mb-4">⊕</div>
                   <p className="text-sm text-brand-text-secondary mb-2">
@@ -1539,7 +1539,7 @@ function Step2Piezas({ dir }: { dir: number }) {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, x: -20, height: 0 }}
                         transition={{ delay: idx * 0.04, duration: 0.2 }}
-                        className="glass rounded-lg p-5 border border-brand-border/60 relative"
+                        className="bg-brand-surface rounded-lg p-5 border border-brand-border/60 relative"
                         style={showTabs ? { borderLeft: `2px solid ${color.hex}30` } : undefined}
                       >
                         <div className="absolute top-4 left-5">
@@ -1667,7 +1667,7 @@ function Step2Piezas({ dir }: { dir: number }) {
 
         {/* Total */}
         {piezas.length > 0 && (
-          <div className="mt-6 glass rounded-lg px-5 py-4 flex items-center justify-between border border-brand-border/60">
+          <div className="mt-6 bg-brand-surface rounded-lg px-5 py-4 flex items-center justify-between border border-brand-border/60">
             <span className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold">
               Total proyecto
             </span>
@@ -1923,7 +1923,7 @@ function CCModalResultado({ cotId, onClose }: { cotId: number; onClose: () => vo
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 8 }}
         transition={{ duration: 0.15 }}
-        className="relative glass rounded-xl border border-brand-border shadow-2xl p-5 w-80 z-10"
+        className="relative bg-brand-surface rounded-xl border border-brand-border shadow-2xl p-5 w-80 z-10"
         onClick={(e) => e.stopPropagation()}
       >
         <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-brand-text-secondary mb-4">Cuenta de Cobro</p>

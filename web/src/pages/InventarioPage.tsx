@@ -151,11 +151,11 @@ export default function InventarioPage() {
             <p className="text-sm text-brand-text-secondary">Cargando inventario…</p>
           </div>
         ) : isError ? (
-          <div className="glass rounded-xl border border-brand-danger/30 p-8 text-center shadow-md transition-shadow hover:shadow-lg">
+          <div className="bg-brand-surface rounded-xl border border-brand-danger/30 p-8 text-center shadow-md transition-shadow hover:shadow-lg">
             <p className="text-brand-danger text-sm">Error al cargar el inventario. Recarga la página.</p>
           </div>
         ) : data.length === 0 ? (
-          <div className="glass rounded-xl border border-brand-border p-16 text-center shadow-md transition-shadow hover:shadow-lg">
+          <div className="bg-brand-surface rounded-xl border border-brand-border p-16 text-center shadow-md transition-shadow hover:shadow-lg">
             <Boxes className="w-10 h-10 text-brand-text-secondary mx-auto mb-4" />
             <p className="text-brand-text-secondary text-sm mb-2">No hay láminas registradas</p>
             <button onClick={openCreate} className="text-brand-text-secondary hover:text-brand-primary text-sm hover:underline cursor-pointer">
@@ -166,7 +166,7 @@ export default function InventarioPage() {
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass rounded-xl border border-brand-border overflow-hidden shadow-md transition-shadow hover:shadow-lg"
+            className="bg-brand-surface rounded-xl border border-brand-border overflow-hidden shadow-md transition-shadow hover:shadow-lg"
           >
             <div className="overflow-x-auto">
               {/* Header — solo desktop */}

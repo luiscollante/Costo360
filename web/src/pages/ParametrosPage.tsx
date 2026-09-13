@@ -100,7 +100,7 @@ function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRo
       </div>
 
       {/* Filas — layout flex compatible con todos los anchos */}
-      <div className="glass rounded-xl border border-brand-border divide-y divide-brand-border/50">
+      <div className="bg-brand-surface rounded-xl border border-brand-border divide-y divide-brand-border/50">
         {filas.length === 0 ? (
           <p className="px-5 py-8 text-center text-sm text-brand-text-secondary">Sin tarifas para este material.</p>
         ) : filas.map((item, idx) => {
@@ -205,7 +205,7 @@ function AdicionalesTab({ adicionales, canEdit, onChange, onAddRow, onRemoveRow 
         — precio varía según etapa de la obra.
       </p>
 
-      <div className="glass rounded-xl border border-brand-border overflow-x-auto">
+      <div className="bg-brand-surface rounded-xl border border-brand-border overflow-x-auto">
         <table className="w-full text-sm min-w-[700px]">
           <thead>
             <tr className="border-b border-brand-border bg-brand-surface/40">
@@ -436,7 +436,7 @@ export default function ParametrosPage() {
 
         {/* ── Loading state ── */}
         {loading ? (
-          <div className="glass rounded-xl border border-brand-border p-16 text-center">
+          <div className="bg-brand-surface rounded-xl border border-brand-border p-16 text-center">
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}
@@ -500,7 +500,7 @@ export default function ParametrosPage() {
             </AnimatePresence>
           </motion.div>
         ) : (
-          <div className="glass rounded-xl border border-brand-danger/30 p-8 text-center">
+          <div className="bg-brand-surface rounded-xl border border-brand-danger/30 p-8 text-center">
             <AlertCircle className="w-8 h-8 text-brand-danger mx-auto mb-3" />
             <p className="text-sm text-brand-danger">No se pudieron cargar los parámetros.</p>
           </div>

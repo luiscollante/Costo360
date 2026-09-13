@@ -64,7 +64,7 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-brand-bg p-4">
-      <div className="glass rounded-2xl border border-brand-border p-8 w-full max-w-sm">
+      <div className="bg-brand-surface rounded-2xl border border-brand-border p-8 w-full max-w-sm">
         <Logo variant="dark" className="w-[170px] h-auto mx-auto mb-6" />
         <h1 className="text-lg font-bold text-brand-text-dark text-center mb-1">Define tu contraseña</h1>
         <p className="text-xs text-brand-text-secondary text-center mb-6">

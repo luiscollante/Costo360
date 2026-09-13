@@ -121,7 +121,7 @@ export default function SessionGuard() {
       aria-modal="true"
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
     >
-      <div className="glass rounded-2xl border border-brand-border p-8 w-full max-w-sm text-center">
+      <div className="bg-brand-surface rounded-2xl border border-brand-border p-8 w-full max-w-sm text-center">
         {vista.tipo === 'esperando' && (
           <>
             <h2 className="text-base font-bold text-brand-text mb-2">Sesión en otro dispositivo</h2>

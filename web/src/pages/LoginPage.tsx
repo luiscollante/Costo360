@@ -68,7 +68,7 @@ export default function LoginPage() {
       <div className="relative w-full max-w-sm">
         <div className="absolute inset-0 rounded-2xl bg-brand-primary/[0.08] blur-[40px] scale-110 pointer-events-none" />
 
-        <div className="relative glass rounded-2xl overflow-hidden">
+        <div className="relative bg-brand-surface rounded-2xl overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-primary/70 to-transparent" />
 
           <div className="p-10">
