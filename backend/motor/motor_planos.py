@@ -776,7 +776,7 @@ def _generar_svg_nesting(
     # ── Constantes de layout ─────────────────────────────────────────────────
     PX_M         = 160     # píxeles por metro
     MARG         = 80      # margen lateral del canvas
-    TITL_H       = 44      # altura barra título
+    TITL_H       = 60      # altura barra título (2 filas: identificación + indicadores)
     KERF         = 2.0     # reducción visual kerf (px) por lado
     # Espacio para cotas de la placa (izq y arriba)
     COTA_PLACA   = _COTA_GAP + _COTA_TICK + 18
@@ -837,20 +837,42 @@ def _generar_svg_nesting(
     )
 
     # ── Barra título ─────────────────────────────────────────────────────────
+    # 2 filas: (1) identificación del plano + dimensión de la placa, en texto
+    # discreto; (2) los 2 datos que el operario necesita entender de un
+    # vistazo -- Uso y Retal -- como "chips" con ícono + valor grande, en vez
+    # de enterrados en una sola oración con separadores "·".
     pct_uso = 100 - metricas["porcentaje_desperdicio"]
+    pct_retal = metricas["porcentaje_desperdicio"]
     parts.append(
         f'<rect x="0" y="0" width="{canvas_w:.0f}" height="{TITL_H}" '
         f'fill="{_AZUL_OSCURO}" rx="6"/>'
         f'<rect x="0" y="{TITL_H//2}" width="{canvas_w:.0f}" height="{TITL_H//2}" '
         f'fill="{_AZUL_OSCURO}"/>'
-        f'<text x="14" y="28" font-family="Helvetica,Arial,sans-serif" font-size="13" '
-        f'font-weight="bold" fill="#FFFFFF">'
-        f'NESTING 2D  ·  Placa {placa_ancho:.2f}×{placa_alto:.2f} m  '
-        f'·  Uso: {pct_uso:.1f}%  ·  Retal: {metricas["porcentaje_desperdicio"]:.1f}%'
+        # Fila 1 — identificación
+        f'<text x="14" y="19" font-family="Helvetica,Arial,sans-serif">'
+        f'<tspan font-size="12" font-weight="bold" fill="#FFFFFF">NESTING 2D</tspan>'
+        f'<tspan font-size="11" fill="{_DORADO}"> · </tspan>'
+        f'<tspan font-size="11" fill="#FFFFFF" opacity="0.75">'
+        f'Placa {placa_ancho:.2f} × {placa_alto:.2f} m</tspan>'
         f'</text>'
-        f'<text x="{canvas_w - 12:.0f}" y="28" text-anchor="end" '
-        f'font-family="Helvetica,Arial,sans-serif" font-size="9" fill="{_DORADO}">'
+        f'<text x="{canvas_w - 12:.0f}" y="19" text-anchor="end" '
+        f'font-family="Helvetica,Arial,sans-serif" font-size="9" fill="{_DORADO}" opacity="0.85">'
         f'Costo360</text>'
+        # Fila 2 — chip "USO" (esmeralda, igual color que las piezas colocadas)
+        f'<rect x="12" y="30" width="150" height="22" rx="6" fill="#3FA968" opacity="0.16"/>'
+        f'<rect x="20" y="36" width="10" height="10" rx="2" fill="#3FA968"/>'
+        f'<text x="36" y="46" font-family="Helvetica,Arial,sans-serif">'
+        f'<tspan font-size="8" letter-spacing="0.5" fill="#C9BFA8">USO </tspan>'
+        f'<tspan font-size="15" font-weight="bold" fill="#3FA968">{pct_uso:.1f}%</tspan>'
+        f'</text>'
+        # Fila 2 — chip "RETAL" (dorado + el mismo patrón de rayado de la placa)
+        f'<rect x="172" y="30" width="150" height="22" rx="6" fill="{_DORADO}" opacity="0.16"/>'
+        f'<rect x="180" y="36" width="10" height="10" rx="2" fill="none" '
+        f'stroke="{_DORADO}" stroke-width="1.4"/>'
+        f'<text x="196" y="46" font-family="Helvetica,Arial,sans-serif">'
+        f'<tspan font-size="8" letter-spacing="0.5" fill="#C9BFA8">RETAL </tspan>'
+        f'<tspan font-size="15" font-weight="bold" fill="{_DORADO}">{pct_retal:.1f}%</tspan>'
+        f'</text>'
     )
 
     # ════════════════════════════════════════════════════════════════════════
