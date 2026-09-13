@@ -12,17 +12,17 @@ import tempfile
 import os
 
 # ── Paleta corporativa ────────────────────────────────────────────────────────
-_AZUL_CORP   = "#1E7FFF"   # brand blue
-_AZUL_OSCURO = "#080F1C"   # very dark navy (title bars, dark backgrounds)
-_AZUL_CLARO  = "#1A3A5C"   # dark blue fill (legacy pieces, legend total row)
+_AZUL_CORP   = "#1A7A3A"   # brand blue
+_AZUL_OSCURO = "#00311D"   # very dark navy (title bars, dark backgrounds)
+_AZUL_CLARO  = "#15612E"   # dark blue fill (legacy pieces, legend total row)
 _AZUL_MED    = "#5AAFF5"   # brand blue light
-_DORADO      = "#C9A227"   # brand gold (cotas, flechas dimensionales)
+_DORADO      = "#D4AF37"   # brand gold (cotas, flechas dimensionales)
 _GRIS_PERF   = "#3A5A7A"   # muted blue for perforaciones
 _GRIS_FILL   = "#0E1E33"   # dark fill for perforaciones
 _GRID_COLOR  = "#162840"   # very subtle dark grid
-_BG          = "#080F1C"   # dark canvas background
+_BG          = "#00311D"   # dark canvas background
 _WHITE       = "#FFFFFF"
-_TEXT_DIM    = "#B0C4D8"   # muted light text on dark backgrounds
+_TEXT_DIM    = "#C9BFA8"   # muted light text on dark backgrounds
 
 # ── Constantes de layout ──────────────────────────────────────────────────────
 _PX_M        = 140         # píxeles por metro
@@ -620,28 +620,28 @@ def _guillotine_pack(bin_w: float, bin_h: float, items: list[dict]):
 
 # ── Paleta nesting ────────────────────────────────────────────────────────────
 _NEST_FILLS = [
-    "#162840",  # calacatta — dark blue
-    "#0E2418",  # verde marble — dark green
-    "#281A0C",  # travertino — dark amber
-    "#1E1028",  # viola — dark plum
-    "#281010",  # rosso — dark wine
-    "#0C2428",  # slate teal
-    "#142010",  # sage
-    "#20180A",  # dorado marble
-    "#101828",  # azul bahia — dark indigo
-    "#201018",  # rosa marble
+    "#0F3320",  # esmeralda oscuro (marca)
+    "#3A2A0C",  # dorado oscuro (marca)
+    "#2E1810",  # terracota oscuro
+    "#1E1428",  # ciruela oscuro
+    "#2A1010",  # vino oscuro
+    "#0C2820",  # verde azulado oscuro
+    "#1C2410",  # oliva oscuro
+    "#241A08",  # bronce oscuro
+    "#181C1A",  # gris cálido oscuro
+    "#28141C",  # rosa viejo oscuro
 ]
 _NEST_STROKES = [
-    "#4A9FE5",  # blue
-    "#4AAA70",  # green
-    "#C59040",  # caramel
-    "#9060C0",  # purple
-    "#C06060",  # red
-    "#50A0B0",  # teal
-    "#70A040",  # sage
-    "#C0A040",  # gold
-    "#6070C0",  # indigo
-    "#C06090",  # rose
+    "#3FA968",  # esmeralda (marca)
+    "#D4AF37",  # dorado real (marca)
+    "#C97B4A",  # terracota
+    "#A070C0",  # ciruela
+    "#C05858",  # vino
+    "#4FA898",  # verde azulado
+    "#8FA850",  # oliva
+    "#B08840",  # bronce/caramelo
+    "#8A9088",  # gris cálido
+    "#C06888",  # rosa viejo
 ]
 
 
@@ -812,7 +812,7 @@ def _generar_svg_nesting(
         f'width="{canvas_w:.0f}" height="{canvas_h:.0f}" '
         f'viewBox="0 0 {canvas_w:.0f} {canvas_h:.0f}" '
         f'style="display:block;border-radius:10px;'
-        f'box-shadow:0 0 0 1px rgba(30,127,255,0.12),0 4px 40px rgba(0,0,0,0.60);">'
+        f'box-shadow:0 0 0 1px rgba(21,97,46,0.16),0 4px 40px rgba(0,0,0,0.60);">'
     )
 
     # ── CAMBIO 1: defs con marcadores de flecha + patrón hatch obligatorio ───
@@ -826,14 +826,14 @@ def _generar_svg_nesting(
         f'<path d="M5.5,0 L5.5,4 L0,2 z" fill="{_DORADO}"/></marker>'
         '<pattern id="retal_hatch" width="15" height="15" '
         'patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">'
-        '<line x1="0" y1="0" x2="0" y2="15" stroke="#1E4070" stroke-width="1.5" opacity="0.55"/>'
+        '<line x1="0" y1="0" x2="0" y2="15" stroke="#1A7A3A" stroke-width="1.5" opacity="0.55"/>'
         '</pattern>'
         '</defs>'
     )
 
     # ── Fondo canvas ─────────────────────────────────────────────────────────
     parts.append(
-        f'<rect width="{canvas_w:.0f}" height="{canvas_h:.0f}" fill="#080F1C" rx="6"/>'
+        f'<rect width="{canvas_w:.0f}" height="{canvas_h:.0f}" fill="#00311D" rx="6"/>'
     )
 
     # ── Barra título ─────────────────────────────────────────────────────────
@@ -872,7 +872,7 @@ def _generar_svg_nesting(
         f'stroke="{_DORADO}" stroke-width="1.5" '
         f'marker-start="url(#na_r)" marker-end="url(#na)"/>'
         f'<rect x="{_mid_cx - 36:.1f}" y="{_cy_cota - 8:.1f}" width="72" height="16" '
-        f'rx="2" fill="#040A14" opacity="0.92"/>'
+        f'rx="2" fill="#001A10" opacity="0.92"/>'
         f'<text x="{_mid_cx:.1f}" y="{_cy_cota + 4:.1f}" text-anchor="middle" '
         f'font-family="Helvetica,Arial,sans-serif" font-size="10" '
         f'font-weight="bold" fill="{_DORADO}">{_fmt_m(placa_ancho)}</text>'
@@ -893,7 +893,7 @@ def _generar_svg_nesting(
         f'stroke="{_DORADO}" stroke-width="1.5" '
         f'marker-start="url(#na_r)" marker-end="url(#na)"/>'
         f'<rect x="{_cx_cota - 8:.1f}" y="{_mid_cy - 36:.1f}" width="16" height="72" '
-        f'rx="2" fill="#040A14" opacity="0.92" '
+        f'rx="2" fill="#001A10" opacity="0.92" '
         f'transform="rotate(-90,{_cx_cota:.1f},{_mid_cy:.1f})"/>'
         f'<text x="{_cx_cota:.1f}" y="{_mid_cy:.1f}" text-anchor="middle" '
         f'dominant-baseline="middle" '
@@ -912,7 +912,7 @@ def _generar_svg_nesting(
     parts.append(
         f'<rect x="{ox:.1f}" y="{oy:.1f}" '
         f'width="{placa_w_px:.1f}" height="{placa_h_px:.1f}" '
-        f'rx="3" fill="#0D1B2E" stroke="#1E3A5C" stroke-width="2"/>'
+        f'rx="3" fill="#0A2818" stroke="#2E6B44" stroke-width="2"/>'
     )
     # Rect 2: mismas dimensiones, relleno con patrón hatch (retal rayado)
     parts.append(
@@ -929,7 +929,7 @@ def _generar_svg_nesting(
         parts.append(
             f'<line x1="{ox+_gx:.1f}" y1="{oy:.1f}" '
             f'x2="{ox+_gx:.1f}" y2="{oy+placa_h_px:.1f}" '
-            f'stroke="#1A304A" stroke-width="{"0.7" if _es_m_g else "0.35"}" '
+            f'stroke="#1F3A28" stroke-width="{"0.7" if _es_m_g else "0.35"}" '
             f'opacity="{"0.60" if _es_m_g else "0.30"}"/>'
         )
         _gx += _paso_g
@@ -939,7 +939,7 @@ def _generar_svg_nesting(
         parts.append(
             f'<line x1="{ox:.1f}" y1="{oy+_gy:.1f}" '
             f'x2="{ox+placa_w_px:.1f}" y2="{oy+_gy:.1f}" '
-            f'stroke="#1A304A" stroke-width="{"0.7" if _es_m_g else "0.35"}" '
+            f'stroke="#1F3A28" stroke-width="{"0.7" if _es_m_g else "0.35"}" '
             f'opacity="{"0.60" if _es_m_g else "0.30"}"/>'
         )
         _gy += _paso_g
@@ -948,7 +948,7 @@ def _generar_svg_nesting(
     parts.append(
         f'<text x="{ox + 7:.1f}" y="{oy + 15:.1f}" '
         f'font-family="Helvetica,Arial,sans-serif" font-size="10" '
-        f'fill="#3A5A8A" opacity="0.70">'
+        f'fill="#5FA37D" opacity="0.70">'
         f'Placa {placa_ancho:.2f}×{placa_alto:.2f} m  ({metricas["area_placa"]:.2f} m²)'
         f'</text>'
     )
@@ -1036,7 +1036,7 @@ def _generar_svg_nesting(
             f'<text x="{cx_:.1f}" y="{_num_cy:.1f}" '
             f'text-anchor="middle" dominant-baseline="middle" '
             f'font-family="Helvetica,Arial,sans-serif" '
-            f'font-size="{fs_num}" font-weight="bold" fill="#E8EDF5" '
+            f'font-size="{fs_num}" font-weight="bold" fill="#F5EFD9" '
             f'opacity="0.90" clip-path="url(#nc_{idx})">{num}</text>'
         )
 
@@ -1048,7 +1048,7 @@ def _generar_svg_nesting(
             f'<text x="{cx_:.1f}" y="{_dim_cy:.1f}" '
             f'text-anchor="middle" dominant-baseline="middle" '
             f'font-family="Helvetica,Arial,sans-serif" '
-            f'font-size="{_fs_dim}" font-weight="700" fill="#8AB4CC" '
+            f'font-size="{_fs_dim}" font-weight="700" fill="#A8D0B8" '
             f'clip-path="url(#nc_{idx})">{_dims_txt}</text>'
         )
 
@@ -1067,7 +1067,7 @@ def _generar_svg_nesting(
                 f'<text x="{cx_:.1f}" y="{_nom_cy:.1f}" '
                 f'text-anchor="middle" dominant-baseline="middle" '
                 f'font-family="Helvetica,Arial,sans-serif" '
-                f'font-size="{_fs_nom}" font-weight="400" fill="#B0C8E0" '
+                f'font-size="{_fs_nom}" font-weight="400" fill="#C9BFA8" '
                 f'opacity="0.75" clip-path="url(#nc_{idx})">'
                 f'{_esc(_nombre_raw[:14])}</text>'
             )
@@ -1123,7 +1123,7 @@ def _generar_svg_nesting(
     parts.append(
         f'<rect x="{ox:.1f}" y="{_ly_top:.1f}" '
         f'width="{_ley_w:.1f}" height="{LEY_H:.1f}" '
-        f'rx="6" fill="#0A1828" stroke="{_AZUL_CORP}" stroke-width="1.0" opacity="0.98"/>'
+        f'rx="6" fill="#062015" stroke="{_AZUL_CORP}" stroke-width="1.0" opacity="0.98"/>'
     )
 
     # Cabecera de la tabla
@@ -1165,7 +1165,7 @@ def _generar_svg_nesting(
         area_m2 = largo_m * ancho_m
 
         _row_y  = _hdr_y + LEY_HEADER_H + idx * LEY_ROW_H
-        _row_bg = "#0E1C2E" if idx % 2 == 0 else "#080F1C"
+        _row_bg = "#0A2818" if idx % 2 == 0 else "#00311D"
 
         # Fondo de fila alternado
         parts.append(
@@ -1191,7 +1191,7 @@ def _generar_svg_nesting(
         parts.append(
             f'<rect x="{_chk_x:.1f}" y="{_chk_y:.1f}" '
             f'width="{_chk_sz}" height="{_chk_sz}" rx="1.5" '
-            f'fill="#0E1C2E" stroke="#3A5A8A" stroke-width="1.5"/>'
+            f'fill="#0A2818" stroke="#5FA37D" stroke-width="1.5"/>'
         )
         # Pastilla de color con número, a la derecha de la casilla
         _nc_x = _chk_x + _chk_sz + 12
@@ -1201,7 +1201,7 @@ def _generar_svg_nesting(
             f'fill="{fill}" stroke="{stroke}" stroke-width="1.2"/>'
             f'<text x="{_nc_x:.1f}" y="{_ty + 4:.1f}" text-anchor="middle" '
             f'font-family="Helvetica,Arial,sans-serif" font-size="11" '
-            f'font-weight="bold" fill="#E8EDF5">{num}</text>'
+            f'font-weight="bold" fill="#F5EFD9">{num}</text>'
         )
         _col_x += _ley_col[0]
 
@@ -1234,13 +1234,13 @@ def _generar_svg_nesting(
         f'fill="{_AZUL_CLARO}" opacity="0.60"/>'
         f'<text x="{ox + _ley_col[0] + 8:.1f}" y="{_total_y + LEY_ROW_H/2 + 4:.1f}" '
         f'font-family="Helvetica,Arial,sans-serif" font-size="11" '
-        f'font-weight="bold" fill="#E8EDF5">'
+        f'font-weight="bold" fill="#F5EFD9">'
         f'TOTAL  ·  {len(placed)} piezas colocadas'
         f'</text>'
         f'<text x="{ox + sum(_ley_col[:4]) + _ley_col[4]/2:.1f}" '
         f'y="{_total_y + LEY_ROW_H/2 + 4:.1f}" text-anchor="middle" '
         f'font-family="Helvetica,Arial,sans-serif" font-size="11" '
-        f'font-weight="bold" fill="#E8EDF5">{_total_area:.4f} m\u00b2</text>'
+        f'font-weight="bold" fill="#F5EFD9">{_total_area:.4f} m\u00b2</text>'
     )
 
     parts.append("</svg>")
