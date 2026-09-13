@@ -2,6 +2,21 @@
 
 ---
 
+## ✅ Hecho (2026-09-13, continuación) — Barrido completo: quita `.glass` de otros 12 archivos
+
+Tras el arreglo puntual de Cost/RetalesPage, el fundador pidió revisar el resto de la app. Barrido
+completo: `.glass` seguía en 53 tarjetas/modales/paneles flotantes más, repartidos en 12 archivos
+(`SessionGuard.tsx`, `LoginPage.tsx`, `ResetPasswordPage.tsx`, `CotizacionPage.tsx`,
+`CotizacionExpressPage.tsx`, `CotizacionAIUPage.tsx`, `ParametrosPage.tsx`, `NestingPage.tsx`,
+`InventarioPage.tsx`, `HistorialPage.tsx`, `ConfigPage.tsx`, `AdminPage.tsx`). Reemplazo mecánico y
+verificado del token de clase `glass` → `bg-brand-surface`, excluyendo a propósito
+`glass-emerald`/`glass-gold` (gradientes sólidos reales del sidebar, mal nombrados pero no son el
+bug). Verificado en vivo en 3 páginas representativas (Login, Nesting, Parámetros) — todas sólidas.
+
+**Fuera de alcance a propósito:** `LandingPage.tsx` + sus 3 componentes también usan `glass`, pero
+esa página no está conectada a ninguna ruta real de `App.tsx` — código muerto, invisible para
+cualquier usuario, no vale la pena tocarlo. Commit `adc59bd`, subido y desplegado a producción.
+
 ## ✅ Hecho (2026-09-13) — Quita la transparencia del panel de Cost y del modal de "Agregar retal"
 
 Ambos usaban la clase `.glass` (60% blanco + blur de 20px), remanente del diseño glassmorphism
