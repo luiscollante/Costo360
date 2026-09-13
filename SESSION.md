@@ -2,10 +2,10 @@
 
 ---
 
-## Sesión: 2026-09-13 — Transparencia de modales, barrido `.glass`, Nesting a color de marca y descargas
+## Sesión: 2026-09-13 — Transparencia, barrido `.glass`, Nesting a color de marca, descargas y título
 
 ### Qué se hizo
-Sesión de cuatro ciclos encadenados, todos verificados en vivo y desplegados. (1) El fundador reportó
+Sesión de cinco ciclos encadenados, todos verificados en vivo y desplegados. (1) El fundador reportó
 que el panel flotante de Cost y el modal de "Agregar retal" se veían transparentes — ambos usaban la
 clase `.glass` legacy (glassmorphism, 60% blanco + blur), remanente de antes del rediseño visual que
 ya movió el resto de la app a superficies sólidas. Se pasaron a `bg-brand-surface` sólido, mismo
@@ -37,16 +37,23 @@ se corrigió definiendo el rect como horizontal (72×16) antes de rotar. Verific
 formatos descargan archivos válidos y la cota ya no muestra el desalineamiento. Nota de proceso:
 una primera verificación pareció fallar (el PDF no aparecía de inmediato en el Escritorio) —
 resultó ser demora de escritura a disco/antivirus, no un bug real, confirmado ejecutando el mismo
-código directo en la consola del navegador.
+código directo en la consola del navegador. (5) El fundador pidió reorganizar el texto de la barra
+de título del plano ("NESTING 2D · Placa 3.20×1.60 m · Uso: 30.5% · Retal: 69.5%") para que se
+entendiera rápido — antes era una sola oración con separadores "·", todo el mismo tamaño/peso, sin
+jerarquía visual. Rediseño a 2 filas: identificación + dimensión arriba (discreto), y los 2 datos
+que de verdad importan — Uso y Retal — como chips independientes con ícono + número grande abajo
+(Uso en esmeralda con cuadro sólido, Retal en dorado con cuadro hueco, mismo lenguaje visual
+sólido=pieza / vacío=sobrante que ya usa el plano). Verificado en vivo que los chips se leen de
+inmediato y que las descargas del ciclo anterior siguen funcionando con la barra más alta.
 
 ### Archivos modificados
 `web/src/components/CostFloating.tsx`, `web/src/pages/RetalesPage.tsx` (transparencia); 12 archivos
 más (`SessionGuard.tsx`, `LoginPage.tsx`, `ResetPasswordPage.tsx`, `CotizacionPage.tsx`,
 `CotizacionExpressPage.tsx`, `CotizacionAIUPage.tsx`, `ParametrosPage.tsx`, `NestingPage.tsx`,
 `InventarioPage.tsx`, `HistorialPage.tsx`, `ConfigPage.tsx`, `AdminPage.tsx`) (barrido `.glass`);
-`backend/motor/motor_planos.py` (recoloreo de Nesting + fix de cota vertical);
-`web/src/pages/NestingPage.tsx`, `web/src/lib/svgExport.ts` (nuevo), `web/package.json` (descargas
-PNG/PDF).
+`backend/motor/motor_planos.py` (recoloreo de Nesting + fix de cota vertical + rediseño de barra de
+título); `web/src/pages/NestingPage.tsx`, `web/src/lib/svgExport.ts` (nuevo), `web/package.json`
+(descargas PNG/PDF).
 
 ### Decisiones tomadas
 Mantener el plano de Nesting con estética "plano técnico oscuro" en vez de migrar a superficie
@@ -57,7 +64,7 @@ imagen incrustada — el ahorro de tamaño (8.6 MB → ~140 KB) no tiene costo p
 un plano con textos/cotas, no una foto.
 
 ### Primera tarea de la próxima sesión
-Nada urgente pendiente de estos cuatro frentes — todos verificados en vivo de punta a punta y
+Nada urgente pendiente de estos cinco frentes — todos verificados en vivo de punta a punta y
 desplegados a producción. Revisar `PROGRESS.md` § Siguiente para el próximo frente que el fundador
 priorice. Pendiente opcional (no pedido aún): limpiar el código muerto de `motor_planos.py`
 (~700 líneas heredadas de Streamlit), igual que se hizo con `calcular_merma` en un ciclo anterior.

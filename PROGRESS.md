@@ -2,6 +2,22 @@
 
 ---
 
+## ✅ Hecho (2026-09-13, continuación) — Nesting: barra de título reorganizada para leerse de un vistazo
+
+El fundador pidió reorganizar el texto de la barra de título del plano ("NESTING 2D · Placa
+3.20×1.60 m · Uso: 30.5% · Retal: 69.5%") porque, al ir todo en una sola oración con separadores
+"·" y el mismo tamaño/peso, no se entendía rápido. Rediseño a 2 filas en `motor_planos.py`
+(`_generar_svg_nesting`): fila 1 = identificación del plano + dimensión de la placa, en texto
+discreto; fila 2 = los 2 datos que realmente importan de un vistazo — Uso y Retal — como "chips"
+independientes con ícono + número grande en negrita. El chip de Uso usa el mismo verde esmeralda de
+las piezas colocadas (cuadro sólido); el de Retal usa dorado con un cuadro hueco, siguiendo el mismo
+lenguaje visual sólido=pieza / vacío=sobrante que ya usa el resto del plano. Altura de la barra de
+título sube de 44 a 60px para dar espacio a las 2 filas.
+
+Verificado en vivo en `/nesting`: los 2 chips se leen de inmediato, y las descargas PNG/PDF/SVG
+(agregadas en el ciclo anterior) siguen funcionando bien con la barra más alta. Commit `82b712a`,
+subido y desplegado a producción (backend).
+
 ## ✅ Hecho (2026-09-13, continuación) — Nesting: descarga en PNG/PDF + fix de la cota vertical
 
 El fundador pidió agregar 2 opciones de descarga más al plano de Nesting (antes solo SVG): PNG y
