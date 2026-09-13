@@ -2,10 +2,10 @@
 
 ---
 
-## Sesión: 2026-09-13 — Transparencia de modales, barrido `.glass` completo y Nesting a color de marca
+## Sesión: 2026-09-13 — Transparencia de modales, barrido `.glass`, Nesting a color de marca y descargas
 
 ### Qué se hizo
-Sesión de tres ciclos encadenados, todos verificados en vivo y desplegados. (1) El fundador reportó
+Sesión de cuatro ciclos encadenados, todos verificados en vivo y desplegados. (1) El fundador reportó
 que el panel flotante de Cost y el modal de "Agregar retal" se veían transparentes — ambos usaban la
 clase `.glass` legacy (glassmorphism, 60% blanco + blur), remanente de antes del rediseño visual que
 ya movió el resto de la app a superficies sólidas. Se pasaron a `bg-brand-surface` sólido, mismo
@@ -24,23 +24,40 @@ a superficie clara — eligió mantener oscuro con los colores reales de Costo36
 nueva de 10 tonos cálidos/tierra para la rotación por pieza (encabezando esmeralda y dorado, sin
 colapsar a un solo color — eso habría destruido la distinción entre piezas). Colores de advertencia
 semántica (ROTADA, piezas que no caben) intactos a propósito. Verificado en vivo con un plan real
-(placa 3.20×1.60m, piezas "Mesón cocina" + "Isla").
+(placa 3.20×1.60m, piezas "Mesón cocina" + "Isla"). (4) El fundador pidió agregar descarga en PNG y
+PDF al plano de Nesting (antes solo SVG), y de paso reportó que la etiqueta de la cota vertical
+("ANCHO" del formulario, lado izquierdo del plano) tenía el fondo desalineado del texto — el fondo
+se veía horizontal y el texto vertical. El botón pasó a un menú desplegable con las 3 opciones;
+nueva utilidad `svgExport.ts` rasteriza el SVG (autocontenido) a `<canvas>` sin librerías para el
+PNG, y usa `jspdf` (nueva dependencia) para el PDF, embebiendo la imagen como JPEG en vez de PNG —
+el patrón de rayado del fondo comprimía pésimo como PNG (8.6 MB) y muy bien como JPEG (~140 KB). El
+bug de la cota se rastreó a un `<rect>` de fondo definido "vertical" (16×72) antes de un
+`rotate(-90)`, que lo dejaba horizontal tras la rotación mientras el texto sí giraba correctamente;
+se corrigió definiendo el rect como horizontal (72×16) antes de rotar. Verificado en vivo: los 3
+formatos descargan archivos válidos y la cota ya no muestra el desalineamiento. Nota de proceso:
+una primera verificación pareció fallar (el PDF no aparecía de inmediato en el Escritorio) —
+resultó ser demora de escritura a disco/antivirus, no un bug real, confirmado ejecutando el mismo
+código directo en la consola del navegador.
 
 ### Archivos modificados
 `web/src/components/CostFloating.tsx`, `web/src/pages/RetalesPage.tsx` (transparencia); 12 archivos
 más (`SessionGuard.tsx`, `LoginPage.tsx`, `ResetPasswordPage.tsx`, `CotizacionPage.tsx`,
 `CotizacionExpressPage.tsx`, `CotizacionAIUPage.tsx`, `ParametrosPage.tsx`, `NestingPage.tsx`,
 `InventarioPage.tsx`, `HistorialPage.tsx`, `ConfigPage.tsx`, `AdminPage.tsx`) (barrido `.glass`);
-`backend/motor/motor_planos.py` (recoloreo de Nesting).
+`backend/motor/motor_planos.py` (recoloreo de Nesting + fix de cota vertical);
+`web/src/pages/NestingPage.tsx`, `web/src/lib/svgExport.ts` (nuevo), `web/package.json` (descargas
+PNG/PDF).
 
 ### Decisiones tomadas
 Mantener el plano de Nesting con estética "plano técnico oscuro" en vez de migrar a superficie
 clara — el fundador prefirió conservar la identidad visual ya validada del plano, solo recoloreada
 a marca real. La paleta rotativa por pieza se trata distinto de los colores estructurales: variedad
-curada, no un solo color de marca repetido.
+curada, no un solo color de marca repetido. Para el PDF, usar JPEG en vez de PNG como formato de
+imagen incrustada — el ahorro de tamaño (8.6 MB → ~140 KB) no tiene costo perceptible de calidad en
+un plano con textos/cotas, no una foto.
 
 ### Primera tarea de la próxima sesión
-Nada urgente pendiente de estos tres frentes — todos verificados en vivo de punta a punta y
+Nada urgente pendiente de estos cuatro frentes — todos verificados en vivo de punta a punta y
 desplegados a producción. Revisar `PROGRESS.md` § Siguiente para el próximo frente que el fundador
 priorice. Pendiente opcional (no pedido aún): limpiar el código muerto de `motor_planos.py`
 (~700 líneas heredadas de Streamlit), igual que se hizo con `calcular_merma` en un ciclo anterior.

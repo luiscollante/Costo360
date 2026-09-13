@@ -2,6 +2,34 @@
 
 ---
 
+## ✅ Hecho (2026-09-13, continuación) — Nesting: descarga en PNG/PDF + fix de la cota vertical
+
+El fundador pidió agregar 2 opciones de descarga más al plano de Nesting (antes solo SVG): PNG y
+PDF, para un total de 3. El botón "Descargar SVG" pasa a un menú desplegable ("Descargar ▾") con
+las 3 opciones. Nueva utilidad `web/src/lib/svgExport.ts`: como el SVG del plano es autocontenido
+(sin recursos externos), se rasteriza directo en un `<canvas>` del lado del cliente sin librerías
+para el PNG; para el PDF se agregó `jspdf` (nueva dependencia) embebiendo la imagen como **JPEG**
+en vez de PNG — el patrón de rayado (hatch) del fondo comprime pésimo como PNG (primera versión:
+8.6 MB) y muy bien como JPEG (~140 KB), sin pérdida perceptible en textos/cotas. El tamaño de
+página del PDF respeta las proporciones reales del plano (conversión mm a 96 DPI).
+
+De paso, el fundador reportó que la etiqueta de la cota vertical (el campo "ANCHO" del formulario,
+lado izquierdo del plano) tenía el fondo desalineado del texto — el fondo se veía horizontal
+mientras el texto se veía vertical. Investigación en `motor_planos.py` confirmó el bug: el `<rect>`
+de fondo se definía ya "vertical" (16×72) *antes* de aplicarle `rotate(-90)`, lo que lo dejaba
+horizontal (72×16) después de rotar, mientras el texto (que parte horizontal y se rota igual)
+sí terminaba vertical como se esperaba. Se corrige definiendo el rect como horizontal (72×16,
+igual que su contraparte de la cota de arriba) antes de la rotación, para que ambos — fondo y
+texto — terminen vertical y alineados tras el `rotate(-90)`.
+
+Verificado en vivo en `/nesting`: los 3 formatos de descarga producen archivos válidos (confirmado
+por firma de bytes: `%PDF-1.3`, PNG, SVG) y la etiqueta de la cota vertical ya no muestra el fondo
+desalineado. Nota de proceso: la primera ronda de verificación pareció fallar (el PDF no aparecía
+en el Escritorio inmediatamente después del toast de "descargado") — resultó ser solo una demora
+de escritura a disco/antivirus, no un bug real; confirmado ejecutando el mismo código directo en la
+consola del navegador, que sí produjo el archivo. Commit `c10bf90`, subido y desplegado a
+producción (backend + frontend).
+
 ## ✅ Hecho (2026-09-13) — Nesting: el plano de corte pasa a los colores reales de Costo360
 
 El resultado del plan de Nesting (`backend/motor/motor_planos.py`, función `_generar_svg_nesting` —
