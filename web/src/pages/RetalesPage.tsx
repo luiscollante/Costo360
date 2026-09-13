@@ -291,7 +291,7 @@ export default function RetalesPage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 16 }}
               transition={{ duration: 0.18 }}
-              className="glass rounded-2xl border border-brand-border w-full max-w-lg p-6"
+              className="rounded-2xl border border-brand-border bg-brand-surface shadow-[0_12px_40px_rgba(0,0,0,0.18)] w-full max-w-lg p-6"
             >
               {/* Modal header */}
               <div className="flex items-center justify-between mb-6">

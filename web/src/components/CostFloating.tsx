@@ -82,7 +82,7 @@ export default function CostFloating() {
             initial={{ opacity: 0, y: 16, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.18, ease: 'easeOut' } }}
             exit={{ opacity: 0, y: 10, scale: 0.98, transition: { duration: 0.32, ease: [0.4, 0, 0.2, 1] } }}
-            className="glass fixed bottom-20 right-5 z-40 flex h-[min(560px,calc(100vh-8rem))] w-[min(380px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-2xl border border-brand-border shadow-2xl"
+            className="fixed bottom-20 right-5 z-40 flex h-[min(560px,calc(100vh-8rem))] w-[min(380px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-2xl border border-brand-border bg-brand-surface shadow-2xl"
           >
             {/* Header */}
             <div className="flex shrink-0 items-center gap-2.5 border-b border-brand-border/60 bg-brand-surface/30 px-4 py-3">
