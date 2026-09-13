@@ -892,7 +892,7 @@ def _generar_svg_nesting(
         f'<line x1="{_cx_cota:.1f}" y1="{_cy1:.1f}" x2="{_cx_cota:.1f}" y2="{_cy2:.1f}" '
         f'stroke="{_DORADO}" stroke-width="1.5" '
         f'marker-start="url(#na_r)" marker-end="url(#na)"/>'
-        f'<rect x="{_cx_cota - 8:.1f}" y="{_mid_cy - 36:.1f}" width="16" height="72" '
+        f'<rect x="{_cx_cota - 36:.1f}" y="{_mid_cy - 8:.1f}" width="72" height="16" '
         f'rx="2" fill="#001A10" opacity="0.92" '
         f'transform="rotate(-90,{_cx_cota:.1f},{_mid_cy:.1f})"/>'
         f'<text x="{_cx_cota:.1f}" y="{_mid_cy:.1f}" text-anchor="middle" '

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Grid, Plus, X, Download, AlertTriangle, Minus, Maximize2, PackagePlus, Check } from 'lucide-react'
+import { Grid, Plus, X, Download, AlertTriangle, Minus, Maximize2, PackagePlus, Check, ChevronDown, FileImage, FileText } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import AppLayout from '@/components/AppLayout'
 import { generarNesting } from '@/api/nesting'
@@ -8,6 +8,7 @@ import type { NestingResult } from '@/api/nesting'
 import { crearRetal } from '@/api/retales'
 import { formatNum } from '@/lib/utils'
 import { downloadFile } from '@/lib/downloadFile'
+import { svgToPngBlob, svgToPdfBlob } from '@/lib/svgExport'
 import MaterialCombobox from '@/components/MaterialCombobox'
 
 const MATERIALES_NESTING = ['Mármol', 'Granito', 'Sinterizado', 'Quarztone', 'Quarzita'] as const
@@ -517,11 +518,39 @@ function ResultPanel({
   const [guardando, setGuardando] = useState(false)
   const [guardado, setGuardado] = useState(false)
   const [errorGuardar, setErrorGuardar] = useState<string | null>(null)
+  const [menuDescargaAbierto, setMenuDescargaAbierto] = useState(false)
+  const [descargando, setDescargando] = useState<'svg' | 'png' | 'pdf' | null>(null)
+  const menuDescargaRef = useRef<HTMLDivElement>(null)
 
-  async function handleDownload() {
+  useEffect(() => {
+    if (!menuDescargaAbierto) return
+    function alClicFuera(e: MouseEvent) {
+      if (menuDescargaRef.current && !menuDescargaRef.current.contains(e.target as Node)) {
+        setMenuDescargaAbierto(false)
+      }
+    }
+    document.addEventListener('mousedown', alClicFuera)
+    return () => document.removeEventListener('mousedown', alClicFuera)
+  }, [menuDescargaAbierto])
+
+  async function handleDownload(formato: 'svg' | 'png' | 'pdf') {
     if (!result?.svg) return
-    const blob = new Blob([result.svg], { type: 'image/svg+xml' })
-    await downloadFile(blob, 'plano_nesting.svg', 'image/svg+xml')
+    setMenuDescargaAbierto(false)
+    setDescargando(formato)
+    try {
+      if (formato === 'svg') {
+        const blob = new Blob([result.svg], { type: 'image/svg+xml' })
+        await downloadFile(blob, 'plano_nesting.svg', 'image/svg+xml')
+      } else if (formato === 'png') {
+        const blob = await svgToPngBlob(result.svg)
+        await downloadFile(blob, 'plano_nesting.png', 'image/png')
+      } else {
+        const blob = await svgToPdfBlob(result.svg)
+        await downloadFile(blob, 'plano_nesting.pdf', 'application/pdf')
+      }
+    } finally {
+      setDescargando(null)
+    }
   }
 
   async function handleGuardarRetal() {
@@ -704,14 +733,54 @@ function ResultPanel({
                 <Maximize2 size={11} />
               </button>
             </div>
-            <button
-              type="button"
-              onClick={handleDownload}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-brand-primary/30 bg-brand-primary/10 text-xs font-semibold text-brand-text hover:bg-brand-primary/20 hover:border-brand-primary/60 transition-all duration-200"
-            >
-              <Download size={12} />
-              Descargar SVG
-            </button>
+            <div ref={menuDescargaRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setMenuDescargaAbierto((v) => !v)}
+                disabled={descargando !== null}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-brand-primary/30 bg-brand-primary/10 text-xs font-semibold text-brand-text hover:bg-brand-primary/20 hover:border-brand-primary/60 transition-all duration-200 disabled:opacity-60"
+              >
+                <Download size={12} />
+                {descargando ? `Descargando ${descargando.toUpperCase()}…` : 'Descargar'}
+                <ChevronDown size={11} className={`transition-transform duration-150 ${menuDescargaAbierto ? 'rotate-180' : ''}`} />
+              </button>
+              <AnimatePresence>
+                {menuDescargaAbierto && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-9 right-0 z-20 min-w-[160px] overflow-hidden rounded-lg border border-brand-border bg-brand-surface shadow-lg"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleDownload('svg')}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-brand-text-secondary transition-colors hover:bg-brand-surface/60 hover:text-brand-text"
+                    >
+                      <Grid size={12} />
+                      SVG (vectorial)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDownload('png')}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-brand-text-secondary transition-colors hover:bg-brand-surface/60 hover:text-brand-text"
+                    >
+                      <FileImage size={12} />
+                      PNG (imagen)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDownload('pdf')}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-brand-text-secondary transition-colors hover:bg-brand-surface/60 hover:text-brand-text"
+                    >
+                      <FileText size={12} />
+                      PDF (documento)
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
         {/* SVG with zoom transform */}
