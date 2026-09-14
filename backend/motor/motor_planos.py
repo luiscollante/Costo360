@@ -1236,7 +1236,7 @@ def _generar_svg_nesting(
         _col_x += _ley_col[1]
 
         # Columnas 3, 4, 5: medidas y área (centradas)
-        _col_vals   = [f"{largo_m:.3f}", f"{ancho_m:.3f}", f"{area_m2:.4f}"]
+        _col_vals   = [f"{largo_m:.2f}", f"{ancho_m:.2f}", f"{area_m2:.2f}"]
         _col_widths = [_ley_col[2], _ley_col[3], _ley_col[4]]
         for val, col_w in zip(_col_vals, _col_widths):
             _mx = _col_x + col_w / 2
@@ -1262,7 +1262,7 @@ def _generar_svg_nesting(
         f'<text x="{ox + sum(_ley_col[:4]) + _ley_col[4]/2:.1f}" '
         f'y="{_total_y + LEY_ROW_H/2 + 4:.1f}" text-anchor="middle" '
         f'font-family="Helvetica,Arial,sans-serif" font-size="11" '
-        f'font-weight="bold" fill="#F5EFD9">{_total_area:.4f} m\u00b2</text>'
+        f'font-weight="bold" fill="#F5EFD9">{_total_area:.2f} m\u00b2</text>'
     )
 
     parts.append("</svg>")
