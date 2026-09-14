@@ -31,10 +31,30 @@ no se usaban en el backend), y los 3 fixes de contenido. Verificado con 6 PDFs d
 (fallback correcto), con un logo de prueba rojo/azul/amarillo (paleta aplicada consistentemente en
 los 3 tipos de documento), y uno generado por el navegador contra el backend real.
 
+**Continuación — 3 correcciones tras la revisión del fundador sobre los PDFs reales:**
+(1) Las 2 variantes del logo Costo360 estaban invertidas — había asumido por el nombre de archivo
+que `logo_versiones_oscuras.png` era la de texto claro (para fondo oscuro), era exactamente al
+revés; confirmado componiendo cada archivo sobre fondo oscuro y claro por separado antes de corregir.
+(2) El logo Costo360 del encabezado no quedaba pegado al margen derecho ("casi en el centro") —
+causa: la tabla del encabezado no tenía `ALIGN` definido para esa columna; el texto de al lado se
+veía bien alineado porque cada `Paragraph` traía su propio estilo, pero una imagen no hereda esa
+alineación dentro de una celda de tabla sin el comando `ALIGN` de `TableStyle`. (3) El bug de
+persistencia del logo que había quedado pendiente: diagnóstico completo descartó sesión/RLS
+(confirmado consultando la BD con rol de servicio — la fila sí se guardaba — y reproduciendo la
+misma sesión de Postgres de `rls_connection()` — la fila sí era visible bajo RLS). Causa real,
+aislada con trazas temporales: `cfg_get` tenía una rama `json.loads()` sobre valores que psycopg2 ya
+deserializa de `jsonb` a su tipo nativo — para un STRING (el logo en base64) eso rompía contra el
+base64, la excepción se tragaba, y devolvía `None` en silencio. Solo afectaba valores de config tipo
+string planos (los 2 campos del logo); el resto de la config es `dict` y ya tomaba la rama correcta.
+Verificado de punta a punta con el flujo real de la app (no solo scripts aislados): logo de prueba
+subido desde Configuración → persiste → cotización real generada desde Historial → el PDF usa la
+paleta extraída de ese logo. Con esto el ciclo completo queda cerrado funcionando en la app real.
+
 ### Archivos modificados
 `backend/motor/generador_pdf.py`; nuevos `backend/motor/logo_costo360_oscuro.png`,
-`backend/motor/logo_costo360_claro.png` (copias de variantes ya existentes en `web/public/`),
-`docs/PLANTILLA_PDF_COSTO360.md` (nuevo, referencia fija de roles de color y estructura).
+`backend/motor/logo_costo360_claro.png` (copias de variantes ya existentes en `web/public/`, luego
+corregidas al notar que estaban invertidas); `docs/PLANTILLA_PDF_COSTO360.md` (nuevo, referencia fija
+de roles de color y estructura); `backend/db/config_helpers.py` (fix del bug de persistencia).
 
 ### Decisiones tomadas
 3 colores extraídos del logo, no 4 (los únicos roles de color reales que la plantilla tiene: fondo
@@ -45,12 +65,9 @@ cada generación de PDF a partir de los bytes del logo (no cacheada en una tabla
 logo) — más simple, y el costo de recalcularla es trivial.
 
 ### Primera tarea de la próxima sesión
-Nada urgente pendiente de este frente — verificado en vivo de punta a punta y desplegado a
-producción. Pendiente real detectado pero no corregido (fuera de alcance de este ciclo): la subida
-de logo (`POST /api/config/logo`) devuelve éxito pero el GET inmediato posterior no refleja el logo
-guardado en la cuenta demo — parece un problema de persistencia o aislamiento de sesión. Investigar
-antes de que un taller real intente usar la función de logo (y por extensión, la extracción de
-color, que depende de que el logo realmente quede guardado).
+Nada pendiente de este frente — el ciclo completo (extracción de color + los 6 bugs encontrados en
+el camino, incluido el de persistencia) quedó verificado de punta a punta en la app real y
+desplegado a producción.
 
 ---
 

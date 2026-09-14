@@ -2,6 +2,25 @@
 
 ---
 
+## ✅ Hecho (2026-09-13, continuación) — Bug real de persistencia del logo, resuelto
+
+El pendiente que había quedado del ciclo de PDF de marca por taller: la subida de logo devolvía
+éxito pero no se veía reflejada al leerla de vuelta. Investigación completa: se descartó sesión/RLS
+(confirmado consultando la BD directo con rol de servicio — la fila SÍ se guardaba — y reproduciendo
+la misma sesión de Postgres que usa `rls_connection()` — la fila SÍ era visible bajo RLS). Causa real,
+aislada con trazas temporales: `cfg_get` (`backend/db/config_helpers.py`) tenía una rama
+`json.loads()` sobre valores que psycopg2 ya deserializa de `jsonb` a su tipo nativo — para un valor
+STRING (el logo en base64), eso rompía contra el base64 (no es JSON válido), la excepción se tragaba,
+y la función devolvía `None` en silencio. Solo afectaba a valores de config planos tipo string (los 2
+campos del logo); el resto de la config es un `dict` y ya tomaba la rama correcta.
+
+Verificado de punta a punta con el flujo real de la app (no solo scripts aislados): logo de prueba
+subido desde Configuración → persiste → se genera una cotización real desde Historial → el PDF ya usa
+la paleta de colores extraída de ese logo. Commit `217422c`, subido y desplegado a producción.
+
+Con esto queda cerrado por completo el ciclo de PDF de marca por taller — la feature funciona de
+punta a punta en la app real, no solo en pruebas aisladas.
+
 ## ✅ Hecho (2026-09-13, continuación) — PDF: 2 correcciones post-verificación del fundador
 
 Tras el ciclo de PDF de marca por taller, el fundador revisó los PDFs generados y encontró 2
