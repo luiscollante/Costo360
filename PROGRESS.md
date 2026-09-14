@@ -2,6 +2,26 @@
 
 ---
 
+## ✅ Hecho (2026-09-13, continuación) — PDF: 2 correcciones post-verificación del fundador
+
+Tras el ciclo de PDF de marca por taller, el fundador revisó los PDFs generados y encontró 2
+problemas reales que mi propia verificación no había detectado:
+
+1. **Las 2 variantes del logo Costo360 estaban invertidas.** Había asumido por el nombre de archivo
+   que `web/public/logo_versiones_oscuras.png` era la variante de texto claro (para fondo oscuro) y
+   `web/public/logo.png` la de texto oscuro (para fondo claro) — era exactamente al revés. Confirmado
+   componiendo cada archivo sobre fondo oscuro y claro por separado antes de corregir. Se corrigió el
+   contenido de `backend/motor/logo_costo360_oscuro.png`/`logo_costo360_claro.png` (mismos nombres,
+   contenido correcto). Commit `e50c2ea`.
+2. **El logo Costo360 del encabezado no quedaba pegado al margen derecho** — se veía "casi en el
+   centro". Causa: la tabla del encabezado no tenía ningún `ALIGN` definido para la columna derecha;
+   el texto de al lado se veía bien alineado porque cada `Paragraph` traía su propio estilo
+   `alignment=TA_RIGHT`, pero una imagen (`Image` flowable) no hereda esa alineación dentro de una
+   celda de tabla — ReportLab solo la respeta vía el comando `ALIGN` de `TableStyle`. Se agregó
+   `ALIGN RIGHT` a la columna derecha completa del encabezado. Commit `0cb4fe0`.
+
+Ambos verificados generando PDFs de prueba y desplegados a producción (backend).
+
 ## ✅ Hecho (2026-09-13, continuación) — Ciclo: PDF de marca por taller + 3 bugs reales cerrados
 
 El fundador pidió sentar las bases para estandarizar el formato de PDF de los entregables (cotización,
