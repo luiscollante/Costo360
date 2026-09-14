@@ -2,6 +2,15 @@
 
 ---
 
+## ✅ Hecho (2026-09-13, continuación) — Nesting: tabla de leyenda a 2 decimales
+
+El fundador pidió que las columnas Largo, Ancho y Área de la tabla de piezas al pie del plano
+mostraran solo 2 decimales — mostraban 3 (`2.400`) y 4 (`1.5600`, y el total `2.6400`), inconsistente
+con el resto de la app. Ajuste puntual de formato en `motor_planos.py` (`_generar_svg_nesting`): las
+3 columnas y la fila de TOTAL pasan de `.3f`/`.4f` a `.2f`. Verificado en vivo en `/nesting` con un
+plan de 2 piezas: la tabla ahora muestra `2.40 / 0.65 / 1.56` y `1.20 / 0.90 / 1.08`, total `2.64 m²`.
+Commit `00ee29b`, subido y desplegado a producción (backend).
+
 ## ✅ Hecho (2026-09-13, continuación) — Nesting: barra de título reorganizada para leerse de un vistazo
 
 El fundador pidió reorganizar el texto de la barra de título del plano ("NESTING 2D · Placa
