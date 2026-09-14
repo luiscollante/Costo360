@@ -2,6 +2,58 @@
 
 ---
 
+## Sesión: 2026-09-13 (continuación) — Ciclo: PDF de marca por taller + 3 bugs reales cerrados
+
+### Qué se hizo
+El fundador pidió un ciclo para sentar las bases de un formato de PDF estandarizado para los
+entregables (cotización, oferta AIU, cuenta de cobro): extraer los colores dominantes del logo del
+taller en vez de usar siempre la paleta fija de Costo360, con reglas de diseño fijas en vez de un
+diseño reinventado cada vez, disponible igual para planes Pro y Starter. Fase 0: investigación de
+código con un subagente en paralelo (estructura de los 3 documentos, dónde vive el logo, qué
+librerías de imagen ya hay disponibles) + validación en vivo en el navegador de los 3 tipos de PDF
+(incluyendo archivos que el fundador señaló directamente en su Escritorio). Hallazgo de partida
+importante: el generador (`backend/motor/generador_pdf.py`, ReportLab) ya es 100% determinístico —
+no hay ningún LLM diseñando el layout, contrario a la premisa inicial. El problema real era que
+`_extraer_paleta_logo` existía pero estaba desactivada a propósito, ignorando el logo del taller.
+Validando los 3 PDFs se encontraron además 3 bugs reales no relacionados con el color: el logo
+"Costo360" del encabezado/pie quedaba casi ilegible (confirmado con análisis de píxeles + un render
+de alta resolución del PDF real vía PyMuPDF: el logo tenía texto claro pensado para fondo oscuro,
+pero se componía sobre un recuadro blanco forzado); el nombre de empresa vacío caía en un fallback
+hardcodeado a un nombre de empresa real específico en vez de un texto neutral, lo mismo que dejaba
+vacío el cuadro "PRESTADOR DEL SERVICIO" de la cuenta de cobro; y la sección de
+inclusiones/exclusiones se imprimía con "-- / --" en vez de omitirse. El fundador aprobó corregir
+los 3 bugs dentro del mismo ciclo. Implementación: extracción de color real con Pillow (cuantización
++ filtrado de blancos/negros/grises puros + ajuste de luminancia vía `colorsys` para garantizar
+contraste, sin dependencias nuevas), 3 colores (no 4, son los roles reales de la plantilla), fix del
+compositing de logos con transparencia (`_logo_img` ahora recibe el color de fondo real en vez de
+forzar siempre blanco), 2 variantes correctas del logo Costo360 (ya existían en `web/public/`, solo
+no se usaban en el backend), y los 3 fixes de contenido. Verificado con 6 PDFs de prueba: sin logo
+(fallback correcto), con un logo de prueba rojo/azul/amarillo (paleta aplicada consistentemente en
+los 3 tipos de documento), y uno generado por el navegador contra el backend real.
+
+### Archivos modificados
+`backend/motor/generador_pdf.py`; nuevos `backend/motor/logo_costo360_oscuro.png`,
+`backend/motor/logo_costo360_claro.png` (copias de variantes ya existentes en `web/public/`),
+`docs/PLANTILLA_PDF_COSTO360.md` (nuevo, referencia fija de roles de color y estructura).
+
+### Decisiones tomadas
+3 colores extraídos del logo, no 4 (los únicos roles de color reales que la plantilla tiene: fondo
+oscuro, acento, secundario) — decisión delegada explícitamente por el fundador al proceso de
+planificación. Corregir los 3 bugs de contenido encontrados dentro del mismo ciclo en vez de
+aplazarlos, ya que la plantilla se estaba tocando de todas formas. Extracción de color calculada en
+cada generación de PDF a partir de los bytes del logo (no cacheada en una tabla aparte al subir el
+logo) — más simple, y el costo de recalcularla es trivial.
+
+### Primera tarea de la próxima sesión
+Nada urgente pendiente de este frente — verificado en vivo de punta a punta y desplegado a
+producción. Pendiente real detectado pero no corregido (fuera de alcance de este ciclo): la subida
+de logo (`POST /api/config/logo`) devuelve éxito pero el GET inmediato posterior no refleja el logo
+guardado en la cuenta demo — parece un problema de persistencia o aislamiento de sesión. Investigar
+antes de que un taller real intente usar la función de logo (y por extensión, la extracción de
+color, que depende de que el logo realmente quede guardado).
+
+---
+
 ## Sesión: 2026-09-13 — Transparencia, barrido `.glass`, Nesting a color de marca, descargas, título y decimales
 
 ### Qué se hizo

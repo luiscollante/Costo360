@@ -2,6 +2,46 @@
 
 ---
 
+## ✅ Hecho (2026-09-13, continuación) — Ciclo: PDF de marca por taller + 3 bugs reales cerrados
+
+El fundador pidió sentar las bases para estandarizar el formato de PDF de los entregables (cotización,
+oferta AIU, cuenta de cobro): extraer los colores dominantes del logo del taller (subido previamente)
+en vez de usar siempre la paleta fija de Costo360, con una plantilla base fija en vez de un diseño
+reinventado cada vez. Ciclo completo: investigación de código (con subagente), validación en vivo de
+los 3 tipos de documento en el navegador, plan aprobado, implementación y verificación.
+
+**Hallazgo de partida:** el generador (`backend/motor/generador_pdf.py`, ReportLab) ya era 100%
+determinístico — no hay ningún LLM diseñando el layout. El problema real era otro: la función
+`_extraer_paleta_logo` existía pero estaba desactivada a propósito, ignorando el logo del taller y
+forzando siempre la paleta de Costo360.
+
+**Implementado:**
+- `_extraer_paleta_logo` real: cuantiza el logo con Pillow (sin dependencias nuevas), descarta
+  blancos/negros/grises puros del fondo, y deriva 3 colores (no 4 — son los 3 roles reales que la
+  plantilla usa) con piso/techo de luminancia (vía `colorsys`) para garantizar texto legible sin
+  importar qué tan claro u oscuro sea el logo. Sin logo o si falla, usa la paleta de Costo360 sin
+  cambios.
+- 3 bugs reales encontrados validando los PDFs en vivo, cerrados de una vez (afectan a los 3
+  documentos por compartir `_encabezado_doc`/`_footer_doc`): el logo "Costo360" quedaba casi
+  ilegible en el encabezado (texto claro compuesto sobre un recuadro blanco forzado — corregido con
+  un parámetro `fondo` dinámico en `_logo_img` y las 2 variantes correctas del logo, claro/oscuro,
+  ya existentes en `web/public/`); el nombre de empresa vacío caía en un fallback hardcodeado a un
+  nombre de empresa real específico en vez de un texto neutral ("Tu Taller"), lo mismo que dejaba
+  vacío el cuadro "PRESTADOR DEL SERVICIO" de la cuenta de cobro; la sección de inclusiones/exclusiones
+  se imprimía con "-- / --" en vez de omitirse cuando no hay datos; y el número de documento se
+  repetía 3 veces en la página 1.
+- Nuevo `docs/PLANTILLA_PDF_COSTO360.md`: referencia fija de roles de color y estructura de secciones.
+
+Verificado con 6 PDFs de prueba (script Python directo con un logo de prueba rojo/azul/amarillo +
+1 generado por el navegador contra el backend real): paleta dinámica aplicada de forma consistente
+en los 3 tipos de documento, logo Costo360 legible en ambos fondos, fallback "Tu Taller" correcto,
+secciones vacías omitidas. Commit `4381a19`, subido y desplegado a producción (backend).
+
+**Nota aparte, no corregida (fuera de alcance):** la subida de logo (`POST /api/config/logo`)
+devuelve éxito pero el GET inmediato posterior no refleja el logo guardado en la cuenta demo —
+parece un problema de persistencia o aislamiento de sesión, no de la lógica de extracción de color.
+Investigar en un ciclo aparte antes de que un taller real use esta función.
+
 ## ✅ Hecho (2026-09-13, continuación) — Nesting: tabla de leyenda a 2 decimales
 
 El fundador pidió que las columnas Largo, Ancho y Área de la tabla de piezas al pie del plano
