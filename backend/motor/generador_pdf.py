@@ -13,6 +13,7 @@
 
 import io
 import os
+import colorsys
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 from PIL import Image as PILImage
@@ -82,7 +83,12 @@ _DEFAULT_PALETTE = {
 }
 
 _LOGO_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo_corporativo.png")
-_LOGO_COSTO360_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo_costo360.png")
+# Dos variantes del logo Costo360: "oscuro" (texto claro, para fondos oscuros
+# como la barra de encabezado) y "claro" (texto oscuro, para fondos blancos
+# como el pie de página). Usar la incorrecta en cada fondo es lo que causaba
+# que "Costo" quedara ilegible (ver _logo_img).
+_LOGO_COSTO360_OSCURO_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo_costo360_oscuro.png")
+_LOGO_COSTO360_CLARO_PATH  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo_costo360_claro.png")
 
 
 # ── Utilidades ────────────────────────────────────────────────────────────────
@@ -95,10 +101,140 @@ def _cargar_logo_corporativo():
         return None
 
 
+def _pil_rgb_sobre_fondo(logo_bytes, fondo=(255, 255, 255)):
+    """Abre bytes de imagen y la devuelve en RGB, componiendo la transparencia
+    sobre `fondo` (evita que un canal alfa se pierda como negro, y evita el
+    "recuadro" visible cuando `fondo` no coincide con el fondo real donde se
+    va a colocar la imagen)."""
+    if not logo_bytes:
+        return None
+    try:
+        pil_img = PILImage.open(io.BytesIO(logo_bytes))
+        tiene_alpha = (
+            pil_img.mode in ("RGBA", "LA") or
+            (pil_img.mode == "P" and "transparency" in pil_img.info)
+        )
+        if tiene_alpha:
+            pil_rgba = pil_img.convert("RGBA")
+            fondo_img = PILImage.new("RGB", pil_rgba.size, fondo)
+            fondo_img.paste(pil_rgba, mask=pil_rgba.split()[3])
+            return fondo_img
+        return pil_img.convert("RGB")
+    except Exception:
+        return None
+
+
+def _color_a_rgb(color_reportlab):
+    return (
+        round(color_reportlab.red * 255),
+        round(color_reportlab.green * 255),
+        round(color_reportlab.blue * 255),
+    )
+
+
+def _luminancia(rgb):
+    r, g, b = rgb
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def _con_techo_luminancia(rgb, techo):
+    """Si la luminancia de `rgb` supera `techo`, lo oscurece (escala su
+    canal L en HLS) preservando tono y saturación, hasta cumplir."""
+    if _luminancia(rgb) <= techo:
+        return rgb
+    r, g, b = (c / 255.0 for c in rgb)
+    h, l, s = colorsys.rgb_to_hls(r, g, b)
+    lo, hi = 0.0, l
+    for _ in range(10):
+        mid = (lo + hi) / 2
+        cand = tuple(round(c * 255) for c in colorsys.hls_to_rgb(h, mid, s))
+        if _luminancia(cand) > techo:
+            hi = mid
+        else:
+            lo = mid
+    return tuple(round(c * 255) for c in colorsys.hls_to_rgb(h, lo, s))
+
+
+def _con_piso_luminancia(rgb, piso):
+    """Si la luminancia de `rgb` es menor que `piso`, lo aclara, preservando
+    tono y saturación."""
+    if _luminancia(rgb) >= piso:
+        return rgb
+    r, g, b = (c / 255.0 for c in rgb)
+    h, l, s = colorsys.rgb_to_hls(r, g, b)
+    lo, hi = l, 1.0
+    for _ in range(10):
+        mid = (lo + hi) / 2
+        cand = tuple(round(c * 255) for c in colorsys.hls_to_rgb(h, mid, s))
+        if _luminancia(cand) < piso:
+            lo = mid
+        else:
+            hi = mid
+    return tuple(round(c * 255) for c in colorsys.hls_to_rgb(h, hi, s))
+
+
 def _extraer_paleta_logo(logo_bytes):
-    # En Costo360 se obliga el uso de la paleta oficial (Verde Oscuro y Dorado)
-    # sin importar los colores del logo de la empresa para mantener la marca.
-    return _DEFAULT_PALETTE.copy()
+    """Deriva hasta 3 colores dominantes del logo del taller (fondo oscuro,
+    acento, secundario) para reemplazar la paleta fija de Costo360 en su
+    propia cotización/cuenta de cobro. Sin logo, si la extracción falla, o si
+    el logo no tiene color real (blanco/negro/gris puro), se usa la paleta
+    oficial de Costo360 sin cambios.
+
+    Los 3 colores se ajustan a un piso/techo de luminancia para garantizar
+    texto legible (blanco sobre `primary`, texto sobre blanco con `accent`),
+    sin importar qué tan claro u oscuro sea el logo original.
+    """
+    img = _pil_rgb_sobre_fondo(logo_bytes)
+    if img is None:
+        return _DEFAULT_PALETTE.copy()
+    try:
+        muestra = img.copy()
+        muestra.thumbnail((150, 150))
+        cuantizada = muestra.quantize(colors=8)
+        paleta_idx = cuantizada.getpalette()
+        conteo = cuantizada.getcolors() or []
+        conteo.sort(key=lambda c: -c[0])
+
+        candidatos = []
+        for _cnt, idx in conteo:
+            rgb = tuple(paleta_idx[idx * 3: idx * 3 + 3])
+            r, g, b = rgb
+            mx, mn = max(r, g, b), min(r, g, b)
+            if mx > 240 and mn > 225:              # casi blanco puro (fondo del logo)
+                continue
+            if mx < 30:                             # casi negro puro
+                continue
+            if mx - mn < 12 and 30 <= mx <= 225:    # gris neutro, sin color real
+                continue
+            candidatos.append(rgb)
+
+        if not candidatos:
+            return _DEFAULT_PALETTE.copy()
+
+        oscuro    = min(candidatos, key=_luminancia)
+        vivido    = max(candidatos, key=lambda c: max(c) - min(c))
+        resto     = [c for c in candidatos if c != oscuro and c != vivido]
+        terciario = resto[0] if resto else vivido
+
+        primary_c   = _con_techo_luminancia(oscuro, 60)
+        accent_c    = _con_piso_luminancia(_con_techo_luminancia(vivido, 200), 130)
+        secondary_c = _con_techo_luminancia(terciario, 100)
+
+        def _hx(c):
+            return "#{:02X}{:02X}{:02X}".format(*c)
+
+        paleta = _DEFAULT_PALETTE.copy()
+        paleta.update({
+            "header_dark": _hx(primary_c),
+            "primary":     _hx(primary_c),
+            "total_bg":    _hx(primary_c),
+            "secondary":   _hx(secondary_c),
+            "anticipo_bg": _hx(secondary_c),
+            "accent":      _hx(accent_c),
+        })
+        return paleta
+    except Exception:
+        return _DEFAULT_PALETTE.copy()
 
 
 def _C(palette):
@@ -121,22 +257,16 @@ def _fecha_hasta(dias):
     return f.strftime("%d/%m/%Y")
 
 
-def _logo_img(logo_bytes, max_h=1.4*cm):
-    if not logo_bytes:
+def _logo_img(logo_bytes, max_h=1.4*cm, fondo=(255, 255, 255)):
+    """`fondo` debe coincidir con el color real donde se va a colocar la
+    imagen (blanco para el pie de página, el color de la barra oscura para
+    el encabezado) — si no coincide, la transparencia deja un recuadro
+    visible y un logo con texto claro se vuelve ilegible sobre su propio
+    recuadro blanco."""
+    pil_clean = _pil_rgb_sobre_fondo(logo_bytes, fondo=fondo)
+    if pil_clean is None:
         return None
     try:
-        pil_img = PILImage.open(io.BytesIO(logo_bytes))
-        _tiene_alpha = (
-            pil_img.mode in ("RGBA", "LA") or
-            (pil_img.mode == "P" and "transparency" in pil_img.info)
-        )
-        if _tiene_alpha:
-            pil_rgba = pil_img.convert("RGBA")
-            fondo_blanco = PILImage.new("RGB", pil_rgba.size, (255, 255, 255))
-            fondo_blanco.paste(pil_rgba, mask=pil_rgba.split()[3])
-            pil_clean = fondo_blanco
-        else:
-            pil_clean = pil_img.convert("RGB")
         clean_io = io.BytesIO()
         pil_clean.save(clean_io, format="JPEG", quality=95)
         clean_io.seek(0)
@@ -270,14 +400,15 @@ def _seccion_header(titulo, E):
 
 def _encabezado_doc(E, C, doc_type, numero, fecha_str, empresa_info, logo_bytes, valido_hasta=None):
     emp = empresa_info or {}
+    _fondo_header = _color_a_rgb(C["primary"])
     _lb = logo_bytes or _cargar_logo_corporativo()
-    logo_img = _logo_img(_lb, max_h=1.4*cm)
+    logo_img = _logo_img(_lb, max_h=1.4*cm, fondo=_fondo_header)
 
     izq = []
     if logo_img:
         izq.append(logo_img)
         izq.append(Spacer(1, 4))
-    izq.append(Paragraph(emp.get("nombre") or "Mármoles Collante & Castro Ltda", E["doc_empresa"]))
+    izq.append(Paragraph(emp.get("nombre") or "Tu Taller", E["doc_empresa"]))
     if emp.get("nit"):
         izq.append(Paragraph(emp["nit"], E["doc_emp_sub"]))
     if emp.get("tel") and emp.get("email"):
@@ -289,11 +420,11 @@ def _encabezado_doc(E, C, doc_type, numero, fecha_str, empresa_info, logo_bytes,
 
     logo_c360_bytes = None
     try:
-        with open(_LOGO_COSTO360_PATH, "rb") as f:
+        with open(_LOGO_COSTO360_OSCURO_PATH, "rb") as f:
             logo_c360_bytes = f.read()
     except Exception:
         pass
-    logo_c360 = _logo_img(logo_c360_bytes, max_h=0.9*cm) if logo_c360_bytes else None
+    logo_c360 = _logo_img(logo_c360_bytes, max_h=0.9*cm, fondo=_fondo_header) if logo_c360_bytes else None
 
     der = []
     if logo_c360:
@@ -361,7 +492,7 @@ def _footer_doc(E, C, emp_nombre, fecha_str, numero="", ciudad=""):
     _ciudad_str = ciudad.strip() if ciudad and ciudad.strip() else ""
     _sep_ciudad = f"{_ciudad_str}  •  " if _ciudad_str else ""
     linea = (
-        f"{emp_nombre or 'Mármoles Collante & Castro Ltda'}  |  "
+        f"{emp_nombre or 'Tu Taller'}  |  "
         f"{_sep_ciudad}{fecha_str}"
     )
     _footer_style = ParagraphStyle(
@@ -376,11 +507,11 @@ def _footer_doc(E, C, emp_nombre, fecha_str, numero="", ciudad=""):
     
     logo_bytes = None
     try:
-        with open(_LOGO_COSTO360_PATH, "rb") as f:
+        with open(_LOGO_COSTO360_CLARO_PATH, "rb") as f:
             logo_bytes = f.read()
     except Exception:
         pass
-    
+
     logo_c360 = _logo_img(logo_bytes, max_h=0.45*cm) if logo_bytes else ""
     
     izq = Paragraph(linea, _footer_style)
@@ -645,6 +776,8 @@ def _seccion_resumen_financiero(E, C, precio_sugerido_total, anticipo_pct, inclu
 # ── Módulo: Matriz Dinámica de Inclusiones / Exclusiones ────────────────────
 
 def _seccion_alcance(E, C, inclusiones=None, exclusiones=None):
+    if not inclusiones and not exclusiones:
+        return []
     _inc = inclusiones if inclusiones is not None else []
     _exc = exclusiones if exclusiones is not None else []
 
@@ -829,8 +962,6 @@ def _seccion_hero_precio(E, C, precio_final, incluir_iva, anticipo_pct,
                                leading=32, textColor=colors.HexColor("#FFFFFF"))
     _sub_s  = ParagraphStyle("_h_sub",  fontSize=8,   fontName="Helvetica",
                                leading=10, textColor=C["light"])
-    _num_s  = ParagraphStyle("_h_num",  fontSize=7,   fontName="Helvetica",
-                               leading=9,  textColor=colors.HexColor("#6B7A99"))
     _dlbl_s = ParagraphStyle("_h_dlbl", fontSize=7,   fontName="Helvetica",
                                leading=9,  textColor=C["light"],
                                letterSpacing=0.8)
@@ -858,8 +989,6 @@ def _seccion_hero_precio(E, C, precio_final, incluir_iva, anticipo_pct,
         Spacer(1, 5),
         Paragraph(iva_nota, _sub_s),
     ]
-    if numero:
-        col_izq += [Spacer(1, 3), Paragraph(numero, _num_s)]
 
     _cli_str  = (nombre_cliente or "Por definir")[:42]
     _proy_str = (tipo_proyecto  or "—")[:38]
@@ -1388,7 +1517,7 @@ def generar_cuenta_cobro(resultado, datos_prestador, datos_pagador,
             col.append(Paragraph(extra, _lbl_partes))
         return col
 
-    _prest_nombre = datos_prestador.get("nombre", "—")
+    _prest_nombre = datos_prestador.get("nombre") or "Tu Taller"
     _prest_nit    = datos_prestador.get("nit_cc", datos_prestador.get("nit", ""))
     _prest_ciudad = datos_prestador.get("ciudad", datos_prestador.get("direccion", ""))
     _prest_tel    = datos_prestador.get("tel", datos_prestador.get("telefono", ""))
@@ -1616,7 +1745,7 @@ def generar_cuenta_cobro(resultado, datos_prestador, datos_pagador,
 
     firma = Table(
         [[
-            _caja_firma("Firma del Prestador", datos_prestador.get("nombre", "")),
+            _caja_firma("Firma del Prestador", _prest_nombre),
             _caja_firma("Sello / Firma del Pagador", datos_pagador.get("nombre", "")),
         ]],
         colWidths=[_f_mitad, _f_mitad],
