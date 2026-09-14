@@ -425,6 +425,8 @@ def _encabezado_doc(E, C, doc_type, numero, fecha_str, empresa_info, logo_bytes,
     except Exception:
         pass
     logo_c360 = _logo_img(logo_c360_bytes, max_h=0.9*cm, fondo=_fondo_header) if logo_c360_bytes else None
+    if logo_c360:
+        logo_c360.hAlign = "RIGHT"
 
     der = []
     if logo_c360:
@@ -454,6 +456,7 @@ def _encabezado_doc(E, C, doc_type, numero, fecha_str, empresa_info, logo_bytes,
     tbl.setStyle(TableStyle([
         ("BACKGROUND",    (0,0), (-1,-1), C["primary"]),
         ("VALIGN",        (0,0), (-1,-1), "TOP"),
+        ("ALIGN",         (1,0), (1,-1),  "RIGHT"),
         ("TOPPADDING",    (0,0), (-1,-1), 14),
         ("BOTTOMPADDING", (0,0), (-1,-1), 14),
         ("LEFTPADDING",   (0,0), (0,-1),  16),
