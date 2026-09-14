@@ -26,13 +26,14 @@ def cfg_get(conn, empresa_id, key: str, default=None):
     cur.close()
     if not row:
         return default
-    val = row[0]
-    if isinstance(val, (str, bytes, bytearray)):
-        try:
-            return json.loads(val)
-        except Exception:
-            return default
-    return val
+    # psycopg2 ya deserializa `jsonb` a su tipo Python nativo (dict/list/str/
+    # int/float/bool/None) -- para un valor JSON que es un STRING (como el
+    # logo en base64), eso significa que row[0] YA es el string final, no un
+    # string-que-contiene-JSON. Un json.loads() aquí encima rompe (el base64
+    # no es JSON válido), la excepción se traga, y la funcion devuelve
+    # `default` en silencio -- exactamente el bug que hacía "desaparecer" el
+    # logo subido aunque la fila sí existiera en la base de datos.
+    return row[0]
 
 
 def cfg_set(conn, empresa_id, key: str, value) -> None:
