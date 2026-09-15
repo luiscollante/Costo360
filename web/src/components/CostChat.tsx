@@ -51,16 +51,27 @@ function TextoAsistente({ texto }: { texto: string }) {
  * cuanto hay un paso activo, ES el indicador de carga (con más información
  * que un "…" nunca podría dar) — nunca se muestran los dos a la vez, sería
  * el mismo "ruido visual" que se está quitando. */
-function Pensando() {
+function Pensando({ compacto }: { compacto: boolean }) {
   return (
     <div className="flex items-center gap-2 py-0.5">
-      <motion.span
-        className="h-1.5 w-1.5 rounded-full bg-brand-gold"
-        animate={{ opacity: [0.3, 1, 0.3] }}
-        transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
-        aria-hidden="true"
-      />
-      <span className="shimmer-text text-xs font-medium">Pensando…</span>
+      {/* Mismo lenguaje visual del anillo pulsante de un paso activo
+       * (FilaPaso) — más presencia que un simple punto, y consistente con
+       * el resto del indicador de actividad. */}
+      <span className="relative flex h-2.5 w-2.5 shrink-0 items-center justify-center">
+        <motion.span
+          className="absolute inset-0 rounded-full bg-brand-gold/40"
+          animate={{ scale: [1, 2.1, 1], opacity: [0.7, 0, 0.7] }}
+          transition={{ duration: 1.3, repeat: Infinity, ease: 'easeOut' }}
+          aria-hidden="true"
+        />
+        <motion.span
+          className="h-2 w-2 rounded-full bg-brand-gold"
+          animate={{ opacity: [0.4, 1, 0.4] }}
+          transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
+          aria-hidden="true"
+        />
+      </span>
+      <span className={`shimmer-text font-semibold ${compacto ? 'text-xs' : 'text-sm'}`}>Pensando…</span>
     </div>
   )
 }
@@ -224,7 +235,7 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
                     )}
 
                     <div className={`min-w-0 overflow-hidden break-words ${txt.burbuja}`}>
-                      {m.content ? <TextoAsistente texto={m.content} /> : (sinContenidoTodavia ? <Pensando /> : null)}
+                      {m.content ? <TextoAsistente texto={m.content} /> : (sinContenidoTodavia ? <Pensando compacto={compacto} /> : null)}
                     </div>
                   </>
                 )}
