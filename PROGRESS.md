@@ -2,6 +2,19 @@
 
 ---
 
+## ✅ Hecho (2026-09-14, mismo ciclo) — Destaca Cost en el sidebar
+
+El fundador reportó que Cost pasaba desapercibido: vivía como el último ítem del grupo Ajustes, con
+el mismo estilo visual que Parámetros o Configuración. Se preguntó si sacarlo del grupo (con estilo
+propio), dejarlo en el mismo lugar (solo cambiando el estilo), o sacarlo sin darle estilo especial —
+eligió sacarlo del grupo Ajustes y darle estilo propio. Ahora es un ítem suelto entre "Cotizaciones"
+y "Taller" (mismo nivel que Proyectos), con fondo/borde dorados, un glow dorado cuando está activo, y
+una etiqueta "Beta". Verificado en vivo: se ve claramente distinto al resto de la navegación, navega
+bien a `/agente`, y sigue oculto para el rol operativo (misma bandera `requiereDashboard` que ya
+usaban Parámetros/Configuración). Commit `2fcf4d0`, subido y desplegado a producción (frontend).
+
+---
+
 ## ✅ Hecho (2026-09-14, mismo ciclo) — Quita el campo muerto "Condiciones de pago"
 
 El fundador reportó que tener que escribir a mano las condiciones de pago en Configuración se sentía

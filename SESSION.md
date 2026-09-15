@@ -73,6 +73,36 @@ frontend). Revisar `PROGRESS.md` § Siguiente para el próximo frente que el fun
 
 ---
 
+## Sesión: 2026-09-14 (mismo día) — Destaca Cost en el sidebar
+
+### Qué se hizo
+El fundador reportó que la sección de Cost pasaba desapercibida por completo en el sidebar. Causa:
+vivía como el último ítem dentro del grupo "Ajustes", con exactamente el mismo estilo visual (texto
+plano, sin fondo) que Parámetros o Configuración. Se preguntó al fundador entre 3 enfoques — sacarlo
+del grupo con estilo propio, dejarlo en el mismo lugar solo con estilo distinto, o sacarlo sin darle
+estilo especial — y eligió el primero. Se sacó `Cost` de `NAV_GROUPS['Ajustes']` y se agregó como
+ítem suelto (nuevo componente `CostNavRow`) justo después de "Proyectos", entre los grupos
+"Cotizaciones" y "Taller". Estilo: fondo/borde dorados translúcidos, glow dorado cuando está activo,
+ícono Sparkles en dorado claro, y una etiqueta "Beta" a la derecha (reemplaza el sufijo inline
+"(beta)" que tenía antes el label). Verificado en vivo en el navegador: se distingue claramente del
+resto de la navegación, el clic navega bien a `/agente` y el estado activo aplica el glow; sigue
+oculto para el rol operativo porque conserva la misma bandera `requiereDashboard` que ya protegía a
+Parámetros/Configuración.
+
+### Archivos modificados
+`web/src/components/Sidebar.tsx`.
+
+### Decisiones tomadas
+Sacar a Cost del grupo "Ajustes" en vez de solo cambiarle el color en el mismo lugar — el fundador
+prefirió tratarlo como una sección de primer nivel (mismo peso visual que Proyectos), no como una
+opción más de configuración.
+
+### Primera tarea de la próxima sesión
+Nada pendiente de este frente — commit `2fcf4d0`, subido y desplegado a producción (frontend).
+Revisar `PROGRESS.md` § Siguiente para el próximo frente que el fundador priorice.
+
+---
+
 ## Sesión: 2026-09-13 (continuación) — Ciclo: PDF de marca por taller + 3 bugs reales cerrados
 
 ### Qué se hizo
