@@ -28,6 +28,16 @@ export interface EventoAgUi {
   delta?: string
   outcome?: { type: string; interrupts?: Array<{ id: string; message?: string; metadata?: { propuesta?: Propuesta } }> }
   message?: string
+  // El backend ya manda estos dos en TOOL_CALL_START/TOOL_CALL_END
+  // (`backend/agente/runtime.py`) — antes se ignoraban por completo. Son la
+  // señal real de "qué está haciendo Cost ahora mismo" (ver `store/cost.ts`).
+  // El `EventEncoder` de ag-ui serializa por alias (camelCase), NO por el
+  // nombre del campo en Python — verificado con `model_dump_json()` vs.
+  // `EventEncoder().encode()`: el primero da `tool_call_id`, el segundo
+  // (el que de verdad viaja por SSE) da `toolCallId`. Mismo patrón que
+  // `message_id` → `messageId` en TEXT_MESSAGE_START, ya en uso abajo.
+  toolCallId?: string
+  toolCallName?: string // solo viene en TOOL_CALL_START, no en el END
 }
 
 /**

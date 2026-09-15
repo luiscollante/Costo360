@@ -18,7 +18,7 @@ export default function AgentePage() {
           title="Cost"
           subtitle="Tu asistente de Costo360 — hoy entiende de Proyectos, Tareas, Cotización, Catálogo, Inventario, Retales, Nesting y Parámetros."
         />
-        <Card className="flex h-[65vh] flex-col overflow-hidden">
+        <Card className="flex h-[min(72vh,calc(100vh-11rem))] flex-col overflow-hidden">
           <CostChat />
         </Card>
       </div>

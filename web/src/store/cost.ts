@@ -24,8 +24,16 @@ import { showToast } from '@/lib/toast'
  * flotante (estado puramente de UI, fuera de este store) nunca debe llamar
  * a ninguna de estas dos acciones.
  */
+/** Una llamada a herramienta dentro de un turno de Cost — ver TOOL_CALL_START/
+ * END en `api/agente.ts`. Vive en el mensaje `assistant` del turno (no es
+ * estado aparte) porque una vez terminado el turno, los pasos son historia de
+ * ESE mensaje puntual, igual que su texto. */
+export interface PasoAgente { id: string; nombre: string; estado: 'activo' | 'listo' }
+
+interface MensajeAgente extends MensajeChat { pasos?: PasoAgente[] }
+
 interface CostState {
-  mensajes: MensajeChat[]
+  mensajes: MensajeAgente[]
   input: string
   cargando: boolean
   propuesta: Propuesta | null
@@ -59,7 +67,7 @@ export const useCostStore = create<CostState>((set, get) => ({
     set({
       input: '',
       propuesta: null,
-      mensajes: [...mensajes, { role: 'user', content: contenido }, { role: 'assistant', content: '' }],
+      mensajes: [...mensajes, { role: 'user', content: contenido }, { role: 'assistant', content: '', pasos: [] }],
       cargando: true,
     })
     const controller = new AbortController()
@@ -69,7 +77,26 @@ export const useCostStore = create<CostState>((set, get) => ({
         if (evento.type === 'TEXT_MESSAGE_CONTENT' && evento.delta) {
           set((s) => {
             const copia = [...s.mensajes]
-            copia[copia.length - 1] = { role: 'assistant', content: copia[copia.length - 1].content + evento.delta }
+            const ultimo = copia[copia.length - 1]
+            copia[copia.length - 1] = { ...ultimo, role: 'assistant', content: ultimo.content + evento.delta }
+            return { mensajes: copia }
+          })
+        }
+        if (evento.type === 'TOOL_CALL_START' && evento.toolCallId && evento.toolCallName) {
+          const paso: PasoAgente = { id: evento.toolCallId, nombre: evento.toolCallName, estado: 'activo' }
+          set((s) => {
+            const copia = [...s.mensajes]
+            const ultimo = copia[copia.length - 1]
+            copia[copia.length - 1] = { ...ultimo, pasos: [...(ultimo.pasos ?? []), paso] }
+            return { mensajes: copia }
+          })
+        }
+        if (evento.type === 'TOOL_CALL_END' && evento.toolCallId) {
+          set((s) => {
+            const copia = [...s.mensajes]
+            const ultimo = copia[copia.length - 1]
+            const pasos = (ultimo.pasos ?? []).map((p) => (p.id === evento.toolCallId ? { ...p, estado: 'listo' as const } : p))
+            copia[copia.length - 1] = { ...ultimo, pasos }
             return { mensajes: copia }
           })
         }
@@ -82,7 +109,8 @@ export const useCostStore = create<CostState>((set, get) => ({
           showToast('error', msg)
           set((s) => {
             const copia = [...s.mensajes]
-            if (!copia[copia.length - 1].content) copia[copia.length - 1] = { role: 'assistant', content: `⚠️ ${msg}` }
+            const ultimo = copia[copia.length - 1]
+            if (!ultimo.content) copia[copia.length - 1] = { ...ultimo, role: 'assistant', content: `⚠️ ${msg}` }
             return { mensajes: copia }
           })
         }
@@ -101,7 +129,18 @@ export const useCostStore = create<CostState>((set, get) => ({
       }
     } finally {
       abortController = null
-      set({ cargando: false })
+      // Si el turno terminó (o se abortó) con un paso todavía marcado
+      // "activo" (ej. RUN_ERROR a mitad de una tool), lo cierra — sin esto
+      // el anillo pulsante de ese paso quedaría "vivo" para siempre en un
+      // turno que ya no está corriendo.
+      set((s) => {
+        const copia = [...s.mensajes]
+        const ultimo = copia[copia.length - 1]
+        if (ultimo?.pasos?.some((p) => p.estado === 'activo')) {
+          copia[copia.length - 1] = { ...ultimo, pasos: ultimo.pasos.map((p) => ({ ...p, estado: 'listo' as const })) }
+        }
+        return { mensajes: copia, cargando: false }
+      })
     }
   },
 

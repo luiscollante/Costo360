@@ -126,6 +126,38 @@ export function resumirFila(
   return { principal, id, detalles }
 }
 
+// Mapea el prefijo de una tool (antes del primer "_") al dominio de negocio
+// en español, para el indicador de actividad de Cost (ver CostChat.tsx). Solo
+// hace falta un ítem por dominio — a diferencia de ETIQUETAS arriba, una tool
+// nueva de un dominio ya listado no necesita tocar este mapa.
+const DOMINIO_POR_PREFIJO: Record<string, string> = {
+  proyectos: 'Proyectos', cotizacion: 'Cotización', catalogo: 'Catálogo',
+  inventario: 'Inventario', retales: 'Retales', nesting: 'Nesting', parametros: 'Parámetros',
+}
+
+/** Nombre de dominio "en limpio" para una tool cruda (ej. "catalogo_editar_material" → "Catálogo"). */
+export function dominioDePaso(nombreHerramienta: string): string {
+  if (nombreHerramienta.startsWith('agente_bitacora')) return 'su bitácora'
+  const prefijo = nombreHerramienta.split('_')[0]
+  return DOMINIO_POR_PREFIJO[prefijo] ?? prefijo
+}
+
+/** Frase corta para el indicador de "Cost está haciendo X ahora mismo".
+ * A propósito nunca dice "Borrando" — toda tool destructiva solo PROPONE un
+ * cambio (pasa por la tarjeta de confirmación antes de ejecutarse de verdad),
+ * así que el indicador debe sonar neutral, nunca implicar que ya se borró
+ * algo que todavía espera confirmación humana. */
+export function etiquetaDePaso(nombreHerramienta: string): string {
+  const dominio = dominioDePaso(nombreHerramienta)
+  if (dominio === 'su bitácora') return 'Revisando su bitácora'
+  const verbo =
+    /listar|consultar|obtener|calcular|ver/.test(nombreHerramienta) ? 'Consultando'
+    : /crear|agregar|guardar/.test(nombreHerramienta) ? 'Creando en'
+    : /editar|actualizar|cambiar/.test(nombreHerramienta) ? 'Actualizando'
+    : 'Revisando'
+  return `${verbo} ${dominio}`
+}
+
 export function valorLegible(campo: string, valor: unknown): string {
   if (esCampoMoneda(campo) && typeof valor === 'number') return formatCOP(valor)
   if (esCampoPorcentaje(campo) && typeof valor === 'number') return `${valor}%`
