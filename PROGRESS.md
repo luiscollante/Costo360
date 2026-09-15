@@ -2,6 +2,30 @@
 
 ---
 
+## ✅ Hecho (2026-09-15) — 3 arreglos reales del tablero de Proyectos
+
+El fundador confirmó en vivo que el arrastre real con mouse del Kanban de Proyectos funciona bien
+(cierra el único pendiente que quedaba de la ronda del 2026-09-03), pero reportó 3 problemas nuevos
+al usar el tablero en profundidad. Los 3 se investigaron con evidencia real (lectura de código +
+reproducción en vivo con la consola del navegador) antes de tocar nada:
+
+1. **"Recargado desde cero" al mover un proyecto:** causa raíz real en `useTableroProyectos.
+   recargar()` — vaciaba la columna destino a `{items: [], cargando: true}` antes de refetch,
+   disparando el skeleton como si la página arrancara de cero. Corregido para mantener las tarjetas
+   visibles mientras se refresca en segundo plano. Instrumentado en vivo con medición de tiempos: en
+   el tablero de Tareas (detalle de proyecto) NO se reprodujo el mismo problema — ese código ya usa
+   optimistic updates reales vía react-query.
+2. **No se podía marcar un proyecto como "Completado" desde la pestaña Operativa:** el menú "Mover
+   a" solo ofrecía los estados que son columnas de la vista actual, y "Completado" solo vivía en
+   "Cierre". Confirmado con la consola del navegador (el `<select>` de un proyecto "En revisión" en
+   Operativa no tenía esa opción). Corregido: el menú ahora siempre ofrece todos los estados
+   operables, sin importar la pestaña.
+3. **"En revisión" aparecía a la vez en Operativa y Cierre**, confundiendo a usuarios no técnicos.
+   El fundador eligió sacarlo de Operativa por completo — ahora vive solo en Cierre.
+
+Verificado en vivo con datos reales del taller demo (movimientos de prueba revertidos al terminar).
+Commit `1a3db1f`, subido y desplegado a producción (frontend; sin cambios de backend en este ciclo).
+
 ## ✅ Hecho (2026-09-15) — Ajuste post-rediseño: distinguir usuario de Cost
 
 El fundador probó el rediseño de Cost del día anterior y reportó 2 problemas: no le gustaba el

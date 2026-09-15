@@ -2,6 +2,58 @@
 
 ---
 
+## Sesión: 2026-09-15 — 3 arreglos reales del tablero de Proyectos + aclaraciones sobre Cost/roadmap
+
+### Qué se hizo
+El fundador confirmó en vivo que el arrastre real con mouse del Kanban de Proyectos funciona bien
+(cierra el pendiente que quedaba de la ronda del 2026-09-03), pero al usar el tablero en profundidad
+reportó 3 problemas nuevos, con contexto de negocio real ("puede traducirse en pérdidas de dinero
+para Costo360 si no solucionamos esto"). Antes de esta sesión también pidió más contexto sobre 2
+temas que había mencionado antes sin explicar bien: la integración CopilotKit/AG-UI pendiente del
+roadmap, y por qué se mencionaba un "Agente de Parámetros" cuando el agente único del producto se
+llama Cost — ambas se explicaron en texto (CopilotKit/AG-UI: le daría a Cost la capacidad de accionar
+la interfaz directamente —navegar, abrir diálogos, resaltar campos— no solo devolver datos en el
+chat; "Agente de Parámetros" era terminología vieja de antes de que Cost se unificara en el Ciclo 3,
+cuando Parámetros tenía su propio asistente separado — corregida en `PROGRESS.md`).
+
+Los 3 problemas del tablero se investigaron con evidencia real antes de tocar código — lectura de
+`useTableroProyectos.ts`/`ProyectosPage.tsx` + reproducción en vivo con la consola del navegador
+(inspección de las opciones reales de los `<select>`, e instrumentación con medición de tiempos para
+confirmar o descartar el bug en cada tablero por separado):
+
+1. **"Recargado desde cero" al mover un proyecto** — causa raíz real: `recargar()` vaciaba la columna
+   destino a `{items: [], cargando: true}` ANTES de refetch, disparando `ColSkeleton` como si la
+   página arrancara de cero en cada movimiento. Corregido para mantener las tarjetas visibles
+   mientras se refresca en segundo plano (el reemplazo real de datos sigue siendo atómico al llegar
+   la respuesta fresca). Verificado con instrumentación que el tablero de Tareas (dentro del detalle
+   de proyecto) NO tiene este bug — ya usa optimistic updates reales de react-query.
+2. **No se podía marcar un proyecto "Completado" desde la pestaña Operativa** — el menú "Mover a"
+   solo ofrecía los estados que son columnas de la vista actual, y "Completado" solo vive en
+   "Cierre". Confirmado leyendo las opciones reales del `<select>` vía consola. Corregido: el menú
+   ahora ofrece siempre todos los estados operables, sin importar la pestaña.
+3. **"En revisión" aparecía a la vez en Operativa y Cierre** — confusión real para usuarios no
+   técnicos. Se le preguntó al fundador cómo resolverlo (dejarlo así ahora que el punto 2 ya no
+   bloquea nada, agregar una aclaración visual, o sacarlo de Operativa); eligió sacarlo de Operativa
+   por completo — ahora vive solo en Cierre.
+
+### Archivos modificados
+`web/src/hooks/useTableroProyectos.ts` (fix del recargado falso), `web/src/pages/ProyectosPage.tsx`
+(destinos globales del "Mover a" + columnas de Operativa sin "en_revision"), `PROGRESS.md`
+(cierre del pendiente de arrastre, corrección de la mención a "Agente de Parámetros").
+
+### Decisiones tomadas
+Sacar "En revisión" de Operativa en vez de solo agregar una aclaración visual — el fundador prefirió
+eliminar la ambigüedad de raíz ahora que el menú "Mover a" ya resuelve el bloqueo real de no poder
+cerrar un proyecto sin cambiar de pestaña.
+
+### Primera tarea de la próxima sesión
+Nada pendiente de este frente — commit `1a3db1f`, subido y desplegado a producción (frontend; sin
+cambios de backend). Revisar `PROGRESS.md` § Siguiente para el próximo frente que el fundador
+priorice — con Objetivos 1/2/5/6 del roadmap completos y Objetivos 3/4 (agentes de operación) en
+espera explícita, no queda ningún frente de producto abierto salvo housekeeping menor.
+
+---
+
 ## Sesión: 2026-09-14 — Logo Costo360 condicional + bug del lápiz en Historial (AIU + reconstrucción)
 
 ### Qué se hizo
