@@ -2,6 +2,18 @@
 
 ---
 
+## ✅ Hecho (2026-09-14, mismo ciclo) — Quita el campo muerto "Condiciones de pago"
+
+El fundador reportó que tener que escribir a mano las condiciones de pago en Configuración se sentía
+poco profesional. Investigación confirmó que el campo era código muerto: se guardaba y se devolvía
+por el API, pero `generador_pdf.py` nunca lo lee — la línea real "Forma de pago" que sí aparece en
+los PDFs ("60% anticipo · 40% contra entrega") ya se genera sola a partir del slider de Anticipo
+requerido, en la misma sección. Se preguntó al fundador si prefería quitarlo o conectarlo de verdad
+a un selector — eligió quitarlo. Removido el input, el default, el tipo TS, y la clave en los 2
+lugares del backend que la devolvían. Verificado: typecheck limpio, imports de backend limpios, el
+campo ya no aparece en Configuración. Commit `792ab64`, subido y desplegado a producción (backend +
+frontend).
+
 ## ✅ Hecho (2026-09-14) — Ciclo: bug del lápiz en Historial (AIU + cotizaciones vacías)
 
 El fundador reportó 2 problemas en Historial: las cotizaciones AIU no tienen lápiz de editar, y las

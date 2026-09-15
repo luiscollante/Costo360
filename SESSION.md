@@ -45,6 +45,34 @@ fundador priorice.
 
 ---
 
+## Sesión: 2026-09-14 (mismo día) — Quita el campo muerto "Condiciones de pago"
+
+### Qué se hizo
+El fundador reportó que tener que escribir a mano las condiciones de pago en Configuración, en el
+campo "Condiciones de pago" de "Condiciones comerciales", se sentía poco profesional para un software
+de alto nivel. Investigación (grep en `generador_pdf.py`) confirmó que el campo era código muerto:
+se guardaba y se devolvía por el API, pero ningún PDF lo lee — la línea real "Forma de pago" que sí
+aparece en los PDFs se genera sola a partir del slider de Anticipo requerido, en la misma sección de
+Configuración. Se le preguntó al fundador si prefería quitar el campo o conectarlo de verdad a un
+selector; eligió quitarlo. Removido el input y su default en `ConfigPage.tsx`, el tipo TS en
+`config.ts`, y la clave `condiciones_pago` en los 2 lugares del backend que la devolvían
+(`config.py`, `cotizacion.py`). Verificado: typecheck limpio, sin referencias sueltas, el campo ya
+no aparece en Configuración.
+
+### Archivos modificados
+`web/src/pages/ConfigPage.tsx`, `web/src/api/config.ts`, `backend/routers/config.py`,
+`backend/routers/cotizacion.py`.
+
+### Decisiones tomadas
+Quitar el campo en vez de conectarlo a un selector real — el dato que el fundador realmente necesita
+mostrar en el PDF (forma de pago) ya existe y se genera automático desde el slider de Anticipo.
+
+### Primera tarea de la próxima sesión
+Nada pendiente de este frente — commit `792ab64`, subido y desplegado a producción (backend +
+frontend). Revisar `PROGRESS.md` § Siguiente para el próximo frente que el fundador priorice.
+
+---
+
 ## Sesión: 2026-09-13 (continuación) — Ciclo: PDF de marca por taller + 3 bugs reales cerrados
 
 ### Qué se hizo
