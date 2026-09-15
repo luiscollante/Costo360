@@ -2,6 +2,38 @@
 
 ---
 
+## ✅ Hecho (2026-09-14, mismo ciclo) — Rediseño de Cost: agente de IA, no chatbot
+
+El fundador pidió un ciclo de diseño para el panel de Cost: "necesito que tenga animaciones de carga,
+tenga menos ruido visual y dé la impresión a los usuarios de que es un Agente de IA y no un
+chatbot/asistente al que le hablas y te responde", más revisar el panel en el navegador por si tenía
+demasiado scroll interno. Investigación en vivo confirmó el estado real: burbujas de chat clásicas en
+zig-zag, un "…" estático sin ninguna animación como único indicador de carga, y un panel de altura
+fija que ya necesitaba scroll interno a los 3 intercambios.
+
+Se armó un ciclo con 2 agentes de diseño (UI Designer + Whimsy Injector) en paralelo, cada uno con el
+contexto técnico real (código exacto, tokens de marca, regla dura de nunca respetar
+`prefers-reduced-motion`, personalidad ya decidida de Cost). Hallazgo técnico central del ciclo: el
+backend YA emitía eventos AG-UI reales `TOOL_CALL_START`/`TOOL_CALL_END` con el nombre de la
+herramienta ejecutándose — pura oportunidad de frontend, cero cambios de backend. Al implementar
+apareció un bug real (no hipotético): el encoder de `ag-ui` serializa esos campos en camelCase
+(`toolCallId`/`toolCallName`), no snake_case como el modelo Python los nombra — verificado
+directamente contra el encoder real antes de corregir, o los eventos habrían llegado silenciosamente
+vacíos al frontend.
+
+Implementado: el panel dejó de dibujarse como conversación de mensajería y pasa a ser una bitácora de
+una sola columna (fila por turno, label "Tú"/"Cost", sin burbujas de color); el "…" se reemplazó por
+un punto dorado pulsante + shimmer de texto; cada llamada a herramienta se ve en vivo como "Consultando
+Proyectos"/"Actualizando Catálogo"/etc. con su propio anillo pulsante, y se colapsa a un resumen
+clicable en cuanto el turno termina (soluciona el scroll rápido sin depender solo de agrandar el
+panel); la tarjeta de confirmación ganó borde discontinuo, badge, subtítulo ("Cost pausó aquí — esto
+no se ejecuta hasta que decidas"), filas tipo recibo y estado de carga visible en los botones.
+Verificado en vivo en el navegador (página dedicada y widget flotante compacto), incluida una tarea de
+prueba creada y borrada de punta a punta para confirmar el flujo completo. Commit `d829dd4`, subido y
+desplegado a producción (frontend).
+
+---
+
 ## ✅ Hecho (2026-09-14, mismo ciclo) — Destaca Cost en el sidebar
 
 El fundador reportó que Cost pasaba desapercibido: vivía como el último ítem del grupo Ajustes, con

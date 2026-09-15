@@ -103,6 +103,56 @@ Revisar `PROGRESS.md` § Siguiente para el próximo frente que el fundador prior
 
 ---
 
+## Sesión: 2026-09-14 (mismo día) — Rediseño de Cost: agente de IA, no chatbot
+
+### Qué se hizo
+El fundador pidió armar un ciclo con los agentes de diseño para el panel de Cost: quería animaciones
+de carga reales, menos ruido visual, y que se sintiera como un Agente de IA trabajando — no como un
+chatbot al que le hablas y te responde. También pidió revisar el panel sección por sección en el
+navegador por si tenía demasiado scroll vertical.
+
+Investigación en vivo (antes de diseñar nada) confirmó el estado real: burbujas de chat en zig-zag
+(usuario verde a la derecha, Cost crema con borde a la izquierda — el patrón visual de cualquier app
+de mensajería), un `<span>…</span>` estático sin ninguna animación como único indicador de "pensando",
+y un panel de altura fija (`h-[65vh]`) que ya necesitaba scroll interno con apenas 3 intercambios.
+
+Se lanzaron 2 agentes de diseño en paralelo (UI Designer + Whimsy Injector), cada uno con el contexto
+técnico completo (código exacto de `CostChat.tsx`/`cost.ts`, tokens de marca reales, la regla dura de
+nunca respetar `prefers-reduced-motion` en este producto, y la personalidad ya decidida de Cost —
+calmado, competente, humor conservador). Los dos convergieron en el mismo hallazgo central: el backend
+YA emitía eventos AG-UI reales `TOOL_CALL_START`/`TOOL_CALL_END` con el nombre exacto de la
+herramienta ejecutándose (`backend/agente/runtime.py`), pero el frontend los ignoraba por completo —
+esa era la señal real de "un agente trabajando" que sobraba desaprovechar, sin necesitar ningún cambio
+de backend.
+
+Al implementar apareció un bug real de integración (no hipotético): el `EventEncoder` de la librería
+`ag-ui` serializa esos dos campos en camelCase (`toolCallId`/`toolCallName`), no con el nombre exacto
+del campo en el modelo Python (`tool_call_id`/`tool_call_name`) — se verificó ejecutando el encoder
+real desde Python antes de corregir, porque el primer intento (con los nombres en snake_case)
+compilaba sin error mostrando el panel en vivo, pero nunca capturaba ningún paso — es el mismo patrón
+que ya usa `message_id` → `messageId` en el evento de texto, que sí funcionaba desde antes.
+
+### Archivos modificados
+`web/src/api/agente.ts` (contrato del evento AG-UI, con los nombres camelCase correctos),
+`web/src/store/cost.ts` (tracking de "pasos" por mensaje, activo/listo), `web/src/lib/agenteFormato.ts`
+(`etiquetaDePaso()`/`dominioDePaso()`), `web/src/components/CostChat.tsx` (el rediseño completo: filas
+de bitácora en vez de burbujas, indicador de carga con shimmer, pasos de herramienta en vivo con
+colapso a resumen, tarjeta de confirmación con borde discontinuo y estado de carga en los botones),
+`web/src/pages/AgentePage.tsx` (altura del panel, con techo).
+
+### Decisiones tomadas
+Nunca hacer que el indicador de "paso" diga "Borrando X" — toda tool destructiva solo PROPONE un
+cambio (pasa por la tarjeta de confirmación antes de ejecutarse de verdad), así que el indicador tenía
+que sonar neutral para no implicar que algo ya se borró antes de que el humano confirmara. Resolver el
+scroll interno colapsando los pasos terminados a un resumen clicable, en vez de solo agrandar el panel
+(agrandarlo sin eso habría vuelto a llenarse más rápido todavía, con las filas de pasos nuevas).
+
+### Primera tarea de la próxima sesión
+Nada pendiente de este frente — commit `d829dd4`, subido y desplegado a producción (frontend).
+Revisar `PROGRESS.md` § Siguiente para el próximo frente que el fundador priorice.
+
+---
+
 ## Sesión: 2026-09-13 (continuación) — Ciclo: PDF de marca por taller + 3 bugs reales cerrados
 
 ### Qué se hizo
