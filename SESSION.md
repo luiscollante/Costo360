@@ -2,6 +2,49 @@
 
 ---
 
+## Sesión: 2026-09-14 — Logo Costo360 condicional + bug del lápiz en Historial (AIU + reconstrucción)
+
+### Qué se hizo
+Continuación del ciclo de PDF de marca por taller. (1) El fundador pidió que el logo de Costo360 no
+aparezca en ningún PDF cuando el taller ya tiene su propio logo cargado. `_encabezado_doc`/
+`_footer_doc` en `generador_pdf.py` ahora condicionan la carga del logo/texto de Costo360 a que el
+taller NO tenga logo propio. Verificado en vivo: cotización real con logo de taller — ni el logo ni
+el texto de Costo360 aparecen (PDF de ~11 KB en vez de ~100+ KB). (2) El fundador reportó 2 problemas
+en Historial: cotizaciones AIU sin lápiz de editar, y cotizaciones normales que sí abren el editor
+pero con el formulario casi vacío. Investigación en vivo confirmó ambos y encontró la causa raíz
+real del segundo: `_wizard_inputs` (los datos que el formulario necesita) solo lo genera el asistente
+paso a paso — Express y el agente Cost nunca lo guardan, sin importar qué tan reciente sea la
+cotización, no era solo un problema de datos viejos. Antes de programar, se identificaron por
+consulta directa a la BD 7 cotizaciones de prueba de la cuenta demo sin `_wizard_inputs`, se mostró
+la lista completa al fundador, y se borraron por ID exacto tras su confirmación explícita (verificado
+antes/después que las cotizaciones con datos completos quedaran intactas). Implementado: lápiz
+siempre visible + edición real de AIU (navega a `/cotizacion-aiu` con los datos guardados,
+`CotizacionAIUPage.tsx` gana el mismo patrón de hidratación que ya usaba `CotizacionPage.tsx`); y
+`reconstruirWizardInputs()` — cuando falta `_wizard_inputs` (de cualquier origen), arma una
+aproximación de material+pieza+proyecto a partir de los campos planos que el cálculo siempre guarda,
+con un toast avisando que es una aproximación. Verificado en vivo con una cotización AIU real
+(carga sus ítems guardados) y una creada por Express (reconstrucción con valores correctos,
+incluido el largo derivado del m² real).
+
+### Archivos modificados
+`backend/motor/generador_pdf.py` (logo condicional); `web/src/pages/HistorialPage.tsx` (lápiz
+siempre visible, reconstrucción de `_wizard_inputs`), `web/src/pages/CotizacionAIUPage.tsx`
+(hidratación desde Historial → Editar).
+
+### Decisiones tomadas
+Borrar las 7 cotizaciones de prueba sin `_wizard_inputs` en vez de reconstruir su detalle
+(imposible de todas formas para las más viejas — ni siquiera tienen `_estado_guardado`) — el
+fundador confirmó que la cuenta sigue en fase de desarrollo. Arreglar el bug de raíz para las 3 vías
+de creación (asistente, Express, Cost) en el mismo ciclo en vez de solo el caso puntual reportado,
+una vez confirmado que Express y Cost también generan el mismo problema hacia adelante.
+
+### Primera tarea de la próxima sesión
+Nada urgente pendiente de estos 2 frentes — verificados en vivo de punta a punta y desplegados a
+producción (backend + frontend). Revisar `PROGRESS.md` § Siguiente para el próximo frente que el
+fundador priorice.
+
+---
+
 ## Sesión: 2026-09-13 (continuación) — Ciclo: PDF de marca por taller + 3 bugs reales cerrados
 
 ### Qué se hizo

@@ -2,6 +2,48 @@
 
 ---
 
+## ✅ Hecho (2026-09-14) — Ciclo: bug del lápiz en Historial (AIU + cotizaciones vacías)
+
+El fundador reportó 2 problemas en Historial: las cotizaciones AIU no tienen lápiz de editar, y las
+que sí lo tienen abren el formulario casi vacío al editar. Investigación en vivo confirmó ambos y
+encontró la causa raíz real de la segunda: `_wizard_inputs` (los datos que el formulario necesita
+para reconstruirse) solo lo genera el asistente paso a paso — las cotizaciones creadas por **Express**
+o por el agente **Cost** nunca lo incluyen, sin importar qué tan nuevas sean (no era solo un problema
+de datos viejos, como parecía al principio).
+
+**Antes de programar, limpieza de datos de desarrollo (autorizada explícitamente):** se identificaron
+por consulta directa a la BD 7 cotizaciones de la cuenta demo sin `_wizard_inputs` (todas de prueba,
+anteriores a que existiera esta función) — se mostró la lista completa (ID, número, cliente, fecha) y
+se borraron por ID exacto tras confirmación, verificando antes y después que las cotizaciones con
+datos completos quedaran intactas.
+
+**Implementado:**
+- Lápiz de editar visible siempre (antes oculto para AIU) — `handleEdit()` en `HistorialPage.tsx`
+  ahora detecta AIU y navega a `/cotizacion-aiu` con los datos guardados
+  (`_estado_guardado.aiu_items`, cliente, ciudad, teléfono, pct A/I/U, IVA); `CotizacionAIUPage.tsx`
+  gana un hook de hidratación igual al patrón que ya usaba `CotizacionPage.tsx`.
+- `reconstruirWizardInputs()`: cuando falta `_wizard_inputs` (Express, Cost, o cualquier cotización
+  vieja), arma una aproximación (1 material + 1 pieza + datos de proyecto) a partir de los campos
+  planos que el cálculo siempre guarda, con un toast explicando que es una aproximación a revisar.
+  Resuelve el bug de raíz para las 3 vías de creación, no solo el caso puntual reportado.
+
+Verificado en vivo: editar la cotización AIU real carga sus ítems guardados correctamente; una
+cotización creada por Express (sin `_wizard_inputs`) muestra el aviso y reconstruye
+material+pieza+proyecto con valores correctos (incluido el largo derivado del m² real). Commits
+`946d2e8` (fix) — el borrado de datos fue directo a BD, sin cambio de código — subido y desplegado a
+producción (frontend).
+
+## ✅ Hecho (2026-09-14, mismo ciclo) — Logo de Costo360 oculto cuando el taller tiene logo propio
+
+El fundador pidió que el logo/marca de agua "Generado por Costo360" (encabezado + pie de página de
+los PDFs) no aparezca cuando el taller ya tiene su propio logo cargado — con logo propio, el
+documento debe ser 100% de la marca del taller. `_encabezado_doc`/`_footer_doc` en
+`backend/motor/generador_pdf.py` ahora condicionan la carga y el render del logo/texto de Costo360 a
+que el taller NO tenga logo (`not logo_bytes` / nuevo parámetro `tiene_logo_propio`). Verificado en
+vivo: cotización real generada con un logo de taller ya guardado — ni el logo ni el texto de
+Costo360 aparecen en ningún lado del documento (el PDF resultante pesa ~11 KB en vez de ~100+ KB, al
+no incrustar esa imagen). Commit `8282a53`, subido y desplegado a producción (backend).
+
 ## ✅ Hecho (2026-09-13, continuación) — Bug real de persistencia del logo, resuelto
 
 El pendiente que había quedado del ciclo de PDF de marca por taller: la subida de logo devolvía
