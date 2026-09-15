@@ -1068,12 +1068,7 @@ de este dominio, sin subir a GitHub todavía.
 
 ## 🔄 En progreso
 
-- **Prueba manual de arrastre real pendiente:** la corrección del drag-and-drop de Proyectos
-  (2026-09-03) quedó verificada por la desaparición del warning de consola de
-  `@hello-pangea/dnd` y por el arrastre entre columnas confirmado con teclado — no se logró
-  simular un arrastre real de mouse con las herramientas de automatización del navegador
-  (limitación conocida de esa clase de librería). El fundador debería confirmar con un
-  arrastre real en su propio navegador para cerrar el loop del todo.
+*(vacío por ahora)*
 
 ---
 
@@ -1086,10 +1081,13 @@ de este dominio, sin subir a GitHub todavía.
 2. ✅ **Motor único de roles/permisos** (mismo para Starter/Pro/Enterprise, cambia el cupo —
    trigger `trg_usuarios_cupo_check`) y **sesión única con aviso/control real** (Regla 5,
    `routers/session.py` + `SessionGuard.tsx`).
-3. ⬜ Integrar CopilotKit/AG-UI para que el Agente nativo navegue la interfaz — **Objetivo 5
-   del roadmap, depende del rediseño visual (Fase 2.A)**.
-4. ⬜ Ajustar el Agente de Parámetros para que nunca entregue una cotización incompleta en
-   silencio (regla 8) — pendiente, va con el Objetivo 5.
+3. ⬜ Integrar CopilotKit/AG-UI para que Cost accione la interfaz directamente (navegar,
+   abrir diálogos, resaltar campos) — hoy Cost opera datos por chat pero nunca "maneja" la
+   pantalla por el usuario. **Objetivo 5 del roadmap, depende del rediseño visual (Fase 2.A)**.
+4. ⬜ Verificar que Cost, en su dominio de Parámetros, nunca entregue una cotización incompleta
+   en silencio (regla 8) — redactado originalmente como "Agente de Parámetros", nombre del
+   asistente legado y separado que existía ANTES de que Cost se unificara en el Ciclo 3 (ver
+   `AgenteChat.tsx`, borrado); hoy es 100% Cost. Pendiente, va con el Objetivo 5.
 5. ⬜ Generación automática de cliente TypeScript desde el schema OpenAPI de FastAPI — nota:
    hoy `web/src/api/*.ts` están alineados a mano con el backend nuevo.
 
@@ -1100,9 +1098,9 @@ de este dominio, sin subir a GitHub todavía.
 - **Vercel sin auto-deploy real de GitHub** (descubierto 2026-09-10) — cada push a `master`
   necesita un `vercel deploy --prod --token` manual hasta que se conecte de verdad el repo en la
   configuración de cada proyecto. Ver memoria `feedback_vercel_sin_autodeploy`.
-- **El fundador confirma la ronda de bugs del 2026-09-03** (Proyectos + wizard de Cotización,
-  ver entrada de "Hecho" correspondiente) — en particular el arrastre real con mouse, que no se
-  pudo probar de forma automatizada (ver "🔄 En progreso" arriba).
+- **El fundador confirmó en vivo (2026-09-15) que el arrastre real con mouse del tablero Kanban
+  de Proyectos funciona bien** — cierra el único pendiente que quedaba abierto de la ronda de
+  bugs del 2026-09-03.
 - **El fundador pidió no tocar el asa de arrastre pequeña de las tarjetas del tablero
   Kanban** (2026-09-04) — es un arreglo deliberado de accesibilidad ya auditado; si en el futuro
   se quiere una zona de agarre más grande, hay que diseñarlo con cuidado de no reabrir el
