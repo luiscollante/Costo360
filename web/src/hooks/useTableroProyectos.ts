@@ -168,7 +168,15 @@ export function useTableroProyectos(columns: EstadoProyecto[], filtros: Filtros)
       const token = ++reqRef.current
       const cols = estado ? [estado] : columns
       cols.forEach((e) => {
-        setState((prev) => ({ ...prev, [e]: { ...colVacia() } }))
+        // Mantiene las tarjetas ya visibles mientras se refresca en segundo
+        // plano — antes esto vaciaba la columna a `{items: [], cargando:
+        // true}` ANTES de refetch, lo que disparaba `ColSkeleton` (exige
+        // `cargando && !items.length`) como si la página se recargara desde
+        // cero cada vez que se movía un proyecto (hallazgo real del
+        // fundador, 2026-09-15). `fetchPage` igual reemplaza el array
+        // completo en un solo `setState` atómico cuando llegan los datos
+        // frescos — nunca queda un hueco visible entre medio.
+        setState((prev) => ({ ...prev, [e]: { ...(prev[e] ?? colVacia()), cargando: true, error: false } }))
         void fetchPage(e, 0, token)
       })
     },

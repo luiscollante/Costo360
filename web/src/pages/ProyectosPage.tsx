@@ -25,13 +25,24 @@ import { useTableroProyectos, type Filtros } from '@/hooks/useTableroProyectos'
 type VistaKey = 'operativa' | 'cierre' | 'archivo'
 
 const VISTAS: { key: VistaKey; label: string; hint: string; columnas: EstadoProyecto[]; soloLectura?: boolean }[] = [
+  // "en_revision" vive SOLO en Cierre (hallazgo real del fundador,
+  // 2026-09-15): antes aparecía también en Operativa, y esa duplicación
+  // confundía a usuarios no técnicos sobre si eran 2 estados distintos.
   { key: 'operativa', label: 'Operativa', hint: 'El día a día del taller',
-    columnas: ['planificacion', 'activo', 'en_revision', 'en_pausa', 'cancelado'] },
+    columnas: ['planificacion', 'activo', 'en_pausa', 'cancelado'] },
   { key: 'cierre', label: 'Cierre', hint: 'Revisión y entrega final',
     columnas: ['en_revision', 'completado'] },
   { key: 'archivo', label: 'Archivo', hint: 'Histórico, solo consulta',
     columnas: ['archivado'], soloLectura: true },
 ]
+
+// Destinos del selector "Mover a" — a propósito TODOS los estados operables
+// (menos "archivado", que solo asigna el barrido diario automático), sin
+// importar la pestaña donde estés parado. Antes ofrecía solo las columnas de
+// la vista actual: desde Operativa no aparecía "Completado" porque esa
+// columna solo vive en Cierre — un proyecto en revisión no tenía forma de
+// cerrarse sin cambiar de pestaña primero (hallazgo real, 2026-09-15).
+const ESTADOS_MOVIBLES: EstadoProyecto[] = ['planificacion', 'activo', 'en_revision', 'en_pausa', 'cancelado', 'completado']
 
 const ORDENES: { key: Filtros['orden']; label: string }[] = [
   { key: 'reciente', label: 'Más reciente' },
@@ -199,7 +210,7 @@ export default function ProyectosPage() {
                                 <div ref={drag.innerRef} {...drag.draggableProps} className="rounded-xl">
                                   <ProyectoCard
                                     proyecto={p}
-                                    columnasDestino={vistaCfg.columnas}
+                                    columnasDestino={ESTADOS_MOVIBLES}
                                     onMover={(id, hacia) => moverPorMenu(id, estado, hacia)}
                                     puedeMover={!soloLectura}
                                     dragHandleProps={soloLectura ? null : drag.dragHandleProps}
