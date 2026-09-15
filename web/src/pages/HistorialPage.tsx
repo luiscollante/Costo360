@@ -18,8 +18,71 @@ import {
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Dialog } from '@/components/ui/Dialog'
 import { formatCOP, formatNum } from '@/lib/utils'
+import { showToast } from '@/lib/toast'
+import type { MaterialItem, PiezaItem } from '@/types/cotizacion'
 
 const ESTADOS = ['Pendiente', 'Aprobada', 'Rechazada']
+
+// ── Reconstrucción del formulario cuando faltan los datos originales ──────────
+// Cotizaciones creadas por Express o por Cost (el agente de IA) nunca guardan
+// `_wizard_inputs` (solo lo genera el asistente paso a paso) — igual que las
+// cotizaciones guardadas antes de que existiera esta función. En vez de abrir
+// el formulario casi vacío, se reconstruye una aproximación a partir de los
+// campos planos que el cálculo SIEMPRE guarda (categoría, referencia, m², etc).
+const ANCHO_POR_TIPO: Record<string, number> = {
+  Meson: 0.60, Isla: 1.00, 'Baño': 0.45, Escalera: 0.30,
+  Piso: 1.00, Fachada: 1.00, Revestimiento: 0.60, Otro: 0.60,
+}
+const ELEMENTO_POR_TIPO: Record<string, string> = {
+  Meson: 'Mesón de cocina', Isla: 'Isla de cocina', 'Baño': 'Baño / Lavamanos',
+  Escalera: 'Huella escalón', Fachada: 'Fachada / Panel',
+}
+
+function reconstruirWizardInputs(datos: Record<string, unknown>, clienteFallback: string) {
+  const tipoProyecto = (datos.tipo_proyecto as string) || 'Meson'
+  const anchoAprox = ANCHO_POR_TIPO[tipoProyecto] ?? 0.60
+  const m2Real = Number(datos.m2_real ?? 0)
+  const largoAprox = anchoAprox > 0 && m2Real > 0 ? Number((m2Real / anchoAprox).toFixed(2)) : 0
+
+  const materiales: MaterialItem[] = [{
+    cat: (datos.categoria as string) || '',
+    ref: (datos.referencia as string) || '',
+    precio_m2: Number(datos.precio_m2 ?? 0),
+    area_placa: Number(datos.area_placa ?? m2Real ?? 0),
+    cantLaminas: 1,
+  }]
+  const piezas: PiezaItem[] = [{
+    nombre: tipoProyecto,
+    ml: largoAprox,
+    ancho_custom: anchoAprox,
+    cantidad: 1,
+    categoria: ELEMENTO_POR_TIPO[tipoProyecto] ?? 'Personalizado',
+    unidad_venta: 'ml',
+  }]
+  const proyecto = {
+    tipo_proyecto: tipoProyecto,
+    nombre_cliente: (datos.nombre_cliente as string) || clienteFallback,
+    margen_pct: Number(datos.margen_pct ?? 40),
+    dias: Number(datos.dias ?? 2),
+    personas: Number(datos.personas ?? 2),
+    incluir_iva: Boolean(datos.incluir_iva ?? true),
+  }
+  return { materiales, piezas, proyecto }
+}
+
+function reconstruirAiuInputs(datos: Record<string, unknown>, clienteFallback: string) {
+  const estado = (datos._estado_guardado as Record<string, unknown>) || {}
+  return {
+    nombreCliente: (estado.nombre_cliente as string) || (datos.nombre_cliente as string) || clienteFallback,
+    ciudad: (datos.ciudad_proyecto as string) || '',
+    telefono: (datos.telefono_cliente as string) || '',
+    items: (estado.aiu_items as unknown[]) || [],
+    pctA: Number(datos.pct_a ?? 2.0),
+    pctI: Number(datos.pct_i ?? 2.0),
+    pctU: Number(datos.pct_u ?? 5.0),
+    incluirIva: Boolean(datos.incluir_iva ?? true),
+  }
+}
 
 const estadoConfig: Record<string, { color: string; bg: string; dot: string }> = {
   Pendiente:  { color: 'text-brand-warning-text',   bg: 'bg-brand-warning-soft border-brand-warning/30', dot: 'bg-brand-warning' },
@@ -233,12 +296,22 @@ function HistorialRow({ row, index }: { row: CotizacionResumen; index: number })
     setEditing(true)
     try {
       const { datos } = await getCotizacionDatos(row.id)
-      const wizardInputs = (datos as Record<string, unknown>)._wizard_inputs
+      const d = datos as Record<string, unknown>
+
+      if (isAIU) {
+        navigate('/cotizacion-aiu', { state: { _aiu_inputs: reconstruirAiuInputs(d, row.cliente) } })
+        return
+      }
+
+      const wizardInputs = d._wizard_inputs
       if (wizardInputs) {
         navigate('/cotizacion', { state: { _wizard_inputs: wizardInputs } })
       } else {
-        // Cotización antigua sin _wizard_inputs: abrir igual y dejar al usuario reconfigurar
-        navigate('/cotizacion', { state: { _wizard_inputs: { proyecto: { nombre_cliente: row.cliente } } } })
+        // Sin _wizard_inputs (creada por Express, por Cost, o guardada antes de
+        // que existiera esta función): se reconstruye una aproximación a partir
+        // de los campos planos que el cálculo siempre guarda.
+        showToast('success', 'Cotización cargada de forma aproximada — revisa piezas y material antes de guardar')
+        navigate('/cotizacion', { state: { _wizard_inputs: reconstruirWizardInputs(d, row.cliente) } })
       }
     } catch {
       setEditing(false)
@@ -268,18 +341,14 @@ function HistorialRow({ row, index }: { row: CotizacionResumen; index: number })
           {showCC && <CCModal cotId={row.id} onClose={() => setShowCC(false)} />}
         </AnimatePresence>
       </div>
-      {!isAIU ? (
-        <button
-          onClick={handleEdit}
-          disabled={editing}
-          title="Editar cotización"
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-brand-text-secondary hover:text-brand-primary hover:bg-brand-primary/10 transition-all disabled:opacity-40"
-        >
-          {editing ? <Loader2 size={14} className="animate-spin" /> : <Pencil size={14} />}
-        </button>
-      ) : (
-        <div className="w-8 h-8" />
-      )}
+      <button
+        onClick={handleEdit}
+        disabled={editing}
+        title="Editar cotización"
+        className="w-8 h-8 flex items-center justify-center rounded-lg text-brand-text-secondary hover:text-brand-primary hover:bg-brand-primary/10 transition-all disabled:opacity-40"
+      >
+        {editing ? <Loader2 size={14} className="animate-spin" /> : <Pencil size={14} />}
+      </button>
       <AnimatePresence mode="wait">
         {confirmDelete ? (
           <motion.div

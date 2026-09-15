@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Loader2, Trash2, PlusCircle } from 'lucide-react'
 import AppLayout from '@/components/AppLayout'
 import { calcularAIU, guardarAIU, descargarPDFAiu, descargarCuentaCobro } from '@/api/cotizacion'
@@ -634,6 +634,32 @@ export default function CotizacionAIUPage() {
   const [calcError, setCalcError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState<{ id: number; numero: string } | null>(null)
+
+  const location = useLocation()
+
+  // Hydration desde Historial → Editar (mismo patrón que CotizacionPage.tsx)
+  useEffect(() => {
+    const state = location.state as {
+      _aiu_inputs?: {
+        nombreCliente: string; ciudad: string; telefono: string; items: ItemAIU[]
+        pctA: number; pctI: number; pctU: number; incluirIva: boolean
+      }
+    } | null
+    if (state?._aiu_inputs) {
+      const inp = state._aiu_inputs
+      setNombreCliente(inp.nombreCliente)
+      setCiudad(inp.ciudad)
+      setTelefono(inp.telefono)
+      if (inp.items?.length) setItems(inp.items)
+      setPctA(inp.pctA)
+      setPctI(inp.pctI)
+      setPctU(inp.pctU)
+      setIncluirIva(inp.incluirIva)
+      setPaso(0)
+      window.history.replaceState({}, '')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const cd = items.reduce((s, it) => s + it.cant * it.punit, 0)
 
