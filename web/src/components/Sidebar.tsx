@@ -35,6 +35,10 @@ interface NavItem { to: string; label: string; Icon: LucideIcon; requiereDashboa
 const DASHBOARD_ITEM: NavItem = { to: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard, requiereDashboard: true }
 // Ítem suelto (no un grupo de un solo hijo — hallazgo UX U10), entre "Cotizaciones" y "Taller".
 const PROYECTOS_ITEM: NavItem = { to: '/proyectos', label: 'Proyectos', Icon: FolderKanban }
+// Cost vivía escondido como último ítem de "Ajustes" y pasaba desapercibido
+// (reporte del fundador 2026-09-14) — ahora es un ítem suelto con estilo
+// propio (ver CostNavRow), igual de visible que Proyectos.
+const COST_ITEM: NavItem = { to: '/agente', label: 'Cost', Icon: Sparkles, requiereDashboard: true }
 
 const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
@@ -60,12 +64,6 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { to: '/parametros',    label: 'Parámetros',    Icon: SlidersHorizontal, requiereDashboard: true },
       { to: '/configuracion', label: 'Configuración', Icon: Settings2,         requiereDashboard: true },
-      // Desde el Ciclo 3, Cost ya cubre los 6 dominios y vive también en el
-      // widget flotante global — la página dedicada sigue solo para
-      // admin/gerencia (RoleRoute en App.tsx). Su bitácora ("la Bóveda")
-      // dejó de ser una pantalla: es memoria interna que Cost consulta
-      // solo, nunca una pantalla de usuario (decisión del fundador).
-      { to: '/agente', label: 'Cost (beta)', Icon: Sparkles, requiereDashboard: true },
     ],
   },
 ]
@@ -105,6 +103,30 @@ function NavRow({ to, label, Icon, onNavigate }: NavItem & { onNavigate?: () => 
           {label}
         </>
       )}
+    </NavLink>
+  )
+}
+
+// Ítem propio de Cost: fondo/borde dorados + glow, distinto al resto de la
+// navegación a propósito (es el agente de IA insignia del producto).
+function CostNavRow({ onNavigate }: { onNavigate?: () => void }) {
+  return (
+    <NavLink
+      to={COST_ITEM.to}
+      onClick={onNavigate}
+      className={({ isActive }) =>
+        `flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium border transition-all ${
+          isActive
+            ? 'bg-brand-gold/25 border-brand-gold text-white shadow-[0_0_16px_#D4AF3745]'
+            : 'bg-brand-gold/10 border-brand-gold/40 text-[#F5E8D2] hover:bg-brand-gold/20 hover:border-brand-gold/70'
+        }`
+      }
+    >
+      <Sparkles className="w-4 h-4 shrink-0 text-brand-gold-light" aria-hidden="true" />
+      Cost
+      <span className="ml-auto text-[9px] font-semibold uppercase tracking-wider text-brand-gold-light/80">
+        Beta
+      </span>
     </NavLink>
   )
 }
@@ -162,6 +184,9 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               <div className="space-y-0.5">
                 <NavRow {...PROYECTOS_ITEM} onNavigate={onNavigate} />
               </div>
+            )}
+            {group.label === 'Cotizaciones' && verDashboard && (
+              <CostNavRow onNavigate={onNavigate} />
             )}
           </Fragment>
         ))}
