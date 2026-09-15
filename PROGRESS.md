@@ -2,6 +2,20 @@
 
 ---
 
+## ✅ Hecho (2026-09-15) — Ajuste post-rediseño: distinguir usuario de Cost
+
+El fundador probó el rediseño de Cost del día anterior y reportó 2 problemas: no le gustaba el
+degradé color crema sobre el scroll, y no podía distinguir su propio mensaje de la respuesta de Cost
+(el label pequeño "Tú"/"Cost" no bastaba, ambos eran texto plano casi idéntico). Se quitó el degradé.
+El turno del usuario ahora es un bloque propio alineado a la derecha con borde/fondo sutil (mismo
+patrón que usa esta propia CLI para distinguir el prompt del usuario de la salida del agente); la
+respuesta de Cost sigue en estilo bitácora (texto plano, izquierda, con sus pasos de herramienta) —
+mantiene el objetivo de "agente, no chatbot" del ciclo anterior sin sacrificar que se pueda distinguir
+quién dijo qué. Se agregó un `sr-only` "Tú:" para no perder la señal de rol en lectores de pantalla.
+Verificado en vivo. Commit `7ad585b`, subido y desplegado a producción (frontend).
+
+---
+
 ## ✅ Hecho (2026-09-14, mismo ciclo) — Rediseño de Cost: agente de IA, no chatbot
 
 El fundador pidió un ciclo de diseño para el panel de Cost: "necesito que tenga animaciones de carga,
