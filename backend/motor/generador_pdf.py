@@ -418,12 +418,16 @@ def _encabezado_doc(E, C, doc_type, numero, fecha_str, empresa_info, logo_bytes,
     if emp.get("ciudad"):
         izq.append(Paragraph(emp["ciudad"], E["doc_emp_sub"]))
 
+    # El logo de Costo360 solo aparece cuando el taller NO tiene su propio
+    # logo cargado -- con logo propio, el documento es 100% de la marca del
+    # taller (ver PLANTILLA_PDF_COSTO360.md).
     logo_c360_bytes = None
-    try:
-        with open(_LOGO_COSTO360_OSCURO_PATH, "rb") as f:
-            logo_c360_bytes = f.read()
-    except Exception:
-        pass
+    if not logo_bytes:
+        try:
+            with open(_LOGO_COSTO360_OSCURO_PATH, "rb") as f:
+                logo_c360_bytes = f.read()
+        except Exception:
+            pass
     logo_c360 = _logo_img(logo_c360_bytes, max_h=0.9*cm, fondo=_fondo_header) if logo_c360_bytes else None
     if logo_c360:
         logo_c360.hAlign = "RIGHT"
@@ -491,7 +495,7 @@ def _tabla_2col(E, C, filas_datos):
     return _tabla_datos_cliente(E, C, filas_datos)
 
 
-def _footer_doc(E, C, emp_nombre, fecha_str, numero="", ciudad=""):
+def _footer_doc(E, C, emp_nombre, fecha_str, numero="", ciudad="", tiene_logo_propio=False):
     _ciudad_str = ciudad.strip() if ciudad and ciudad.strip() else ""
     _sep_ciudad = f"{_ciudad_str}  •  " if _ciudad_str else ""
     linea = (
@@ -507,20 +511,24 @@ def _footer_doc(E, C, emp_nombre, fecha_str, numero="", ciudad=""):
         "marca_costo360", fontSize=6.5, fontName="Helvetica",
         leading=8, textColor=C["gray"], alignment=TA_RIGHT,
     )
-    
+
+    # La marca de agua "Generado por Costo360" (logo o texto) solo aparece
+    # cuando el taller NO tiene su propio logo cargado.
     logo_bytes = None
-    try:
-        with open(_LOGO_COSTO360_CLARO_PATH, "rb") as f:
-            logo_bytes = f.read()
-    except Exception:
-        pass
+    if not tiene_logo_propio:
+        try:
+            with open(_LOGO_COSTO360_CLARO_PATH, "rb") as f:
+                logo_bytes = f.read()
+        except Exception:
+            pass
 
     logo_c360 = _logo_img(logo_bytes, max_h=0.45*cm) if logo_bytes else ""
-    
+
     izq = Paragraph(linea, _footer_style)
-    
-    der_items = []
-    if logo_c360:
+
+    if tiene_logo_propio:
+        der = ""
+    elif logo_c360:
         # Align logo to the right by wrapping it in a table
         tbl_logo = Table([[Paragraph("Generado por", _marca_style), logo_c360]], colWidths=[2*cm, 2.5*cm])
         tbl_logo.setStyle(TableStyle([
@@ -1171,7 +1179,8 @@ def generar_pdf_cotizacion(resultado, numero=None, empresa_info=None,
     story += _bloque_firma_cliente(E, C)
 
     # ⑩ FOOTER
-    story += _footer_doc(E, C, emp.get("nombre",""), fecha_str, numero, ciudad=emp.get("ciudad",""))
+    story += _footer_doc(E, C, emp.get("nombre",""), fecha_str, numero, ciudad=emp.get("ciudad",""),
+                          tiene_logo_propio=bool(logo_bytes))
 
     doc.build(story)
     return buf.getvalue()
@@ -1415,7 +1424,8 @@ def generar_pdf_cotizacion_aiu(resultado, numero=None, empresa_info=None, logo_b
     story += _seccion_terminos(E, C, nota_aiu, anticipo_pct)
     story.append(Spacer(1, _SP_BLOQUE))
     story += _bloque_firma_cliente(E, C)
-    story += _footer_doc(E, C, emp.get("nombre",""), fecha_str, numero, ciudad=emp.get("ciudad",""))
+    story += _footer_doc(E, C, emp.get("nombre",""), fecha_str, numero, ciudad=emp.get("ciudad",""),
+                          tiene_logo_propio=bool(logo_bytes))
 
     doc.build(story)
     return buf.getvalue()
@@ -1764,7 +1774,8 @@ def generar_cuenta_cobro(resultado, datos_prestador, datos_pagador,
     story.append(firma)
 
     story += _footer_doc(E, C, datos_prestador.get("nombre", ""), fecha_str, numero,
-                          ciudad=datos_prestador.get("ciudad", ""))
+                          ciudad=datos_prestador.get("ciudad", ""),
+                          tiene_logo_propio=bool(logo_bytes))
 
     doc.build(story)
     return buf.getvalue()
