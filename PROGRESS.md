@@ -14,6 +14,10 @@ mantiene el objetivo de "agente, no chatbot" del ciclo anterior sin sacrificar q
 quién dijo qué. Se agregó un `sr-only` "Tú:" para no perder la señal de rol en lectores de pantalla.
 Verificado en vivo. Commit `7ad585b`, subido y desplegado a producción (frontend).
 
+Ajuste adicional el mismo día: el fundador pidió que "Pensando…" resaltara un poco más — el punto
+dorado ganó un anillo pulsante (mismo lenguaje visual que ya usa un paso de herramienta activo) y el
+texto pasó de `text-xs`/`font-medium` a `text-sm`/`font-semibold`. Commit `f38a950`, desplegado.
+
 ---
 
 ## ✅ Hecho (2026-09-14, mismo ciclo) — Rediseño de Cost: agente de IA, no chatbot
