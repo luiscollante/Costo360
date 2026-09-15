@@ -20,7 +20,6 @@ const DEFAULTS: ConfigEmpresa = {
   banco_titular: '',
   anticipo_pct: 60,
   dias_entrega: 10,
-  condiciones_pago: '50% anticipo — 50% contra entrega',
 }
 
 export default function ConfigPage() {
@@ -227,15 +226,6 @@ export default function ConfigPage() {
                     value={form.dias_entrega}
                     onChange={(e) => set('dias_entrega', parseInt(e.target.value) || 1)}
                     className={inputBase + ' font-mono'}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-[10px] font-semibold text-brand-text-secondary mb-1.5 uppercase tracking-wide">Condiciones de pago</label>
-                  <input
-                    type="text"
-                    value={form.condiciones_pago}
-                    onChange={(e) => set('condiciones_pago', e.target.value)}
-                    className={inputBase}
                   />
                 </div>
               </div>

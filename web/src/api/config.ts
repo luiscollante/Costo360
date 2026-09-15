@@ -13,7 +13,6 @@ export interface ConfigEmpresa {
   banco_titular: string
   anticipo_pct: number
   dias_entrega: number
-  condiciones_pago: string
 }
 
 export async function getConfigEmpresa(): Promise<ConfigEmpresa> {

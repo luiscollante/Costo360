@@ -172,7 +172,6 @@ def _empresa_info(conn, empresa_id) -> dict:
         "ciudad":           saved.get("ciudad", ""),
         "anticipo_pct":     saved.get("anticipo_pct", 60),
         "dias_entrega":     saved.get("dias_entrega", 10),
-        "condiciones_pago": saved.get("condiciones_pago", "50% anticipo — 50% contra entrega"),
     }
 
 

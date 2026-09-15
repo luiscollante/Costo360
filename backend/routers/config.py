@@ -25,7 +25,6 @@ _EMPRESA_DEFAULTS = {
     "banco_titular":     "",
     "anticipo_pct":      60,
     "dias_entrega":      10,
-    "condiciones_pago":  "50% anticipo — 50% contra entrega",
 }
 
 
