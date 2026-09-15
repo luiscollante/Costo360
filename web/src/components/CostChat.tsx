@@ -145,13 +145,7 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="relative flex-1 min-h-0">
-        {/* Degradado sobre el borde superior del scroll — suaviza el corte
-            cuando hay contenido tapado arriba, en vez de un borde duro. */}
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 z-10 h-6 bg-gradient-to-b from-brand-bg to-transparent"
-          aria-hidden="true"
-        />
+      <div className="flex-1 min-h-0">
         <div ref={scrollRef} className="h-full overflow-y-auto p-4">
           {mensajes.length === 0 && (
             <div className="flex h-full flex-col items-center justify-center">
@@ -192,39 +186,48 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
                 }
                 className="border-t border-brand-border/50 pt-3 first:border-t-0 first:pt-0"
               >
-                <p
-                  className={`mb-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider ${
-                    m.role === 'user' ? 'text-brand-text-tertiary' : 'text-brand-gold-text'
-                  }`}
-                >
-                  {m.role === 'assistant' && <Sparkles size={11} aria-hidden="true" />}
-                  {m.role === 'user' ? 'Tú' : 'Cost'}
-                </p>
-
-                {m.role === 'assistant' && pasos.length > 0 && (
-                  expandido ? (
-                    <div className="mb-1.5 space-y-1">
-                      {pasos.map((p) => <FilaPaso key={p.id} paso={p} />)}
+                {m.role === 'user' ? (
+                  // A propósito distinto del estilo "bitácora" de Cost: tu
+                  // mensaje es la ORDEN, no un paso del registro — se ve como
+                  // un bloque propio, alineado a la derecha, para que nunca
+                  // se confunda con la respuesta (hallazgo real del fundador:
+                  // sin esto, ambos eran texto plano indistinguible a simple
+                  // vista, ver el label pequeño no bastaba).
+                  <div className="flex justify-end">
+                    <div className="max-w-[85%] rounded-lg border border-brand-primary/25 bg-brand-primary/[0.06] px-3 py-2">
+                      <span className="sr-only">Tú: </span>
+                      <p className={`whitespace-pre-wrap text-brand-text ${txt.burbuja}`}>{m.content}</p>
                     </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => togglePasos(i)}
-                      className="mb-1.5 flex cursor-pointer items-center gap-1 text-[11px] text-brand-text-tertiary transition-colors hover:text-brand-text-secondary"
-                    >
-                      <ChevronRight size={11} aria-hidden="true" />
-                      {pasos.length} paso{pasos.length > 1 ? 's' : ''} · {[...new Set(pasos.map((p) => dominioDePaso(p.nombre)))].join(', ')}
-                    </button>
-                  )
-                )}
+                  </div>
+                ) : (
+                  <>
+                    <p className="mb-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-brand-gold-text">
+                      <Sparkles size={11} aria-hidden="true" />
+                      Cost
+                    </p>
 
-                <div className={`min-w-0 overflow-hidden break-words ${txt.burbuja}`}>
-                  {m.role === 'assistant' ? (
-                    m.content ? <TextoAsistente texto={m.content} /> : (sinContenidoTodavia ? <Pensando /> : null)
-                  ) : (
-                    <p className="whitespace-pre-wrap text-brand-text">{m.content}</p>
-                  )}
-                </div>
+                    {pasos.length > 0 && (
+                      expandido ? (
+                        <div className="mb-1.5 space-y-1">
+                          {pasos.map((p) => <FilaPaso key={p.id} paso={p} />)}
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => togglePasos(i)}
+                          className="mb-1.5 flex cursor-pointer items-center gap-1 text-[11px] text-brand-text-tertiary transition-colors hover:text-brand-text-secondary"
+                        >
+                          <ChevronRight size={11} aria-hidden="true" />
+                          {pasos.length} paso{pasos.length > 1 ? 's' : ''} · {[...new Set(pasos.map((p) => dominioDePaso(p.nombre)))].join(', ')}
+                        </button>
+                      )
+                    )}
+
+                    <div className={`min-w-0 overflow-hidden break-words ${txt.burbuja}`}>
+                      {m.content ? <TextoAsistente texto={m.content} /> : (sinContenidoTodavia ? <Pensando /> : null)}
+                    </div>
+                  </>
+                )}
               </motion.div>
             )
           })}
