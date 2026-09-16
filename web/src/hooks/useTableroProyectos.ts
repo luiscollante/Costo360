@@ -205,17 +205,35 @@ export function useTableroProyectos(columns: EstadoProyecto[], filtros: Filtros)
         return next
       })
       try {
-        await moverProyecto(id, hacia)
-        // Reconciliar la columna destino con la verdad del backend (progreso,
-        // en_riesgo, contadores). La de origen ya no contiene la tarjeta.
-        if (columns.includes(hacia)) recargar(hacia)
+        const actualizado = await moverProyecto(id, hacia)
+        // Reconcilia SOLO esta tarjeta con la respuesta del propio movimiento
+        // (ya trae progreso/en_riesgo recalculados) — nunca volver a listar
+        // toda la columna destino. Antes se llamaba `recargar(hacia)`, que
+        // relistaba la columna entera por su cuenta; si esa respuesta llegaba
+        // tarde (red lenta) y mientras tanto la MISMA tarjeta se arrastraba
+        // de nuevo a otra columna, la relistada vieja la resucitaba en la
+        // columna anterior — tarjeta fantasma duplicada hasta recargar la
+        // página a mano (hallazgo real y crítico del fundador, 2026-09-15).
+        // Usar la respuesta de ESTE propio movimiento en vez de una relistada
+        // aparte elimina la carrera de raíz: no hay una segunda petición
+        // independiente que pueda llegar fuera de orden.
+        setState((prev) => {
+          const col = prev[hacia]
+          // Si la tarjeta ya no está en esta columna (se volvió a mover
+          // mientras esta respuesta viajaba), no hay nada que reconciliar.
+          if (!col || !col.items.some((p) => p.id === id)) return prev
+          return {
+            ...prev,
+            [hacia]: { ...col, items: col.items.map((p) => (p.id === id ? actualizado : p)) },
+          }
+        })
         return true
       } catch {
         if (previo) setState(previo)
         return false
       }
     },
-    [columns, recargar],
+    [],
   )
 
   const algunError = columns.some((c) => state[c]?.error)
