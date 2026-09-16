@@ -2,6 +2,92 @@
 
 ---
 
+## Sesión: 2026-09-16 (mismo día) — Entrenamiento de pronunciación de la voz de Cost
+
+### Qué se hizo
+El fundador probó la voz de Cost y reportó 3 problemas con un ejemplo real capturado (le preguntó por
+los 5 materiales de mármol más caros): 6-7 segundos de silencio antes de que la respuesta empezara a
+sonar tras hablarle por micrófono, habla demasiado rápido en respuestas largas, y pronuncia mal
+términos del dominio ("m²" → "m dos"; "$1.339.000" → "mil trescientos treinta y nueve", perdiendo la
+magnitud real). Pidió explícitamente un ciclo formal, riguroso y exhaustivo, con ayuda de los agentes
+que hicieran falta — no un parche rápido.
+
+Se consultó al agente Voice AI Integration Engineer con el pipeline real (`routers/voz.py` proxy
+directo a ElevenLabs, sin `voice_settings`, con `model_id=eleven_multilingual_v2`, y el texto que le
+llega es el markdown crudo que genera el modelo, sin limpiar) y el ejemplo real del fundador. El agente
+hizo su propia auditoría de las 8 tools de dominio + el system prompt y encontró, además de los 3 casos
+ya reportados: `ml` (metros lineales), `cm`, los códigos cortos de unidad de Parámetros (`und`, `glb`),
+`%`, timestamps ISO completos que la Bóveda le devuelve al modelo (un desastre total si Cost los cita
+al responder "¿qué cambiaste ayer?"), e IDs/UUIDs que el propio system prompt le pide usar "exactos"
+sin aclarar que nunca deben pronunciarse. Entregó una especificación completa en 4 etapas con el orden
+exacto de aplicación (el orden importa: markdown antes que IDs/fechas antes que unidades/moneda antes
+que limpieza final) y las razones de cada decisión de diseño.
+
+Se implementó tal cual la especificación en `backend/services/voz_service.py` (módulo nuevo):
+`normalizar_para_voz` como pipeline de 4 etapas, y `cop_a_letras`/`numero_a_palabras` como conversor de
+números a español escrito desde cero (con las reglas reales de apócope "un"/"veintiún" antes de un
+sustantivo, y "de" antes de "pesos" solo cuando "millón/millones" es el último grupo hablado — "un
+millón de pesos" pero "dos millones novecientos catorce mil pesos", sin "de"). Se decidió deletrear el
+monto completo en palabras en vez de solo reformatear los separadores de miles — el bug real
+(`$1.339.000` mal leído) es evidencia de que ElevenLabs no resuelve de forma confiable un número con
+más de un punto de agrupación, así que reformatear seguiría dependiendo del mismo comportamiento no
+documentado de un proveedor externo; deletrear en código propio es la única opción determinista y
+testeable. Se conectó en `backend/routers/voz.py` antes de mandar el texto a ElevenLabs, junto con el
+cambio de `model_id` a `eleven_flash_v2_5` (el que ElevenLabs recomienda para conversación en vivo, más
+rápido que `eleven_multilingual_v2`) y un `voice_settings` nuevo (`speed: 0.92` para el ritmo, más
+`stability`/`similarity_boost`/`style` recomendados) — antes no se mandaba ningún ajuste, ElevenLabs
+usaba el default de la voz. Se agregó también un tope de seguridad aparte sobre el texto YA normalizado
+(la conversión a palabras expande el texto, ej. "$2.914.000" de 11 caracteres pasa a 44), recortando
+siempre en el último punto completo, nunca a mitad de palabra.
+
+Dos hallazgos propios durante la implementación, no parte de la especificación original: el texto real
+que generó Cost en vivo (probado en el navegador) tenía un formato ligeramente distinto al ejemplo
+original del fundador — lista numerada con negritas, un guion "–" como separador, y "COP/m²" en vez de
+solo "/ m²" — lo que expuso dos casos no cubiertos (el guion sonaba como una pausa rara, y "COP" quedaba
+pegado y sin sentido después de "pesos"); se agregaron dos reglas más (guion-separador → coma, "COP"
+suelto se descarta) verificadas con el texto real capturado del navegador. También se agregó una línea
+al system prompt (`runtime.py`) aclarando que un `historial_id` u otro id técnico nunca debe
+pronunciarse en la respuesta al usuario — la regex que redacta UUIDs es una red de seguridad, no el
+arreglo real de raíz.
+
+Verificado: 12 casos de `cop_a_letras` contra los 5 montos reales del reporte del fundador (todos
+exactos); la función completa contra el texto real que generó Cost en vivo al reproducir la pregunta
+original en el navegador (resultado limpio, sin markdown, sin "m dos", sin "COP" suelto, con las pausas
+correctas); endpoint `/api/voz/hablar` probado en vivo tras el cambio de modelo — 200 OK, audio se
+genera y reproduce. No se pudo medir con precisión cuánto bajó la latencia real de los 6-7 segundos
+reportados — esa cifra incluye la transcripción del audio y el turno completo del agente (razonamiento
++ tool-calls), no solo la generación de TTS, así que el cambio de modelo ayuda a la porción de TTS pero
+no se prometió que por sí solo resuelva todo; falta que el fundador lo sienta en vivo.
+
+### Archivos modificados
+`backend/services/voz_service.py` (nuevo — normalización de texto para voz), `backend/routers/voz.py`
+(aplica la normalización, `model_id` más rápido, `voice_settings` nuevo, tope de seguridad sobre el
+texto normalizado), `backend/agente/runtime.py` (una línea: nunca pronunciar ids técnicos).
+
+### Decisiones tomadas
+- Deletrear montos completos en palabras, no reformatear separadores — la única opción determinista
+  dado que el bug real demostró que el comportamiento de ElevenLabs con números agrupados no es
+  confiable.
+- La normalización vive en el backend (`services/voz_service.py`), no en el frontend — ya existe un
+  segundo cliente (`.env.android`) apuntando al mismo backend, así que centralizar evita duplicar la
+  lógica si aparece un segundo cliente real.
+- `eleven_flash_v2_5` en vez de `eleven_multilingual_v2` — es lo que ElevenLabs recomienda para
+  conversación en vivo; si la calidad se siente por debajo de lo aceptable en producción, la opción de
+  respaldo documentada es `eleven_turbo_v2_5`, no volver al modelo anterior.
+- La regex que redacta UUIDs es un respaldo, no el arreglo real — la instrucción del system prompt de
+  nunca pronunciar ids es la corrección de raíz.
+
+### Primera tarea de la próxima sesión
+Confirmar con el fundador, escuchando a Cost en su navegador real: (1) si la pronunciación de montos/
+unidades/listas mejoró de verdad, (2) si el ritmo se siente mejor con `speed: 0.92` (ajustar de oído si
+sigue sintiéndose rápido, o se siente artificialmente lento), y (3) cuánto bajó realmente la latencia de
+los 6-7 segundos originales — si sigue sintiéndose lenta, el cuello de botella probable está en el turno
+del agente (razonamiento + tool-calls), no en el TTS, y sería un ciclo aparte medir cada tramo por
+separado. Este ciclo ya está commiteado, pusheado y desplegado a producción (solo backend), verificado
+con `/healthz`.
+
+---
+
 ## Sesión: 2026-09-16 (mismo día) — Esfera quitada del chat + Cost deja de decir "taller" + voz automática
 
 ### Qué se hizo

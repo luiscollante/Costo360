@@ -2,6 +2,57 @@
 
 ---
 
+## ✅ Hecho (2026-09-16, mismo día) — Entrenamiento de pronunciación de la voz de Cost
+
+El fundador reportó 3 problemas reales escuchando a Cost: tarda 6-7 segundos en empezar a hablar tras
+un mensaje de voz, habla demasiado rápido en respuestas largas, y pronuncia mal términos del dominio
+("m²" → "m dos", "$1.339.000" → "mil trescientos treinta y nueve" — perdiendo la magnitud real del
+monto). Pidió explícitamente un ciclo formal con ayuda de agentes especializados para un
+"entrenamiento riguroso y exhaustivo", no un parche rápido.
+
+**Auditoría** (agente Voice AI Integration Engineer, recorrido completo de las 8 tools de dominio +
+el system prompt): además de los 3 casos que ya había encontrado el fundador, aparecieron `ml`
+(metros lineales), `cm`, los códigos cortos de unidad de Parámetros (`und`, `glb`), `%`, timestamps
+ISO completos que la Bóveda le devuelve al modelo, IDs/UUIDs que el system prompt le pide usar
+"exactos" al deshacer algo, y markdown crudo (negritas, listas) que nunca se limpiaba antes de
+mandarlo a ElevenLabs.
+
+**Implementado** en `backend/services/voz_service.py` (nuevo) — función `normalizar_para_voz` en 4
+etapas (markdown → texto hablable, redacción de IDs/fechas, unidades y moneda del dominio, limpieza
+final), aplicada en `backend/routers/voz.py` antes de mandar el texto a ElevenLabs:
+- Montos en pesos colombianos se deletrean completos en palabras (`cop_a_letras` — conversor de
+  números a español escrito desde cero, con las reglas reales de apócope "un"/"veintiún" y "de" antes
+  de "pesos" solo cuando corresponde) — decisión deliberada en vez de reformatear separadores, porque
+  el bug real demostró que ElevenLabs no resuelve de forma confiable un monto con más de un punto de
+  miles.
+- m²/m2, ml, cm, %, und, glb expandidos a su forma hablada; "/m²" → "por metro cuadrado"; "COP"
+  pegado a un monto ya convertido se descarta (ruido, "pesos" ya dice la moneda).
+- Markdown (negritas, listas numeradas/viñetas, backticks, enlaces) limpiado con pausas reales entre
+  ítems; guiones usados como separador ("Nombre – $precio") pasan a coma.
+- UUIDs redactados por completo, timestamps ISO convertidos a fecha hablada — más un ajuste de una
+  línea en el system prompt (`runtime.py`) para que Cost no vuelva a citar un id técnico en su
+  respuesta al usuario (la regex es una red de seguridad, no el arreglo real).
+- `model_id` de ElevenLabs cambiado de `eleven_multilingual_v2` a `eleven_flash_v2_5` (el que
+  ElevenLabs recomienda para conversación en vivo, notablemente más rápido) y se agregó
+  `voice_settings` (`speed: 0.92`, más los demás parámetros recomendados) — antes no se mandaba
+  ningún ajuste de ritmo, ElevenLabs usaba el default de la voz.
+
+Verificado: 12 casos de conversión de moneda contra los 5 montos reales del ejemplo del fundador (todos
+exactos, incluida la regla de apócope en "$901.000" → "novecientos un mil pesos"); la función completa
+probada contra el texto real que generó Cost en vivo (con negritas, lista numerada, guion separador y
+sufijo "COP/m²" — un formato ligeramente distinto al ejemplo original del fundador, buena señal de que
+generaliza) — resultado limpio y correcto. Endpoint `/api/voz/hablar` probado en vivo en el navegador
+tras el cambio de modelo: 200 OK, audio se genera y reproduce.
+
+**Honesto sobre la latencia**: los 6-7 segundos reportados no son solo TTS — incluyen transcripción del
+audio + el turno completo del agente (razonamiento + tool-calls) antes de tener texto final. El cambio
+de modelo reduce la porción de TTS del total, pero no se prometió (ni se puede confirmar desde acá) que
+eso por sí solo baje los 6-7 segundos a algo instantáneo — falta que el fundador lo sienta en vivo.
+
+Commiteado, pusheado y desplegado a producción (solo backend), verificado con `/healthz`.
+
+---
+
 ## ✅ Hecho (2026-09-16, mismo día) — Esfera quitada del chat + Cost deja de decir "taller" + voz automática
 
 Tres pedidos puntuales del fundador, sin relación entre sí:
