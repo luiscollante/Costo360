@@ -169,12 +169,27 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
   useEffect(() => () => detenerVoz(), [])
 
   // Escuchar por micrófono — graba con MediaRecorder (nativo del navegador,
-  // sin costo) y transcribe con ElevenLabs. Llena el input en vez de enviar
-  // solo: el usuario revisa la transcripción antes de mandarla, igual que
-  // revisaría lo que escribió a mano.
+  // sin costo) y transcribe con ElevenLabs. A propósito envía SOLO (decisión
+  // del fundador, 2026-09-16): al detectar que dejaste de hablar, se detiene
+  // y se manda directo — nunca hace falta un segundo clic en el micrófono ni
+  // en enviar. Un clic manual en el micrófono mientras graba sigue cortando
+  // antes si querés (mismo camino de cierre que la detección de silencio).
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioCtxGrabacionRef = useRef<AudioContext | null>(null)
+  const rafSilencioRef = useRef<number | null>(null)
+  const topeGrabacionRef = useRef<number | null>(null)
   const [grabando, setGrabando] = useState(false)
   const [transcribiendo, setTranscribiendo] = useState(false)
+
+  const _UMBRAL_SILENCIO = 0.02
+  const _SILENCIO_MS = 1500
+  const _TOPE_GRABACION_MS = 60_000 // respaldo si el silencio nunca se detecta (ruido de fondo)
+
+  function limpiarDeteccionSilencio() {
+    if (rafSilencioRef.current != null) { cancelAnimationFrame(rafSilencioRef.current); rafSilencioRef.current = null }
+    if (topeGrabacionRef.current != null) { window.clearTimeout(topeGrabacionRef.current); topeGrabacionRef.current = null }
+    if (audioCtxGrabacionRef.current) { audioCtxGrabacionRef.current.close().catch(() => {}); audioCtxGrabacionRef.current = null }
+  }
 
   async function alternarGrabacion() {
     if (grabando) { mediaRecorderRef.current?.stop(); return }
@@ -184,12 +199,13 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
       const chunks: Blob[] = []
       mr.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data) }
       mr.onstop = async () => {
+        limpiarDeteccionSilencio()
         stream.getTracks().forEach((t) => t.stop())
         setGrabando(false)
         setTranscribiendo(true)
         try {
           const texto = await escuchar(new Blob(chunks, { type: 'audio/webm' }))
-          if (texto.trim()) setInput(texto.trim())
+          if (texto.trim()) enviar(texto.trim())
           else showToast('error', 'No se entendió el audio — intenta de nuevo')
         } catch {
           showToast('error', 'No se pudo transcribir el audio')
@@ -200,10 +216,55 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
       mediaRecorderRef.current = mr
       mr.start()
       setGrabando(true)
+
+      // Detección de silencio: mide el volumen real del micrófono (RMS) y
+      // detiene la grabación tras 1.5s por debajo del umbral — pero solo
+      // DESPUÉS de haber detectado voz al menos una vez, para no cortar de
+      // inmediato si el ambiente ya estaba en silencio al empezar a grabar.
+      const ctx = new AudioContext()
+      audioCtxGrabacionRef.current = ctx
+      const analyser = ctx.createAnalyser()
+      analyser.fftSize = 2048
+      ctx.createMediaStreamSource(stream).connect(analyser)
+      const datos = new Uint8Array(analyser.fftSize)
+      let empezoAHablar = false
+      let silencioDesde: number | null = null
+      const chequear = () => {
+        analyser.getByteTimeDomainData(datos)
+        let sumaCuadrados = 0
+        for (let n = 0; n < datos.length; n++) {
+          const v = (datos[n] - 128) / 128
+          sumaCuadrados += v * v
+        }
+        const rms = Math.sqrt(sumaCuadrados / datos.length)
+        if (rms >= _UMBRAL_SILENCIO) {
+          empezoAHablar = true
+          silencioDesde = null
+        } else if (empezoAHablar) {
+          if (silencioDesde == null) silencioDesde = performance.now()
+          else if (performance.now() - silencioDesde > _SILENCIO_MS) {
+            if (mr.state !== 'inactive') mr.stop()
+            return
+          }
+        }
+        rafSilencioRef.current = requestAnimationFrame(chequear)
+      }
+      rafSilencioRef.current = requestAnimationFrame(chequear)
+      topeGrabacionRef.current = window.setTimeout(() => {
+        if (mr.state !== 'inactive') mr.stop()
+      }, _TOPE_GRABACION_MS)
     } catch {
       showToast('error', 'No se pudo acceder al micrófono')
     }
   }
+
+  // Nunca dejar el micrófono/análisis de silencio corriendo de fondo si el
+  // panel se desmonta a mitad de una grabación.
+  useEffect(() => () => {
+    mediaRecorderRef.current?.stop()
+    limpiarDeteccionSilencio()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function scrollAbajo() {
     requestAnimationFrame(() => {
@@ -441,7 +502,7 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={grabando ? 'Escuchando…' : 'Escribe tu mensaje…'}
+          placeholder={grabando ? 'Escuchando… (se envía sola al terminar)' : 'Escribe tu mensaje…'}
           aria-label="Mensaje para el asistente"
           disabled={grabando || transcribiendo}
           className={`h-9 flex-1 rounded-lg border border-brand-border bg-brand-input px-3 text-brand-text focus-visible:outline-none focus-visible:border-brand-primary disabled:opacity-60 ${txt.input}`}
