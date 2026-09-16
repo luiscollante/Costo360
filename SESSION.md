@@ -2,6 +2,175 @@
 
 ---
 
+## Sesión: 2026-09-16 (mismo día) — Render de cocina con IA (OpenAI): objetivo nuevo completo + 4 mejoras
+
+### Qué se hizo
+El fundador pidió planificar, con 4 agentes en paralelo (AI Engineer, Prompt Engineer, Backend
+Architect, Product Manager), cómo integrar la API de OpenAI para que los asesores generen un render
+fotorrealista de la cocina de un cliente con el material real que está cotizando — su preocupación
+explícita era que el resultado no se pareciera "en nada al material en la vida real". Tras revisar el
+plan, pidió implementarlo directo: "vamos a implementarlo y en la 'marcha' vemos que corregimos y
+agregamos".
+
+**Construcción completa** (backend + frontend + migración de base de datos real):
+- Migración `0011_render_cocina.sql` aplicada a producción (Supabase) con confirmación explícita del
+  fundador — tabla `render_cocina` con RLS real + 3 buckets privados de Storage con URLs firmadas.
+- `catalogo_materiales` ganó atributos visuales (enum cerrado: color, veta, densidad/patrón de
+  veteado, acabado, tono) y foto de referencia con aprobación humana separada de la subida.
+- `backend/services/render_service.py`: construye el prompt de forma determinística a partir de los
+  enum (nunca texto libre del asesor sin filtrar), ancla la generación en una foto real del material
+  siempre que exista (`/v1/images/edits` en vez de generación por texto solo), tope mensual
+  configurable, tope de 3 renders por cotización, límite de 10/hora por IP.
+- Modelo real usado: `gpt-image-2.5-sunburst`.
+- Frontend: `RenderCocinaDialog.tsx` (botón nuevo en Historial), 4 endpoints nuevos de atributos/foto
+  de material integrados en `MaterialesPage.tsx`.
+
+**Primera generación real y pagada, verificada en vivo:** el fundador consiguió su clave de OpenAI y la
+agregó él mismo a `backend/.env` (yo preparé la línea vacía + instrucciones paso a paso sin tecnicismos
+— nunca vi ni escribí el valor real de la clave, regla dura del proyecto). Con la clave activa se
+generó un render real de una cocina con el material AMAZONAS (granito): `201 Created`, imagen
+fotorrealista correcta. Antes de tener la clave se confirmó también el camino de error controlado
+(`503 Service Unavailable`, mensaje claro, sin romper el resto de la app).
+
+**4 mejoras pedidas por el fundador el mismo día sobre el diálogo de render**, las 4 implementadas:
+1. Regla dura: nunca se genera un render sin foto de referencia APROBADA del material — antes era
+   opcional (se degradaba a generar solo por texto). Ahora el backend la exige con un 422 y el frontend
+   bloquea el botón con un aviso claro. Verificado en vivo.
+2. Selección de material en 2 pasos en cascada (Tipo de material → Referencia) en vez de un único
+   `<select>` con más de 200 opciones mezcladas de todas las categorías. Verificado en vivo.
+3. Subir la foto de referencia y aprobarla sin salir del diálogo — al subir aparece una tarjeta con
+   vista previa preguntando "¿Guardar esta foto en el catálogo para usarla en este y en futuros
+   renders de [REFERENCIA]?". Verificado en vivo (con una foto de muestra genérica, usando
+   deliberadamente el botón "Subir otra" al final para NO dejar guardada una foto incorrecta como
+   referencia real de AMAZONAS en el catálogo de producción — esa foto sigue pendiente de subir con la
+   lámina real cuando el fundador la tenga).
+4. Comparación antes/después (foto del cliente vs. render generado, lado a lado en el mismo diálogo) y
+   un estado de carga más agradable (mensajes rotativos + barra de progreso animada, reemplazando el
+   spinner chico anterior). Implementadas y revisadas en código, pero NO verificadas con una generación
+   real todavía (cada llamada a OpenAI tiene costo real) — queda como primera tarea pendiente.
+
+**2 preguntas del fundador, respondidas sin tocar código:**
+- ¿Cost (el agente) genera los renders? No — es un flujo completamente aparte, sin ninguna tool
+  conectada a Cost hoy.
+- ¿Podés construir toda la infraestructura de Costo360 en AWS/Azure de forma automatizada? Sí, como
+  arquitecto de nube, con credenciales acotadas (nunca cuenta root) — pero siempre con plan + costo
+  estimado + confirmación antes de crear cada recurso, nunca de una sola pasada, y sin reemplazar
+  guardia 24/7 real. Es una decisión de migración grande para el futuro, no algo iniciado en esta sesión.
+
+### Archivos creados
+`backend/migrations/0011_render_cocina.sql`, `backend/models/render.py`,
+`backend/services/storage_service.py`, `backend/services/render_service.py`,
+`backend/routers/render.py`, `web/src/api/render.ts`, `web/src/components/RenderCocinaDialog.tsx`.
+
+### Archivos modificados
+`backend/models/materiales.py`, `backend/services/catalogo_service.py`,
+`backend/routers/materiales.py`, `backend/main.py`, `backend/.env` (línea `OPENAI_API_KEY=` agregada
+vacía; el fundador puso el valor real él mismo), `web/src/api/materiales.ts`,
+`web/src/pages/MaterialesPage.tsx`, `web/src/pages/HistorialPage.tsx`, `web/src/index.css` (animación
+nueva de barra de progreso).
+
+### Decisiones tomadas
+- La foto real de referencia del material es OBLIGATORIA para generar cualquier render, sin excepción
+  — decisión explícita del fundador, cierra la Ruta A degradada (generar solo por texto) que existía
+  antes como opción válida.
+- El "antes" de la comparación antes/después vive solo en el navegador del asesor (nunca se reenvía al
+  backend) — decisión de diseño propia para no romper la regla ya existente de no re-exponer la foto
+  del cliente por privacidad.
+- Subir + aprobar la foto de referencia se resuelve completo dentro del mismo diálogo de render (no
+  hace falta ir a Catálogo aparte) — reusando los mismos 2 endpoints que ya existían para
+  `MaterialesPage.tsx`, sin backend nuevo para esa parte.
+- Nada de este objetivo se comiteó a git en esta sesión — decisión de esperar confirmación explícita
+  del fundador antes de comitear, pushear o desplegar (regla dura del proyecto).
+
+### Primera tarea de la próxima sesión
+Decidir con el fundador: (1) si comitear/pushear/desplegar todo el objetivo de Render de cocina con IA
+tal cual quedó, y (2) hacer una generación real más (con costo) para confirmar visualmente la
+comparación antes/después y el nuevo estado de carga — las 2 únicas partes de esta sesión que no se
+verificaron en vivo contra la API real.
+
+---
+
+## Sesión: 2026-09-16 (mismo día) — Corrección de voseo + 6 mejoras de diseño en Parámetros
+
+### Qué se hizo
+El fundador pidió, en un mensaje aparte, que revisara en el navegador la sección de Parámetros
+recién rediseñada para encontrar oportunidades de mejora de diseño — solo revisar, sin modificar nada,
+y explicar todo en lenguaje simple. Se revisó en vivo (Tarifas, las 5 pestañas de material, Adicionales,
+y el modal de agregar costo) y se encontraron 6 problemas reales: montos sin separador de miles,
+nombres/unidades truncados en la tabla de Adicionales, el modal de agregar sin botón de cerrar, borrado
+sin confirmación, la lista de costos ya guardados sin la misma agrupación que el modal de agregar, y
+ninguna señal de "cambios sin guardar". Se presentaron los 6 hallazgos sin tocar código.
+
+En el mensaje siguiente, con `/goal`, el fundador señaló dos cosas más: el modal de agregar tenía texto
+en voseo argentino ("le pagás a un oficial", "Elegí qué tipo de costo…") — una regla del proyecto ya
+definida antes (para las respuestas de Cost) que volvió a aparecer, esta vez en código que yo mismo
+escribí; y que yo mismo le estaba hablando en voseo en el chat, algo que calificó como falta de respeto.
+Pidió implementar las 6 mejoras en un solo ciclo.
+
+**Voseo**: grep confirmó solo 2 strings reales con voseo en `ParametrosPage.tsx` (el resto del copy ya
+estaba en tuteo neutro) — corregidas ambas. Se guardó una memoria de feedback nueva
+(`feedback_nunca_voseo.md`, en el índice de memoria del proyecto) documentando que la regla ya se había
+corregido una vez y volvió a aparecer dos veces (código + mi propio chat), para no depender solo de
+revisión manual la próxima vez.
+
+**Las 6 mejoras**, implementadas todas en `ParametrosPage.tsx` (más un cambio chico en el `Dialog`
+compartido):
+1. Componente nuevo `MoneyInput` — formatea con puntos de miles ("60.000") tanto en reposo como
+   mientras se edita, usado en los valores de Tarifas y en las 4 columnas de precio de Adicionales.
+2. Tabla de Adicionales con `table-fixed` y columnas reproporcionadas (Concepto 36%, Unidad 8%, cada
+   etapa 12%) — los nombres largos y las unidades completas ahora se leen sin truncar.
+3. Botón de cerrar ("X") agregado al componente `Dialog` compartido de toda la app — decisión
+   deliberada de arreglarlo ahí y no solo en esta pantalla, porque beneficia a cualquier diálogo del
+   producto sin duplicar lógica; se revisaron los otros usos (`CampanaNotificaciones.tsx`, etc.) para
+   confirmar que no había colisión visual, y se puso el botón AL FINAL del DOM (aunque se vea arriba a
+   la derecha) para no robarle el foco automático al primer campo real de cada diálogo.
+4. Confirmación antes de borrar — un `Dialog role="alertdialog"` (mismo patrón que ya usa
+   `MaterialesPage.tsx` para su propio borrado) en Tarifas y en Adicionales, con el nombre real de lo
+   que se va a quitar y la aclaración de que no es permanente hasta guardar.
+5. La lista de costos ya guardados se reorganizó para agruparse por las mismas 4 categorías que ya
+   agrupaba el modal de agregar (Mano de obra, Insumo, Sobre el material, Costo fijo) — cierra la
+   inconsistencia real que había entre cómo se agrega algo y cómo se ve después.
+6. Aviso "Tienes cambios sin guardar" (punto dorado + texto) junto al botón Guardar — se implementó con
+   un wrapper único (`actualizarData`) que reemplazó las 7 llamadas directas a `setData` en los
+   manejadores de mutación, para que ninguna edición futura se olvide de marcar el estado como sucio;
+   se limpia solo tras un guardado exitoso.
+
+**Bug real encontrado y corregido durante la verificación en vivo** (no estaba en la lista original):
+el primer diseño de `MoneyInput` usaba `requestAnimationFrame` para seleccionar el texto al enfocar el
+campo — con clics reales a veces el cursor quedaba sin nada seleccionado, y escribir encima insertaba
+en vez de reemplazar (probado: "60000" existente + escribir "75000" → quedaba "7500060000"). Se
+rediseñó el componente para seleccionar de forma síncrona dentro del propio evento `onFocus` (sin
+`requestAnimationFrame` ni un estado `editando` separado) — más simple, y sin la condición de carrera
+que causaba el bug. Reverificado en vivo con inspección directa del DOM (`selectionStart`/`selectionEnd`
+del input) antes y después del fix.
+
+### Archivos modificados
+`web/src/pages/ParametrosPage.tsx` (voseo corregido, `MoneyInput` nuevo, tabla de Adicionales
+reproporcionada, confirmación de borrado en las 2 pestañas, agrupación de la lista de Tarifas,
+indicador de cambios sin guardar), `web/src/components/ui/Dialog.tsx` (botón de cerrar nuevo,
+compartido por toda la app).
+
+### Decisiones tomadas
+- El botón de cerrar se agregó al `Dialog` compartido, no solo a la pantalla de Parámetros — beneficia
+  a cualquier diálogo del producto, y evita duplicar la misma lógica de cierre en cada pantalla que use
+  modales en el futuro.
+- Seleccionar el texto del campo de dinero de forma síncrona en `onFocus`, sin `requestAnimationFrame`
+  — el diseño anterior tenía una condición de carrera real que se confirmó con el clic real del
+  navegador, no solo una sospecha teórica.
+- Agrupar la lista de costos guardados con las MISMAS 4 categorías del modal de agregar (reusando
+  `GRUPOS_INDUCTOR` e `INDUCTORES_DISPONIBLES` ya existentes) en vez de inventar una agrupación
+  distinta — consistencia entre agregar y ver.
+
+### Primera tarea de la próxima sesión
+Confirmar con el fundador, en su navegador real: que el voseo ya no aparece en ningún lado de
+Parámetros ni en mi forma de hablarle, y que las 6 mejoras se sienten bien en el uso real (formato de
+montos al escribir números grandes, columnas de Adicionales sin truncar, cerrar el modal con la X,
+confirmar un borrado real, la lista agrupada, y el aviso de cambios sin guardar apareciendo y
+desapareciendo correctamente). Todo este ciclo ya está commiteado, pusheado y desplegado a producción
+(solo frontend).
+
+---
+
 ## Sesión: 2026-09-16 (mismo día) — Rediseño del selector de inductores en Parámetros › Tarifas
 
 ### Qué se hizo

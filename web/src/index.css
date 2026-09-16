@@ -234,6 +234,17 @@ body::before {
   opacity: 1;
 }
 
+/* Barra de progreso indeterminada — Render de cocina con IA (espera real a
+   OpenAI, sin porcentaje real disponible: el movimiento continuo transmite
+   "sigue trabajando" sin prometer un tiempo que no podemos cumplir). */
+@keyframes render-progreso {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+.render-progreso-bar {
+  animation: render-progreso 1.5s ease-in-out infinite;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }

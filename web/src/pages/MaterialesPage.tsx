@@ -1,13 +1,24 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus, Check, Trash2 } from 'lucide-react'
+import { Plus, Check, Trash2, ImagePlus, ShieldCheck, ShieldAlert } from 'lucide-react'
 import AppLayout from '@/components/AppLayout'
 import {
   getMaterialesTodos,
   crearMaterial,
   editarMaterial,
   eliminarMaterial,
+  getMaterialVisual,
+  actualizarAtributosVisuales,
+  subirFotoReferencia,
+  aprobarFotoReferencia,
+  COLOR_BASE_OPCIONES,
+  COLOR_VETAS_OPCIONES,
+  DENSIDAD_VETEADO_OPCIONES,
+  PATRON_VETEADO_OPCIONES,
+  ACABADO_OPCIONES,
+  TONO_GENERAL_OPCIONES,
   type MaterialCatalogo,
+  type AtributosVisuales,
 } from '@/api/materiales'
 import { formatCOP } from '@/lib/utils'
 import { showToast } from '@/lib/toast'
@@ -249,9 +260,15 @@ export default function MaterialesPage() {
             <p className="text-[11px] leading-relaxed text-brand-text-secondary">
               Este es un material base de Costo360. Al guardar se creará una copia
               personalizada para tu taller; el material original no se modifica.
+              Los datos visuales para render con IA solo se pueden cargar después
+              de personalizarlo (guardá un cambio de precio o nombre primero).
             </p>
           )}
         </div>
+
+        {modal === 'editar' && editando?.es_propio && (
+          <DatosVisualesRender materialId={editando.id} />
+        )}
 
         <div className="mt-5 flex items-center gap-2">
           {modal === 'editar' && editando?.es_propio && (
@@ -303,5 +320,190 @@ export default function MaterialesPage() {
         </div>
       </Dialog>
     </AppLayout>
+  )
+}
+
+// ── Datos visuales para render con IA ────────────────────────────────────────
+// Sin esto (color/veta/patrón/acabado + foto real de la lámina), el render
+// de cocina con IA no tiene cómo saber cómo se ve el material de verdad —
+// ver `render_service.py`. Cada select guarda apenas cambia (mismo criterio
+// que las filas editables de Parámetros): no hay botón de "guardar" aparte.
+const selVisualCls =
+  'w-full rounded-lg border border-brand-border bg-brand-input px-2.5 py-2 text-xs text-brand-text outline-none focus-visible:border-brand-primary cursor-pointer'
+
+function DatosVisualesRender({ materialId }: { materialId: number }) {
+  const qc = useQueryClient()
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  const { data: visual, isPending } = useQuery({
+    queryKey: ['material-visual', materialId],
+    queryFn: () => getMaterialVisual(materialId),
+  })
+
+  const invalidar = () => qc.invalidateQueries({ queryKey: ['material-visual', materialId] })
+
+  const atributosMut = useMutation({
+    mutationFn: (body: AtributosVisuales) => actualizarAtributosVisuales(materialId, body),
+    onSuccess: invalidar,
+    onError: (e) => showToast('error', errDetalle(e, 'No se pudo guardar')),
+  })
+  const fotoMut = useMutation({
+    mutationFn: (archivo: File) => subirFotoReferencia(materialId, archivo),
+    onSuccess: async () => { await invalidar(); showToast('success', 'Foto guardada — falta aprobarla') },
+    onError: (e) => showToast('error', errDetalle(e, 'No se pudo subir la foto')),
+  })
+  const aprobarMut = useMutation({
+    mutationFn: (aprobada: boolean) => aprobarFotoReferencia(materialId, aprobada),
+    onSuccess: invalidar,
+    onError: (e) => showToast('error', errDetalle(e, 'No se pudo actualizar')),
+  })
+
+  function actualizarCampo<K extends keyof AtributosVisuales>(campo: K, valor: AtributosVisuales[K]) {
+    if (!visual) return
+    atributosMut.mutate({
+      color_base: visual.color_base, color_vetas: visual.color_vetas,
+      densidad_veteado: visual.densidad_veteado, patron_veteado: visual.patron_veteado,
+      acabado: visual.acabado, tono_general: visual.tono_general,
+      [campo]: valor,
+    })
+  }
+
+  if (isPending || !visual) {
+    return <p className="mt-5 border-t border-brand-border pt-4 text-xs text-brand-text-secondary">Cargando datos visuales…</p>
+  }
+
+  return (
+    <div className="mt-5 border-t border-brand-border pt-4">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-text-secondary">
+          Datos visuales para render con IA
+        </p>
+        {visual.apto_para_render ? (
+          <Badge tono="success" icon={<ShieldCheck size={11} />}>Listo para render</Badge>
+        ) : (
+          <Badge tono="neutral" icon={<ShieldAlert size={11} />}>Faltan datos</Badge>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-2.5">
+        <div>
+          <label className="mb-1 block text-[10px] font-medium text-brand-text-secondary">Color base</label>
+          <select
+            className={selVisualCls}
+            value={visual.color_base ?? ''}
+            onChange={(e) => actualizarCampo('color_base', (e.target.value || null) as never)}
+          >
+            <option value="">Elegir…</option>
+            {COLOR_BASE_OPCIONES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-[10px] font-medium text-brand-text-secondary">Color de vetas</label>
+          <select
+            className={selVisualCls}
+            value={visual.color_vetas ?? ''}
+            onChange={(e) => actualizarCampo('color_vetas', (e.target.value || null) as never)}
+          >
+            <option value="">Elegir…</option>
+            {COLOR_VETAS_OPCIONES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-[10px] font-medium text-brand-text-secondary">Densidad del veteado</label>
+          <select
+            className={selVisualCls}
+            value={visual.densidad_veteado ?? ''}
+            onChange={(e) => actualizarCampo('densidad_veteado', (e.target.value || null) as never)}
+          >
+            <option value="">Elegir…</option>
+            {DENSIDAD_VETEADO_OPCIONES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-[10px] font-medium text-brand-text-secondary">Patrón</label>
+          <select
+            className={selVisualCls}
+            value={visual.patron_veteado ?? ''}
+            onChange={(e) => actualizarCampo('patron_veteado', (e.target.value || null) as never)}
+          >
+            <option value="">Elegir…</option>
+            {PATRON_VETEADO_OPCIONES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-[10px] font-medium text-brand-text-secondary">Acabado</label>
+          <select
+            className={selVisualCls}
+            value={visual.acabado ?? ''}
+            onChange={(e) => actualizarCampo('acabado', (e.target.value || null) as never)}
+          >
+            <option value="">Elegir…</option>
+            {ACABADO_OPCIONES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-[10px] font-medium text-brand-text-secondary">Tono (opcional)</label>
+          <select
+            className={selVisualCls}
+            value={visual.tono_general ?? ''}
+            onChange={(e) => actualizarCampo('tono_general', (e.target.value || null) as never)}
+          >
+            <option value="">Neutro (default)</option>
+            {TONO_GENERAL_OPCIONES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className="mt-3">
+        <label className="mb-1 block text-[10px] font-medium text-brand-text-secondary">Foto real de la lámina</label>
+        {visual.foto_referencia_url ? (
+          <div className="flex items-center gap-2">
+            {visual.foto_referencia_aprobada ? (
+              <Badge tono="success" icon={<ShieldCheck size={11} />}>Foto aprobada</Badge>
+            ) : (
+              <>
+                <Badge tono="warning">Sin aprobar</Badge>
+                <button
+                  type="button"
+                  onClick={() => aprobarMut.mutate(true)}
+                  disabled={aprobarMut.isPending}
+                  className="text-xs font-semibold text-brand-primary hover:underline cursor-pointer"
+                >
+                  Aprobar foto
+                </button>
+              </>
+            )}
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="ml-auto text-xs text-brand-text-secondary hover:text-brand-text hover:underline cursor-pointer"
+            >
+              Cambiar foto
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={fotoMut.isPending}
+            className="flex items-center gap-2 rounded-lg border border-dashed border-brand-border px-3 py-2 text-xs text-brand-text-secondary hover:text-brand-text hover:border-brand-primary/50 transition-colors cursor-pointer"
+          >
+            <ImagePlus size={14} aria-hidden="true" />
+            {fotoMut.isPending ? 'Subiendo…' : 'Subir foto de la lámina real'}
+          </button>
+        )}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0]
+            if (f) fotoMut.mutate(f)
+            e.target.value = ''
+          }}
+        />
+      </div>
+    </div>
   )
 }

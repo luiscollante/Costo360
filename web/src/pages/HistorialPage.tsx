@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FileDown, Loader2, Receipt, Pencil, Trash2, Check, X, ChevronDown } from 'lucide-react'
+import { FileDown, Loader2, Receipt, Pencil, Trash2, Check, X, ChevronDown, Sparkles } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import AppLayout from '@/components/AppLayout'
 import {
@@ -17,6 +17,7 @@ import {
 } from '@/api/cotizacion'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Dialog } from '@/components/ui/Dialog'
+import { RenderCocinaDialog } from '@/components/RenderCocinaDialog'
 import { formatCOP, formatNum } from '@/lib/utils'
 import { showToast } from '@/lib/toast'
 import type { MaterialItem, PiezaItem } from '@/types/cotizacion'
@@ -263,6 +264,7 @@ function CCModal({
 function HistorialRow({ row, index }: { row: CotizacionResumen; index: number }) {
   const [downloading, setDownloading] = useState(false)
   const [showCC, setShowCC] = useState(false)
+  const [showRender, setShowRender] = useState(false)
   const [editing, setEditing] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const navigate = useNavigate()
@@ -341,6 +343,7 @@ function HistorialRow({ row, index }: { row: CotizacionResumen; index: number })
           {showCC && <CCModal cotId={row.id} onClose={() => setShowCC(false)} />}
         </AnimatePresence>
       </div>
+      {showRender && <RenderCocinaDialog cotizacionId={row.id} onClose={() => setShowRender(false)} />}
       <button
         onClick={handleEdit}
         disabled={editing}
@@ -349,6 +352,15 @@ function HistorialRow({ row, index }: { row: CotizacionResumen; index: number })
       >
         {editing ? <Loader2 size={14} className="animate-spin" /> : <Pencil size={14} />}
       </button>
+      {!isAIU && (
+        <button
+          onClick={() => setShowRender(true)}
+          title="Generar render de cocina con IA"
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-brand-text-secondary hover:text-brand-primary hover:bg-brand-primary/10 transition-all"
+        >
+          <Sparkles size={14} />
+        </button>
+      )}
       <AnimatePresence mode="wait">
         {confirmDelete ? (
           <motion.div

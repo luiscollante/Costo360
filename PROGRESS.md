@@ -2,6 +2,122 @@
 
 ---
 
+## ✅ Hecho (2026-09-16, mismo día) — Objetivo nuevo: Render de cocina con IA (OpenAI) + 4 mejoras del fundador
+
+El fundador pidió planificar (con 4 agentes especializados en paralelo: AI Engineer, Prompt Engineer,
+Backend Architect, Product Manager) cómo integrar la API de OpenAI para que los asesores de un taller
+generen un render fotorrealista de la cocina del cliente con el material real que está cotizando —
+"no con un material que no se parece en nada al material en la vida real". Tras el plan, pidió
+implementarlo directamente ("vamos a implementarlo y en la 'marcha' vemos que corregimos y agregamos").
+
+**Diseño central del plan** (por qué no es solo "llamar a la API de imágenes"): sin una foto real de la
+lámina, ningún modelo sabe cómo se ve una piedra puntual de un proveedor regional — así que el servicio
+SIEMPRE prioriza anclar la generación en una foto real de referencia del material (`/v1/images/edits`)
+sobre generar solo por texto. Modelo usado: `gpt-image-2.5-sunburst` (confirmado real, familia "ChatGPT
+Imágenes 2.5", lanzado 2026-09-08).
+
+**Construido de cero:**
+- Migración `0011_render_cocina.sql` — tabla `render_cocina` (RLS real) + 3 buckets privados de Supabase
+  Storage (`render-material-referencias`, `render-cliente-fotos`, `render-generados`), todos con URLs
+  firmadas de corta duración, nunca públicas. **Aplicada a la base de datos real de producción** con
+  confirmación explícita del fundador, verificada con `get_advisors` (sin alertas nuevas) y `list_tables`.
+- `catalogo_materiales` gana atributos visuales de enum cerrado (color, veta, densidad/patrón de
+  veteado, acabado, tono) + foto de referencia con aprobación humana separada — mismo patrón
+  copy-on-write que el resto del catálogo (`backend/services/catalogo_service.py`).
+- `backend/services/render_service.py` — construcción determinística del prompt (mismo enum → siempre
+  la misma frase), tope mensual configurable por empresa, tope de 3 renders por cotización, límite de
+  10/hora por IP, y defensa de inyección en la nota libre del asesor (mismo criterio que el system
+  prompt de Cost: el texto de negocio es dato, nunca instrucción).
+- `backend/services/storage_service.py` — acceso a Supabase Storage vía REST + service-role key
+  (mismo patrón "el backend es la única frontera de confianza" del resto del proyecto).
+- Frontend: `RenderCocinaDialog.tsx` (nuevo, botón de destellos en Historial) + 4 endpoints nuevos de
+  atributos/foto de material integrados en `MaterialesPage.tsx`.
+
+**Verificado en vivo, incluida la primera llamada real y pagada a OpenAI:** con la clave real que el
+fundador configuró él mismo en `backend/.env` (yo preparé la línea vacía y las instrucciones paso a
+paso para alguien no programador — nunca vi ni escribí el valor de la clave), se generó un render real
+de cocina con el material AMAZONAS (granito) — `201 Created`, imagen fotorrealista correcta, mostrada
+en el Historial con el aviso "Simulación referencial". Antes de tener la clave se confirmó también el
+camino de error controlado (`503`, sin clave configurada).
+
+**4 mejoras pedidas por el fundador el mismo día, ya implementadas:**
+1. **Regla dura: nunca se genera un render sin una foto de referencia aprobada del material** —
+   bloqueo real en el backend (422) además del frontend; antes esto era opcional (Ruta A degradada por
+   texto solo). Confirmado en vivo: sin foto, el botón queda deshabilitado con el aviso "Falta la foto
+   de referencia aprobada."
+2. **Selección de material en 2 pasos** — "Tipo de material" (categoría) y "Referencia" (nombre,
+   filtrado por tipo) en vez de un único `<select>` gigante con 200+ opciones mezcladas. Confirmado en
+   vivo: elegir "Granito" habilita "Referencia" ya filtrada.
+3. **Subir la foto de referencia + confirmación "bonita" para guardarla en el catálogo**, todo dentro
+   del mismo diálogo — no hace falta salir a Catálogo. Al subir aparece una tarjeta con la vista previa
+   y "¿Guardar esta foto en el catálogo para usarla en este y en futuros renders de [REFERENCIA]?" con
+   "Sí, usar esta foto" / "Subir otra". Confirmado en vivo (con una foto de muestra genérica, usando
+   deliberadamente "Subir otra" al final para no dejar guardada una foto incorrecta como si fuera la
+   lámina real de AMAZONAS en el catálogo de producción).
+4. **Comparación antes/después + mejor estado de carga** — implementadas en código (el "antes" es la
+   foto que el asesor sube, guardada solo en el navegador vía `URL.createObjectURL`, nunca reenviada al
+   backend por privacidad del cliente; el estado de carga pasa de un spinner chico a un panel con
+   mensajes rotativos y barra de progreso animada). **No verificadas en vivo con una generación real**
+   (cada llamada cuesta dinero real) — quedan como próxima verificación pendiente.
+
+**Preguntas del fundador respondidas, sin acción tomada:** (1) Cost (el agente) NO tiene ninguna tool
+conectada a este feature — el render de cocina es un flujo aparte, integrado solo en Historial; (2) sí
+sería capaz de construir infraestructura completa en AWS/Azure como arquitecto de nube si se dan
+credenciales acotadas, pero nunca de una sola pasada (plan + costo estimado + confirmación antes de
+crear cada recurso), y no reemplaza guardia 24/7 real — sirve para cuando el fundador decida escalar,
+no una decisión tomada en esta sesión.
+
+**Sin comitear:** ningún archivo de este objetivo (backend ni frontend) se subió a git todavía — pendiente
+la decisión del fundador.
+
+---
+
+## ✅ Hecho (2026-09-16, mismo día) — Corrección de voseo + 6 mejoras de diseño en Parámetros
+
+El fundador revisó el rediseño de Parámetros (pidió una revisión de diseño sin tocar nada) y encontró
+dos cosas más al mismo tiempo: (1) el modal de agregar costo tenía texto en voseo argentino ("le pagás
+a un oficial", "Elegí qué tipo de costo…") pese a ser una regla ya definida del proyecto — y peor,
+también noté que yo mismo le estaba hablando en voseo en el chat, algo que el fundador marcó como falta
+de respeto; y (2) pidió implementar en un solo ciclo las 6 oportunidades de mejora encontradas en esa
+revisión de diseño.
+
+**Voseo corregido**: las 2 strings reales en `ParametrosPage.tsx` ("le pagás" → "le pagas", "Elegí" →
+"Elige") — verificado con grep que no queda ninguna otra. Se guardó una memoria de feedback nueva
+(`feedback_nunca_voseo.md`) porque esta regla ya se había corregido una vez antes (en las respuestas de
+Cost) y volvió a aparecer dos veces — código y mi propio chat.
+
+**Las 6 mejoras, todas implementadas y verificadas en vivo:**
+1. **Montos con separador de miles** — nuevo componente `MoneyInput` ("60.000" en vez de "60000"),
+   usado en Tarifas y en las 4 columnas de precio de Adicionales. Selecciona todo el texto al enfocar
+   (reemplaza entero al escribir encima, nunca se mezcla con lo anterior) y reformatea al salir del
+   campo.
+2. **Textos truncados en Adicionales corregidos** — tabla con `table-fixed` y columnas reproporcionadas
+   (Concepto 36%, Unidad 8%); nombres largos como "Fregadero instalación bajo cubierta" ahora se ven
+   completos, igual que la unidad ("und" en vez de solo "u").
+3. **El modal para agregar un costo ahora tiene una "X" para cerrar** — se agregó al componente
+   `Dialog` compartido de toda la app (no solo a esta pantalla), con cuidado de no robarle el foco
+   automático a los campos reales del diálogo (el botón queda último en el orden del DOM aunque se vea
+   arriba a la derecha).
+4. **Borrar un costo ahora pide confirmación** — un `Dialog` tipo `alertdialog` (mismo patrón que ya
+   usa el resto de la app) antes de quitar una fila, tanto en Tarifas como en Adicionales, aclarando
+   que no es permanente hasta guardar.
+5. **La lista de costos ya guardados ahora se agrupa igual que el modal de agregar** — mismas 4
+   categorías (Mano de obra, Insumo, Sobre el material, Costo fijo), mismos íconos — ya no hay
+   inconsistencia entre cómo se agrega algo y cómo se ve después.
+6. **Aviso de "cambios sin guardar"** — un punto dorado + texto junto a "Guardar cambios" cuando hay
+   algo pendiente; se activa a través de un solo wrapper (`actualizarData`) que reemplaza todas las
+   mutaciones locales, así ninguna edición futura se olvida de marcarlo.
+
+Durante la verificación en vivo se encontró y corrigió un bug real: el primer diseño de `MoneyInput`
+dependía de `requestAnimationFrame` para seleccionar el texto al enfocar, y a veces el clic dejaba el
+cursor sin seleccionar nada — escribir encima insertaba en vez de reemplazar (ej. "60000" + "75000" =
+"7500060000"). Se rediseñó para seleccionar de forma síncrona en el propio evento de foco, sin
+depender de ningún timing de animación — más simple y sin la condición de carrera.
+
+Build real sin errores. Commiteado, pusheado y desplegado a producción (solo frontend).
+
+---
+
 ## ✅ Hecho (2026-09-16, mismo día) — Rediseño del selector de inductores en Parámetros › Tarifas
 
 El fundador probó su propia pantalla de Parámetros y no entendió qué hacía el selector al final de la
@@ -1410,11 +1526,25 @@ de este dominio, sin subir a GitHub todavía.
 
 ## 🔄 En progreso
 
-*(vacío por ahora)*
+- **Render de cocina con IA (OpenAI)** — feature completa y verificada en gran parte en vivo (ver
+  entrada de "Hecho" arriba), pero: (1) nada de este objetivo está comiteado a git todavía; (2) las 2
+  mejoras visuales del último pedido (comparación antes/después, nuevo estado de carga) están
+  implementadas pero no probadas con una generación real de OpenAI (tiene costo real por llamada).
 
 ---
 
 ## 📋 Siguiente
+
+### Render de cocina con IA — pendientes inmediatos
+1. Decidir con el fundador si comitear, pushear y desplegar el feature completo (backend + frontend +
+   migración ya aplicada a producción).
+2. Verificar en vivo, con una generación real (costo real), la comparación antes/después y el nuevo
+   estado de carga con mensajes rotativos.
+3. Cuando el fundador use el feature con materiales reales del taller, subir y aprobar las fotos de
+   referencia REALES de cada material — las pruebas de esta sesión usaron fotos de muestra genéricas y
+   deliberadamente NUNCA se aprobaron (para no dejar una referencia incorrecta en el catálogo real).
+4. Opcional a futuro: conectar el render de cocina como una tool más de Cost (hoy es un flujo aparte,
+   sin relación con el agente).
 
 ### Fase 1 + 2.A (fundamento técnico) — ✅ hecho salvo la prueba en vivo
 1. ✅ **Aislamiento multi-tenant** — esquema con `empresa_id` en todas las tablas (2026-08-26),
@@ -1473,4 +1603,4 @@ de este dominio, sin subir a GitHub todavía.
 
 ---
 
-*Última actualización: 2026-09-13*
+*Última actualización: 2026-09-16*
