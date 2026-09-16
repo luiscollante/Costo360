@@ -14,6 +14,8 @@ import {
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Dialog } from '@/components/ui/Dialog'
 import { formatCOP } from '@/lib/utils'
 
 const MATERIALES = ['Mármol', 'Granito', 'Sinterizado', 'Quarztone', 'Quarzita'] as const
@@ -115,6 +117,8 @@ interface TarifasTabProps {
   onRename: (material: string, index: number, nombre: string) => void
   onAddRow: (material: string, inductor: string) => void
   onRemoveRow: (material: string, index: number) => void
+  onGuardar: () => void
+  saving: boolean
 }
 
 // Los valores tipo "%" se guardan como fracción (0.02 = 2%) — helpers para mostrar/editar en %.
@@ -122,15 +126,15 @@ function esPorcentajeInductor(inductor: string): boolean {
   return inductor === 'porcentaje_material' || inductor === 'merma_pct'
 }
 
-function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRow }: TarifasTabProps) {
+function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRow, onGuardar, saving }: TarifasTabProps) {
   const [activeMat, setActiveMat] = useState<Material>(MATERIALES[0])
   const filas = tarifas[activeMat] ?? []
 
-  // Menú de "agregar costo" — reemplaza al <select> plano de antes por un
-  // popover agrupado; elegir una tarjeta ya crea la fila (sin segundo click).
+  // Modal de "agregar costo" — reemplaza al <select> plano de antes; elegir
+  // una tarjeta ya crea la fila (sin segundo click). Usa el <Dialog> real de
+  // la app (foco atrapado, Escape, click afuera, devuelve el foco al cerrar
+  // — todo eso ya lo resuelve el componente, no hace falta reimplementarlo).
   const [menuAbierto, setMenuAbierto] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
-  const triggerRef = useRef<HTMLButtonElement>(null)
 
   // Resalta brevemente la fila recién agregada — cierra el loop visual de
   // "elegí algo del menú" -> "esto es lo que apareció abajo".
@@ -158,29 +162,9 @@ function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRo
     prevLenRef.current = filas.length
   }, [filas.length])
 
-  useEffect(() => {
-    if (!menuAbierto) return
-    function onPointerDown(e: PointerEvent) {
-      if (menuRef.current?.contains(e.target as Node) || triggerRef.current?.contains(e.target as Node)) return
-      setMenuAbierto(false)
-    }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key !== 'Escape') return
-      setMenuAbierto(false)
-      triggerRef.current?.focus()
-    }
-    document.addEventListener('pointerdown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [menuAbierto])
-
   function elegirInductor(value: string) {
     onAddRow(activeMat, value)
     setMenuAbierto(false)
-    triggerRef.current?.focus()
   }
 
   return (
@@ -264,82 +248,75 @@ function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRo
       </div>
 
       {canEdit && (
-        <div className="relative mt-3 inline-block">
-          <button
-            ref={triggerRef}
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <Button
             type="button"
-            onClick={() => setMenuAbierto((v) => !v)}
-            aria-haspopup="listbox"
+            onClick={() => setMenuAbierto(true)}
+            aria-haspopup="dialog"
             aria-expanded={menuAbierto}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-brand-border text-sm text-brand-text-secondary hover:text-brand-text hover:border-brand-primary/50 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             Agregar costo para {activeMat}
-          </button>
-
-          <AnimatePresence>
-            {menuAbierto && (
-              <motion.div
-                ref={menuRef}
-                role="listbox"
-                aria-label="Tipo de costo a agregar"
-                initial={{ opacity: 0, scale: 0.96, y: -4 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.96, y: -4 }}
-                transition={{ duration: 0.15, ease: 'easeOut' }}
-                className="absolute left-0 top-full z-40 mt-2 max-h-[480px] w-[360px] max-w-[90vw] overflow-y-auto rounded-xl border border-brand-border bg-brand-surface shadow-lg"
-              >
-                <p className="px-4 pb-2 pt-3 text-xs font-semibold uppercase tracking-wide text-brand-text-secondary">
-                  Elegí qué tipo de costo estás agregando
-                </p>
-                {GRUPOS_INDUCTOR.map((grupo, gi) => {
-                  const opciones = INDUCTORES_DISPONIBLES.filter((o) => o.grupo === grupo.id)
-                  if (opciones.length === 0) return null
-                  return (
-                    <div key={grupo.id} className={gi > 0 ? 'mt-3 border-t border-brand-border/60 pt-3' : ''}>
-                      <div className="mb-1.5 flex items-center gap-2 px-4">
-                        <grupo.Icon size={14} className="shrink-0 text-brand-text-secondary" aria-hidden="true" />
-                        <span className="text-[11px] font-bold uppercase tracking-wide text-brand-text-secondary">
-                          {grupo.label}
-                        </span>
-                        <span className="text-[11px] font-normal normal-case text-brand-text-secondary/70">
-                          — {grupo.subtitulo}
-                        </span>
-                      </div>
-                      {opciones.map((op) => {
-                        const badge = INDUCTOR_BADGE[op.value]
-                        return (
-                          <button
-                            key={op.value}
-                            type="button"
-                            role="option"
-                            aria-selected="false"
-                            onClick={() => elegirInductor(op.value)}
-                            className="flex w-full cursor-pointer items-start gap-3 rounded-lg px-4 py-2.5 text-left transition-colors hover:bg-brand-bg focus-visible:bg-brand-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/50"
-                          >
-                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-primary/10">
-                              {badge && <badge.Icon size={16} className="text-brand-primary" aria-hidden="true" />}
-                            </span>
-                            <span className="min-w-0 flex-1">
-                              <span className="block text-sm font-medium leading-tight text-brand-text">{op.titulo}</span>
-                              <span className="mt-0.5 block text-xs leading-snug text-brand-text-secondary">{op.descripcion}</span>
-                            </span>
-                            {badge && (
-                              <span className="shrink-0 self-center">
-                                <Badge tono="neutral" icon={<badge.Icon size={11} />}>{badge.label}</Badge>
-                              </span>
-                            )}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )
-                })}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          </Button>
+          <Button type="button" onClick={onGuardar} disabled={saving}>
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Save className="w-4 h-4" aria-hidden="true" />}
+            {saving ? 'Guardando…' : 'Guardar cambios'}
+          </Button>
         </div>
       )}
+
+      <Dialog
+        open={menuAbierto}
+        onClose={() => setMenuAbierto(false)}
+        title="Elegí qué tipo de costo estás agregando"
+        className="max-w-lg"
+      >
+        <div role="listbox" aria-label="Tipo de costo a agregar">
+          {GRUPOS_INDUCTOR.map((grupo, gi) => {
+            const opciones = INDUCTORES_DISPONIBLES.filter((o) => o.grupo === grupo.id)
+            if (opciones.length === 0) return null
+            return (
+              <div key={grupo.id} className={gi > 0 ? 'mt-4 border-t border-brand-border/60 pt-4' : ''}>
+                <div className="mb-1.5 flex items-center gap-2">
+                  <grupo.Icon size={14} className="shrink-0 text-brand-text-secondary" aria-hidden="true" />
+                  <span className="text-[11px] font-bold uppercase tracking-wide text-brand-text-secondary">
+                    {grupo.label}
+                  </span>
+                  <span className="text-[11px] font-normal normal-case text-brand-text-secondary/70">
+                    — {grupo.subtitulo}
+                  </span>
+                </div>
+                {opciones.map((op) => {
+                  const badge = INDUCTOR_BADGE[op.value]
+                  return (
+                    <button
+                      key={op.value}
+                      type="button"
+                      role="option"
+                      aria-selected="false"
+                      onClick={() => elegirInductor(op.value)}
+                      className="flex w-full cursor-pointer items-start gap-3 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-brand-bg focus-visible:bg-brand-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/50"
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-primary/10">
+                        {badge && <badge.Icon size={16} className="text-brand-primary" aria-hidden="true" />}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-medium leading-tight text-brand-text">{op.titulo}</span>
+                        <span className="mt-0.5 block text-xs leading-snug text-brand-text-secondary">{op.descripcion}</span>
+                      </span>
+                      {badge && (
+                        <span className="shrink-0 self-center">
+                          <Badge tono="neutral" icon={<badge.Icon size={11} />}>{badge.label}</Badge>
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            )
+          })}
+        </div>
+      </Dialog>
     </div>
   )
 }
@@ -360,9 +337,11 @@ interface AdicionalesTabProps {
   onChange: (index: number, field: keyof AdicionalItem, value: string | number) => void
   onAddRow: () => void
   onRemoveRow: (index: number) => void
+  onGuardar: () => void
+  saving: boolean
 }
 
-function AdicionalesTab({ adicionales, canEdit, onChange, onAddRow, onRemoveRow }: AdicionalesTabProps) {
+function AdicionalesTab({ adicionales, canEdit, onChange, onAddRow, onRemoveRow, onGuardar, saving }: AdicionalesTabProps) {
   return (
     <div className="space-y-3">
       <p className="text-xs text-brand-text-secondary pl-1">
@@ -447,13 +426,16 @@ function AdicionalesTab({ adicionales, canEdit, onChange, onAddRow, onRemoveRow 
       </div>
 
       {canEdit && (
-        <button
-          onClick={onAddRow}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-brand-border text-sm text-brand-text-secondary hover:text-brand-text hover:border-brand-primary/50 transition-colors"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Agregar servicio adicional
-        </button>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Button type="button" onClick={onAddRow}>
+            <Plus className="w-3.5 h-3.5" />
+            Agregar servicio adicional
+          </Button>
+          <Button type="button" onClick={onGuardar} disabled={saving}>
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Save className="w-4 h-4" aria-hidden="true" />}
+            {saving ? 'Guardando…' : 'Guardar cambios'}
+          </Button>
+        </div>
       )}
     </div>
   )
@@ -585,17 +567,7 @@ export default function ParametrosPage() {
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                 Solo Admin o Gerente pueden editar
               </span>
-            ) : (
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving || loading}
-                className="flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-primary-light disabled:opacity-50 cursor-pointer"
-              >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Save className="w-4 h-4" aria-hidden="true" />}
-                {saving ? 'Guardando…' : 'Guardar cambios'}
-              </button>
-            )
+            ) : undefined
           }
         />
 
@@ -649,6 +621,8 @@ export default function ParametrosPage() {
                     onRename={handleTarifaRename}
                     onAddRow={handleTarifaAddRow}
                     onRemoveRow={handleTarifaRemoveRow}
+                    onGuardar={handleSave}
+                    saving={saving}
                   />
                 )}
 
@@ -659,6 +633,8 @@ export default function ParametrosPage() {
                     onChange={handleAdicionalesChange}
                     onAddRow={handleAdicionalesAddRow}
                     onRemoveRow={handleAdicionalesRemoveRow}
+                    onGuardar={handleSave}
+                    saving={saving}
                   />
                 )}
               </motion.div>
