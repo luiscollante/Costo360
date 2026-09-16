@@ -1,5 +1,6 @@
 import { type ReactNode, type KeyboardEvent, useEffect, useId, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { X } from 'lucide-react'
 
 const FOCUSABLES =
   'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])'
@@ -116,14 +117,25 @@ export function Dialog({
         onClick={(e) => e.stopPropagation()}
         // Alto acotado al viewport + scroll propio del panel: un solo scroll, sin
         // recorte del contenido en pantallas bajas (feedback del fundador).
-        className={`my-auto max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-2xl border border-brand-border bg-brand-surface p-6 shadow-[0_12px_40px_rgba(0,0,0,0.18)] focus:outline-none ${className}`}
+        className={`relative my-auto max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-2xl border border-brand-border bg-brand-surface p-6 shadow-[0_12px_40px_rgba(0,0,0,0.18)] focus:outline-none ${className}`}
       >
         {title && (
-          <h2 id={titleId} className="mb-3 text-base font-bold text-brand-text-dark">
+          <h2 id={titleId} className="mb-3 pr-8 text-base font-bold text-brand-text-dark">
             {title}
           </h2>
         )}
         {children}
+        {/* Al final del DOM a propósito (no antes de `children`) — así el foco
+            automático al abrir sigue cayendo en el primer control real del
+            diálogo, nunca en este botón, aunque se vea arriba a la derecha. */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Cerrar"
+          className="absolute right-4 top-4 rounded-md p-1 text-brand-text-secondary transition-colors hover:bg-brand-bg hover:text-brand-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/50"
+        >
+          <X size={18} aria-hidden="true" />
+        </button>
       </div>
     </div>,
     document.body,

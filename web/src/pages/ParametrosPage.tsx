@@ -16,7 +16,7 @@ import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Dialog } from '@/components/ui/Dialog'
-import { formatCOP } from '@/lib/utils'
+import { formatCOP, formatNum } from '@/lib/utils'
 
 const MATERIALES = ['Mármol', 'Granito', 'Sinterizado', 'Quarztone', 'Quarzita'] as const
 type Material = (typeof MATERIALES)[number]
@@ -42,7 +42,7 @@ const INDUCTOR_BADGE: Record<string, { label: string; Icon: LucideIcon }> = {
 type GrupoInductor = 'mano_obra' | 'insumo' | 'material' | 'fijo'
 
 const GRUPOS_INDUCTOR: { id: GrupoInductor; label: string; subtitulo: string; Icon: LucideIcon }[] = [
-  { id: 'mano_obra', label: 'Mano de obra',                         subtitulo: 'le pagás a un oficial',       Icon: HardHat },
+  { id: 'mano_obra', label: 'Mano de obra',                         subtitulo: 'le pagas a un oficial',       Icon: HardHat },
   { id: 'insumo',    label: 'Insumo o desgaste de herramienta',     subtitulo: 'no es sueldo de nadie',       Icon: Disc3 },
   { id: 'material',  label: 'Sobre el material de la pieza',        subtitulo: 'se calcula como %',           Icon: Gem },
   { id: 'fijo',      label: 'Costo fijo del proyecto',              subtitulo: 'no depende del tamaño',       Icon: Lock },
@@ -119,6 +119,7 @@ interface TarifasTabProps {
   onRemoveRow: (material: string, index: number) => void
   onGuardar: () => void
   saving: boolean
+  dirty: boolean
 }
 
 // Los valores tipo "%" se guardan como fracción (0.02 = 2%) — helpers para mostrar/editar en %.
@@ -126,7 +127,51 @@ function esPorcentajeInductor(inductor: string): boolean {
   return inductor === 'porcentaje_material' || inductor === 'merma_pct'
 }
 
-function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRow, onGuardar, saving }: TarifasTabProps) {
+/**
+ * Campo de dinero — muestra "60.000" (agrupado, sin ceros de más) siempre,
+ * incluso mientras se edita. Hallazgo real del fundador, 2026-09-16: sin
+ * agrupar, "60000" obliga a contar dígitos uno por uno para saber si son 6,
+ * 60 o 600 mil. `onFocus` selecciona todo el texto — al escribir encima se
+ * reemplaza entero, nunca se mezcla con lo que ya había (un diseño anterior
+ * que dependía de `requestAnimationFrame` para seleccionar tenía justo ese
+ * bug: a veces el clic quedaba con el cursor sin seleccionar nada, y tipear
+ * insertaba en vez de reemplazar).
+ */
+function MoneyInput({
+  value,
+  onChange,
+  className,
+}: {
+  value: number
+  onChange: (n: number) => void
+  className?: string
+}) {
+  const [texto, setTexto] = useState(() => formatNum(value, 0))
+
+  // El valor puede cambiar desde AFUERA (se canceló un borrado, se cambió de
+  // pestaña de material) — mantener el texto mostrado sincronizado con eso.
+  useEffect(() => {
+    setTexto(formatNum(value, 0))
+  }, [value])
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      value={texto}
+      onFocus={(e) => e.target.select()}
+      onChange={(e) => setTexto(e.target.value.replace(/[^\d]/g, ''))}
+      onBlur={() => {
+        const n = texto ? Number.parseInt(texto, 10) : 0
+        onChange(n)
+        setTexto(formatNum(n, 0))
+      }}
+      className={className}
+    />
+  )
+}
+
+function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRow, onGuardar, saving, dirty }: TarifasTabProps) {
   const [activeMat, setActiveMat] = useState<Material>(MATERIALES[0])
   const filas = tarifas[activeMat] ?? []
 
@@ -136,6 +181,10 @@ function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRo
   // — todo eso ya lo resuelve el componente, no hace falta reimplementarlo).
   const [menuAbierto, setMenuAbierto] = useState(false)
 
+  // Confirmación antes de borrar — un clic sin querer en el bote de basura
+  // ya no borra directo (hallazgo real del fundador, 2026-09-16).
+  const [borrarIdx, setBorrarIdx] = useState<number | null>(null)
+
   // Resalta brevemente la fila recién agregada — cierra el loop visual de
   // "elegí algo del menú" -> "esto es lo que apareció abajo".
   const [filaDestacada, setFilaDestacada] = useState<number | null>(null)
@@ -144,6 +193,7 @@ function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRo
   useEffect(() => {
     setMenuAbierto(false)
     setFilaDestacada(null)
+    setBorrarIdx(null)
     prevLenRef.current = filas.length
     // Solo reaccionar al cambio de MATERIAL (evita una falsa alarma de "fila
     // agregada" si el material nuevo simplemente tiene más filas que el
@@ -167,6 +217,14 @@ function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRo
     setMenuAbierto(false)
   }
 
+  function confirmarBorrar() {
+    if (borrarIdx === null) return
+    onRemoveRow(activeMat, borrarIdx)
+    setBorrarIdx(null)
+  }
+
+  const filaABorrar = borrarIdx !== null ? filas[borrarIdx] : null
+
   return (
     <div>
       {/* Sub-tabs materiales */}
@@ -186,65 +244,93 @@ function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRo
         ))}
       </div>
 
-      {/* Filas — layout flex compatible con todos los anchos */}
-      <div className="bg-brand-surface rounded-xl border border-brand-border divide-y divide-brand-border/50">
+      {/* Filas agrupadas por lo mismo que agrupa el modal de agregar — así la
+          lista de lo que YA existe se lee con la misma lógica que se usó
+          para agregarlo (hallazgo real del fundador, 2026-09-16: antes el
+          modal agrupaba pero la lista de abajo seguía plana). */}
+      <div className="bg-brand-surface rounded-xl border border-brand-border overflow-hidden">
         {filas.length === 0 ? (
           <p className="px-5 py-8 text-center text-sm text-brand-text-secondary">Sin tarifas para este material.</p>
-        ) : filas.map((item, idx) => {
-          const esPorcentaje = esPorcentajeInductor(item.inductor)
-          return (
-            <div
-              key={`${item.inductor}-${idx}`}
-              className={`px-5 py-3.5 flex items-center justify-between gap-4 transition-colors duration-700 ${
-                idx === filaDestacada ? 'bg-brand-success-soft' : 'hover:bg-brand-surface/30'
-              }`}
-            >
-              <div className="min-w-0 flex-1">
-                {canEdit ? (
-                  <input
-                    type="text"
-                    value={item.nombre_interno}
-                    onChange={(e) => onRename(activeMat, idx, e.target.value)}
-                    className="text-sm font-medium text-brand-text leading-tight bg-transparent border-none outline-none w-full focus:bg-brand-input rounded px-1 -mx-1"
-                    placeholder="Nombre de este costo"
-                  />
-                ) : (
-                  <p className="text-sm font-medium text-brand-text leading-tight">{item.nombre_interno}</p>
-                )}
-                <div className="mt-1"><InductorBadge inductor={item.inductor} /></div>
-              </div>
-              {canEdit ? (
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {!esPorcentaje && <span className="text-[10px] text-brand-text-secondary">COP</span>}
-                  <input
-                    type="number"
-                    value={esPorcentaje ? Math.round(item.valor * 1000) / 10 : item.valor}
-                    step={esPorcentaje ? 0.1 : 1000}
-                    min={0}
-                    max={esPorcentaje ? 100 : undefined}
-                    onChange={(e) => {
-                      const raw = parseFloat(e.target.value) || 0
-                      onChange(activeMat, idx, esPorcentaje ? raw / 100 : raw)
-                    }}
-                    className={`${inputBase} w-28`}
-                  />
-                  {esPorcentaje && <span className="text-[10px] text-brand-text-secondary">%</span>}
-                  <button
-                    onClick={() => onRemoveRow(activeMat, idx)}
-                    className="p-1.5 rounded-md text-brand-text-secondary hover:text-brand-danger hover:bg-brand-danger/10 transition-colors"
-                    title="Eliminar este costo"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+        ) : (
+          GRUPOS_INDUCTOR.map((grupo, gi) => {
+            const filasDelGrupo = filas
+              .map((item, idx) => ({ item, idx }))
+              .filter(({ item }) => INDUCTORES_DISPONIBLES.find((o) => o.value === item.inductor)?.grupo === grupo.id)
+            if (filasDelGrupo.length === 0) return null
+            return (
+              <div key={grupo.id} className={gi > 0 ? 'border-t border-brand-border' : ''}>
+                <div className="flex items-center gap-2 bg-brand-surface/60 px-5 py-2">
+                  <grupo.Icon size={13} className="shrink-0 text-brand-text-secondary" aria-hidden="true" />
+                  <span className="text-[11px] font-bold uppercase tracking-wide text-brand-text-secondary">
+                    {grupo.label}
+                  </span>
                 </div>
-              ) : (
-                <span className="font-mono text-sm text-brand-text shrink-0">
-                  {esPorcentaje ? `${Math.round(item.valor * 1000) / 10}%` : formatCOP(item.valor)}
-                </span>
-              )}
-            </div>
-          )
-        })}
+                <div className="divide-y divide-brand-border/50">
+                  {filasDelGrupo.map(({ item, idx }) => {
+                    const esPorcentaje = esPorcentajeInductor(item.inductor)
+                    return (
+                      <div
+                        key={`${item.inductor}-${idx}`}
+                        className={`px-5 py-3.5 flex items-center justify-between gap-4 transition-colors duration-700 ${
+                          idx === filaDestacada ? 'bg-brand-success-soft' : 'hover:bg-brand-surface/30'
+                        }`}
+                      >
+                        <div className="min-w-0 flex-1">
+                          {canEdit ? (
+                            <input
+                              type="text"
+                              value={item.nombre_interno}
+                              onChange={(e) => onRename(activeMat, idx, e.target.value)}
+                              className="text-sm font-medium text-brand-text leading-tight bg-transparent border-none outline-none w-full focus:bg-brand-input rounded px-1 -mx-1"
+                              placeholder="Nombre de este costo"
+                            />
+                          ) : (
+                            <p className="text-sm font-medium text-brand-text leading-tight">{item.nombre_interno}</p>
+                          )}
+                          <div className="mt-1"><InductorBadge inductor={item.inductor} /></div>
+                        </div>
+                        {canEdit ? (
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {!esPorcentaje && <span className="text-[10px] text-brand-text-secondary">COP</span>}
+                            {esPorcentaje ? (
+                              <input
+                                type="number"
+                                value={Math.round(item.valor * 1000) / 10}
+                                step={0.1}
+                                min={0}
+                                max={100}
+                                onChange={(e) => onChange(activeMat, idx, (parseFloat(e.target.value) || 0) / 100)}
+                                className={`${inputBase} w-28`}
+                              />
+                            ) : (
+                              <MoneyInput
+                                value={item.valor}
+                                onChange={(n) => onChange(activeMat, idx, n)}
+                                className={`${inputBase} w-28`}
+                              />
+                            )}
+                            {esPorcentaje && <span className="text-[10px] text-brand-text-secondary">%</span>}
+                            <button
+                              onClick={() => setBorrarIdx(idx)}
+                              className="p-1.5 rounded-md text-brand-text-secondary hover:text-brand-danger hover:bg-brand-danger/10 transition-colors"
+                              title="Eliminar este costo"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="font-mono text-sm text-brand-text shrink-0">
+                            {esPorcentaje ? `${Math.round(item.valor * 1000) / 10}%` : formatCOP(item.valor)}
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })
+        )}
       </div>
 
       {canEdit && (
@@ -258,17 +344,42 @@ function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRo
             <Plus className="w-3.5 h-3.5" />
             Agregar costo para {activeMat}
           </Button>
-          <Button type="button" onClick={onGuardar} disabled={saving}>
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Save className="w-4 h-4" aria-hidden="true" />}
-            {saving ? 'Guardando…' : 'Guardar cambios'}
-          </Button>
+          <div className="flex items-center gap-3">
+            {dirty && !saving && (
+              <span className="flex items-center gap-1.5 text-xs text-brand-text-secondary">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand-gold" aria-hidden="true" />
+                Tienes cambios sin guardar
+              </span>
+            )}
+            <Button type="button" onClick={onGuardar} disabled={saving}>
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Save className="w-4 h-4" aria-hidden="true" />}
+              {saving ? 'Guardando…' : 'Guardar cambios'}
+            </Button>
+          </div>
         </div>
       )}
 
       <Dialog
+        open={borrarIdx !== null}
+        onClose={() => setBorrarIdx(null)}
+        role="alertdialog"
+        title="Eliminar este costo"
+      >
+        <p className="mb-5 text-sm text-brand-text-secondary">
+          ¿Eliminar <span className="font-semibold text-brand-text-dark">«{filaABorrar?.nombre_interno}»</span> de
+          las tarifas de {activeMat}? Se quita de la lista, pero no se hace permanente hasta que toques
+          «Guardar cambios».
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="secondary" onClick={() => setBorrarIdx(null)}>Cancelar</Button>
+          <Button type="button" variant="danger" onClick={confirmarBorrar}>Eliminar</Button>
+        </div>
+      </Dialog>
+
+      <Dialog
         open={menuAbierto}
         onClose={() => setMenuAbierto(false)}
-        title="Elegí qué tipo de costo estás agregando"
+        title="Elige qué tipo de costo estás agregando"
         className="max-w-lg"
       >
         <div role="listbox" aria-label="Tipo de costo a agregar">
@@ -339,9 +450,21 @@ interface AdicionalesTabProps {
   onRemoveRow: (index: number) => void
   onGuardar: () => void
   saving: boolean
+  dirty: boolean
 }
 
-function AdicionalesTab({ adicionales, canEdit, onChange, onAddRow, onRemoveRow, onGuardar, saving }: AdicionalesTabProps) {
+function AdicionalesTab({ adicionales, canEdit, onChange, onAddRow, onRemoveRow, onGuardar, saving, dirty }: AdicionalesTabProps) {
+  // Confirmación antes de borrar — mismo criterio que en Tarifas.
+  const [borrarIdx, setBorrarIdx] = useState<number | null>(null)
+
+  function confirmarBorrar() {
+    if (borrarIdx === null) return
+    onRemoveRow(borrarIdx)
+    setBorrarIdx(null)
+  }
+
+  const filaABorrar = borrarIdx !== null ? adicionales[borrarIdx] : null
+
   return (
     <div className="space-y-3">
       <p className="text-xs text-brand-text-secondary pl-1">
@@ -350,17 +473,17 @@ function AdicionalesTab({ adicionales, canEdit, onChange, onAddRow, onRemoveRow,
       </p>
 
       <div className="bg-brand-surface rounded-xl border border-brand-border overflow-x-auto">
-        <table className="w-full text-sm min-w-[700px]">
+        <table className="w-full text-sm min-w-[820px] table-fixed">
           <thead>
             <tr className="border-b border-brand-border bg-brand-surface/40">
-              <th className="px-4 py-3 text-left text-[11px] font-bold text-brand-text-secondary uppercase tracking-wider w-[35%]">Concepto</th>
+              <th className="px-4 py-3 text-left text-[11px] font-bold text-brand-text-secondary uppercase tracking-wider w-[36%]">Concepto</th>
               <th className="px-3 py-3 text-left text-[11px] font-bold text-brand-text-secondary uppercase tracking-wider w-[8%]">Unidad</th>
               {ETAPAS_COLS.map(({ label }) => (
-                <th key={label} className="px-3 py-3 text-right text-[11px] font-bold text-brand-text-secondary uppercase tracking-wider">
+                <th key={label} className="px-3 py-3 text-right text-[11px] font-bold text-brand-text-secondary uppercase tracking-wider w-[12%]">
                   {label}
                 </th>
               ))}
-              {canEdit && <th className="w-8" />}
+              {canEdit && <th className="w-10" />}
             </tr>
           </thead>
           <tbody className="divide-y divide-brand-border/40">
@@ -395,13 +518,10 @@ function AdicionalesTab({ adicionales, canEdit, onChange, onAddRow, onRemoveRow,
                 {ETAPAS_COLS.map(({ key }) => (
                   <td key={key} className="px-3 py-2.5 text-right">
                     {canEdit ? (
-                      <input
-                        type="number"
+                      <MoneyInput
                         value={item[key] as number}
-                        min={0}
-                        step={1000}
-                        onChange={(e) => onChange(idx, key, parseFloat(e.target.value) || 0)}
-                        className="w-28 px-2 py-1.5 rounded-md bg-brand-input border border-brand-border text-sm text-right text-brand-text tabular-nums focus:outline-none focus:border-brand-primary transition-colors"
+                        onChange={(n) => onChange(idx, key, n)}
+                        className="w-full px-2 py-1.5 rounded-md bg-brand-input border border-brand-border text-sm text-right text-brand-text tabular-nums focus:outline-none focus:border-brand-primary transition-colors"
                       />
                     ) : (
                       <span className="text-brand-text tabular-nums">{formatCOP(item[key] as number)}</span>
@@ -411,7 +531,7 @@ function AdicionalesTab({ adicionales, canEdit, onChange, onAddRow, onRemoveRow,
                 {canEdit && (
                   <td className="px-2 py-2.5">
                     <button
-                      onClick={() => onRemoveRow(idx)}
+                      onClick={() => setBorrarIdx(idx)}
                       className="p-1.5 rounded-md text-brand-text-secondary hover:text-brand-danger hover:bg-brand-danger/10 transition-colors"
                       title="Eliminar fila"
                     >
@@ -431,12 +551,37 @@ function AdicionalesTab({ adicionales, canEdit, onChange, onAddRow, onRemoveRow,
             <Plus className="w-3.5 h-3.5" />
             Agregar servicio adicional
           </Button>
-          <Button type="button" onClick={onGuardar} disabled={saving}>
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Save className="w-4 h-4" aria-hidden="true" />}
-            {saving ? 'Guardando…' : 'Guardar cambios'}
-          </Button>
+          <div className="flex items-center gap-3">
+            {dirty && !saving && (
+              <span className="flex items-center gap-1.5 text-xs text-brand-text-secondary">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand-gold" aria-hidden="true" />
+                Tienes cambios sin guardar
+              </span>
+            )}
+            <Button type="button" onClick={onGuardar} disabled={saving}>
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Save className="w-4 h-4" aria-hidden="true" />}
+              {saving ? 'Guardando…' : 'Guardar cambios'}
+            </Button>
+          </div>
         </div>
       )}
+
+      <Dialog
+        open={borrarIdx !== null}
+        onClose={() => setBorrarIdx(null)}
+        role="alertdialog"
+        title="Eliminar este servicio"
+      >
+        <p className="mb-5 text-sm text-brand-text-secondary">
+          ¿Eliminar <span className="font-semibold text-brand-text-dark">«{filaABorrar?.concepto}»</span> de los
+          servicios adicionales? Se quita de la lista, pero no se hace permanente hasta que toques
+          «Guardar cambios».
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="secondary" onClick={() => setBorrarIdx(null)}>Cancelar</Button>
+          <Button type="button" variant="danger" onClick={confirmarBorrar}>Eliminar</Button>
+        </div>
+      </Dialog>
     </div>
   )
 }
@@ -452,6 +597,9 @@ export default function ParametrosPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  // Hallazgo real del fundador, 2026-09-16: nada avisaba si había cambios
+  // sin guardar — "Guardar cambios" se veía igual con o sin nada pendiente.
+  const [dirty, setDirty] = useState(false)
 
   // Load on mount
   useEffect(() => {
@@ -462,9 +610,16 @@ export default function ParametrosPage() {
       .finally(() => setLoading(false))
   }, [])
 
+  // Todas las mutaciones locales pasan por acá en vez de `setData` directo,
+  // para que ninguna futura edición se olvide de marcar `dirty`.
+  const actualizarData = useCallback((updater: (prev: ParametrosData | null) => ParametrosData | null) => {
+    setData(updater)
+    setDirty(true)
+  }, [])
+
   // Handlers for local mutations
   const handleTarifaChange = useCallback((material: string, index: number, value: number) => {
-    setData((prev) => {
+    actualizarData((prev) => {
       if (!prev) return prev
       const updated = prev.tarifas[material].map((item, i) =>
         i === index ? { ...item, valor: value } : item
@@ -474,7 +629,7 @@ export default function ParametrosPage() {
   }, [])
 
   const handleTarifaRename = useCallback((material: string, index: number, nombre: string) => {
-    setData((prev) => {
+    actualizarData((prev) => {
       if (!prev) return prev
       const updated = prev.tarifas[material].map((item, i) =>
         i === index ? { ...item, nombre_interno: nombre } : item
@@ -484,7 +639,7 @@ export default function ParametrosPage() {
   }, [])
 
   const handleTarifaAddRow = useCallback((material: string, inductor: string) => {
-    setData((prev) => {
+    actualizarData((prev) => {
       if (!prev) return prev
       const cfg = INDUCTORES_DISPONIBLES.find((i) => i.value === inductor) ?? INDUCTORES_DISPONIBLES[0]
       const nuevaFila: TarifaItem = {
@@ -499,7 +654,7 @@ export default function ParametrosPage() {
   }, [])
 
   const handleTarifaRemoveRow = useCallback((material: string, index: number) => {
-    setData((prev) => {
+    actualizarData((prev) => {
       if (!prev) return prev
       const updated = (prev.tarifas[material] ?? []).filter((_, i) => i !== index)
       return { ...prev, tarifas: { ...prev.tarifas, [material]: updated } }
@@ -509,7 +664,7 @@ export default function ParametrosPage() {
 
 
   const handleAdicionalesChange = useCallback((index: number, field: keyof AdicionalItem, value: string | number) => {
-    setData((prev) => {
+    actualizarData((prev) => {
       if (!prev) return prev
       const updated = prev.adicionales.map((item, i) =>
         i === index ? { ...item, [field]: value } : item
@@ -519,7 +674,7 @@ export default function ParametrosPage() {
   }, [])
 
   const handleAdicionalesAddRow = useCallback(() => {
-    setData((prev) => {
+    actualizarData((prev) => {
       if (!prev) return prev
       return {
         ...prev,
@@ -529,7 +684,7 @@ export default function ParametrosPage() {
   }, [])
 
   const handleAdicionalesRemoveRow = useCallback((index: number) => {
-    setData((prev) => {
+    actualizarData((prev) => {
       if (!prev) return prev
       return { ...prev, adicionales: prev.adicionales.filter((_, i) => i !== index) }
     })
@@ -545,6 +700,7 @@ export default function ParametrosPage() {
       else                                 payload = { adicionales: data.adicionales }
 
       await setParametros(payload)
+      setDirty(false)
       setToast({ type: 'success', message: 'Parámetros guardados correctamente' })
     } catch {
       setToast({ type: 'error', message: 'Error al guardar parámetros' })
@@ -623,6 +779,7 @@ export default function ParametrosPage() {
                     onRemoveRow={handleTarifaRemoveRow}
                     onGuardar={handleSave}
                     saving={saving}
+                    dirty={dirty}
                   />
                 )}
 
@@ -635,6 +792,7 @@ export default function ParametrosPage() {
                     onRemoveRow={handleAdicionalesRemoveRow}
                     onGuardar={handleSave}
                     saving={saving}
+                    dirty={dirty}
                   />
                 )}
               </motion.div>
