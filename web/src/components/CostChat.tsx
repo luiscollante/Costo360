@@ -520,13 +520,18 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
         <Button
           type="button"
           size="sm"
-          variant={grabando ? 'danger' : 'secondary'}
+          variant={orbEsSoportado() ? 'secondary' : grabando ? 'danger' : 'secondary'}
           onClick={alternarGrabacion}
           disabled={cargando || transcribiendo}
           aria-label={grabando ? 'Detener grabación' : 'Hablarle a Cost por micrófono'}
         >
           {transcribiendo ? (
             <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+          ) : orbEsSoportado() ? (
+            // Misma esfera del header, en 'thinking' mientras graba — reusa
+            // el mismo lenguaje visual en vez de un ícono de micrófono
+            // genérico sin relación con la marca.
+            <CostOrb estado={grabando ? 'thinking' : 'idle'} size={20} />
           ) : (
             <Mic size={14} aria-hidden="true" />
           )}
