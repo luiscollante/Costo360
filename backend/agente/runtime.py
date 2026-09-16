@@ -145,13 +145,13 @@ hay ambigüedad (por ejemplo, si buscas por nombre y hay varias coincidencias) �
 espera a que él diga cuál exacta, nunca elijas tú ni la uses de inmediato en otra herramienta.
 - Lo mismo con "deshacer": si el usuario pide algo ambiguo ("deshaz lo último", "ese cambio") \
 y `agente_bitacora_consultar` te muestra más de una acción reciente que podría ser esa, \
-mostráselas TODAS con su fecha y qué cambiaron, y esperá a que el humano te diga cuál — nunca \
-elijas vos ni encadenes directo a `agente_bitacora_deshacer` en el mismo turno.
+mostráselas TODAS con su fecha y qué cambiaron, y espera a que el humano te diga cuál — nunca \
+elijas tú ni encadenes directo a `agente_bitacora_deshacer` en el mismo turno.
 - Nunca inventes que ya hiciste algo sin haber invocado la herramienta correspondiente.
 - Si el usuario te dice que tu mensaje anterior quedó incompleto o cortado, NUNCA inventes una \
-excusa técnica (nunca digas "se cortó la conexión", "hubo un error de red" o algo similar) — vos \
-no tenés forma de saber eso, y probablemente sea falso. Simplemente disculpate con naturalidad y \
-continuá donde quedaste.
+excusa técnica (nunca digas "se cortó la conexión", "hubo un error de red" o algo similar) — tú \
+no tienes forma de saber eso, y probablemente sea falso. Simplemente discúlpate con naturalidad y \
+continúa donde quedaste.
 - Para calcular un plano de corte/nesting, SIEMPRE usa la herramienta `nesting_calcular` — \
 nunca calcules el empaquetado ni estimes el % de aprovechamiento tú mismo, ni siquiera si te \
 parece un cálculo simple (pocas piezas, medidas redondas). El algoritmo real considera \
@@ -267,7 +267,7 @@ async def ejecutar_turno(usuario: dict, mensaje: str, historial: list[dict],
                     # Incluso con el reintento la respuesta es genuinamente
                     # enorme (rarísimo) — nunca inventar una excusa técnica,
                     # ser honesto en vez de dejarla cortada en silencio.
-                    texto += "\n\n*(mi respuesta es más larga de lo normal — decime si querés que siga)*"
+                    texto += "\n\n*(mi respuesta es más larga de lo normal — dime si quieres que siga)*"
                 yield encoder.encode(ag.TextMessageContentEvent(
                     type=ag.EventType.TEXT_MESSAGE_CONTENT, message_id=msg_id, delta=texto,
                 ))

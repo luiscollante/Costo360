@@ -63,8 +63,8 @@ registrar(ToolSpec(
             "Lista los materiales del catálogo del taller (propios + los de Costo360 "
             "que el taller no haya personalizado), con precio por m², proveedor y si "
             "es propio del taller. Admite filtrar por categoría. La respuesta trae un "
-            "campo `total` — para '¿cuántos materiales tengo?' usá ese número directo, "
-            "nunca cuentes la lista vos mismo."
+            "campo `total` — para '¿cuántos materiales tengo?' usa ese número directo, "
+            "nunca cuentes la lista tú mismo."
         ),
         parameters={
             "type": "OBJECT",

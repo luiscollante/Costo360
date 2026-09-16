@@ -65,8 +65,8 @@ registrar(ToolSpec(
             "(Disponible/Reservado/Usado), precios. Si el usuario es operativo, solo "
             "ve SUS PROPIOS retales, nunca los de otros usuarios del taller — esto no "
             "es configurable desde esta tool. La respuesta trae un campo `total` — para "
-            "'¿cuántos retales tengo?' usá ese número directo, nunca cuentes la lista "
-            "vos mismo."
+            "'¿cuántos retales tengo?' usa ese número directo, nunca cuentes la lista "
+            "tú mismo."
         ),
         parameters={"type": "OBJECT", "properties": {}},
     ),

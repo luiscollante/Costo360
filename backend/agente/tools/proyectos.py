@@ -48,7 +48,7 @@ registrar(ToolSpec(
         description=(
             "Lista las tareas de un proyecto de Costo360, con su estado, prioridad y "
             "responsable. La respuesta trae un campo `total` — para '¿cuántas tareas "
-            "hay?' usá ese número directo, nunca cuentes la lista vos mismo."
+            "hay?' usa ese número directo, nunca cuentes la lista tú mismo."
         ),
         parameters={
             "type": "OBJECT",

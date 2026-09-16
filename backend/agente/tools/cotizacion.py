@@ -67,9 +67,9 @@ registrar(ToolSpec(
             "Lista cotizaciones del taller con número, cliente, fecha, precio, "
             "margen y estado. Admite filtrar por texto de búsqueda (cliente, "
             "número o material), estado, y rango de fechas. La respuesta trae un campo "
-            "`total` (usalo directo para '¿cuántas cotizaciones tengo?', nunca cuentes "
-            "la lista vos mismo) y `hay_mas_de_las_mostradas` — esta lista tiene un tope "
-            "fijo de 50, si ese campo es true decile al usuario que hay más de las que "
+            "`total` (úsalo directo para '¿cuántas cotizaciones tengo?', nunca cuentes "
+            "la lista tú mismo) y `hay_mas_de_las_mostradas` — esta lista tiene un tope "
+            "fijo de 50, si ese campo es true dile al usuario que hay más de las que "
             "ves y que afine la búsqueda si necesita verlas todas."
         ),
         parameters={

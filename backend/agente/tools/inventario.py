@@ -59,8 +59,8 @@ registrar(ToolSpec(
         description=(
             "Lista las láminas en inventario del taller (cantidad, medidas, costo, "
             "proveedor, ubicación). Admite filtrar por categoría de material. La "
-            "respuesta trae un campo `total` — para '¿cuántas láminas tengo?' usá ese "
-            "número directo, nunca cuentes la lista vos mismo."
+            "respuesta trae un campo `total` — para '¿cuántas láminas tengo?' usa ese "
+            "número directo, nunca cuentes la lista tú mismo."
         ),
         parameters={
             "type": "OBJECT",

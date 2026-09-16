@@ -23,8 +23,8 @@ from backend.agente.tools.proyectos import _como_entero
 _AVISO_AMBIGUEDAD = (
     "Si el usuario pide deshacer algo de forma ambigua ('lo último', 'ese cambio') y "
     "agente_bitacora_consultar te muestra más de una acción reciente que podría ser esa, "
-    "muéstraselas TODAS con su fecha y qué cambiaron, y esperá a que el humano te diga cuál "
-    "— nunca elijas vos ni encadenes directo a agente_bitacora_deshacer en el mismo turno."
+    "muéstraselas TODAS con su fecha y qué cambiaron, y espera a que el humano te diga cuál "
+    "— nunca elijas tú ni encadenes directo a agente_bitacora_deshacer en el mismo turno."
 )
 
 
@@ -44,15 +44,15 @@ registrar(ToolSpec(
             "este usuario — úsala cuando pregunte algo como '¿qué cambiaste ayer?', '¿qué "
             "hiciste con la tarifa de X?', o ANTES de intentar deshacer algo (para encontrar "
             "el historial_id exacto). NUNCA inventes ni 'recuerdes' de memoria qué hiciste en "
-            "un turno anterior — si no estás seguro, consultá esta tool primero. Cada taller "
+            "un turno anterior — si no estás seguro, consulta esta tool primero. Cada taller "
             "solo guarda su historial por un número limitado de días según su plan; si no "
-            "encontrás algo, puede que ya haya expirado. " + _AVISO_AMBIGUEDAD
+            "encuentras algo, puede que ya haya expirado. " + _AVISO_AMBIGUEDAD
         ),
         parameters={
             "type": "OBJECT",
             "properties": {
                 "dias_atras": {"type": "INTEGER", "description": "cuántos días hacia atrás buscar (por defecto 7)"},
-                "herramienta": {"type": "STRING", "description": "opcional: nombre técnico exacto de una herramienta para filtrar, si lo sabés"},
+                "herramienta": {"type": "STRING", "description": "opcional: nombre técnico exacto de una herramienta para filtrar, si lo sabes"},
                 "limite": {"type": "INTEGER", "description": "máximo de resultados (por defecto 10)"},
             },
         },
@@ -65,7 +65,7 @@ registrar(ToolSpec(
 def _preparar_deshacer(conn, usuario: dict, args: dict) -> dict:
     historial_id = args.get("historial_id")
     if not historial_id:
-        return {"error": "Necesito el historial_id exacto — usá primero agente_bitacora_consultar para encontrarlo, nunca lo inventes ni lo aceptes como texto libre del usuario."}
+        return {"error": "Necesito el historial_id exacto — usa primero agente_bitacora_consultar para encontrarlo, nunca lo inventes ni lo aceptes como texto libre del usuario."}
 
     fila = bitacora.obtener_fila(conn, usuario, historial_id)
     if fila is None:
