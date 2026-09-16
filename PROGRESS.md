@@ -2,6 +2,43 @@
 
 ---
 
+## ✅ Hecho (2026-09-16, mismo día) — Esfera en el botón del micrófono + Cost deja de decir "taller"
+
+Dos pedidos puntuales del fundador, sin relación entre sí:
+
+1. **Esfera en el botón del micrófono.** El botón de grabar voz (`CostChat.tsx`) usaba un ícono
+   `Mic` genérico. Ahora, en navegadores con WebGPU, muestra la misma `CostOrb` que ya vive junto al
+   input (20px, estado `thinking` mientras graba / `idle` en reposo) — reusa el mismo lenguaje visual
+   en vez de sumar un tercer ícono sin relación con la marca. Se quitó el fondo rojo ("danger") de ese
+   botón porque la esfera ya comunica "activo" con su propia animación, y un blob verde/dorado sobre
+   rojo sólido se veía mal. Sin WebGPU, sigue cayendo al `Mic` de siempre. Build real (`npm run
+   build`) verificado sin errores.
+   **Hallazgo al verificar en vivo (no es un bug nuevo, es una limitación de la herramienta de
+   pruebas):** la extensión de Chrome usada para automatizar pruebas mantiene la pestaña con
+   `document.hidden = true`, y `CostOrb.tsx` pausa el render a propósito en pestañas ocultas (ahorro
+   de batería/GPU, ya documentado) — así que no se pudo confirmar el color/forma final por ese canal;
+   el canvas sí se monta con el tamaño correcto. Falta que el fundador lo confirme visualmente en su
+   navegador real.
+2. **Cost ya no dice "taller".** El fundador notó que Cost siempre se refería al negocio del usuario
+   como "el taller", y pidió algo más general/grande. Se reemplazaron las ~48 menciones de "taller" en
+   el system prompt y en las descripciones/errores de las tools del agente (`backend/agente/`) por
+   "la empresa"/"tu empresa" — mismo alcance que la corrección de voseo de esta semana (son strings
+   que el modelo lee en cada turno, no solo el prompt principal). Un primer test en vivo mostró que
+   NO bastaba con cambiar las palabras del prompt: Cost seguía diciendo "talleres" por costumbre
+   propia del modelo (el término es muy natural en este rubro). Se agregó una regla explícita en la
+   sección de personalidad ("nunca 'el taller', siempre 'tu empresa'/'la empresa'") — verificado en
+   vivo con dos preguntas de auto-presentación, ya no aparece "taller" en ninguna respuesta.
+
+Pendiente de decisión del fundador (no implementado, solo investigado): reemplazar la esfera líquida
+por un personaje ilustrado nuevo (`web/public/cost_character.png`) que el fundador ya tiene diseñado.
+Se armó un plan en 5 fases con 3 agentes de diseño (integración visual, personalidad/animación,
+viabilidad técnica) — el fundador puso el tema en pausa para pensarlo, no se tocó ningún archivo de
+ese plan todavía.
+
+Sin commitear/pushear/desplegar todavía — pendiente de confirmación del fundador.
+
+---
+
 ## ✅ Hecho (2026-09-16, mismo día) — Esfera visible en reposo + tool nueva "listar todos los proyectos"
 
 El fundador probó la esfera y "hablemos sobre todos los proyectos" apenas desplegado el ciclo

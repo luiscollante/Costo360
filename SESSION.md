@@ -2,6 +2,70 @@
 
 ---
 
+## Sesión: 2026-09-16 (mismo día) — Esfera en el micrófono + Cost deja de decir "taller"
+
+### Qué se hizo
+Antes de esto, se armó (a pedido del fundador) un plan de 5 fases con 3 agentes de diseño (UI
+Designer, Whimsy Injector, UX Architect) para eventualmente reemplazar la esfera líquida por un
+personaje ilustrado ya diseñado (`web/public/cost_character.png`). El fundador puso ese tema en pausa
+para pensarlo con calma, y en su lugar pidió dos cosas puntuales.
+
+**Micrófono → esfera.** El botón de grabar voz en `CostChat.tsx` mostraba un ícono `Mic` genérico sin
+relación con la marca. Se reemplazó por la misma `CostOrb` que ya vive junto al input (20px), con
+`estado='thinking'` mientras graba y `'idle'` en reposo — reutiliza el mismo vocabulario visual en vez
+de agregar un tercer tratamiento distinto. Se quitó el fondo rojo ("danger") de ese botón: la esfera
+ya comunica "activo" con su propia animación, y mezclarla con un fondo rojo sólido se veía mal (un
+blob verde/dorado sobre rojo). Sin WebGPU sigue cayendo al ícono `Mic` de siempre, igual que antes.
+
+Al intentar verificarlo en vivo con la extensión de Chrome, se encontró que esa pestaña automatizada
+queda con `document.hidden = true`, y `CostOrb.tsx` pausa el render a propósito en pestañas ocultas
+(optimización ya documentada en el código, no un bug). Confirmado con lectura directa de píxeles del
+canvas (`toDataURL` + `getImageData`, alpha=0 en los 1600 píxeles) y comprobando que WebGPU sí
+funciona en esa máquina (adapter AMD real, no software) — así que el canvas se monta bien, pero el
+color/forma final no se pudo confirmar por este canal. Queda pendiente que el fundador lo revise en su
+navegador real.
+
+**Cost deja de decir "taller".** El fundador notó que Cost siempre hablaba de "el taller" del usuario
+en vez de algo más general. Se reemplazaron ~48 apariciones de "taller" en `backend/agente/` (el
+system prompt en `runtime.py` y las descripciones/errores de las 8 tools de dominio) por
+"la empresa"/"tu empresa" — mismo patrón que la corrección de voseo de esta semana, porque son strings
+que el modelo lee en cada turno, no solo el prompt principal. El reemplazo se hizo con un script
+(orden de patrones específico a genérico, por la concordancia de género es/una vs. el/un), y se
+revisó el diff completo a mano — se encontraron y corrigieron 2 errores de concordancia ("este
+empresa" → "esta empresa", "todo la empresa" → "toda la empresa") y un archivo que el script no cubrió
+(`backend/agente/tools/bitacora.py`, homónimo de `backend/agente/bitacora.py`, sí incluido).
+
+Un primer test en vivo (pregunta "¿Qué eres y a quién ayudas?") mostró que el cambio de palabras en el
+prompt NO alcanzaba: Cost seguía diciendo "talleres y empresas" por costumbre propia del modelo, no
+por estar copiando el prompt literal — el término le sale natural en este rubro sin necesidad de leerlo
+en ningún lado. Se agregó una regla explícita en la sección de personalidad de `runtime.py`
+("nunca 'el taller', siempre 'tu empresa'/'la empresa'"). Verificado de nuevo en vivo con una segunda
+pregunta de auto-presentación — la respuesta ya no menciona "taller" en ningún lado.
+
+### Archivos modificados
+`web/src/components/CostChat.tsx` (ícono del botón de grabar), `backend/agente/runtime.py` (system
+prompt: descripción del negocio + regla explícita nueva), `backend/agente/registry.py`,
+`backend/agente/bitacora.py`, `backend/agente/tools/{bitacora,inventario,cotizacion,nesting,catalogo,
+parametros,proyectos,retales}.py` (terminología "taller"→"empresa" en descripciones/errores que lee
+el modelo).
+
+### Decisiones tomadas
+- La esfera del botón de grabar reusa `estado='thinking'`/`'idle'` en vez de inventar un tercer
+  estado — el vocabulario ya existe, no hace falta uno nuevo solo para "escuchando".
+- Se quitó el fondo rojo del botón de grabar al usar la esfera (se mantiene solo en el fallback sin
+  WebGPU) — evita el choque visual verde/dorado sobre rojo sólido.
+- "la empresa"/"tu empresa" como término único y consistente (no se alternó con "negocio"/"compañía")
+  para minimizar el riesgo de que el modelo vuelva a derivar hacia "taller" por variación de redacción.
+
+### Primera tarea de la próxima sesión
+Confirmar con el fundador, en su navegador real: (1) cómo se ve la esfera en el botón de grabar
+(color/forma — no se pudo verificar por la limitación de `document.hidden` en la pestaña automatizada
+de pruebas), y (2) si el plan de 5 fases del personaje ilustrado (pausado esta sesión) sigue en pie o
+cambió de idea. Nada de este ciclo está commiteado/pusheado/desplegado todavía — pendiente de que el
+fundador lo revise y confirme.
+
+---
+
 ## Sesión: 2026-09-16 (mismo día) — Esfera visible en reposo + tool "listar todos los proyectos"
 
 ### Qué se hizo
