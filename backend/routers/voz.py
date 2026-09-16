@@ -4,11 +4,26 @@ API de ElevenLabs: la clave (`ELEVENLABS_API_KEY`) nunca sale del backend, el
 navegador nunca la ve.
 
 Decisión del fundador (2026-09-16): con solo 10.000 créditos, "hablar" es
-manual — un botón de reproducir por mensaje en el frontend, nunca automático
-— para no agotar el saldo sin que nadie se dé cuenta. Ese límite se aplica en
-la interfaz, no aquí; este router solo expone las 2 operaciones y sus topes
+manual por defecto — un botón de reproducir por mensaje en el frontend — con
+una excepción explícita: si el turno empezó por micrófono, el frontend
+reproduce la respuesta sola (`CostChat.tsx`). Ese límite se aplica en la
+interfaz, no aquí; este router solo expone las 2 operaciones y sus topes
 anti-abuso (texto/audio máximo, rate limit) — mismo patrón que
 `routers/nesting.py`.
+
+Antes de mandar el texto a ElevenLabs se normaliza con
+`services/voz_service.normalizar_para_voz` — sin esto, el markdown crudo que
+genera el modelo (negritas, listas, "$1.339.000", "m²", "%"...) se lee mal o
+directamente mal (hallazgo real del fundador, 2026-09-16: un monto con más de
+un punto de miles se leía como si fuera mil veces menor). Ver ese módulo para
+el detalle completo de cada regla.
+
+`model_id` es `eleven_flash_v2_5` (no `eleven_multilingual_v2`) — es el
+modelo que ElevenLabs recomienda para uso conversacional en vivo, con
+latencia bastante menor; el mismo motor de pronunciación de base, así que las
+reglas de `voz_service` le sirven igual. `voice_settings.speed` más bajo que
+el default (1.0) porque el fundador reportó que las respuestas largas se oían
+demasiado rápido.
 """
 import os
 
@@ -20,14 +35,38 @@ from backend.db.deps import verificar_dispositivo
 from backend.middleware.auth import get_current_user
 from backend.middleware.rate_limiter import limiter
 from backend.models.voz import HablarIn
+from backend.services.voz_service import normalizar_para_voz
 
 router = APIRouter(prefix="/api/voz", tags=["voz"],
                    dependencies=[Depends(verificar_dispositivo)])
 
 _TIMEOUT = 30.0
 _BASE = "https://api.elevenlabs.io/v1"
-_MAX_CARACTERES = 2000  # ya lo topa HablarIn, doble candado si cambia el modelo
+_MODEL_ID = "eleven_flash_v2_5"
+_VOICE_SETTINGS = {
+    "speed": 0.92,
+    "stability": 0.55,
+    "similarity_boost": 0.75,
+    "style": 0.1,
+    "use_speaker_boost": True,
+}
+_MAX_CARACTERES = 2000  # ya lo topa HablarIn, doble candado si cambia el modelo — sobre el texto CRUDO, antes de normalizar
+# La normalización puede EXPANDIR el texto (deletrea montos en palabras: "$2.914.000"
+# de 11 caracteres pasa a "dos millones novecientos catorce mil pesos", 44) — tope
+# aparte sobre el resultado ya normalizado, para no mandarle a ElevenLabs algo
+# desproporcionado si un mensaje viene cargado de montos.
+_MAX_CARACTERES_NORMALIZADO = 4000
 _MAX_BYTES_AUDIO = 10 * 1024 * 1024  # 10 MB — un mensaje de voz no debería pasar de esto
+
+
+def _recortar_en_oracion(texto: str, limite: int) -> str:
+    """Nunca cortar a mitad de palabra (y menos a mitad de un monto recién
+    deletreado en palabras) — recorta en el último punto completo antes del
+    límite."""
+    if len(texto) <= limite:
+        return texto
+    corte = texto.rfind(".", 0, limite)
+    return texto[:corte + 1] if corte != -1 else texto[:limite]
 
 
 def _api_key() -> str:
@@ -50,14 +89,18 @@ def hablar(request: Request, body: HablarIn, usuario=Depends(get_current_user)):
     """Convierte el texto de un mensaje de Cost a voz. Devuelve el audio (mp3) directo."""
     api_key = _api_key()
     voice_id = _voice_id()
-    texto = body.texto.strip()[:_MAX_CARACTERES]
+    texto_crudo = body.texto.strip()[:_MAX_CARACTERES]
+    if not texto_crudo:
+        raise HTTPException(status_code=400, detail="No hay texto para leer")
+    texto = normalizar_para_voz(texto_crudo)
+    texto = _recortar_en_oracion(texto, _MAX_CARACTERES_NORMALIZADO)
     if not texto:
         raise HTTPException(status_code=400, detail="No hay texto para leer")
     with httpx.Client(timeout=_TIMEOUT) as c:
         r = c.post(
             f"{_BASE}/text-to-speech/{voice_id}",
             headers={"xi-api-key": api_key, "Content-Type": "application/json"},
-            json={"text": texto, "model_id": "eleven_multilingual_v2"},
+            json={"text": texto, "model_id": _MODEL_ID, "voice_settings": _VOICE_SETTINGS},
         )
     if r.status_code != 200:
         raise HTTPException(status_code=502, detail="ElevenLabs no pudo generar el audio")
