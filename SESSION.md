@@ -2,6 +2,64 @@
 
 ---
 
+## Sesión: 2026-09-16 (mismo día) — Esfera líquida de marca para Cost
+
+### Qué se hizo
+El fundador dio el enlace correcto del editor de esferas líquidas (github.com/LerSent001/orb, MIT —
+el repo anterior había sido un error suyo), con un preset exacto por URL: estilo "siri", estado
+"thinking", con la paleta de ejemplo del editor (dorado/cian/rosa/morado). Se clonó el repo para
+investigar su código real antes de construir nada: es un **editor** por WebGPU (React + Vite), no una
+librería para instalar — el flujo real es diseñar un preset en su interfaz y exportar el código
+resultante. Se leyó su lógica de exportación real (`code-export.ts`) para entender el mecanismo exacto
+(un shader WGSL + un layout de uniforms de 136 floats + una curva de transición entre 2 estados
+únicos: "idle" y "thinking") y se extrajo esa lógica verbatim para Costo360, en vez de depender de la
+interfaz de edición del repo.
+
+Se construyó `web/src/components/orb/`: el shader WGSL real copiado sin tocar (con atribución MIT), un
+archivo nuevo (`orb-params.ts`) con los parámetros de forma/vidrio/movimiento exactos del preset
+"siri" que compartió el fundador, pero con la paleta reemplazada por colores de marca (esmeralda +
+dorado) en vez de la de ejemplo — iterado en vivo en el navegador (primero muy apagado, después con
+más contraste real entre highlight casi blanco y esmeralda muy oscuro) hasta lograr un resultado que
+se viera "Costo360" y no genérico. Y un componente React (`CostOrb.tsx`) con el pipeline WebGPU real,
+simplificado (sin las 3 variantes de partículas del estilo "particleRibbon", que Cost nunca usa).
+
+Integrado en el input de `CostChat.tsx` (afecta tanto la página dedicada `/agente` como el widget
+flotante, que comparten el mismo componente) — decisión de alcance: el botón flotante en sí (el ícono
+verde que abre el widget) se dejó intacto, ya tiene su propio tratamiento visual aprobado y mezclarlo
+con la esfera necesitaba más iteración de diseño de la que valía la pena en este ciclo. Respaldo para
+navegadores sin WebGPU (Safari, buena parte de móviles): el shimmer dorado ya existente, decisión ya
+tomada en el ciclo anterior de la voz.
+
+**Bug real de despliegue:** el primer intento de desplegar a Vercel falló en el build real
+(`npm run build` → `tsc -b && vite build`) aunque el `tsc --noEmit -p .` que se venía usando para
+verificar en esta sesión había pasado limpio segundos antes — `GPUBufferUsage` (un global de la spec
+de WebGPU) no existe sin `@webgpu/types` como dependencia, y por alguna razón ambiental el entorno
+local sí lo resolvía pero el build real de Vercel no. Corregido reemplazando el global por las
+constantes reales de la spec a mano (sin agregar ninguna dependencia nueva), y esta vez se verificó
+corriendo el `npm run build` real antes de volver a desplegar — lección para las próximas veces que se
+toque código con tipos de navegador poco comunes (WebGPU, WebUSB, etc.): `tsc --noEmit -p .` solo no
+basta, hay que correr el build real.
+
+### Archivos modificados
+`web/src/components/orb/effect.wgsl` (nuevo, copiado verbatim), `web/src/components/orb/
+orb-shader-source.ts` (nuevo, copiado verbatim), `web/src/components/orb/LICENSE_ORB.md` (nuevo),
+`web/src/components/orb/orb-params.ts` (nuevo, único archivo con contenido realmente propio),
+`web/src/components/orb/CostOrb.tsx` (nuevo), `web/src/components/CostChat.tsx` (integración en el
+input).
+
+### Decisiones tomadas
+No integrar la esfera en el botón flotante de Cost en este ciclo — el botón ya tiene su propio
+tratamiento visual (círculo esmeralda sólido + glow) validado antes, y combinarlo bien con la esfera
+requería más iteración visual de la que el alcance de este pedido justificaba. Verificar siempre con
+`npm run build` real (no solo `tsc --noEmit`) cuando el código toca APIs de navegador poco comunes.
+
+### Primera tarea de la próxima sesión
+Nada pendiente de este frente — commits `2813d3f`/`aeb7ea7`, subidos y desplegados a producción
+(frontend). Si el fundador quiere la esfera también en el botón flotante, sería un ciclo de diseño
+aparte.
+
+---
+
 ## Sesión: 2026-09-16 (mismo día) — Bug real: Cost respondía con voseo argentino
 
 ### Qué se hizo

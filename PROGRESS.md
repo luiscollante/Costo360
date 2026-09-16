@@ -2,6 +2,40 @@
 
 ---
 
+## ✅ Hecho (2026-09-16, mismo día) — Esfera líquida de marca para los estados de Cost
+
+El fundador dio el enlace real del editor (github.com/LerSent001/orb, MIT) con un preset exacto por
+URL (estilo "siri", estado "thinking") para reemplazar el ícono estático de Cost. Es un **editor**
+por WebGPU, no una librería instalable — se clonó el repo y se extrajo el shader WGSL real + la
+lógica de render verbatim, en vez de depender de su interfaz de edición.
+
+**Construido en `web/src/components/orb/`:**
+- `effect.wgsl` + `orb-shader-source.ts` — shader real copiado verbatim (atribución MIT en el propio
+  archivo + `LICENSE_ORB.md`).
+- `orb-params.ts` — los parámetros de forma/vidrio/movimiento del preset "siri" tal cual el fundador
+  los compartió (sin tocar), con la paleta de colores reemplazada por la de marca (esmeralda + dorado)
+  en vez de la de ejemplo del editor (dorado/cian/rosa/morado) — iterado en vivo en el navegador hasta
+  lograr contraste real entre los 2 estados que el efecto soporta ("idle"/"thinking", cubren
+  pensando+actuando; el detalle fino ya lo da el texto de `FilaPaso`).
+- `CostOrb.tsx` — componente React con el pipeline WebGPU real (sin las 3 variantes de partículas,
+  innecesarias para "siri"), transición suave entre estados, y `orbEsSoportado()` para que quien lo
+  use decida el respaldo.
+
+Integrado en el input de `CostChat.tsx` (página dedicada + widget flotante) — el botón flotante en sí
+se dejó intacto a propósito, ya tiene su propio tratamiento visual aprobado. Respaldo: el shimmer
+dorado ya existente en navegadores sin WebGPU (Safari, buena parte de móviles), decisión ya tomada en
+el ciclo anterior.
+
+**Bug real de despliegue encontrado y corregido:** el build local (`tsc --noEmit`) pasaba, pero el
+build real de producción (`tsc -b`, lo que corre Vercel) fallaba — `GPUBufferUsage` no existe como
+global sin `@webgpu/types` como dependencia, y el entorno local lo resolvía por alguna razón ambiental
+que el build real no. Corregido reemplazando el global por las constantes reales de la spec de WebGPU
+a mano, sin agregar ninguna dependencia nueva. Verificado corriendo `npm run build` real (no solo
+`tsc --noEmit`) antes de volver a desplegar. Commits `2813d3f`, `aeb7ea7`, subidos y desplegados a
+producción (frontend).
+
+---
+
 ## ✅ Hecho (2026-09-16, mismo día) — Bug real: Cost respondía con voseo argentino
 
 El fundador reportó que Cost le respondió "Hola" con tono argentino ("Contame en qué te puedo dar
