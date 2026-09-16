@@ -2,23 +2,25 @@
 
 ---
 
-## ✅ Hecho (2026-09-16, mismo día) — Esfera en el botón del micrófono + Cost deja de decir "taller"
+## ✅ Hecho (2026-09-16, mismo día) — Esfera quitada del chat + Cost deja de decir "taller" + voz automática
 
-Dos pedidos puntuales del fundador, sin relación entre sí:
+Tres pedidos puntuales del fundador, sin relación entre sí:
 
-1. **Esfera en el botón del micrófono.** El botón de grabar voz (`CostChat.tsx`) usaba un ícono
-   `Mic` genérico. Ahora, en navegadores con WebGPU, muestra la misma `CostOrb` que ya vive junto al
-   input (20px, estado `thinking` mientras graba / `idle` en reposo) — reusa el mismo lenguaje visual
-   en vez de sumar un tercer ícono sin relación con la marca. Se quitó el fondo rojo ("danger") de ese
-   botón porque la esfera ya comunica "activo" con su propia animación, y un blob verde/dorado sobre
-   rojo sólido se veía mal. Sin WebGPU, sigue cayendo al `Mic` de siempre. Build real (`npm run
-   build`) verificado sin errores.
-   **Hallazgo al verificar en vivo (no es un bug nuevo, es una limitación de la herramienta de
-   pruebas):** la extensión de Chrome usada para automatizar pruebas mantiene la pestaña con
-   `document.hidden = true`, y `CostOrb.tsx` pausa el render a propósito en pestañas ocultas (ahorro
-   de batería/GPU, ya documentado) — así que no se pudo confirmar el color/forma final por ese canal;
-   el canvas sí se monta con el tamaño correcto. Falta que el fundador lo confirme visualmente en su
-   navegador real.
+1. **Esfera quitada por completo del chat.** Se había agregado la esfera al botón de grabar voz
+   (reemplazando el `Mic` genérico) reusando la misma `CostOrb` del input. Al no poder confirmarse
+   visualmente en vivo (ver hallazgo abajo) el fundador pidió directamente quitar la esfera de los dos
+   lugares donde vivía en `CostChat.tsx` — el input (ya estaba en producción de un ciclo anterior) y el
+   botón de grabar (agregado y revertido en este mismo ciclo). Ambos volvieron a su tratamiento
+   original: Sparkles con glow junto al input, `Mic` simple en el botón de grabar. Se quitó el import
+   ya sin uso de `CostOrb`/`orbEsSoportado` de ese archivo — el componente en sí (`components/orb/`)
+   queda intacto, solo deja de usarse ahí. Build real (`npm run build`) verificado sin errores antes y
+   después del revert; verificado en vivo en el navegador que ambos íconos volvieron a la normalidad.
+   **Hallazgo al intentar verificar el color de la esfera en vivo (no es un bug de código, es una
+   limitación de la herramienta de pruebas):** la extensión de Chrome usada para automatizar pruebas
+   mantiene la pestaña con `document.hidden = true`, y `CostOrb.tsx` pausa el render a propósito en
+   pestañas ocultas (ahorro de batería/GPU, ya documentado) — confirmado con lectura directa de
+   píxeles del canvas (alpha=0 en los 1600 píxeles) y comprobando que WebGPU sí funciona en esa
+   máquina (adapter AMD real). Queda como antecedente por si se retoma la esfera más adelante.
 2. **Cost ya no dice "taller".** El fundador notó que Cost siempre se refería al negocio del usuario
    como "el taller", y pidió algo más general/grande. Se reemplazaron las ~48 menciones de "taller" en
    el system prompt y en las descripciones/errores de las tools del agente (`backend/agente/`) por
@@ -29,13 +31,27 @@ Dos pedidos puntuales del fundador, sin relación entre sí:
    sección de personalidad ("nunca 'el taller', siempre 'tu empresa'/'la empresa'") — verificado en
    vivo con dos preguntas de auto-presentación, ya no aparece "taller" en ninguna respuesta.
 
+3. **Cost responde con voz sola tras un mensaje hablado + ícono de bocina.** El botón de escuchar
+   cada respuesta de Cost usaba un ícono de "Play" genérico; ahora es una bocina (`Volume2`), que
+   representa mejor "hacer que Cost hable" para el caso en que el usuario escribió y Cost respondió
+   por chat. Además, cuando el usuario le habla a Cost por micrófono, la respuesta ahora se reproduce
+   sola en cuanto llega completa, sin tocar la bocina — se activa un ref justo antes de enviar el
+   texto transcripto y se consume una sola vez cuando `cargando` vuelve a `false`. Si el usuario
+   escribió en vez de hablar, el ref nunca se activa: la política de "nunca sonar solo con créditos
+   limitados" (decisión del fundador de este mismo ciclo) se mantiene intacta para el caso de texto,
+   solo se relaja para una conversación de voz donde esperar un clic rompe el flujo. Verificado en
+   vivo que el ícono cambió y que un mensaje ESCRITO no dispara audio solo (cero elementos `<audio>`
+   creados); el flujo de auto-reproducción tras hablar por voz no se pudo probar con la
+   automatización (necesita un micrófono real) — falta que el fundador lo confirme.
+
 Pendiente de decisión del fundador (no implementado, solo investigado): reemplazar la esfera líquida
 por un personaje ilustrado nuevo (`web/public/cost_character.png`) que el fundador ya tiene diseñado.
 Se armó un plan en 5 fases con 3 agentes de diseño (integración visual, personalidad/animación,
 viabilidad técnica) — el fundador puso el tema en pausa para pensarlo, no se tocó ningún archivo de
 ese plan todavía.
 
-Sin commitear/pushear/desplegar todavía — pendiente de confirmación del fundador.
+Los 3 puntos commiteados, pusheados y desplegados a producción (backend + frontend), verificados con
+`/healthz` y `curl` 200 al frontend después de cada deploy.
 
 ---
 

@@ -2,7 +2,7 @@
 
 ---
 
-## Sesión: 2026-09-16 (mismo día) — Esfera en el micrófono + Cost deja de decir "taller"
+## Sesión: 2026-09-16 (mismo día) — Esfera quitada del chat + Cost deja de decir "taller" + voz automática
 
 ### Qué se hizo
 Antes de esto, se armó (a pedido del fundador) un plan de 5 fases con 3 agentes de diseño (UI
@@ -10,20 +10,27 @@ Designer, Whimsy Injector, UX Architect) para eventualmente reemplazar la esfera
 personaje ilustrado ya diseñado (`web/public/cost_character.png`). El fundador puso ese tema en pausa
 para pensarlo con calma, y en su lugar pidió dos cosas puntuales.
 
-**Micrófono → esfera.** El botón de grabar voz en `CostChat.tsx` mostraba un ícono `Mic` genérico sin
-relación con la marca. Se reemplazó por la misma `CostOrb` que ya vive junto al input (20px), con
-`estado='thinking'` mientras graba y `'idle'` en reposo — reutiliza el mismo vocabulario visual en vez
-de agregar un tercer tratamiento distinto. Se quitó el fondo rojo ("danger") de ese botón: la esfera
-ya comunica "activo" con su propia animación, y mezclarla con un fondo rojo sólido se veía mal (un
-blob verde/dorado sobre rojo). Sin WebGPU sigue cayendo al ícono `Mic` de siempre, igual que antes.
+**Micrófono → esfera → quitada de nuevo.** El botón de grabar voz en `CostChat.tsx` mostraba un ícono
+`Mic` genérico sin relación con la marca. Se reemplazó por la misma `CostOrb` que ya vive junto al
+input (20px), con `estado='thinking'` mientras graba y `'idle'` en reposo — reutiliza el mismo
+vocabulario visual en vez de agregar un tercer tratamiento distinto. Se quitó el fondo rojo ("danger")
+de ese botón: la esfera ya comunica "activo" con su propia animación, y mezclarla con un fondo rojo
+sólido se veía mal (un blob verde/dorado sobre rojo).
 
 Al intentar verificarlo en vivo con la extensión de Chrome, se encontró que esa pestaña automatizada
 queda con `document.hidden = true`, y `CostOrb.tsx` pausa el render a propósito en pestañas ocultas
 (optimización ya documentada en el código, no un bug). Confirmado con lectura directa de píxeles del
 canvas (`toDataURL` + `getImageData`, alpha=0 en los 1600 píxeles) y comprobando que WebGPU sí
 funciona en esa máquina (adapter AMD real, no software) — así que el canvas se monta bien, pero el
-color/forma final no se pudo confirmar por este canal. Queda pendiente que el fundador lo revise en su
-navegador real.
+color/forma final no se pudo confirmar por este canal.
+
+Al no poder confirmarse visualmente, el fundador interrumpió el deploy en curso y pidió directamente
+quitar la esfera de los dos lugares donde vivía en `CostChat.tsx` — el input (ya en producción de un
+ciclo anterior) y el botón de grabar (agregado en este mismo ciclo). Se revirtieron ambos a su
+tratamiento original (Sparkles con glow junto al input, `Mic` simple en el botón de grabar), se quitó
+el import ya sin uso de `CostOrb`/`orbEsSoportado`, y se verificó en vivo en el navegador que los dos
+íconos volvieron a la normalidad. El componente `CostOrb` en sí (`components/orb/`) no se tocó — solo
+dejó de usarse desde este archivo.
 
 **Cost deja de decir "taller".** El fundador notó que Cost siempre hablaba de "el taller" del usuario
 en vez de algo más general. Se reemplazaron ~48 apariciones de "taller" en `backend/agente/` (el
@@ -42,27 +49,49 @@ en ningún lado. Se agregó una regla explícita en la sección de personalidad 
 ("nunca 'el taller', siempre 'tu empresa'/'la empresa'"). Verificado de nuevo en vivo con una segunda
 pregunta de auto-presentación — la respuesta ya no menciona "taller" en ningún lado.
 
+**Bocina + voz automática tras hablar.** El fundador pidió dos cosas más sobre el botón de escuchar
+cada respuesta de Cost: cambiar el ícono de "Play" por una bocina (representa mejor "hacer que Cost
+hable"), y que la respuesta se reproduzca sola cuando el usuario le habló a Cost por micrófono (sin
+necesidad de tocar la bocina) — pero solo en ese caso, nunca cuando el usuario escribió (la política
+de "nunca sonar solo con créditos limitados", decisión de este mismo ciclo, se mantiene para el texto
+escrito). Se implementó con un ref (`vozAutoPendienteRef`) que se activa justo antes de enviar el
+texto transcripto por voz, y se consume una sola vez en un `useEffect` que espera a que `cargando`
+vuelva a `false` (la respuesta ya completa, no a mitad del streaming de pasos). Verificado en vivo que
+el ícono cambió a bocina (`lucide-volume2`) y que un mensaje escrito no crea ningún elemento `<audio>`
+por sí solo; el flujo real de auto-reproducción tras hablar por voz no se pudo probar con la
+automatización (`getUserMedia` necesita un micrófono real) — queda pendiente que el fundador lo
+confirme.
+
 ### Archivos modificados
-`web/src/components/CostChat.tsx` (ícono del botón de grabar), `backend/agente/runtime.py` (system
-prompt: descripción del negocio + regla explícita nueva), `backend/agente/registry.py`,
+`web/src/components/CostChat.tsx` (esfera agregada al botón de grabar y luego revertida por completo,
+junto con la del input; quitado el import de `CostOrb`/`orbEsSoportado`; ícono de bocina + voz
+automática tras hablar), `backend/agente/runtime.py`
+(system prompt: descripción del negocio + regla explícita nueva), `backend/agente/registry.py`,
 `backend/agente/bitacora.py`, `backend/agente/tools/{bitacora,inventario,cotizacion,nesting,catalogo,
 parametros,proyectos,retales}.py` (terminología "taller"→"empresa" en descripciones/errores que lee
 el modelo).
 
 ### Decisiones tomadas
-- La esfera del botón de grabar reusa `estado='thinking'`/`'idle'` en vez de inventar un tercer
-  estado — el vocabulario ya existe, no hace falta uno nuevo solo para "escuchando".
-- Se quitó el fondo rojo del botón de grabar al usar la esfera (se mantiene solo en el fallback sin
-  WebGPU) — evita el choque visual verde/dorado sobre rojo sólido.
+- La esfera se quita por completo de `CostChat.tsx` (input y botón de grabar) en vez de invertir más
+  tiempo en diagnosticar el problema de verificación — el fundador prefirió el ícono simple y
+  confiable sobre un efecto que no se pudo confirmar visualmente en el momento. El componente
+  `CostOrb` queda disponible en el código por si se retoma más adelante (ej. junto al personaje
+  ilustrado, si ese plan avanza).
 - "la empresa"/"tu empresa" como término único y consistente (no se alternó con "negocio"/"compañía")
   para minimizar el riesgo de que el modelo vuelva a derivar hacia "taller" por variación de redacción.
+- La auto-reproducción de voz se limita estrictamente a turnos que empezaron por micrófono — nunca se
+  relajó la política general de "nunca sonar solo" para el caso de texto escrito, solo se creó una
+  excepción puntual y explícita para no romper el flujo de una conversación hablada.
 
 ### Primera tarea de la próxima sesión
-Confirmar con el fundador, en su navegador real: (1) cómo se ve la esfera en el botón de grabar
-(color/forma — no se pudo verificar por la limitación de `document.hidden` en la pestaña automatizada
-de pruebas), y (2) si el plan de 5 fases del personaje ilustrado (pausado esta sesión) sigue en pie o
-cambió de idea. Nada de este ciclo está commiteado/pusheado/desplegado todavía — pendiente de que el
-fundador lo revise y confirme.
+Confirmar con el fundador, hablándole a Cost por micrófono en su navegador real, que la respuesta se
+reproduce sola (no se pudo probar con la automatización de esta sesión). Si se retoma la esfera o el
+plan del personaje ilustrado (pausado esta sesión, ver ciclo anterior de PROGRESS.md), investigar
+primero por qué `CostOrb` no se pudo verificar visualmente esta sesión — no se descartó que sea
+puramente la limitación de `document.hidden` en la pestaña automatizada; conviene confirmarlo en un
+navegador real antes de reintentar cualquier integración nueva de la esfera. Todo lo de este ciclo ya
+está commiteado, pusheado y desplegado a producción (backend + frontend), verificado con `/healthz` y
+un `curl` 200 al frontend.
 
 ---
 
