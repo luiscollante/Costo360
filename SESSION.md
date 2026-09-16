@@ -76,6 +76,47 @@ explícita al fundador en el chat antes de comitear (un aviso automático de `/g
 real, ver `feedback_goal_hook_no_es_aprobacion.md`) — aprobó, y este ciclo ya está commiteado, pusheado
 y desplegado a producción (solo frontend), verificado con `curl` 200.
 
+**Ajuste post-despliegue el mismo día.** El fundador probó el resultado y pidió 3 cambios sobre el
+mismo selector: que el popover fuera un modal centrado en pantalla (no anclado al botón), que "Agregar
+costo" tuviera fondo sólido para no pasar desapercibido, y que "Guardar cambios" se moviera del header
+de la página al final, a la misma altura que "Agregar costo"/"Agregar servicio adicional". Antes de
+armar un modal desde cero se buscó un patrón ya existente en la app — se encontró `components/ui/
+Dialog.tsx`, un diálogo real con portal a `document.body`, `#root` marcado `inert`, foco atrapado,
+cierre con Escape/click-afuera, y devolución de foco al cerrar, ya usado en varias páginas
+(`NuevoProyectoDialog.tsx`, `MaterialesPage.tsx`, etc.) — se reusó tal cual en vez de reinventar esa
+lógica de accesibilidad. Esto además resolvió, de rebote, la duda que había quedado abierta sobre el
+cierre visual del popover: `Dialog` es un simple `if (!open) return null` sin animación de salida por
+`requestAnimationFrame`, así que no sufre la limitación de `document.hidden` que afectaba a
+`AnimatePresence`/framer-motion — confirmado en vivo esta vez sin ambigüedad (`!!document.querySelector
+('[role="dialog"]')` pasa de `true` a `false` de inmediato al elegir una opción o clickear afuera).
+
+Los botones de agregar pasan de `border-dashed` a `Button variant="primary"` (componente compartido ya
+existente, mismo que ya usaba "Guardar cambios"). "Guardar cambios" se saca del `actions` de
+`PageHeader` y se pasa como prop (`onGuardar`/`saving`) a `TarifasTab` y `AdicionalesTab`, que lo
+renderizan en un `flex justify-between` junto a su propio botón de agregar — se duplica el JSX del
+botón en las dos pestañas (aceptable: solo una está visible a la vez, y ambas ya comparten el mismo
+handler `handleSave` del padre).
+
+Al verificar en el navegador se encontró un error real (no cosmético): `ReferenceError: triggerRef is
+not defined`, resto de una limpieza incompleta de la iteración anterior (el estado auxiliar `triggerRef`
+del popover ya no hacía falta con `Dialog`, pero quedó una referencia suelta que rompía el render de la
+pestaña Adicionales). Se corrigió antes de dar el ciclo por terminado — grep confirmó cero referencias
+restantes, `npm run build` limpio, y una recarga completa del navegador confirmó que el error no volvía
+a aparecer.
+
+### Archivos modificados (ajuste post-despliegue)
+`web/src/pages/ParametrosPage.tsx` (popover reemplazado por `<Dialog>`, botones de agregar a `Button
+variant="primary"`, "Guardar cambios" movido de `PageHeader` a ambas pestañas).
+
+### Decisiones tomadas (ajuste post-despliegue)
+- Reusar el `Dialog` ya existente de la app en vez de armar un modal a mano — accesibilidad (foco
+  atrapado, inert, devolución de foco) ya resuelta y probada en el resto del producto.
+- Duplicar el botón "Guardar cambios" en las dos pestañas (Tarifas/Adicionales) en vez de intentar un
+  layout compartido más complejo — es el mismo botón visualmente, solo uno visible a la vez, y ambos
+  llaman al mismo `handleSave` del padre.
+
+Commiteado, pusheado y desplegado a producción (solo frontend), verificado con `curl` 200.
+
 ---
 
 ## Sesión: 2026-09-16 (mismo día) — Entrenamiento de pronunciación de la voz de Cost

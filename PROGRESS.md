@@ -40,6 +40,20 @@ visualmente en su navegador real.
 
 Commiteado, pusheado y desplegado a producción (solo frontend), verificado con `curl` 200.
 
+**Ajuste post-despliegue el mismo día**: el fundador pidió 3 cambios sobre este mismo selector — que el
+popover fuera un modal centrado en pantalla, que el botón "Agregar costo" tuviera fondo sólido (no pasar
+desapercibido), y que "Guardar cambios" se moviera del header al final de la página, a la misma altura
+que "Agregar costo"/"Agregar servicio adicional". Se reemplazó el popover por el `<Dialog>` real ya
+existente en la app (foco atrapado, Escape, click afuera, todo ya resuelto — y de paso destrabó el
+problema de cierre-visual-nunca-confirmado, porque `Dialog` no depende de `requestAnimationFrame` como
+sí dependía `AnimatePresence`/framer-motion del popover). Ambos botones de agregar pasan a
+`Button variant="primary"` (sólido), y "Guardar cambios" se pasa como prop a las dos pestañas
+(Tarifas/Adicionales) en vez de vivir solo en el `PageHeader`. Se encontró y corrigió un error real
+(`triggerRef` sin definir, resto de una limpieza incompleta) antes de dar el cambio por terminado.
+Verificado en vivo: modal centrado con fondo oscurecido, cierra con click afuera y al elegir una opción
+(fila se agrega bien), ambos botones sólidos alineados correctamente en las dos pestañas. Commiteado,
+pusheado y desplegado a producción (solo frontend), verificado con `curl` 200.
+
 ---
 
 ## ✅ Hecho (2026-09-16, mismo día) — Entrenamiento de pronunciación de la voz de Cost
