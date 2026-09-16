@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import AppLayout from '@/components/AppLayout'
 import Toast from '@/components/Toast'
@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/auth'
 import {
   Save, AlertCircle, Loader2, Plus, Trash2,
   Ruler, Hammer, Square, CalendarDays, Percent, AlignHorizontalJustifyStart, Scissors,
+  HardHat, Disc3, Gem, Lock,
   type LucideIcon,
 } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -32,18 +33,64 @@ const INDUCTOR_BADGE: Record<string, { label: string; Icon: LucideIcon }> = {
   merma_pct:           { label: '% merma',       Icon: Scissors },
 }
 
+// Los 7 inductores agrupados por QUÉ representa el costo (no por su unidad de medida —
+// agrupar por unidad es justo lo que juntaba en el texto a los dos "por m²" y los dos
+// "por metro lineal" que son conceptualmente distintos; hallazgo real del fundador,
+// 2026-09-16: ni él mismo entendía el selector plano de antes).
+type GrupoInductor = 'mano_obra' | 'insumo' | 'material' | 'fijo'
+
+const GRUPOS_INDUCTOR: { id: GrupoInductor; label: string; subtitulo: string; Icon: LucideIcon }[] = [
+  { id: 'mano_obra', label: 'Mano de obra',                         subtitulo: 'le pagás a un oficial',       Icon: HardHat },
+  { id: 'insumo',    label: 'Insumo o desgaste de herramienta',     subtitulo: 'no es sueldo de nadie',       Icon: Disc3 },
+  { id: 'material',  label: 'Sobre el material de la pieza',        subtitulo: 'se calcula como %',           Icon: Gem },
+  { id: 'fijo',      label: 'Costo fijo del proyecto',              subtitulo: 'no depende del tamaño',       Icon: Lock },
+]
+
 // Catálogo cerrado de tipos de cálculo que una empresa puede elegir al agregar una fila nueva.
 // Agregar un tipo NUEVO a este catálogo es trabajo del desarrollador (requiere lógica nueva en
 // el motor de cálculo) — lo que cada empresa sí controla libremente es cuántas FILAS usa de este
 // catálogo y con qué nombre/valor. Ver ARQUITECTURA_AGENTES_OPERACION.md y motor/parametros.py.
-const INDUCTORES_DISPONIBLES: { value: string; label: string; bucketDefault: string; esPorcentaje: boolean }[] = [
-  { value: 'por_ml',              label: 'Por metro lineal (mano de obra en bordes)', bucketDefault: 'c2_mano_obra', esPorcentaje: false },
-  { value: 'por_m2_mano_obra',    label: 'Por m² (mano de obra en área — pisos/fachadas)', bucketDefault: 'c2_mano_obra', esPorcentaje: false },
-  { value: 'por_m2',              label: 'Por m² cortado (insumo/consumible)', bucketDefault: 'c4_insumos', esPorcentaje: false },
-  { value: 'por_dia',             label: 'Por día de obra (costo fijo del proyecto)', bucketDefault: 'c4_insumos', esPorcentaje: false },
-  { value: 'porcentaje_material', label: '% del costo del material', bucketDefault: 'c4_insumos', esPorcentaje: true },
-  { value: 'por_ml_zocalo',       label: 'Por metro lineal de zócalo', bucketDefault: 'c3_zocalos', esPorcentaje: false },
-  { value: 'merma_pct',           label: '% de merma / desperdicio de material', bucketDefault: '', esPorcentaje: true },
+// `value`/`bucketDefault`/`esPorcentaje` SIN TOCAR — son el contrato real con el motor de cálculo
+// (backend/motor/calculos.py); solo cambió el texto que ve el usuario (`titulo`/`descripcion`).
+const INDUCTORES_DISPONIBLES: {
+  value: string; titulo: string; descripcion: string; grupo: GrupoInductor
+  bucketDefault: string; esPorcentaje: boolean
+}[] = [
+  {
+    value: 'por_ml', grupo: 'mano_obra', bucketDefault: 'c2_mano_obra', esPorcentaje: false,
+    titulo: 'Mano de obra por borde',
+    descripcion: 'Se cobra por cada metro lineal de borde pulido o canteado de la pieza. A más borde, más costo.',
+  },
+  {
+    value: 'por_m2_mano_obra', grupo: 'mano_obra', bucketDefault: 'c2_mano_obra', esPorcentaje: false,
+    titulo: 'Mano de obra por área',
+    descripcion: 'Se cobra por cada m² instalado en piso o fachada. Es el pago al oficial, no el material.',
+  },
+  {
+    value: 'por_ml_zocalo', grupo: 'mano_obra', bucketDefault: 'c3_zocalos', esPorcentaje: false,
+    titulo: 'Mano de obra por zócalo',
+    descripcion: 'Igual que "por borde", pero se mide aparte: son los metros lineales de zócalo (rodapié), no del borde principal.',
+  },
+  {
+    value: 'por_m2', grupo: 'insumo', bucketDefault: 'c4_insumos', esPorcentaje: false,
+    titulo: 'Insumo por m² cortado',
+    descripcion: 'No es sueldo: es el desgaste del disco y los consumibles del corte, por cada m² cortado.',
+  },
+  {
+    value: 'porcentaje_material', grupo: 'material', bucketDefault: 'c4_insumos', esPorcentaje: true,
+    titulo: '% sobre el costo del material',
+    descripcion: 'Un porcentaje que se suma sobre el valor de la piedra de esa pieza — ej. riesgo por si se rompe al procesarla.',
+  },
+  {
+    value: 'merma_pct', grupo: 'material', bucketDefault: '', esPorcentaje: true,
+    titulo: '% de material perdido (merma)',
+    descripcion: 'Porcentaje de piedra que se pierde al cortar y hay que comprar de más. Es material, no mano de obra.',
+  },
+  {
+    value: 'por_dia', grupo: 'fijo', bucketDefault: 'c4_insumos', esPorcentaje: false,
+    titulo: 'Costo fijo por día de obra',
+    descripcion: 'Un valor fijo que se cobra una sola vez por los días que dura el proyecto — no crece con el tamaño de la pieza.',
+  },
 ]
 
 function InductorBadge({ inductor }: { inductor: string }) {
@@ -77,8 +124,64 @@ function esPorcentajeInductor(inductor: string): boolean {
 
 function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRow }: TarifasTabProps) {
   const [activeMat, setActiveMat] = useState<Material>(MATERIALES[0])
-  const [nuevoInductor, setNuevoInductor] = useState(INDUCTORES_DISPONIBLES[0].value)
   const filas = tarifas[activeMat] ?? []
+
+  // Menú de "agregar costo" — reemplaza al <select> plano de antes por un
+  // popover agrupado; elegir una tarjeta ya crea la fila (sin segundo click).
+  const [menuAbierto, setMenuAbierto] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+
+  // Resalta brevemente la fila recién agregada — cierra el loop visual de
+  // "elegí algo del menú" -> "esto es lo que apareció abajo".
+  const [filaDestacada, setFilaDestacada] = useState<number | null>(null)
+  const prevLenRef = useRef(filas.length)
+
+  useEffect(() => {
+    setMenuAbierto(false)
+    setFilaDestacada(null)
+    prevLenRef.current = filas.length
+    // Solo reaccionar al cambio de MATERIAL (evita una falsa alarma de "fila
+    // agregada" si el material nuevo simplemente tiene más filas que el
+    // anterior) — el efecto de abajo es el que sí reacciona a `filas.length`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeMat])
+
+  useEffect(() => {
+    if (filas.length > prevLenRef.current) {
+      const idx = filas.length - 1
+      setFilaDestacada(idx)
+      prevLenRef.current = filas.length
+      const t = setTimeout(() => setFilaDestacada(null), 900)
+      return () => clearTimeout(t)
+    }
+    prevLenRef.current = filas.length
+  }, [filas.length])
+
+  useEffect(() => {
+    if (!menuAbierto) return
+    function onPointerDown(e: PointerEvent) {
+      if (menuRef.current?.contains(e.target as Node) || triggerRef.current?.contains(e.target as Node)) return
+      setMenuAbierto(false)
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== 'Escape') return
+      setMenuAbierto(false)
+      triggerRef.current?.focus()
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [menuAbierto])
+
+  function elegirInductor(value: string) {
+    onAddRow(activeMat, value)
+    setMenuAbierto(false)
+    triggerRef.current?.focus()
+  }
 
   return (
     <div>
@@ -106,7 +209,12 @@ function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRo
         ) : filas.map((item, idx) => {
           const esPorcentaje = esPorcentajeInductor(item.inductor)
           return (
-            <div key={`${item.inductor}-${idx}`} className="px-5 py-3.5 flex items-center justify-between gap-4 hover:bg-brand-surface/30 transition-colors">
+            <div
+              key={`${item.inductor}-${idx}`}
+              className={`px-5 py-3.5 flex items-center justify-between gap-4 transition-colors duration-700 ${
+                idx === filaDestacada ? 'bg-brand-success-soft' : 'hover:bg-brand-surface/30'
+              }`}
+            >
               <div className="min-w-0 flex-1">
                 {canEdit ? (
                   <input
@@ -156,23 +264,80 @@ function TarifasTab({ tarifas, canEdit, onChange, onRename, onAddRow, onRemoveRo
       </div>
 
       {canEdit && (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <select
-            value={nuevoInductor}
-            onChange={(e) => setNuevoInductor(e.target.value)}
-            className="px-3 py-2 rounded-lg bg-brand-input border border-brand-border text-xs text-brand-text focus:outline-none focus:border-brand-primary transition-colors max-w-[280px]"
-          >
-            {INDUCTORES_DISPONIBLES.map((ind) => (
-              <option key={ind.value} value={ind.value}>{ind.label}</option>
-            ))}
-          </select>
+        <div className="relative mt-3 inline-block">
           <button
-            onClick={() => onAddRow(activeMat, nuevoInductor)}
+            ref={triggerRef}
+            type="button"
+            onClick={() => setMenuAbierto((v) => !v)}
+            aria-haspopup="listbox"
+            aria-expanded={menuAbierto}
             className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-brand-border text-sm text-brand-text-secondary hover:text-brand-text hover:border-brand-primary/50 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             Agregar costo para {activeMat}
           </button>
+
+          <AnimatePresence>
+            {menuAbierto && (
+              <motion.div
+                ref={menuRef}
+                role="listbox"
+                aria-label="Tipo de costo a agregar"
+                initial={{ opacity: 0, scale: 0.96, y: -4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: -4 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+                className="absolute left-0 top-full z-40 mt-2 max-h-[480px] w-[360px] max-w-[90vw] overflow-y-auto rounded-xl border border-brand-border bg-brand-surface shadow-lg"
+              >
+                <p className="px-4 pb-2 pt-3 text-xs font-semibold uppercase tracking-wide text-brand-text-secondary">
+                  Elegí qué tipo de costo estás agregando
+                </p>
+                {GRUPOS_INDUCTOR.map((grupo, gi) => {
+                  const opciones = INDUCTORES_DISPONIBLES.filter((o) => o.grupo === grupo.id)
+                  if (opciones.length === 0) return null
+                  return (
+                    <div key={grupo.id} className={gi > 0 ? 'mt-3 border-t border-brand-border/60 pt-3' : ''}>
+                      <div className="mb-1.5 flex items-center gap-2 px-4">
+                        <grupo.Icon size={14} className="shrink-0 text-brand-text-secondary" aria-hidden="true" />
+                        <span className="text-[11px] font-bold uppercase tracking-wide text-brand-text-secondary">
+                          {grupo.label}
+                        </span>
+                        <span className="text-[11px] font-normal normal-case text-brand-text-secondary/70">
+                          — {grupo.subtitulo}
+                        </span>
+                      </div>
+                      {opciones.map((op) => {
+                        const badge = INDUCTOR_BADGE[op.value]
+                        return (
+                          <button
+                            key={op.value}
+                            type="button"
+                            role="option"
+                            aria-selected="false"
+                            onClick={() => elegirInductor(op.value)}
+                            className="flex w-full cursor-pointer items-start gap-3 rounded-lg px-4 py-2.5 text-left transition-colors hover:bg-brand-bg focus-visible:bg-brand-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/50"
+                          >
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-primary/10">
+                              {badge && <badge.Icon size={16} className="text-brand-primary" aria-hidden="true" />}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-sm font-medium leading-tight text-brand-text">{op.titulo}</span>
+                              <span className="mt-0.5 block text-xs leading-snug text-brand-text-secondary">{op.descripcion}</span>
+                            </span>
+                            {badge && (
+                              <span className="shrink-0 self-center">
+                                <Badge tono="neutral" icon={<badge.Icon size={11} />}>{badge.label}</Badge>
+                              </span>
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </div>
