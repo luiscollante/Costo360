@@ -2,6 +2,50 @@
 
 ---
 
+## Sesión: 2026-09-16 (mismo día) — Bug real: Cost respondía con voseo argentino
+
+### Qué se hizo
+El fundador reportó que le escribió "Hola" a Cost y respondió con tono argentino: "¡Hola! ¿Cómo va
+todo? Contame en qué te puedo dar una mano hoy con el taller..." — a pesar de que la personalidad de
+Cost ya estaba decidida (memoria `project_costo360_agente_personalidad`) como español neutro de
+Colombia, siempre tuteo, nunca voseo. Se investigó el `system prompt` real en
+`backend/agente/runtime.py` y se encontró la causa exacta: varios fragmentos del propio texto de
+instrucción PARA el modelo estaban escritos en voseo real ("vos", "tenés", "esperá", "consultá",
+"encontrás", "disculpate", "continuá"), pese a que la cabecera del mismo prompt decía explícitamente
+"tuteo, nunca usted" (nunca mencionaba voseo, pero la intención de tuteo estaba clara). Se amplió la
+búsqueda a los archivos de tools (`bitacora.py`, `catalogo.py`, `cotizacion.py`, `inventario.py`,
+`proyectos.py`, `retales.py`) y aparecieron 22 ocurrencias en total repartidas en 7 archivos — un
+patrón sistemático, no un error puntual, probablemente de una redacción inicial en voseo que se
+copió entre varias descripciones de tools sin notarlo. La hipótesis que explica por qué "Contame"
+apareció en la respuesta real: el modelo absorbe el registro lingüístico de TODO lo que tiene en su
+contexto (incluido el texto instruccional del propio prompt), no solo las reglas explícitas — la
+regla "tuteo" en la cabecera no bastaba para contrarrestar tantas líneas de voseo genuino más abajo
+en el mismo prompt.
+
+Corregidas las 22 ocurrencias (vos→tú, tenés→tienes, esperá→espera, consultá→consulta,
+encontrás→encuentras, usá→usa, decile→dile, decime→dime, sabés→sabes, disculpate→discúlpate,
+continuá→continúa) en los 7 archivos. Se revisó también `confirmations.py` y el resto de `backend/`
+por si había más rastros — limpio (el único resultado adicional fue un id `"sos"` de una tarjeta de
+ayuda no relacionada, de código legado). Verificado en vivo reiniciando el backend: el mismo saludo
+"Hola" que reportó el fundador, y una segunda consulta real, ambas respondieron en tuteo limpio, sin
+ningún rastro de voseo.
+
+### Archivos modificados
+`backend/agente/runtime.py`, `backend/agente/tools/bitacora.py`, `backend/agente/tools/catalogo.py`,
+`backend/agente/tools/cotizacion.py`, `backend/agente/tools/inventario.py`,
+`backend/agente/tools/proyectos.py`, `backend/agente/tools/retales.py`.
+
+### Decisiones tomadas
+Ninguna decisión de producto — es un bug de redacción puro, corregido a lo que ya estaba decidido
+(tuteo neutro colombiano) sin ningún cambio de comportamiento adicional.
+
+### Primera tarea de la próxima sesión
+Nada pendiente de este frente — commit `f5dddbc`, subido y desplegado a producción (backend). Seguir
+con lo que quedó abierto de la voz de Cost (que el fundador pruebe "escuchar" con su propia voz) y con
+la esfera líquida de marca, todavía sin empezar.
+
+---
+
 ## Sesión: 2026-09-16 — Voz de Cost (ElevenLabs) verificada en vivo; esfera líquida pendiente
 
 ### Qué se hizo

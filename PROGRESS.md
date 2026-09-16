@@ -2,6 +2,23 @@
 
 ---
 
+## ✅ Hecho (2026-09-16, mismo día) — Bug real: Cost respondía con voseo argentino
+
+El fundador reportó que Cost le respondió "Hola" con tono argentino ("Contame en qué te puedo dar
+una mano..."), a pesar de que la personalidad ya estaba decidida como español neutro de Colombia con
+tuteo. Causa raíz encontrada: el propio texto del system prompt (`runtime.py`) y varias descripciones
+de tools (`bitacora.py`, `catalogo.py`, `cotizacion.py`, `inventario.py`, `proyectos.py`,
+`retales.py`) tenían fragmentos reales en voseo ("vos", "tenés", "esperá", "consultá", "encontrás",
+"usá", "decile", "decime", "sabés", "disculpate", "continuá") — instrucciones dirigidas al modelo, no
+texto de cara al usuario, pero el modelo absorbe el registro lingüístico de TODO lo que tiene en su
+contexto, no solo las reglas explícitas; la instrucción "siempre tuteo" de la cabecera no bastaba
+para contrarrestar tantas líneas de voseo real más abajo en el mismo prompt. Corregidas las 22
+ocurrencias encontradas en 7 archivos. Verificado en vivo con el mismo saludo que reportó el
+fundador y con una segunda consulta real — ambas en tuteo limpio, sin ningún rastro de voseo. Commit
+`f5dddbc`, subido y desplegado a producción (backend).
+
+---
+
 ## ✅ Hecho (2026-09-16) — Voz de Cost (ElevenLabs): hablar verificado en vivo, envío por voz automático
 
 El fundador pidió darle a Cost la capacidad de hablar y escuchar, con una API de ElevenLabs propia
