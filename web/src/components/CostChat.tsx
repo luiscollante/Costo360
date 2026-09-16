@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Sparkles, Send, AlertTriangle, PauseCircle, Square, Check, ChevronRight, Loader2 } from 'lucide-react'
+import {
+  Sparkles, Send, AlertTriangle, PauseCircle, Square, Check, ChevronRight, Loader2, Play, Mic,
+} from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useCostStore, type PasoAgente } from '@/store/cost'
 import { resumirFila, etiquetaDePaso, dominioDePaso } from '@/lib/agenteFormato'
+import { hablar, escuchar } from '@/api/voz'
+import { showToast } from '@/lib/toast'
 
 const SUGERENCIAS = [
   'Lista las tareas del proyecto 8',
@@ -125,6 +129,82 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
   const propuestaRef = useRef<HTMLDivElement>(null)
   const [pasosExpandidos, setPasosExpandidos] = useState<Set<number>>(new Set())
 
+  // Voz de Cost (ElevenLabs) — "hablar" es manual, un botón de reproducir por
+  // mensaje (decisión del fundador, 2026-09-16: con créditos limitados nunca
+  // debe sonar solo). Un único <audio> a la vez: reproducir otro mensaje, o
+  // el mismo de nuevo, corta lo que estuviera sonando antes.
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const audioUrlRef = useRef<string | null>(null)
+  const [vozEstado, setVozEstado] = useState<{ i: number; fase: 'cargando' | 'sonando' } | null>(null)
+
+  function detenerVoz() {
+    audioRef.current?.pause()
+    audioRef.current = null
+    if (audioUrlRef.current) { URL.revokeObjectURL(audioUrlRef.current); audioUrlRef.current = null }
+    setVozEstado(null)
+  }
+
+  async function alternarVoz(i: number, texto: string) {
+    if (vozEstado?.i === i) { detenerVoz(); return }
+    detenerVoz()
+    setVozEstado({ i, fase: 'cargando' })
+    try {
+      const blob = await hablar(texto)
+      const url = URL.createObjectURL(blob)
+      audioUrlRef.current = url
+      const audio = new Audio(url)
+      audioRef.current = audio
+      audio.onended = () => detenerVoz()
+      audio.onerror = () => { detenerVoz(); showToast('error', 'No se pudo reproducir la voz de Cost') }
+      setVozEstado({ i, fase: 'sonando' })
+      await audio.play()
+    } catch {
+      detenerVoz()
+      showToast('error', 'No se pudo generar la voz de Cost')
+    }
+  }
+
+  // Nunca dejar audio sonando de fondo si el panel se desmonta (cambio de
+  // página en /agente, o se cierra el widget flotante).
+  useEffect(() => () => detenerVoz(), [])
+
+  // Escuchar por micrófono — graba con MediaRecorder (nativo del navegador,
+  // sin costo) y transcribe con ElevenLabs. Llena el input en vez de enviar
+  // solo: el usuario revisa la transcripción antes de mandarla, igual que
+  // revisaría lo que escribió a mano.
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const [grabando, setGrabando] = useState(false)
+  const [transcribiendo, setTranscribiendo] = useState(false)
+
+  async function alternarGrabacion() {
+    if (grabando) { mediaRecorderRef.current?.stop(); return }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mr = new MediaRecorder(stream)
+      const chunks: Blob[] = []
+      mr.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data) }
+      mr.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop())
+        setGrabando(false)
+        setTranscribiendo(true)
+        try {
+          const texto = await escuchar(new Blob(chunks, { type: 'audio/webm' }))
+          if (texto.trim()) setInput(texto.trim())
+          else showToast('error', 'No se entendió el audio — intenta de nuevo')
+        } catch {
+          showToast('error', 'No se pudo transcribir el audio')
+        } finally {
+          setTranscribiendo(false)
+        }
+      }
+      mediaRecorderRef.current = mr
+      mr.start()
+      setGrabando(true)
+    } catch {
+      showToast('error', 'No se pudo acceder al micrófono')
+    }
+  }
+
   function scrollAbajo() {
     requestAnimationFrame(() => {
       scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
@@ -215,6 +295,22 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
                     <p className="mb-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-brand-gold-text">
                       <Sparkles size={11} aria-hidden="true" />
                       Cost
+                      {m.content && (
+                        <button
+                          type="button"
+                          onClick={() => alternarVoz(i, m.content)}
+                          aria-label={vozEstado?.i === i && vozEstado.fase === 'sonando' ? 'Detener la voz de Cost' : 'Escuchar este mensaje'}
+                          className="ml-auto flex cursor-pointer items-center rounded p-0.5 normal-case tracking-normal text-brand-text-tertiary transition-colors hover:text-brand-gold-text"
+                        >
+                          {vozEstado?.i === i && vozEstado.fase === 'cargando' ? (
+                            <Loader2 size={12} className="animate-spin" aria-hidden="true" />
+                          ) : vozEstado?.i === i && vozEstado.fase === 'sonando' ? (
+                            <PauseCircle size={13} aria-hidden="true" />
+                          ) : (
+                            <Play size={12} aria-hidden="true" />
+                          )}
+                        </button>
+                      )}
                     </p>
 
                     {pasos.length > 0 && (
@@ -345,10 +441,25 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Escribe tu mensaje…"
+          placeholder={grabando ? 'Escuchando…' : 'Escribe tu mensaje…'}
           aria-label="Mensaje para el asistente"
-          className={`h-9 flex-1 rounded-lg border border-brand-border bg-brand-input px-3 text-brand-text focus-visible:outline-none focus-visible:border-brand-primary ${txt.input}`}
+          disabled={grabando || transcribiendo}
+          className={`h-9 flex-1 rounded-lg border border-brand-border bg-brand-input px-3 text-brand-text focus-visible:outline-none focus-visible:border-brand-primary disabled:opacity-60 ${txt.input}`}
         />
+        <Button
+          type="button"
+          size="sm"
+          variant={grabando ? 'danger' : 'secondary'}
+          onClick={alternarGrabacion}
+          disabled={cargando || transcribiendo}
+          aria-label={grabando ? 'Detener grabación' : 'Hablarle a Cost por micrófono'}
+        >
+          {transcribiendo ? (
+            <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+          ) : (
+            <Mic size={14} aria-hidden="true" />
+          )}
+        </Button>
         {cargando ? (
           <Button type="button" size="sm" variant="danger" onClick={detener} aria-label="Detener la respuesta">
             <Square size={12} aria-hidden="true" />
