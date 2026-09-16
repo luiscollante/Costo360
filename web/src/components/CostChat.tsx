@@ -10,6 +10,7 @@ import { useCostStore, type PasoAgente } from '@/store/cost'
 import { resumirFila, etiquetaDePaso, dominioDePaso } from '@/lib/agenteFormato'
 import { hablar, escuchar } from '@/api/voz'
 import { showToast } from '@/lib/toast'
+import { CostOrb, orbEsSoportado } from '@/components/orb/CostOrb'
 
 const SUGERENCIAS = [
   'Lista las tareas del proyecto 8',
@@ -488,17 +489,26 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
         onSubmit={(e) => { e.preventDefault(); enviar() }}
         className="flex items-center gap-2 border-t border-brand-border p-3"
       >
-        <motion.span
-          className="shrink-0 text-brand-text-tertiary"
-          animate={
-            cargando
-              ? { filter: ['drop-shadow(0 0 0px #15612E00)', 'drop-shadow(0 0 6px #15612E80)', 'drop-shadow(0 0 0px #15612E00)'] }
-              : { filter: 'drop-shadow(0 0 0px #15612E00)' }
-          }
-          transition={cargando ? { duration: 2.2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}
-        >
-          <Sparkles size={16} aria-hidden="true" />
-        </motion.span>
+        {orbEsSoportado() ? (
+          // Esfera líquida de marca — reemplaza el Sparkles con glow en
+          // navegadores con WebGPU (ver `components/orb/`). Sin WebGPU
+          // (Safari, algunos móviles), cae al Sparkles con glow de siempre.
+          <span className="shrink-0">
+            <CostOrb estado={cargando ? 'thinking' : 'idle'} size={40} />
+          </span>
+        ) : (
+          <motion.span
+            className="shrink-0 text-brand-text-tertiary"
+            animate={
+              cargando
+                ? { filter: ['drop-shadow(0 0 0px #15612E00)', 'drop-shadow(0 0 6px #15612E80)', 'drop-shadow(0 0 0px #15612E00)'] }
+                : { filter: 'drop-shadow(0 0 0px #15612E00)' }
+            }
+            transition={cargando ? { duration: 2.2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}
+          >
+            <Sparkles size={16} aria-hidden="true" />
+          </motion.span>
+        )}
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
