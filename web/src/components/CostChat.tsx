@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  Sparkles, Send, AlertTriangle, PauseCircle, Square, Check, ChevronRight, Loader2, Play, Mic,
+  Sparkles, Send, AlertTriangle, PauseCircle, Square, Check, ChevronRight, Loader2, Volume2, Mic,
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { Button } from '@/components/ui/Button'
@@ -129,13 +129,20 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
   const propuestaRef = useRef<HTMLDivElement>(null)
   const [pasosExpandidos, setPasosExpandidos] = useState<Set<number>>(new Set())
 
-  // Voz de Cost (ElevenLabs) — "hablar" es manual, un botón de reproducir por
-  // mensaje (decisión del fundador, 2026-09-16: con créditos limitados nunca
-  // debe sonar solo). Un único <audio> a la vez: reproducir otro mensaje, o
-  // el mismo de nuevo, corta lo que estuviera sonando antes.
+  // Voz de Cost (ElevenLabs) — manual por defecto, un botón-bocina por mensaje
+  // (decisión del fundador, 2026-09-16: con créditos limitados nunca debe
+  // sonar solo cuando el usuario ESCRIBIÓ). Excepción: si el usuario le habló
+  // a Cost por micrófono, la respuesta se reproduce sola (ver
+  // `vozAutoPendienteRef` más abajo) — en una conversación de voz esperar un
+  // clic para "escuchar" rompe el flujo. Un único <audio> a la vez: reproducir
+  // otro mensaje, o el mismo de nuevo, corta lo que estuviera sonando antes.
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const audioUrlRef = useRef<string | null>(null)
   const [vozEstado, setVozEstado] = useState<{ i: number; fase: 'cargando' | 'sonando' } | null>(null)
+  // Se activa justo antes de enviar un mensaje transcripto por voz; cuando la
+  // respuesta de Cost termina de llegar, el effect de abajo lo consume una
+  // sola vez y dispara `alternarVoz` automáticamente.
+  const vozAutoPendienteRef = useRef(false)
 
   function detenerVoz() {
     audioRef.current?.pause()
@@ -167,6 +174,19 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
   // Nunca dejar audio sonando de fondo si el panel se desmonta (cambio de
   // página en /agente, o se cierra el widget flotante).
   useEffect(() => () => detenerVoz(), [])
+
+  // Reproduce sola la respuesta de Cost cuando el turno se originó por voz —
+  // se dispara una sola vez por turno (el ref se apaga apenas se consume),
+  // recién cuando `cargando` vuelve a false (la respuesta ya está completa,
+  // no a mitad del streaming de pasos).
+  useEffect(() => {
+    if (cargando || !vozAutoPendienteRef.current) return
+    const ultimo = mensajes[mensajes.length - 1]
+    if (!ultimo || ultimo.role !== 'assistant' || !ultimo.content) return
+    vozAutoPendienteRef.current = false
+    alternarVoz(mensajes.length - 1, ultimo.content)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- alternarVoz se recrea cada render, no debe reprogramar este effect
+  }, [cargando, mensajes])
 
   // Escuchar por micrófono — graba con MediaRecorder (nativo del navegador,
   // sin costo) y transcribe con ElevenLabs. A propósito envía SOLO (decisión
@@ -205,7 +225,7 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
         setTranscribiendo(true)
         try {
           const texto = await escuchar(new Blob(chunks, { type: 'audio/webm' }))
-          if (texto.trim()) enviar(texto.trim())
+          if (texto.trim()) { vozAutoPendienteRef.current = true; enviar(texto.trim()) }
           else showToast('error', 'No se entendió el audio — intenta de nuevo')
         } catch {
           showToast('error', 'No se pudo transcribir el audio')
@@ -368,7 +388,7 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
                           ) : vozEstado?.i === i && vozEstado.fase === 'sonando' ? (
                             <PauseCircle size={13} aria-hidden="true" />
                           ) : (
-                            <Play size={12} aria-hidden="true" />
+                            <Volume2 size={12} aria-hidden="true" />
                           )}
                         </button>
                       )}
