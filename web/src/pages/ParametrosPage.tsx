@@ -476,10 +476,10 @@ function AdicionalesTab({ adicionales, canEdit, onChange, onAddRow, onRemoveRow,
         <table className="w-full text-sm min-w-[820px] table-fixed">
           <thead>
             <tr className="border-b border-brand-border bg-brand-surface/40">
-              <th className="px-4 py-3 text-left text-[11px] font-bold text-brand-text-secondary uppercase tracking-wider w-[36%]">Concepto</th>
-              <th className="px-3 py-3 text-left text-[11px] font-bold text-brand-text-secondary uppercase tracking-wider w-[8%]">Unidad</th>
+              <th className="px-4 py-3 text-left text-[11px] font-bold text-brand-text-secondary uppercase tracking-wider w-[30%]">Concepto</th>
+              <th className="px-2 py-3 text-left text-[11px] font-bold text-brand-text-secondary uppercase tracking-wider w-[13%]">Unidad</th>
               {ETAPAS_COLS.map(({ label }) => (
-                <th key={label} className="px-3 py-3 text-right text-[11px] font-bold text-brand-text-secondary uppercase tracking-wider w-[12%]">
+                <th key={label} className="px-3 py-3 text-right text-[11px] font-bold text-brand-text-secondary uppercase tracking-wider w-[11%]">
                   {label}
                 </th>
               ))}
@@ -502,12 +502,12 @@ function AdicionalesTab({ adicionales, canEdit, onChange, onAddRow, onRemoveRow,
                     <span className="text-brand-text">{item.concepto}</span>
                   )}
                 </td>
-                <td className="px-3 py-2.5">
+                <td className="px-2 py-2.5">
                   {canEdit ? (
                     <select
                       value={item.unidad}
                       onChange={(e) => onChange(idx, 'unidad', e.target.value)}
-                      className="w-full px-2 py-1.5 rounded-md bg-brand-input border border-brand-border text-sm text-brand-text focus:outline-none focus:border-brand-primary transition-colors"
+                      className="w-full px-1.5 py-1.5 rounded-md bg-brand-input border border-brand-border text-sm text-brand-text focus:outline-none focus:border-brand-primary transition-colors"
                     >
                       {UNIDADES_ADD.map((u) => <option key={u} value={u}>{u}</option>)}
                     </select>
