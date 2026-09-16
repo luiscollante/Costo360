@@ -92,8 +92,11 @@ def numero_a_palabras(n: int) -> str:
 def cop_a_letras(monto: int) -> str:
     """Monto entero en pesos colombianos, deletreado completo — ver el
     docstring del módulo para la razón de deletrear en vez de reformatear
-    separadores."""
-    return f"{numero_a_palabras(monto)} pesos"
+    separadores. Dice "pesos colombianos" completo (no solo "pesos") porque
+    el fundador escuchó "... pesos COP..." — la sigla quedaba sonando sola,
+    sin aclarar la moneda; "COP" sobrante se descarta después, en
+    `_stage_unidades` (ver ahí)."""
+    return f"{numero_a_palabras(monto)} pesos colombianos"
 
 
 def _fecha_hablada(anio: str, mes: str, dia: str) -> str:
@@ -170,9 +173,15 @@ def _stage_unidades(texto: str) -> str:
     decimales residuales al final — ver el docstring del módulo."""
     texto = _RE_DINERO.sub(_sub_dinero, texto)
     # "COP" suele quedar pegado justo después de un monto ya convertido a
-    # palabras ("...pesos COP/m²") — "pesos" ya dice la moneda, "COP" ahí es
-    # puro ruido que ElevenLabs leería como la palabra inglesa "cop".
+    # palabras ("...pesos colombianos COP/m²") — `cop_a_letras` ya dice
+    # "pesos colombianos" completo, así que cualquier "COP" que sobre acá es
+    # puro ruido redundante (y sonaría como la palabra inglesa "cop" si se
+    # dejara).
     texto = re.sub(r"\bCOP\b", "", texto)
+    # Si el modelo ya escribió "pesos"/"pesos colombianos" pegado al monto
+    # (ej. "$1.339.000 pesos", "$1.339.000 pesos colombianos"),
+    # `cop_a_letras` ya lo dijo — no repetirlo dos veces.
+    texto = re.sub(r"pesos colombianos\s+(?:pesos\s+colombianos|pesos|colombianos)\b", "pesos colombianos", texto)
     texto = re.sub(r"/\s*m[²2]\b", " por metro cuadrado", texto)
     texto = re.sub(r"(\d+(?:[.,]\d+)?)\s*m[²2]\b", r"\1 metros cuadrados", texto)
     texto = re.sub(r"(\d+(?:[.,]\d+)?)\s*ml\b", r"\1 metros lineales", texto)
