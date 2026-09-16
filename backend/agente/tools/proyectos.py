@@ -29,6 +29,52 @@ def _como_entero(v) -> int | None:
     return None
 
 
+def _listar_proyectos(conn, usuario: dict, args: dict) -> dict:
+    estado = (args.get("estado") or "").strip()
+    q = (args.get("q") or "").strip()
+    # Archivados excluidos a propósito — "hablemos de los proyectos" del
+    # taller casi siempre significa el trabajo vivo, no el histórico
+    # archivado (hallazgo real del fundador, 2026-09-16: no existía ninguna
+    # tool para ver el conjunto completo de proyectos, solo tareas de uno).
+    resultado = proyectos_service.listar_proyectos(
+        conn, estado=estado, archivado=False, q=q, orden="reciente", limit=50,
+    )
+    # `total` explícito — mismo hallazgo que en el resto de tools "listar".
+    return {"total": len(resultado["items"]), "hay_mas": resultado["hay_mas"], "proyectos": resultado["items"]}
+
+
+registrar(ToolSpec(
+    nombre="proyectos_listar",
+    declaracion=gtypes.FunctionDeclaration(
+        name="proyectos_listar",
+        description=(
+            "Lista los proyectos del taller (no archivados) — nombre, cliente, material, "
+            "estado y % de avance de cada uno. Úsala para cualquier pregunta sobre el "
+            "conjunto de proyectos ('hablemos de los proyectos', '¿cuáles están activos?', "
+            "'¿cuántos proyectos tengo?') — no confundir con proyectos_listar_tareas, que "
+            "es para las tareas DENTRO de un proyecto puntual. Admite filtrar por estado "
+            "exacto (planificacion, activo, en_revision, completado, en_pausa, cancelado) o "
+            "por texto de búsqueda (nombre, cliente o material). La respuesta trae un campo "
+            "`total` — para '¿cuántos proyectos tengo?' usa ese número directo, nunca "
+            "cuentes la lista tú mismo. Si `hay_mas` es true, dile al usuario que afine la "
+            "búsqueda para ver el resto."
+        ),
+        parameters={
+            "type": "OBJECT",
+            "properties": {
+                "estado": {
+                    "type": "STRING",
+                    "description": "opcional: planificacion, activo, en_revision, completado, en_pausa o cancelado",
+                },
+                "q": {"type": "STRING", "description": "opcional: texto de búsqueda por nombre, cliente o material"},
+            },
+        },
+    ),
+    handler=_listar_proyectos,
+    es_destructiva=False,
+))
+
+
 def _listar_tareas(conn, usuario: dict, args: dict) -> dict:
     project_id = _como_entero(args.get("project_id"))
     if project_id is None:

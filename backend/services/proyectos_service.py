@@ -33,6 +33,27 @@ def _d(v):
 _TAREA_COLS = ("id,project_id,titulo,descripcion,estado,prioridad,responsable_id,"
                "fecha_limite,horas_estimadas,milestone_id,orden,created_at,updated_at")
 
+_PROY_COLS = ("id,nombre,descripcion,cliente,material,estado,fecha_inicio,fecha_fin,"
+              "progreso_pct,tareas_total,tareas_hechas,archivado,en_riesgo,created_at,updated_at")
+
+_ORDEN_PROYECTOS = {
+    "reciente": "updated_at desc",
+    "entrega":  "fecha_fin asc nulls last, updated_at desc",
+    "avance":   "progreso_pct desc, updated_at desc",
+    "nombre":   "nombre asc",
+}
+
+
+def _proyecto_row(r) -> dict:
+    return {
+        "id": r[0], "nombre": r[1], "descripcion": r[2], "cliente": r[3],
+        "material": r[4], "estado": r[5], "fecha_inicio": _d(r[6]),
+        "fecha_fin": _d(r[7]), "progreso_pct": r[8], "tareas_total": r[9],
+        "tareas_hechas": r[10], "archivado": r[11], "en_riesgo": r[12],
+        "created_at": r[13].isoformat() if r[13] else None,
+        "updated_at": r[14].isoformat() if r[14] else None,
+    }
+
 
 def _tarea_row(r) -> dict:
     return {
@@ -103,6 +124,39 @@ def listar_tareas(conn, project_id: int, limite: int = 500) -> list[dict]:
     rows = cur.fetchall()
     cur.close()
     return [_tarea_row(r) for r in rows]
+
+
+def listar_proyectos(
+    conn, *, estado: str = "", archivado: bool | None = None, q: str = "",
+    orden: str = "reciente", limit: int = 25, offset: int = 0,
+) -> dict:
+    """Extraído verbatim de `routers/proyectos.py::listar_proyectos` — misma
+    lógica exacta, ahora reutilizable también por el Agente de IA
+    (`agente/tools/proyectos.py::proyectos_listar`)."""
+    order_sql = _ORDEN_PROYECTOS.get(orden, _ORDEN_PROYECTOS["reciente"])
+    cond, params = [], []
+    if estado:
+        cond.append("estado = %s")
+        params.append(estado)
+    if archivado is not None:
+        cond.append("archivado = %s")
+        params.append(archivado)
+    if q.strip():
+        cond.append("(nombre ILIKE %s OR cliente ILIKE %s OR material ILIKE %s)")
+        like = f"%{q.strip()}%"
+        params += [like, like, like]
+    where_sql = f"where {' and '.join(cond)}" if cond else ""
+    params += [limit + 1, offset]
+    cur = conn.cursor()
+    cur.execute(
+        f"select {_PROY_COLS} from pm_projects {where_sql} "
+        f"order by {order_sql} limit %s offset %s",
+        params,
+    )
+    rows = cur.fetchall()
+    cur.close()
+    hay_mas = len(rows) > limit
+    return {"items": [_proyecto_row(r) for r in rows[:limit]], "hay_mas": hay_mas}
 
 
 def crear_tarea(conn, usuario: dict, project_id: int, body: TareaIn) -> dict:

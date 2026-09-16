@@ -130,6 +130,20 @@ export function CostOrb({
       context.configure({ device, format, alphaMode: 'premultiplied' })
 
       const shader = device.createShaderModule({ code: orbShaderSource })
+      // Un error de validación de WebGPU (shader inválido, layout mal armado)
+      // normalmente NO lanza una excepción de JS — se reporta aparte, así que
+      // sin esto el canvas se queda negro en silencio y nadie se entera nunca
+      // por qué (hallazgo real del fundador, 2026-09-16: la esfera se veía
+      // negra en producción sin ningún error visible).
+      const compilacion = await shader.getCompilationInfo()
+      const errores = compilacion.messages.filter((m: { type: string }) => m.type === 'error')
+      if (errores.length) {
+        throw new Error(`Shader WGSL inválido: ${errores.map((m: { message: string }) => m.message).join(' | ')}`)
+      }
+      device.addEventListener('uncapturederror', (event: { error: { message: string } }) => {
+        // eslint-disable-next-line no-console -- única forma real de enterarse de un error de WebGPU (no lanza excepción)
+        console.error('[CostOrb] Error de WebGPU:', event.error.message)
+      })
       const pipeline = device.createRenderPipeline({
         layout: 'auto',
         vertex: { module: shader, entryPoint: 'vs_main' },
@@ -194,7 +208,11 @@ export function CostOrb({
       frameId = requestAnimationFrame(cuadro)
     }
 
-    iniciar().catch(() => { detenido = true })
+    iniciar().catch((error: unknown) => {
+      detenido = true
+      // eslint-disable-next-line no-console -- sin esto, un fallo de WebGPU se veía como un círculo negro sin ninguna pista en consola
+      console.error('[CostOrb] No se pudo iniciar la esfera:', error)
+    })
 
     return () => {
       detenido = true
