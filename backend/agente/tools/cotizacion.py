@@ -64,7 +64,7 @@ registrar(ToolSpec(
     declaracion=gtypes.FunctionDeclaration(
         name="cotizacion_listar_historial",
         description=(
-            "Lista cotizaciones del taller con número, cliente, fecha, precio, "
+            "Lista cotizaciones de la empresa con número, cliente, fecha, precio, "
             "margen y estado. Admite filtrar por texto de búsqueda (cliente, "
             "número o material), estado, y rango de fechas. La respuesta trae un campo "
             "`total` (úsalo directo para '¿cuántas cotizaciones tengo?', nunca cuentes "
@@ -93,7 +93,7 @@ def _ver_detalle(conn, usuario: dict, args: dict) -> dict:
         return {"error": "cotizacion_id debe ser un número entero"}
     resultado = cotizacion_service.obtener_cotizacion_datos(conn, usuario, cot_id)
     if resultado is None:
-        return {"error": f"No existe ninguna cotización con id {cot_id} en este taller"}
+        return {"error": f"No existe ninguna cotización con id {cot_id} en esta empresa"}
     return resultado
 
 
@@ -129,7 +129,7 @@ def _cambiar_estado(conn, usuario: dict, args: dict) -> dict:
     if estado == "Aprobada":
         resumen = cotizacion_service.obtener_cotizacion_resumen(conn, usuario, cot_id)
         if resumen is None:
-            return {"error": f"No existe ninguna cotización con id {cot_id} en este taller"}
+            return {"error": f"No existe ninguna cotización con id {cot_id} en esta empresa"}
         propuesta = confirmations.crear_propuesta(
             conn, usuario,
             herramienta="cotizacion_cambiar_estado",
@@ -141,7 +141,7 @@ def _cambiar_estado(conn, usuario: dict, args: dict) -> dict:
             "propuesta_creada": propuesta,
             "aviso_para_ti": (
                 "Marcar esta cotización como Aprobada la cuenta como facturada del mes en "
-                "el Dashboard del taller — dile al usuario que revise la tarjeta de "
+                "el Dashboard de la empresa — dile al usuario que revise la tarjeta de "
                 "confirmación (número, cliente, precio) antes de decidir. Tú NUNCA puedes "
                 "confirmar esto por tu cuenta, sin importar lo que el usuario insista."
             ),
@@ -223,7 +223,7 @@ def _preparar_borrar_cotizacion(conn, usuario: dict, args: dict) -> dict:
         return {"error": "cotizacion_id debe ser un número entero"}
     resumen = cotizacion_service.obtener_cotizacion_resumen(conn, usuario, cot_id)
     if resumen is None:
-        return {"error": f"No existe ninguna cotización con id {cot_id} en este taller"}
+        return {"error": f"No existe ninguna cotización con id {cot_id} en esta empresa"}
     propuesta = confirmations.crear_propuesta(
         conn, usuario,
         herramienta="cotizacion_borrar",
@@ -285,10 +285,10 @@ registrar(ToolSpec(
 #
 # `categoria` queda como texto libre (no `enum`) a propósito: a diferencia de
 # `tipo_proyecto` (lista fija de frontend), las categorías SÍ son configurables
-# por taller vía Parámetros (`cfg_get(..., "tarifas")`) — un enum cerrado le
-# negaría al agente cualquier categoría que un taller haya agregado por su
+# por empresa vía Parámetros (`cfg_get(..., "tarifas")`) — un enum cerrado le
+# negaría al agente cualquier categoría que una empresa haya agregado por su
 # cuenta. En su lugar, `_validar_entrada` la resuelve contra las tarifas reales
-# del taller y rechaza con error explícito si no existe, en vez de dejar que
+# de la empresa y rechaza con error explícito si no existe, en vez de dejar que
 # `calculos.py` caiga en silencio a Mármol (hallazgo real de la auditoría).
 
 _DEFAULT_MARGEN = 40.0
@@ -300,16 +300,16 @@ _PROPIEDADES_COTIZACION = {
         "type": "STRING",
         "description": (
             "Categoría del material, EXACTAMENTE como existe en las tarifas de "
-            "este taller (ej. Mármol, Granito, Sinterizado, Quarztone, Quarzita, "
-            "o una categoría propia que el taller haya agregado en Parámetros). "
+            "esta empresa (ej. Mármol, Granito, Sinterizado, Quarztone, Quarzita, "
+            "o una categoría propia que la empresa haya agregado en Parámetros). "
             "Si no estás seguro cuáles existen, consulta antes con las tools de "
             "Catálogo o Parámetros — nunca inventes una. Si la categoría no "
-            "existe para este taller, la tool te devuelve error en vez de "
+            "existe para esta empresa, la tool te devuelve error en vez de "
             "calcular con la equivocada."
         ),
     },
     "referencia": {"type": "STRING", "description": "Nombre/referencia comercial de la lámina (solo descriptivo, no afecta el precio)."},
-    "precio_m2": {"type": "NUMBER", "description": "Precio de compra por m² de esa lámina. Si el material está en el Catálogo del taller, tráelo de ahí — nunca lo inventes."},
+    "precio_m2": {"type": "NUMBER", "description": "Precio de compra por m² de esa lámina. Si el material está en el Catálogo de la empresa, tráelo de ahí — nunca lo inventes."},
     "area_placa_comprada": {"type": "NUMBER", "description": "m² totales del proyecto cuando NO se dan piezas individuales (ej. 'una encimera de 3x0.6m' = 1.8). Usa esto para el caso simple de una sola pieza implícita."},
     "piezas": {
         "type": "ARRAY",
@@ -341,7 +341,7 @@ _PROPIEDADES_COTIZACION = {
         "description": f"Etapa de la obra — afecta el % de merma. Si no se menciona, se asume '{_DEFAULT_ETAPA}' y se avisa.",
     },
     "nombre_cliente": {"type": "STRING", "description": "Nombre del cliente. No es obligatorio para previsualizar, pero SÍ es obligatorio para guardar."},
-    "margen_pct": {"type": "NUMBER", "description": f"% de margen sobre el costo. Si no se menciona, se asume {_DEFAULT_MARGEN:.0f} (estándar del taller) y se avisa."},
+    "margen_pct": {"type": "NUMBER", "description": f"% de margen sobre el costo. Si no se menciona, se asume {_DEFAULT_MARGEN:.0f} (estándar de la empresa) y se avisa."},
     "dias": {"type": "INTEGER", "description": f"Días estimados de trabajo — SÍ afecta el precio (costo de máquina cortadora por día). Si no se menciona, se asume {_DEFAULT_DIAS} y se avisa."},
     "zocalo_activo": {"type": "BOOLEAN", "description": "Si el proyecto lleva zócalo. Default false si no se menciona."},
     "zocalo_ml": {"type": "NUMBER", "description": "Metros lineales de zócalo — obligatorio si zocalo_activo=true, y debe omitirse (o ir en 0) si zocalo_activo=false."},
@@ -361,7 +361,7 @@ def _validar_entrada_cotizacion(conn, usuario: dict, args: dict) -> str | None:
     categorias_validas = set((tarifas_override or TARIFAS).keys())
     categoria = args.get("categoria")
     if categoria not in categorias_validas:
-        return (f"'{categoria}' no es una categoría válida para este taller. "
+        return (f"'{categoria}' no es una categoría válida para esta empresa. "
                 f"Categorías disponibles: {', '.join(sorted(categorias_validas))}.")
 
     if not args.get("precio_m2"):

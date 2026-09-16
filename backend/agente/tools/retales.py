@@ -20,7 +20,7 @@ SIEMPRE propone, sin excepción, igual que `inventario_editar_lamina`/
 - Retales tiene una capa de aislamiento que ningún otro dominio de Cost
   tiene todavía: además de aislar por empresa, `scope_propio` aísla por
   USUARIO (un operativo solo ve/edita/borra SUS PROPIOS retales, un gestor
-  ve los de todo el taller). Ninguna tool de este archivo expone un
+  ve los de toda la empresa). Ninguna tool de este archivo expone un
   parámetro de alcance al modelo (nunca `usuario_id`, `ver_todos`, etc.) —
   `retales_service` resuelve `scope_propio(usuario)` siempre internamente,
   tomando `usuario` de la sesión autenticada real.
@@ -63,7 +63,7 @@ registrar(ToolSpec(
             "Lista los retales (sobrantes de lámina reutilizables) visibles para el "
             "usuario actual — cantidad de m² disponibles, material, estado "
             "(Disponible/Reservado/Usado), precios. Si el usuario es operativo, solo "
-            "ve SUS PROPIOS retales, nunca los de otros usuarios del taller — esto no "
+            "ve SUS PROPIOS retales, nunca los de otros usuarios de la empresa — esto no "
             "es configurable desde esta tool. La respuesta trae un campo `total` — para "
             "'¿cuántos retales tengo?' usa ese número directo, nunca cuentes la lista "
             "tú mismo."

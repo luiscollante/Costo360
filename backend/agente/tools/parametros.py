@@ -2,7 +2,7 @@
 Herramientas del agente sobre el dominio de Parámetros (tarifas de costo y
 adicionales) — Objetivo 5, Ciclo 2. Dominio de MAYOR riesgo financiero del
 ciclo: estos valores alimentan directamente el motor de cálculo de cada
-cotización futura del taller — un error aquí no afecta una fila, afecta
+cotización futura de la empresa — un error aquí no afecta una fila, afecta
 todas las cotizaciones hasta que alguien lo note.
 
 Todas las tools de escritura reutilizan `services/parametros_service.py` (la
@@ -77,7 +77,7 @@ registrar(ToolSpec(
         name="parametros_ver",
         description=(
             "Muestra las tarifas de costo de producción (por categoría de material) y los "
-            "adicionales opcionales (por etapa de obra) configurados por el taller. Usa "
+            "adicionales opcionales (por etapa de obra) configurados por la empresa. Usa "
             "SIEMPRE esta tool antes de editar/agregar/quitar cualquier tarifa o adicional, "
             "para conocer el nombre EXACTO de la fila — nunca adivines un nombre parecido. "
             "Los valores de inductor 'porcentaje_material' o 'merma_pct' vienen como fracción "

@@ -36,7 +36,7 @@ class ToolSpec:
     es_destructiva: bool = False
     # Capacidad booleana requerida en `usuario` (una de las 4 de roles_catalogo)
     # para que esta tool aparezca en el catálogo del modelo. None = disponible
-    # para cualquier usuario autenticado del taller.
+    # para cualquier usuario autenticado de la empresa.
     requiere_capacidad: Optional[str] = None
     # SOLO para es_destructiva=True: (conn, usuario, payload_de_la_propuesta)
     # -> dict de resultado. Invocado únicamente por el endpoint de

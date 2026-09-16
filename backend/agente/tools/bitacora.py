@@ -44,7 +44,7 @@ registrar(ToolSpec(
             "este usuario — úsala cuando pregunte algo como '¿qué cambiaste ayer?', '¿qué "
             "hiciste con la tarifa de X?', o ANTES de intentar deshacer algo (para encontrar "
             "el historial_id exacto). NUNCA inventes ni 'recuerdes' de memoria qué hiciste en "
-            "un turno anterior — si no estás seguro, consulta esta tool primero. Cada taller "
+            "un turno anterior — si no estás seguro, consulta esta tool primero. Cada empresa "
             "solo guarda su historial por un número limitado de días según su plan; si no "
             "encuentras algo, puede que ya haya expirado. " + _AVISO_AMBIGUEDAD
         ),

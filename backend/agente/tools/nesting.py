@@ -114,7 +114,7 @@ registrar(ToolSpec(
             "empaquetado ni estimes el % de aprovechamiento tú mismo, ni siquiera para "
             "un caso que parezca simple (pocas piezas, medidas redondas): el algoritmo "
             "real considera rotación de piezas y encaje exacto que un cálculo mental no "
-            "puede replicar, y un número inventado puede hacer que el taller crea que le "
+            "puede replicar, y un número inventado puede hacer que la empresa crea que le "
             "rinde una lámina que en realidad no le alcanza. Es un cálculo puro y "
             "efímero — no guarda nada en la base de datos, no crea ningún registro, se "
             "puede llamar tantas veces como el usuario quiera probar combinaciones "

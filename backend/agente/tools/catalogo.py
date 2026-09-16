@@ -28,7 +28,7 @@ tools:
 - `catalogo_eliminar_material` siempre crea una propuesta (nunca ejecuta
   directo), pero el aviso al usuario distingue si la fila es un override de
   una fila base de Costo360 (borrarla solo "restablece" el original, no se
-  pierde nada) o un material genuinamente propio del taller (borrado real
+  pierde nada) o un material genuinamente propio de la empresa (borrado real
   e irreversible) — la fila afectada incluye el dato crudo `es_override`
   para que la tarjeta de confirmación no dependa solo del cálculo.
 """
@@ -60,9 +60,9 @@ registrar(ToolSpec(
     declaracion=gtypes.FunctionDeclaration(
         name="catalogo_listar_materiales",
         description=(
-            "Lista los materiales del catálogo del taller (propios + los de Costo360 "
-            "que el taller no haya personalizado), con precio por m², proveedor y si "
-            "es propio del taller. Admite filtrar por categoría. La respuesta trae un "
+            "Lista los materiales del catálogo de la empresa (propios + los de Costo360 "
+            "que la empresa no haya personalizado), con precio por m², proveedor y si "
+            "es propio de la empresa. Admite filtrar por categoría. La respuesta trae un "
             "campo `total` — para '¿cuántos materiales tengo?' usa ese número directo, "
             "nunca cuentes la lista tú mismo."
         ),
@@ -84,7 +84,7 @@ registrar(ToolSpec(
     nombre="catalogo_listar_categorias",
     declaracion=gtypes.FunctionDeclaration(
         name="catalogo_listar_categorias",
-        description="Lista las categorías de material que existen en el catálogo del taller.",
+        description="Lista las categorías de material que existen en el catálogo de la empresa.",
         parameters={"type": "OBJECT", "properties": {}},
     ),
     handler=_listar_categorias,
@@ -160,7 +160,7 @@ registrar(ToolSpec(
     declaracion=gtypes.FunctionDeclaration(
         name="catalogo_crear_material",
         description=(
-            "Agrega un material nuevo al catálogo del taller. Si ya existe un material "
+            "Agrega un material nuevo al catálogo de la empresa. Si ya existe un material "
             "propio con esa categoría y referencia, en vez de crear uno duplicado prepara "
             "una propuesta para actualizar su precio (nunca lo hace directo). "
             f"{_AVISO_ANTIENCADENAMIENTO}"
@@ -202,7 +202,7 @@ def _editar_material(conn, usuario: dict, args: dict) -> dict:
 
     actual = catalogo_service.obtener_material(conn, material_id)
     if actual is None:
-        return {"error": f"No existe ningún material con id {material_id} en este taller"}
+        return {"error": f"No existe ningún material con id {material_id} en esta empresa"}
 
     cambios = body.model_dump(exclude_unset=True, exclude_none=True)
     payload = {"material_id": material_id, **cambios}
@@ -289,7 +289,7 @@ def _preparar_eliminar_material(conn, usuario: dict, args: dict) -> dict:
         return {"error": "material_id debe ser un número entero"}
     fila = catalogo_service.obtener_material(conn, material_id)
     if fila is None:
-        return {"error": f"No existe ningún material con id {material_id} en este taller"}
+        return {"error": f"No existe ningún material con id {material_id} en esta empresa"}
     es_override = fila.get("base_id") is not None
     propuesta = confirmations.crear_propuesta(
         conn, usuario,
@@ -300,9 +300,9 @@ def _preparar_eliminar_material(conn, usuario: dict, args: dict) -> dict:
     )
     aviso = (
         "Esto restablece el material a su valor original de Costo360 — no se pierde nada "
-        "propio del taller. Aun así, dile al usuario que revise la tarjeta antes de decidir."
+        "propio de la empresa. Aun así, dile al usuario que revise la tarjeta antes de decidir."
         if es_override else
-        "Esto BORRA de forma permanente un material propio del taller — no hay forma de "
+        "Esto BORRA de forma permanente un material propio de la empresa — no hay forma de "
         "recuperar el precio después. Dile esto al usuario antes de que decida. Tú NUNCA "
         "puedes confirmar ni ejecutar el borrado por tu cuenta."
     )
@@ -321,7 +321,7 @@ registrar(ToolSpec(
     declaracion=gtypes.FunctionDeclaration(
         name="catalogo_eliminar_material",
         description=(
-            "Prepara el borrado de un material del catálogo del taller — úsala siempre que "
+            "Prepara el borrado de un material del catálogo de la empresa — úsala siempre que "
             "el usuario diga 'borra', 'elimina' o 'quita' un material, sin importar qué "
             "precio tenga o haya tenido antes; nunca interpretes 'borrar' como volver a un "
             "precio anterior (eso sería catalogo_editar_material, una tool distinta). NUNCA "

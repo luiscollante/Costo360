@@ -80,7 +80,7 @@ def consultar(conn, usuario: dict, dias_atras: int, herramienta: str | None,
     Dos topes duros aparte de RLS (defensa en profundidad, auditoría de este
     ciclo): `usuario_id = %s` explícito (no confiar solo en la policy), y
     `creado_en > ahora - retención del plan` — Cost NUNCA ve ni usa una
-    acción fuera del plazo prometido al taller, sin importar si el barrido
+    acción fuera del plazo prometido a la empresa, sin importar si el barrido
     diario de limpieza ya la borró físicamente o todavía no.
     """
     plan = usuario.get("plan_codigo") or "starter"

@@ -57,7 +57,7 @@ registrar(ToolSpec(
     declaracion=gtypes.FunctionDeclaration(
         name="inventario_listar_laminas",
         description=(
-            "Lista las láminas en inventario del taller (cantidad, medidas, costo, "
+            "Lista las láminas en inventario de la empresa (cantidad, medidas, costo, "
             "proveedor, ubicación). Admite filtrar por categoría de material. La "
             "respuesta trae un campo `total` — para '¿cuántas láminas tengo?' usa ese "
             "número directo, nunca cuentes la lista tú mismo."
@@ -127,7 +127,7 @@ registrar(ToolSpec(
     declaracion=gtypes.FunctionDeclaration(
         name="inventario_crear_lamina",
         description=(
-            "Prepara la creación de una lámina nueva en el inventario del taller. NUNCA "
+            "Prepara la creación de una lámina nueva en el inventario de la empresa. NUNCA "
             "la ejecuta de inmediato: siempre crea una propuesta que el usuario debe "
             "confirmar en pantalla, sin excepción — igual que al editar una lámina "
             "existente."
@@ -181,7 +181,7 @@ def _editar_lamina(conn, usuario: dict, args: dict) -> dict:
 
     actual = inventario_service.obtener_lamina(conn, lamina_id)
     if actual is None:
-        return {"error": f"No existe ninguna lámina con id {lamina_id} en este taller"}
+        return {"error": f"No existe ninguna lámina con id {lamina_id} en esta empresa"}
     if actual["activo"] is False:
         return {"error": (
             f"La lámina {lamina_id} fue eliminada del inventario — no se puede editar. "
@@ -275,7 +275,7 @@ def _preparar_eliminar_lamina(conn, usuario: dict, args: dict) -> dict:
         return {"error": "lamina_id debe ser un número entero"}
     fila = inventario_service.obtener_lamina(conn, lamina_id)
     if fila is None:
-        return {"error": f"No existe ninguna lámina con id {lamina_id} en este taller"}
+        return {"error": f"No existe ninguna lámina con id {lamina_id} en esta empresa"}
     if fila["activo"] is False:
         return {"error": f"La lámina {lamina_id} ya está eliminada del inventario"}
 
@@ -311,7 +311,7 @@ registrar(ToolSpec(
     declaracion=gtypes.FunctionDeclaration(
         name="inventario_eliminar_lamina",
         description=(
-            "Prepara la eliminación de una lámina del inventario del taller. Aunque por "
+            "Prepara la eliminación de una lámina del inventario de la empresa. Aunque por "
             "dentro es reversible en la base de datos, hoy no hay forma de reactivarla "
             "desde la aplicación, así que trátalo como un borrado real e irreversible. "
             "NUNCA borra de inmediato: crea una propuesta que el usuario debe confirmar "

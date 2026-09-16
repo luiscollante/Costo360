@@ -33,7 +33,7 @@ def _listar_proyectos(conn, usuario: dict, args: dict) -> dict:
     estado = (args.get("estado") or "").strip()
     q = (args.get("q") or "").strip()
     # Archivados excluidos a propósito — "hablemos de los proyectos" del
-    # taller casi siempre significa el trabajo vivo, no el histórico
+    # empresa casi siempre significa el trabajo vivo, no el histórico
     # archivado (hallazgo real del fundador, 2026-09-16: no existía ninguna
     # tool para ver el conjunto completo de proyectos, solo tareas de uno).
     resultado = proyectos_service.listar_proyectos(
@@ -48,7 +48,7 @@ registrar(ToolSpec(
     declaracion=gtypes.FunctionDeclaration(
         name="proyectos_listar",
         description=(
-            "Lista los proyectos del taller (no archivados) — nombre, cliente, material, "
+            "Lista los proyectos de la empresa (no archivados) — nombre, cliente, material, "
             "estado y % de avance de cada uno. Úsala para cualquier pregunta sobre el "
             "conjunto de proyectos ('hablemos de los proyectos', '¿cuáles están activos?', "
             "'¿cuántos proyectos tengo?') — no confundir con proyectos_listar_tareas, que "
@@ -175,7 +175,7 @@ def _preparar_borrar_tarea(conn, usuario: dict, args: dict) -> dict:
     row = cur.fetchone()
     cur.close()
     if row is None:
-        return {"error": f"No existe ninguna tarea con id {tarea_id} en este taller"}
+        return {"error": f"No existe ninguna tarea con id {tarea_id} en esta empresa"}
     fila = {"tipo": "tarea", "id": row[0], "titulo": row[1], "project_id": row[2]}
     propuesta = confirmations.crear_propuesta(
         conn, usuario,
