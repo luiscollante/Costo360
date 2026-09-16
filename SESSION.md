@@ -54,6 +54,41 @@ espera explícita, no queda ningún frente de producto abierto salvo housekeepin
 
 ---
 
+## Sesión: 2026-09-15 (mismo día) — Bug crítico: tarjeta duplicada al arrastrar dos veces
+
+### Qué se hizo
+Poco después del ciclo anterior, el fundador reportó un bug que calificó de crítico y grave: arrastrar
+una tarjeta de un estado X a un estado Y y luego de vuelta a X hacía que apareciera duplicada en Y,
+desapareciendo sin dejar rastro al recargar la página. Se investigó el código de `mover()` en
+`useTableroProyectos.ts` y se encontró la causa raíz exacta: después de cada movimiento exitoso, la
+función volvía a pedirle al servidor TODA la columna destino (`recargar(hacia)`) para traer datos
+recalculados (progreso, riesgo) — una petición GET aparte e independiente. Si la misma tarjeta se
+arrastraba de nuevo antes de que esa respuesta llegara, la respuesta vieja podía llegar después del
+segundo movimiento y sobreescribir la columna, resucitando la tarjeta fantasma. El arreglo: el propio
+endpoint de mover ya devuelve el proyecto actualizado completo como respuesta directa — se usa esa
+respuesta para reconciliar solo la tarjeta afectada, eliminando la necesidad de la segunda petición
+que causaba la carrera.
+
+Durante la verificación en la base de datos real (para descartar causas), se encontró un cambio de
+estado inesperado en un proyecto ("Cocina Torre Andina 302" pasó de Activo a Planificación) que no
+coincidía con ninguna prueba propia hecha en esta sesión. Antes de asumir que era un bug o revertirlo,
+se le preguntó directamente al fundador — confirmó que fue él mismo, en otra pestaña/dispositivo, en
+paralelo mientras se investigaba (consistente con el patrón ya conocido de sesiones paralelas del
+fundador en el mismo repo). No se tocó ese dato.
+
+### Archivos modificados
+`web/src/hooks/useTableroProyectos.ts` (reescritura de la reconciliación en `mover()`).
+
+### Decisiones tomadas
+Preguntar antes de revertir un cambio de datos inesperado encontrado durante la investigación, en vez
+de asumir que era un bug propio — evitó pisar una acción real del fundador.
+
+### Primera tarea de la próxima sesión
+Nada pendiente de este frente — commit `34f17a7`, subido y desplegado a producción (frontend). El
+fundador está usando el tablero de Proyectos en vivo; si encuentra algo más, retomarlo directamente.
+
+---
+
 ## Sesión: 2026-09-14 — Logo Costo360 condicional + bug del lápiz en Historial (AIU + reconstrucción)
 
 ### Qué se hizo

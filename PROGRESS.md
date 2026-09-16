@@ -2,6 +2,29 @@
 
 ---
 
+## ✅ Hecho (2026-09-15, mismo día) — Bug crítico: tarjeta duplicada al arrastrar dos veces
+
+El fundador reportó, tras los 3 arreglos de más abajo: arrastrar una tarjeta de un estado X a un
+estado Y y luego de vuelta a X hacía que apareciera **duplicada** en Y — desaparecía sin dejar rastro
+al recargar la página (solo el estado en memoria del cliente quedaba mal, la base de datos siempre
+estuvo correcta).
+
+**Causa raíz real:** `mover()` reconciliaba la columna destino después de cada movimiento exitoso
+llamando a `recargar(hacia)` — una petición GET aparte e independiente que volvía a listar TODA la
+columna. Si la misma tarjeta se arrastraba de nuevo antes de que esa respuesta llegara, la respuesta
+vieja (todavía con el primer movimiento) podía llegar DESPUÉS del segundo y sobreescribir la columna,
+resucitando la tarjeta fantasma donde ya no debía estar.
+
+**Arreglo:** `moverProyecto()` ya devuelve el proyecto completo actualizado (progreso/riesgo
+recalculados) como respuesta directa del propio movimiento — ahora se usa esa respuesta para
+reconciliar solo esa tarjeta, sin lanzar ninguna petición aparte. Elimina la clase de bug de raíz: ya
+no existe una segunda petición independiente que pueda llegar fuera de orden.
+
+Durante la investigación se encontró un cambio real e inesperado en la base de datos (proyecto
+"Cocina Torre Andina 302" pasó de Activo a Planificación) que no coincidía con ninguna prueba propia
+— se le preguntó al fundador antes de asumir nada o revertir algo; confirmó que fue él mismo, en
+paralelo, mientras se investigaba. Commit `34f17a7`, subido y desplegado a producción (frontend).
+
 ## ✅ Hecho (2026-09-15) — 3 arreglos reales del tablero de Proyectos
 
 El fundador confirmó en vivo que el arrastre real con mouse del Kanban de Proyectos funciona bien
