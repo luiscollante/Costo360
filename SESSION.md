@@ -86,6 +86,15 @@ del agente (razonamiento + tool-calls), no en el TTS, y sería un ciclo aparte m
 separado. Este ciclo ya está commiteado, pusheado y desplegado a producción (solo backend), verificado
 con `/healthz`.
 
+**Ajuste post-despliegue el mismo día**: el fundador escuchó a Cost en producción y reportó que la
+moneda decía "... pesos COP..." en vez de "pesos colombianos" — `cop_a_letras()` solo decía "pesos" y
+el "COP" que a veces escribe el modelo junto al monto quedaba sonando suelto pese a la regla que ya lo
+descartaba. Se cambió `cop_a_letras()` para que diga "pesos colombianos" directo, y se agregaron 2
+reglas de limpieza para no duplicar "pesos"/"colombianos" cuando el modelo ya los había escrito él
+mismo junto al monto (ej. "$1.339.000 pesos" o "$1.339.000 pesos colombianos", ambos casos reales
+probados). Reverificados los 10 montos de prueba del ciclo original más estos 4 casos nuevos — todos
+limpios. Commiteado, pusheado y desplegado a producción (solo backend), verificado con `/healthz`.
+
 ---
 
 ## Sesión: 2026-09-16 (mismo día) — Esfera quitada del chat + Cost deja de decir "taller" + voz automática

@@ -51,6 +51,12 @@ eso por sí solo baje los 6-7 segundos a algo instantáneo — falta que el fund
 
 Commiteado, pusheado y desplegado a producción (solo backend), verificado con `/healthz`.
 
+**Ajuste post-despliegue**: el fundador escuchó "... pesos COP..." en vez de la moneda completa —
+`cop_a_letras()` solo decía "pesos", dejando el "COP" que a veces escribe el modelo sonando suelto.
+Ahora dice "pesos colombianos" directo, con 2 reglas nuevas para no duplicar "pesos"/"colombianos" si
+el modelo ya los había escrito él mismo junto al monto. Reverificados los 10 montos de prueba + los
+casos con "COP" pegado — todos limpios. Commiteado, pusheado y desplegado (solo backend), verificado.
+
 ---
 
 ## ✅ Hecho (2026-09-16, mismo día) — Esfera quitada del chat + Cost deja de decir "taller" + voz automática
