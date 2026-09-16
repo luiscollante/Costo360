@@ -2,6 +2,82 @@
 
 ---
 
+## Sesión: 2026-09-16 (mismo día) — Rediseño del selector de inductores en Parámetros › Tarifas
+
+### Qué se hizo
+El fundador probó su propia pantalla de Parámetros y reportó que no entendía el selector al final de
+la pestaña Tarifas ("por metro lineal (mano de obra en bordes)" y otras 6 opciones más) — dijo
+textualmente que si él mismo no entendía para qué servía, mucho menos lo iba a entender un cliente
+nuevo. Pidió un ciclo formal con `/goal` para rediseñar esa sección, intuitiva y visualmente pulida.
+
+Antes de diseñar se leyó el motor de cálculo real (`backend/motor/calculos.py`, líneas 340-458) para
+tener las 7 definiciones exactas de cada "inductor" (cómo se multiplica ese costo en una cotización) en
+vez de adivinar. Esto confirmó que la confusión del fundador tenía una causa real, no solo de
+redacción: el selector plano tenía DOS opciones "por m²" que suenan casi iguales en texto pero
+significan cosas opuestas (una es mano de obra — se le paga a un oficial —, la otra es desgaste del
+disco de corte — un insumo, no un sueldo) y DOS "por metro lineal" que miden partes distintas de la
+pieza (el borde normal vs. el zócalo/rodapié, instalaciones separadas).
+
+Se consultó a un agente UI Designer con esas 7 definiciones exactas, ejemplos reales de la receta por
+defecto (`$60.000/ml`, `$35.000/m²`, etc.) y el sistema de diseño ya existente de la pantalla
+(`Badge`/`InductorBadge`, con sus 7 íconos ya asignados) — pidiendo un rediseño concreto e
+implementable, no solo dirección. Propuso: agrupar por QUÉ representa el costo (no por su unidad, que
+es justo lo que juntaba los pares confusos) en 4 categorías — Mano de obra, Insumo/desgaste de
+herramienta, Sobre el material de la pieza, Costo fijo del proyecto —, reemplazar el `<select>` nativo
+por un popover con tarjetas (ícono + título corto + descripción de una línea + badge de vista previa
+igual al que se ve después en la fila creada), y que elegir una tarjeta cree la fila al toque en vez de
+un segundo click de "Agregar".
+
+Se implementó tal cual en `web/src/pages/ParametrosPage.tsx`: nuevo tipo `GrupoInductor` + constante
+`GRUPOS_INDUCTOR` (4 categorías con ícono/subtítulo), `INDUCTORES_DISPONIBLES` reescrito con
+`titulo`/`descripcion`/`grupo` nuevos SIN TOCAR los `value`/`bucketDefault`/`esPorcentaje` (el contrato
+real con el backend), y el bloque de "agregar costo" de `TarifasTab` reemplazado por un botón-trigger +
+popover animado con `framer-motion`/`AnimatePresence`, agrupado con separadores y encabezados, cierre
+por click-afuera/Escape/selección, y un flash breve (`bg-brand-success-soft`, 900ms, vía `transition-
+colors` de CSS puro — no rAF) en la fila recién agregada, detectado comparando `filas.length` contra un
+`prevLenRef` que se resetea al cambiar de pestaña de material (para no disparar un flash falso al
+cambiar de material con más filas).
+
+Verificado en vivo con la extensión de Chrome: build real (`npm run build`) sin errores; el popover
+abre con las 4 secciones, íconos, descripciones y badges de vista previa correctos (confirmado con
+capturas de pantalla). Al probar la selección se encontró que el panel quedaba visualmente abierto tras
+elegir una opción — se investigó antes de asumir un bug real: el estado de React sí cerraba
+correctamente (`aria-expanded="false"` en el botón trigger, confirmado por JS directo), y la fila se
+agregaba bien (conteo de 8 a 9, con el badge/inductor correcto) — la causa real es que la pestaña
+automatizada de Chrome queda con `document.hidden = true`, y la animación de salida de `AnimatePresence`
+depende de `requestAnimationFrame`, que el navegador pausa en pestañas en segundo plano — misma
+limitación de herramienta ya documentada esta semana con la esfera de Cost (`CostOrb`), no un bug del
+código nuevo. La lógica de cierre funciona; falta que el fundador confirme el cierre visual en su
+navegador real.
+
+### Archivos modificados
+`web/src/pages/ParametrosPage.tsx` (imports de íconos nuevos, tipo `GrupoInductor` + `GRUPOS_INDUCTOR`,
+`INDUCTORES_DISPONIBLES` reescrito con copy nuevo, `TarifasTab` con el popover agrupado + flash de fila
+nueva, reemplazando el `<select>` plano de antes).
+
+### Decisiones tomadas
+- Agrupar por QUÉ representa el costo (mano de obra / insumo / % sobre material / costo fijo), no por
+  su unidad de medida — resuelve de raíz las dos confusiones reales encontradas en el motor de cálculo,
+  en vez de solo mejorar la redacción de las mismas 7 opciones sueltas.
+- Seleccionar una tarjeta crea la fila al toque (sin botón "Agregar" aparte) — elimina el estado
+  intermedio de "elegí algo pero todavía no pasó nada" que generaba la duda original.
+- Los `value` de cada inductor no se tocaron — es un cambio puramente de presentación, cero riesgo
+  sobre el motor de cálculo de cotizaciones real.
+- El flash de la fila nueva usa una transición CSS simple, no `framer-motion` — sigue funcionando
+  aunque el popover en sí dependa de `AnimatePresence`/rAF (relevante por la limitación de
+  `document.hidden` encontrada al verificar).
+
+### Primera tarea de la próxima sesión
+Confirmar con el fundador, en su navegador real: (1) que el popover se ve bien y se entiende de un
+vistazo (íconos, agrupación, descripciones), y (2) que cierra visualmente bien tras elegir una opción,
+con click-afuera, y con Escape (no se pudo confirmar el cierre VISUAL desde la automatización por la
+limitación de `document.hidden`, aunque la lógica de React sí cierra). Se le pidió confirmación
+explícita al fundador en el chat antes de comitear (un aviso automático de `/goal` nunca es aprobación
+real, ver `feedback_goal_hook_no_es_aprobacion.md`) — aprobó, y este ciclo ya está commiteado, pusheado
+y desplegado a producción (solo frontend), verificado con `curl` 200.
+
+---
+
 ## Sesión: 2026-09-16 (mismo día) — Entrenamiento de pronunciación de la voz de Cost
 
 ### Qué se hizo

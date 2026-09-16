@@ -2,6 +2,46 @@
 
 ---
 
+## ✅ Hecho (2026-09-16, mismo día) — Rediseño del selector de inductores en Parámetros › Tarifas
+
+El fundador probó su propia pantalla de Parámetros y no entendió qué hacía el selector al final de la
+pestaña Tarifas ("por metro lineal (mano de obra en bordes)" y otras 6 opciones) — un `<select>` nativo
+con 7 frases de 6-8 palabras compitiendo por atención, sin agrupar. Pidió explícitamente un ciclo
+formal (`/goal`) para rediseñarlo, intuitivo y visualmente pulido.
+
+Antes de diseñar nada se leyó el motor de cálculo real (`backend/motor/calculos.py`) para tener las 7
+definiciones exactas — confirmó 2 confusiones reales de fondo: hay DOS "por m²" (uno es mano de obra
+por área, el otro es desgaste de disco/insumo — nada que ver entre sí) y DOS "por metro lineal" (borde
+normal vs. zócalo, una pieza distinta de la cotización). Se consultó a un agente UI Designer con estas
+7 definiciones exactas + el sistema de diseño real de la app (tokens, `Badge`/`InductorBadge` ya
+existentes con sus 7 íconos) para un rediseño concreto, no solo inspiración.
+
+**Implementado** en `web/src/pages/ParametrosPage.tsx`:
+- El `<select>` + botón se reemplazó por un botón que abre un popover agrupado en 4 categorías por
+  **qué representa el costo** (no por su unidad, que es justo lo que juntaba los pares confusos):
+  Mano de obra, Insumo/desgaste de herramienta, Sobre el material de la pieza, Costo fijo del proyecto.
+- Cada una de las 7 opciones lleva título corto + una descripción de una línea con un ejemplo real
+  (tomado de la receta por defecto del motor) + el mismo ícono/badge que ya usa la fila una vez creada
+  — mismo lenguaje visual, no uno nuevo en paralelo.
+- Elegir una opción crea la fila al toque (sin segundo click de "Agregar"), con un flash breve
+  (`bg-brand-success-soft`, 900ms) en la fila nueva para cerrar el loop de "elegí esto → esto apareció".
+- Los `value` que llegan al backend (`por_ml`, `por_m2_mano_obra`, etc.) NO se tocaron — solo cambió el
+  texto que ve el usuario, cero riesgo sobre el motor de cálculo real.
+- Cierre con click-afuera, `Escape` (devuelve el foco al botón), o al elegir una opción.
+
+Verificado en vivo: build real (`npm run build`) sin errores; popover abre con las 4 secciones,
+íconos, descripciones y badges de vista previa correctos; seleccionar una opción agrega la fila con el
+inductor correcto y cierra el menú (confirmado por estado real de React — `aria-expanded="false"` tras
+elegir, más el conteo de filas subiendo de 8 a 9 con el badge esperado). El cierre visual del panel no
+se pudo confirmar por la extensión de Chrome automatizada por la misma limitación de `document.hidden`
+que afectó a la esfera de Cost — la animación de salida usa `requestAnimationFrame`, que el navegador
+pausa en pestañas en segundo plano; la lógica de React cierra bien, falta que el fundador lo confirme
+visualmente en su navegador real.
+
+Commiteado, pusheado y desplegado a producción (solo frontend), verificado con `curl` 200.
+
+---
+
 ## ✅ Hecho (2026-09-16, mismo día) — Entrenamiento de pronunciación de la voz de Cost
 
 El fundador reportó 3 problemas reales escuchando a Cost: tarda 6-7 segundos en empezar a hablar tras
