@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { orbShaderSource } from './orb-shader-source'
 import { createOrbUniformSnapshot, ORB_IDLE, ORB_THINKING } from './orb-params'
 
@@ -9,6 +9,14 @@ export type OrbEstado = 'idle' | 'thinking'
 const _ACTIVATION_MS = 220
 const _SETTLE_MS = 650
 const _COLOR_OFFSET = 40 // debe calzar con orb-params.ts
+
+// Constantes reales de la spec de WebGPU (GPUBufferUsageFlags), a mano —
+// a propósito, en vez de usar el global `GPUBufferUsage`: el proyecto no
+// declara los tipos de WebGPU (no hay `@webgpu/types` como dependencia), y
+// el build real de Vercel (a diferencia del entorno local) no los resuelve
+// como ambientales — usar el global rompía `npm run build` en producción.
+const _GPU_BUFFER_USAGE_UNIFORM = 0x40
+const _GPU_BUFFER_USAGE_COPY_DST = 0x8
 
 const _SEEDS: Record<OrbEstado, Float32Array> = {
   idle: Float32Array.from(createOrbUniformSnapshot(ORB_IDLE)),
@@ -67,7 +75,8 @@ export function CostOrb({
 
     let detenido = false
     let destruido = false
-    let device: GPUDevice | null = null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- sin `@webgpu/types` como dependencia, ver nota arriba
+    let device: any = null
     let frameId = 0
     let estadoActual: OrbEstado = estado
     let destinoTransicion: OrbEstado = estado
@@ -110,12 +119,12 @@ export function CostOrb({
     setEstadoRef.current = cambiarEstado
 
     async function iniciar() {
-      const gpu = (navigator as unknown as { gpu: GPU }).gpu
+      const gpu = (navigator as unknown as { gpu: any }).gpu
       const adapter = await gpu.requestAdapter()
       if (!adapter) throw new Error('Sin adaptador WebGPU disponible')
       device = await adapter.requestDevice()
       if (destruido) { device.destroy(); return }
-      const context = canvas!.getContext('webgpu') as unknown as GPUCanvasContext
+      const context = canvas!.getContext('webgpu') as any
       if (!context) throw new Error('No se pudo crear el contexto WebGPU')
       const format = gpu.getPreferredCanvasFormat()
       context.configure({ device, format, alphaMode: 'premultiplied' })
@@ -140,7 +149,7 @@ export function CostOrb({
       const valores = new Float32Array(mostradoU)
       const uniformBuffer = device.createBuffer({
         size: valores.byteLength,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        usage: _GPU_BUFFER_USAGE_UNIFORM | _GPU_BUFFER_USAGE_COPY_DST,
       })
       const bindGroup = device.createBindGroup({
         layout: pipeline.getBindGroupLayout(0),
