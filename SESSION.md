@@ -2,7 +2,7 @@
 
 ---
 
-## Sesión: 2026-09-16 — Voz de Cost (ElevenLabs) construida; esfera líquida pendiente
+## Sesión: 2026-09-16 — Voz de Cost (ElevenLabs) verificada en vivo; esfera líquida pendiente
 
 ### Qué se hizo
 El fundador consiguió una API de ElevenLabs propia (10.000 créditos) y pidió darle a Cost la
@@ -22,11 +22,34 @@ reproduce el audio, un solo audio a la vez) y un botón de micrófono junto al i
 enviar, nunca envía solo). Se preparó el espacio en `backend/.env` (`ELEVENLABS_API_KEY`,
 `ELEVENLABS_VOICE_ID`) sin elegir la voz por el fundador — es una decisión de marca, como el logo.
 
-Verificado en vivo sin la clave real todavía (el fundador no la pegó en el chat, por seguridad):
+Primera verificación (sin la clave real todavía, el fundador no la pegó en el chat por seguridad):
 el backend real responde 503 controlado si falta la clave, sin romper el resto de Cost; en el
 navegador ambos botones responden y el flujo falla con gracia (toast, sin quedar colgado). Commit
-`221c857`, subido y desplegado a producción (backend + frontend) — aunque en producción tampoco hay
-clave configurada todavía, mismo comportamiento controlado.
+`221c857`, subido y desplegado a producción.
+
+**Más tarde, mismo día:** el fundador consiguió su clave real de ElevenLabs y la voz que había
+elegido, y pidió 2 cosas más. Primero, que el mensaje de voz se envíe SOLO al detectar que dejó de
+hablar — nunca un segundo clic en el micrófono ni en enviar. Se implementó detección de silencio real
+con Web Audio API (`AnalyserNode` + RMS del audio en vivo del micrófono): 1.5s bajo el umbral para
+considerar que terminó de hablar, pero solo después de haber detectado voz al menos una vez (evita
+cortar de inmediato si el ambiente ya estaba en silencio al empezar a grabar), con un tope de 60s de
+respaldo. Un clic manual en el micrófono mientras graba sigue cortando antes si el usuario quiere,
+por el mismo camino de cierre. Al detectar el fin del habla, transcribe y envía directo — ya no llena
+el input para que el usuario revise, decisión explícita del fundador de priorizar la inmersión sobre
+la revisión previa.
+
+Al probar "hablar" con la clave real, apareció un bug real: la voz que el fundador había elegido (de
+la Librería de Voces de ElevenLabs) devolvía `402 payment_required` — las voces de librería solo
+funcionan por API con plan pago, aunque sí funcionan en la web de ElevenLabs. Se le mostró el error
+exacto y la lista de voces que su cuenta sí puede usar; pidió usar en su lugar una voz propia llamada
+"Cost" (categoría "generada", en español) que ya tenía en su cuenta — confirmado `200 OK` contra la
+API real antes de aplicarlo. Verificado en vivo en el navegador: "hablar" genera y reproduce el audio
+de punta a punta con la voz real. La grabación por micrófono no se pudo probar de punta a punta por
+automatización (no hay micrófono real en este entorno) — el fundador debe confirmarla con su voz.
+
+Variables `ELEVENLABS_API_KEY`/`ELEVENLABS_VOICE_ID` configuradas en `backend/.env` local y agregadas
+también al proyecto `costo360-backend` en Vercel (producción, sin imprimir los valores reales en
+ningún comando). Commit `d93b62e`, subido y desplegado a producción.
 
 La esfera líquida queda como el siguiente frente, sin empezar — requiere clonar/correr el editor del
 repo, diseñar un preset con los colores de marca, exportar el resultado, y construir el componente
@@ -34,19 +57,21 @@ React con el respaldo de shimmer ya decidido.
 
 ### Archivos modificados
 `backend/routers/voz.py` (nuevo), `backend/models/voz.py` (nuevo), `backend/main.py` (registro del
-router), `backend/.env` (espacio para las 2 variables nuevas, sin valores), `web/src/api/voz.ts`
-(nuevo), `web/src/components/CostChat.tsx` (botón de reproducir + botón de micrófono).
+router), `backend/.env` (clave y voz real, no comiteado — está en `.gitignore`), `web/src/api/voz.ts`
+(nuevo), `web/src/components/CostChat.tsx` (botón de reproducir, botón de micrófono, detección de
+silencio con envío automático).
 
 ### Decisiones tomadas
-Nunca elegir la voz de ElevenLabs por el fundador — se deja `ELEVENLABS_VOICE_ID` vacío a propósito,
-con instrucciones en el propio `.env`, porque es una decisión de identidad de marca que le
-corresponde a él, igual que el logo o la paleta de colores.
+Nunca elegir la voz de ElevenLabs por el fundador — se dejó `ELEVENLABS_VOICE_ID` vacío a propósito
+al principio, con instrucciones en el propio `.env`, porque es una decisión de identidad de marca que
+le corresponde a él, igual que el logo o la paleta de colores. Enviar el mensaje de voz directo (sin
+mostrarlo antes en el input) en vez de dejar que el usuario lo revise — el fundador priorizó la
+inmersión de la experiencia por voz sobre esa capa extra de revisión manual.
 
 ### Primera tarea de la próxima sesión
-1. El fundador pega su clave real de ElevenLabs y elige una voz en `backend/.env`, reinicia el
-   backend local, y se prueba de punta a punta con él (hablar + escuchar).
-2. Agregar las mismas 2 variables al proyecto `costo360-backend` en Vercel (producción).
-3. Empezar la esfera líquida: clonar/correr `github.com/LerSent001/orb`, diseñar el preset de marca,
+1. El fundador prueba "escuchar" con su propia voz real para cerrar el loop del todo (transcripción +
+   envío automático) — es lo único que esta sesión no pudo verificar de punta a punta.
+2. Empezar la esfera líquida: clonar/correr `github.com/LerSent001/orb`, diseñar el preset de marca,
    exportar, y construir el componente React con el respaldo de shimmer decidido.
 
 ---

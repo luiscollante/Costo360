@@ -2,37 +2,43 @@
 
 ---
 
-## 🔄 En progreso (2026-09-16) — Voz de Cost (ElevenLabs): backend + interfaz listos, falta la clave real
+## ✅ Hecho (2026-09-16) — Voz de Cost (ElevenLabs): hablar verificado en vivo, envío por voz automático
 
 El fundador pidió darle a Cost la capacidad de hablar y escuchar, con una API de ElevenLabs propia
-(10.000 créditos). Decisiones tomadas antes de construir, por el presupuesto limitado de créditos:
-"hablar" es manual (un botón ▶ por mensaje, nunca automático) y "escuchar" también usa ElevenLabs
-(Scribe) en vez del reconocimiento gratis del navegador, para priorizar consistencia.
+(10.000 créditos), y consiguió su clave real durante el mismo ciclo. Decisiones tomadas antes de
+construir, por el presupuesto limitado: "hablar" es manual (botón ▶ por mensaje, nunca automático);
+"escuchar" usa ElevenLabs (Scribe) en vez del reconocimiento gratis del navegador; y luego, pedido
+explícito aparte, el mensaje de voz se envía SOLO al detectar que el usuario dejó de hablar — nunca
+un segundo clic en el micrófono ni en enviar.
 
-**Construido y verificado (sin la clave real todavía):**
-- Backend: `routers/voz.py` + `models/voz.py` — proxy mínimo contra la API de ElevenLabs
-  (`POST /api/voz/hablar` texto→audio, `POST /api/voz/escuchar` audio→texto). La clave nunca sale
-  del backend. Mismo patrón que `routers/nesting.py`: rate limit, topes anti-abuso, error controlado
-  (503) si falta la clave — nunca rompe el resto de Cost. Verificado que carga sin errores y que
-  responde 503 controlado sin la clave configurada (backend real, no solo TestClient).
-- Frontend: botón ▶ por mensaje de Cost (con loader mientras genera, toggle a pausa mientras suena,
-  un solo audio a la vez) y botón de micrófono junto al input (graba con `MediaRecorder` nativo,
-  llena el campo de texto con la transcripción — nunca envía solo, el usuario revisa antes de
-  mandar). Verificado en vivo en el navegador: ambos botones responden, el flujo falla con gracia
-  (toast de error, sin quedar colgado) mientras no hay clave configurada.
-- Espacio preparado en `backend/.env` (`ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`) — la clave real
-  y la elección de voz quedan pendientes de que el fundador las pegue/elija él mismo (la voz es una
-  decisión de marca, como el logo o los colores, a propósito no elegida por el código).
+**Backend** (`routers/voz.py` + `models/voz.py`): proxy mínimo contra la API de ElevenLabs
+(`POST /api/voz/hablar` texto→audio, `POST /api/voz/escuchar` audio→texto), la clave nunca sale del
+backend. Mismo patrón que `routers/nesting.py`: rate limit, topes anti-abuso, error controlado (503)
+si falta la clave. **Bug real encontrado y corregido en vivo:** la primera voz que el fundador eligió
+(de la Librería de Voces de ElevenLabs) devolvía 402 `payment_required` — las voces de librería
+requieren plan pago para usarse por API, aunque funcionen en la web de ElevenLabs. Se cambió a una
+voz propia ("Cost", categoría "generada") que sí está disponible en su plan actual — confirmado
+`200 OK` contra la API real antes de aplicar el cambio.
 
-**Pendiente para dar esto por completo:**
-1. Fundador pega su clave real de ElevenLabs en `backend/.env` (`ELEVENLABS_API_KEY`) y elige una
-   voz en la librería de ElevenLabs, pegando su ID en `ELEVENLABS_VOICE_ID`.
-2. Reiniciar el backend local y probar de punta a punta (hablar + escuchar) con la clave real.
-3. Agregar las mismas 2 variables al proyecto `costo360-backend` en Vercel (producción) — hoy solo
-   están preparadas en el `.env` local, no en Vercel.
-4. Commit `221c857` ya subido y desplegado a producción (backend + frontend) — pero sin la clave
-   real configurada ahí tampoco, "hablar"/"escuchar" en producción hoy responden el mismo error
-   controlado (503) hasta que se agregue.
+**Frontend** (`CostChat.tsx`): botón ▶ por mensaje de Cost (loader mientras genera, toggle a pausa
+mientras suena, un solo audio a la vez) y botón de micrófono junto al input. El micrófono graba con
+`MediaRecorder` nativo y usa Web Audio API (`AnalyserNode` + RMS en vivo) para detectar cuándo el
+usuario dejó de hablar de verdad (1.5s bajo el umbral, solo después de haber detectado voz al menos
+una vez, para no cortar de inmediato si el ambiente ya estaba en silencio) — al detectarlo, transcribe
+y **envía el mensaje directo**, sin pasos intermedios. Tope de 60s como respaldo si el silencio nunca
+se detecta. Un clic manual en el micrófono mientras graba sigue cortando antes si el usuario quiere.
+
+**Verificado en vivo:** "hablar" funciona de punta a punta contra la API real de ElevenLabs (audio
+generado, reproducido, y el botón vuelve a su estado normal al terminar). La grabación por micrófono
+no se pudo probar de punta a punta por automatización (no hay micrófono real en este entorno) — el
+fundador debe probarla con su propia voz para cerrar el loop del todo.
+
+Variables `ELEVENLABS_API_KEY`/`ELEVENLABS_VOICE_ID` configuradas en `backend/.env` (local) y también
+agregadas al proyecto `costo360-backend` en Vercel (producción). Commits `221c857`, `d93b62e`, subidos
+y desplegados a producción (backend + frontend).
+
+**Pendiente real:** que el fundador confirme con su voz real que "escuchar" transcribe y envía
+correctamente — es la única parte que esta sesión no pudo verificar de punta a punta.
 
 Commit `221c857`.
 
