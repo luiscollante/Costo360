@@ -2,6 +2,55 @@
 
 ---
 
+## Sesión: 2026-09-16 — Voz de Cost (ElevenLabs) construida; esfera líquida pendiente
+
+### Qué se hizo
+El fundador consiguió una API de ElevenLabs propia (10.000 créditos) y pidió darle a Cost la
+capacidad de hablar y escuchar, más una esfera líquida de marca (repo `github.com/LerSent001/orb`)
+para sus estados de carga/pensamiento. Antes de construir, se investigó el repo del orb: es un
+**editor** de esferas por WebGPU, no una librería instalable, y sin fallback para navegadores sin
+soporte (Safari, algunos móviles) — hallazgo que se le presentó al fundador junto con 2 decisiones
+más por el presupuesto limitado de créditos de voz. Decidió: (1) usar el shimmer dorado actual como
+respaldo donde no haya WebGPU, (2) que "hablar" sea manual (botón por mensaje, nunca automático),
+(3) usar ElevenLabs también para "escuchar" (no el reconocimiento gratis del navegador).
+
+Se construyó la parte de voz completa: `backend/routers/voz.py` + `backend/models/voz.py` (proxy
+mínimo contra la API de ElevenLabs, la clave nunca sale del backend, mismo patrón de rate limit/topes
+anti-abuso que `routers/nesting.py`), y en `CostChat.tsx` un botón ▶ por mensaje de Cost (genera y
+reproduce el audio, un solo audio a la vez) y un botón de micrófono junto al input (graba con
+`MediaRecorder` nativo, llena el texto con la transcripción para que el usuario la revise antes de
+enviar, nunca envía solo). Se preparó el espacio en `backend/.env` (`ELEVENLABS_API_KEY`,
+`ELEVENLABS_VOICE_ID`) sin elegir la voz por el fundador — es una decisión de marca, como el logo.
+
+Verificado en vivo sin la clave real todavía (el fundador no la pegó en el chat, por seguridad):
+el backend real responde 503 controlado si falta la clave, sin romper el resto de Cost; en el
+navegador ambos botones responden y el flujo falla con gracia (toast, sin quedar colgado). Commit
+`221c857`, subido y desplegado a producción (backend + frontend) — aunque en producción tampoco hay
+clave configurada todavía, mismo comportamiento controlado.
+
+La esfera líquida queda como el siguiente frente, sin empezar — requiere clonar/correr el editor del
+repo, diseñar un preset con los colores de marca, exportar el resultado, y construir el componente
+React con el respaldo de shimmer ya decidido.
+
+### Archivos modificados
+`backend/routers/voz.py` (nuevo), `backend/models/voz.py` (nuevo), `backend/main.py` (registro del
+router), `backend/.env` (espacio para las 2 variables nuevas, sin valores), `web/src/api/voz.ts`
+(nuevo), `web/src/components/CostChat.tsx` (botón de reproducir + botón de micrófono).
+
+### Decisiones tomadas
+Nunca elegir la voz de ElevenLabs por el fundador — se deja `ELEVENLABS_VOICE_ID` vacío a propósito,
+con instrucciones en el propio `.env`, porque es una decisión de identidad de marca que le
+corresponde a él, igual que el logo o la paleta de colores.
+
+### Primera tarea de la próxima sesión
+1. El fundador pega su clave real de ElevenLabs y elige una voz en `backend/.env`, reinicia el
+   backend local, y se prueba de punta a punta con él (hablar + escuchar).
+2. Agregar las mismas 2 variables al proyecto `costo360-backend` en Vercel (producción).
+3. Empezar la esfera líquida: clonar/correr `github.com/LerSent001/orb`, diseñar el preset de marca,
+   exportar, y construir el componente React con el respaldo de shimmer decidido.
+
+---
+
 ## Sesión: 2026-09-15 — 3 arreglos reales del tablero de Proyectos + aclaraciones sobre Cost/roadmap
 
 ### Qué se hizo

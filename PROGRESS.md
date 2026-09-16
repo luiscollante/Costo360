@@ -2,6 +2,55 @@
 
 ---
 
+## 🔄 En progreso (2026-09-16) — Voz de Cost (ElevenLabs): backend + interfaz listos, falta la clave real
+
+El fundador pidió darle a Cost la capacidad de hablar y escuchar, con una API de ElevenLabs propia
+(10.000 créditos). Decisiones tomadas antes de construir, por el presupuesto limitado de créditos:
+"hablar" es manual (un botón ▶ por mensaje, nunca automático) y "escuchar" también usa ElevenLabs
+(Scribe) en vez del reconocimiento gratis del navegador, para priorizar consistencia.
+
+**Construido y verificado (sin la clave real todavía):**
+- Backend: `routers/voz.py` + `models/voz.py` — proxy mínimo contra la API de ElevenLabs
+  (`POST /api/voz/hablar` texto→audio, `POST /api/voz/escuchar` audio→texto). La clave nunca sale
+  del backend. Mismo patrón que `routers/nesting.py`: rate limit, topes anti-abuso, error controlado
+  (503) si falta la clave — nunca rompe el resto de Cost. Verificado que carga sin errores y que
+  responde 503 controlado sin la clave configurada (backend real, no solo TestClient).
+- Frontend: botón ▶ por mensaje de Cost (con loader mientras genera, toggle a pausa mientras suena,
+  un solo audio a la vez) y botón de micrófono junto al input (graba con `MediaRecorder` nativo,
+  llena el campo de texto con la transcripción — nunca envía solo, el usuario revisa antes de
+  mandar). Verificado en vivo en el navegador: ambos botones responden, el flujo falla con gracia
+  (toast de error, sin quedar colgado) mientras no hay clave configurada.
+- Espacio preparado en `backend/.env` (`ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`) — la clave real
+  y la elección de voz quedan pendientes de que el fundador las pegue/elija él mismo (la voz es una
+  decisión de marca, como el logo o los colores, a propósito no elegida por el código).
+
+**Pendiente para dar esto por completo:**
+1. Fundador pega su clave real de ElevenLabs en `backend/.env` (`ELEVENLABS_API_KEY`) y elige una
+   voz en la librería de ElevenLabs, pegando su ID en `ELEVENLABS_VOICE_ID`.
+2. Reiniciar el backend local y probar de punta a punta (hablar + escuchar) con la clave real.
+3. Agregar las mismas 2 variables al proyecto `costo360-backend` en Vercel (producción) — hoy solo
+   están preparadas en el `.env` local, no en Vercel.
+4. Commit `221c857` ya subido y desplegado a producción (backend + frontend) — pero sin la clave
+   real configurada ahí tampoco, "hablar"/"escuchar" en producción hoy responden el mismo error
+   controlado (503) hasta que se agregue.
+
+Commit `221c857`.
+
+---
+
+## Esfera líquida de marca para los estados de Cost — pendiente, siguiente frente
+
+El fundador también pidió una esfera líquida personalizada (identidad Costo360) para los estados de
+carga/pensamiento/procesamiento de Cost, usando el repositorio `github.com/LerSent001/orb` como base.
+Investigación previa a construir: ese repo es un **editor** de esferas por WebGPU (no una librería para
+instalar), sin fallback para navegadores sin soporte (Safari, algunos móviles). Decisión del fundador:
+usar el shimmer dorado actual como respaldo donde WebGPU no esté disponible. Falta: clonar/correr el
+editor, diseñar un preset con los colores de marca (esmeralda/dorado), exportar el resultado, y
+construir el componente React que lo integre en `CostChat.tsx` con el respaldo ya decidido — no
+iniciado todavía en este ciclo.
+
+---
+
 ## ✅ Hecho (2026-09-15, mismo día) — Bug crítico: tarjeta duplicada al arrastrar dos veces
 
 El fundador reportó, tras los 3 arreglos de más abajo: arrastrar una tarjeta de un estado X a un
