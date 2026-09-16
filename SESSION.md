@@ -2,6 +2,58 @@
 
 ---
 
+## Sesión: 2026-09-16 (mismo día) — Esfera visible en reposo + tool "listar todos los proyectos"
+
+### Qué se hizo
+Apenas desplegado el ciclo de la esfera líquida, el fundador la probó en producción y reportó que se
+veía negra, sin verde ni dorado visibles, y por separado que al pedirle a Cost "hablemos sobre todos
+los proyectos" respondió que no tenía esa herramienta.
+
+Para la esfera: se revisó el componente y se encontró que no tenía ningún manejo de errores de
+WebGPU — un error de validación (shader inválido, layout mal armado) normalmente NO lanza una
+excepción de JavaScript en WebGPU, se reporta aparte vía el evento `uncapturederror` o
+`shader.getCompilationInfo()`, y sin escuchar ninguno de los dos, un canvas configurado pero que
+nunca llega a pintar un frame se ve exactamente como lo describió el fundador: negro sólido, sin
+ninguna pista de qué falló. Se agregaron ambos manejos con `console.error`. No se pudo confirmar si
+esa era la causa real (no hay forma de ver la consola del navegador del fundador de forma remota),
+pero además se encontró una causa alternativa igual de real: el estado "idle" tenía la exposición
+reducida a ×0.68 del valor de "thinking" — a los 40px que mide la esfera en el input, esa diferencia
+era tan sutil que podía leerse como "no hay color ahí". Se subió a ×0.92 y se aclaró la paleta de
+idle completa.
+
+Para la tool faltante: se confirmó que Cost tenía razón — nunca existió una tool para listar el
+conjunto de proyectos, solo `proyectos_listar_tareas` (tareas DENTRO de un proyecto puntual). Se
+agregó `proyectos_listar` en `agente/tools/proyectos.py`, reutilizando la misma lógica SQL que ya usa
+el endpoint real `GET /api/proyectos` — se extrajo esa lógica a una función nueva en
+`services/proyectos_service.py` (`listar_proyectos`), siguiendo el patrón ya documentado en ese mismo
+archivo ("el router pasa a ser un adaptador delgado sobre estas funciones") sin tocar el router
+existente para no arriesgar el endpoint que ya está en producción — quedó una pequeña duplicación
+temporal entre el router y el servicio, aceptada a propósito por menor riesgo. Se actualizó también
+el system prompt para mencionar la nueva capacidad — el mismo hallazgo de la sesión de Retales de
+esta semana: una tool registrada pero no mencionada en el prompt es invisible para el modelo aunque
+funcione perfecto si se la invoca.
+
+Verificado en vivo: "Hablemos sobre todos los proyectos" ahora responde con los 3 proyectos reales
+del taller demo (cliente, material, estado, % de avance) y una pregunta de seguimiento natural.
+
+### Archivos modificados
+`web/src/components/orb/CostOrb.tsx` (manejo de errores de WebGPU), `web/src/components/orb/
+orb-params.ts` (brillo del estado idle), `backend/services/proyectos_service.py` (nueva función
+`listar_proyectos`), `backend/agente/tools/proyectos.py` (nueva tool `proyectos_listar`),
+`backend/agente/runtime.py` (system prompt menciona la nueva capacidad).
+
+### Decisiones tomadas
+No tocar el router `routers/proyectos.py` al extraer la lógica de listado al servicio — se aceptó una
+pequeña duplicación temporal entre el router (que sigue con su SQL inline) y el nuevo
+`proyectos_service.listar_proyectos()` (que usa la tool), priorizando no arriesgar el endpoint HTTP
+real que ya está en producción sobre la limpieza arquitectónica total.
+
+### Primera tarea de la próxima sesión
+Nada pendiente de este frente — commit `d6e0324`, subido y desplegado a producción (backend +
+frontend). Confirmar con el fundador si la esfera ya se ve con los colores de marca correctamente.
+
+---
+
 ## Sesión: 2026-09-16 (mismo día) — Esfera líquida de marca para Cost
 
 ### Qué se hizo

@@ -2,6 +2,31 @@
 
 ---
 
+## ✅ Hecho (2026-09-16, mismo día) — Esfera visible en reposo + tool nueva "listar todos los proyectos"
+
+El fundador probó la esfera y "hablemos sobre todos los proyectos" apenas desplegado el ciclo
+anterior, y reportó 2 problemas reales:
+
+1. **La esfera se veía negra**, sin verde ni dorado. Se endureció `CostOrb.tsx` para que un error
+   real de WebGPU (que NO lanza excepción de JS, se reporta aparte vía `uncapturederror`/
+   `getCompilationInfo`) quede logueado en vez de fallar en silencio como un círculo negro sin
+   ninguna pista — no se pudo confirmar si el fundador tuvo un error real (no hay forma de ver su
+   consola remota), pero ahora si vuelve a pasar habrá un mensaje claro. Además se subió bastante el
+   brillo del estado "idle" (antes ×0.68 de exposición, ahora ×0.92) — a 40px la diferencia con
+   "thinking" era demasiado sutil, casi ilegible como marca.
+2. **Cost no tenía forma de listar todos los proyectos** — solo existía `proyectos_listar_tareas`
+   (tareas DE un proyecto puntual). Se agregó `proyectos_listar`, reutilizando la misma lógica SQL
+   del endpoint real `GET /api/proyectos` (extraída a `proyectos_service.listar_proyectos`, sin
+   tocar el router existente para no arriesgar el endpoint en producción). Se actualizó el system
+   prompt para mencionar la nueva capacidad explícitamente (mismo hallazgo de Retales: una tool
+   registrada pero no mencionada en el prompt es invisible para el modelo).
+
+Verificado en vivo: "Hablemos sobre todos los proyectos" ahora lista los 3 proyectos reales del
+taller demo con cliente/material/estado/avance. Commit `d6e0324`, subido y desplegado a producción
+(backend + frontend).
+
+---
+
 ## ✅ Hecho (2026-09-16, mismo día) — Esfera líquida de marca para los estados de Cost
 
 El fundador dio el enlace real del editor (github.com/LerSent001/orb, MIT) con un preset exacto por
