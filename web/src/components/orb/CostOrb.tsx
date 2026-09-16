@@ -173,6 +173,13 @@ export function CostOrb({
 
       function cuadro(ahora: number) {
         if (detenido) return
+        // Sin la pestaña visible (cambiaste a otra, o el chat quedó abierto
+        // toda la tarde sin nadie mirando), seguir pintando 60fps no le sirve
+        // a nadie — solo gasta batería/GPU de gusto. `requestAnimationFrame`
+        // ya se pausa solo cuando la pestaña pierde foco, pero esto cubre
+        // también el caso de estar en OTRA pestaña con esta igual en primer
+        // plano de la ventana.
+        if (document.hidden) { frameId = requestAnimationFrame(cuadro); return }
         const dpr = Math.min(window.devicePixelRatio || 1, 2)
         const ancho = Math.max(1, Math.floor(canvas!.clientWidth * dpr))
         const alto = Math.max(1, Math.floor(canvas!.clientHeight * dpr))
