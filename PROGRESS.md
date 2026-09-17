@@ -2,6 +2,69 @@
 
 ---
 
+## ✅ Hecho (2026-09-16, mismo día) — Desglose de costos profesional (Excel) + cuotas mensuales de consumo por empresa (Gemini/ElevenLabs)
+
+Tras cerrar el ciclo del render de cocina con IA, el fundador pidió dos cosas más el mismo día:
+(1) un desglose de costos profesional de Costo360 S.A.S. en Excel, con identidad de marca, pensando
+la empresa ya en operación; y (2) un ciclo real para parametrizar cuánto puede consumir cada
+taller/empresa por mes de las APIs de IA (mencionó específicamente Gemini y ElevenLabs), para que
+Costo360 nunca tenga una sorpresa de gasto a fin de mes.
+
+**Parte 1 — Excel de costos (`docs/Costo360_Desglose_Costos_Profesional.xlsx`, 11 hojas).**
+Regla de oro explícita del fundador para esta parte: solo lectura de archivos existentes, cero
+edición de código — el entregable es un archivo nuevo. Se leyó `docs/PLAN_COSTOS_COMPLETO_COSTO360.md`
+(fuente oficial) y se verificaron a mano con Python todos los números antes de construir nada. Se
+delegó la construcción real del `.xlsx` (openpyxl, identidad de marca real — esmeralda/dorado/logo,
+fórmulas enlazadas entre hojas, cero texto corrupto) a un agente Document Generator, verificado de
+forma independiente por esta sesión en cada entrega (nunca se confió solo en el reporte del agente).
+Estructura: Portada, Resumen Ejecutivo, Costos Directos (COGS), Precios Unitarios y Cantidades,
+Costos Indirectos (OpEx), Impuestos y Tasas (RST/IVA/GMF), Reservas de Contingencia, Estado de
+Resultados, Actualización Operativa Sept-2026 (impacto real de los 2 productos nuevos — render de
+cocina y voz — que el modelo oficial de agosto no incluía), Simulación de Consumo Exagerado por API
+(empresa grande, pedida por el fundador en un mensaje aparte), y un Glosario de 21 términos en
+lenguaje simple (pedido también aparte). **Hallazgo real de esta parte**: se detectó y se le
+encontró útil al fundador durante las pruebas del ciclo 2 (ver abajo) que Cost usa Gemini 3.5 Flash
+directamente, no el stack "Claude Sonnet 5 + Fable + Gemini orquestador" que asume ese documento
+oficial — el costo real es ~7,5x más barato de lo presupuestado ahí.
+
+**Parte 2 — Cuotas mensuales de consumo por empresa (ciclo formal con `/goal`, planificado con
+`EnterPlanMode` antes de tocar código).** Investigación primero: se confirmó que hoy NO existe
+ningún control de consumo mensual real para Gemini (`backend/agente/runtime.py`) ni ElevenLabs
+(`backend/routers/voz.py`) — solo un limitador de velocidad por IP (`@limiter.limit`), que además
+comparte balde entre los 10 usuarios de una misma empresa grande si están detrás de la misma IP de
+oficina, y que en el caso de ElevenLabs es una cuenta compartida entre TODOS los clientes de
+Costo360 (10.000 créditos/mes hoy).
+
+Decisiones tomadas con el fundador antes de programar: medición con tokens/segundos REALES (nunca
+un conteo aproximado), bloqueo duro por función (no de toda la app) al superar el tope, con aviso
+temprano al 80% y un colchón de gracia del 20% (bloqueo real al 120%, no al 100% exacto, para no
+cortar a alguien a mitad de una tarea), y visibilidad para el propio taller en lenguaje simple
+("te quedan aproximadamente X interacciones/minutos este mes").
+
+**Construido:** migración `0012_consumo_api.sql` (tabla única `consumo_api`, generalizada para
+cualquier API medible — la "estandarización" pedida, en vez de una tabla por API — aplicada a
+producción con confirmación explícita), `backend/services/consumo_service.py` (tarifas reales de
+Gemini 3.5 Flash en un solo lugar, topes por defecto por plan editables sin redeploy vía
+`app_config`), enganchado en `runtime.py` (chequeo antes del loop de pasos, registro real de
+`usage_metadata` tras cada llamada) y `voz.py` (chequeo + estimación de segundos de audio), más
+`GET /api/consumo/resumen` nuevo.
+
+**Verificado en vivo de punta a punta, con la app real** (con una interrupción manejada con
+cuidado: se encontró la sesión del fundador activa en su celular a mitad de la prueba y se canceló
+de inmediato en vez de forzar el reclamo de sesión, hasta que él mismo confirmó que podía seguir):
+una conversación real con Cost quedó registrada con tokens/costo reales; bajar el tope a mano
+bloqueó a Cost con el mensaje humano exacto sin afectar el resto de la app; restaurar el tope lo
+volvió a dejar funcionando normal de inmediato (incluida una tool-call real); `GET
+/api/consumo/resumen` devolvió el resumen esperado. **Hallazgo real a revisar**: el tope por
+defecto de voz para Pro (500 créditos) da apenas ~30 segundos reales de voz al mes — deliberadamente
+conservador para proteger el pool compartido de ElevenLabs, pero casi inútil en la práctica; queda
+documentado para que el fundador lo suba cuando lo necesite (es un valor de `app_config`, no
+requiere redeploy).
+
+Commiteado a git local (sin pushear/desplegar todavía — pendiente decisión del fundador).
+
+---
+
 ## ✅ Hecho (2026-09-16, mismo día) — Objetivo nuevo: Render de cocina con IA (OpenAI) + 4 mejoras del fundador
 
 El fundador pidió planificar (con 4 agentes especializados en paralelo: AI Engineer, Prompt Engineer,
@@ -1526,14 +1589,33 @@ de este dominio, sin subir a GitHub todavía.
 
 ## 🔄 En progreso
 
+- **Cuotas de consumo por empresa (Gemini/ElevenLabs)** — implementado y verificado en vivo (ver
+  entrada de "Hecho" arriba), comiteado a git local. Pendiente real: revisar el tope de voz por
+  defecto de Pro (500 créditos ≈ 30 seg/mes, demasiado bajo para uso real) y decidir si/cuándo subir
+  el plan de ElevenLabs conforme entren clientes grandes reales.
 - **Render de cocina con IA (OpenAI)** — feature completa y verificada en gran parte en vivo (ver
-  entrada de "Hecho" arriba), pero: (1) nada de este objetivo está comiteado a git todavía; (2) las 2
-  mejoras visuales del último pedido (comparación antes/después, nuevo estado de carga) están
-  implementadas pero no probadas con una generación real de OpenAI (tiene costo real por llamada).
+  entrada de "Hecho" de esta misma fecha más abajo). Las 2 mejoras visuales del último pedido
+  (comparación antes/después, nuevo estado de carga) están implementadas pero no probadas con una
+  generación real de OpenAI (tiene costo real por llamada).
 
 ---
 
 ## 📋 Siguiente
+
+### Cuotas de consumo por empresa — pendientes inmediatos
+1. Decidir con el fundador si pushear y desplegar el ciclo completo (backend + migración ya aplicada
+   a producción).
+2. Revisar y probablemente subir el tope de voz por defecto (ver hallazgo arriba) antes de que un
+   cliente real lo note.
+3. Cuando haya más de 1-2 clientes usando la voz de Cost activamente, subir el plan real de
+   ElevenLabs — los topes por empresa solo evitan que UNA empresa se coma todo el pool compartido,
+   no resuelven que el pool total (10.000 créditos/mes) sea chico para varios clientes a la vez.
+4. Opcional a futuro: unificar `render_cocina`/`render_config` (OpenAI) al mismo esquema
+   `consumo_api`/`consumo_ia_config` — quedó anotado como candidato, no hecho en este ciclo.
+5. `docs/PLAN_COSTOS_COMPLETO_COSTO360.md` sigue asumiendo el stack "Claude Sonnet 5 + Fable +
+   Gemini orquestador" para Cost — el código real usa solo Gemini 3.5 Flash (~7,5x más barato). No se
+   corrigió ese documento (ya fue entregado); si se actualiza el modelo financiero alguna vez, tenerlo
+   en cuenta.
 
 ### Render de cocina con IA — pendientes inmediatos
 1. Decidir con el fundador si comitear, pushear y desplegar el feature completo (backend + frontend +
@@ -1603,4 +1685,4 @@ de este dominio, sin subir a GitHub todavía.
 
 ---
 
-*Última actualización: 2026-09-16*
+*Última actualización: 2026-09-17*

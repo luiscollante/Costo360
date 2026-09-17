@@ -31,10 +31,12 @@ import httpx
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import Response
 
+from backend.db.client import db_rls
 from backend.db.deps import verificar_dispositivo
 from backend.middleware.auth import get_current_user
 from backend.middleware.rate_limiter import limiter
 from backend.models.voz import HablarIn
+from backend.services import consumo_service
 from backend.services.voz_service import normalizar_para_voz
 
 router = APIRouter(prefix="/api/voz", tags=["voz"],
@@ -85,8 +87,9 @@ def _voice_id() -> str:
 
 @router.post("/hablar")
 @limiter.limit("30/hour")
-def hablar(request: Request, body: HablarIn, usuario=Depends(get_current_user)):
+def hablar(request: Request, body: HablarIn, conn=Depends(db_rls), usuario=Depends(get_current_user)):
     """Convierte el texto de un mensaje de Cost a voz. Devuelve el audio (mp3) directo."""
+    consumo_service.verificar_tope_voz(conn, usuario)
     api_key = _api_key()
     voice_id = _voice_id()
     texto_crudo = body.texto.strip()[:_MAX_CARACTERES]
@@ -104,13 +107,15 @@ def hablar(request: Request, body: HablarIn, usuario=Depends(get_current_user)):
         )
     if r.status_code != 200:
         raise HTTPException(status_code=502, detail="ElevenLabs no pudo generar el audio")
+    consumo_service.registrar_consumo_voz(conn, usuario, segundos_audio=consumo_service.estimar_segundos_tts(texto))
     return Response(content=r.content, media_type="audio/mpeg")
 
 
 @router.post("/escuchar")
 @limiter.limit("30/hour")
-async def escuchar(request: Request, file: UploadFile = File(...), usuario=Depends(get_current_user)):
+async def escuchar(request: Request, file: UploadFile = File(...), conn=Depends(db_rls), usuario=Depends(get_current_user)):
     """Transcribe un audio grabado en el navegador (el micrófono) a texto."""
+    consumo_service.verificar_tope_voz(conn, usuario)
     api_key = _api_key()
     audio = await file.read()
     if not audio:
@@ -126,4 +131,5 @@ async def escuchar(request: Request, file: UploadFile = File(...), usuario=Depen
         )
     if r.status_code != 200:
         raise HTTPException(status_code=502, detail="ElevenLabs no pudo transcribir el audio")
+    consumo_service.registrar_consumo_voz(conn, usuario, segundos_audio=consumo_service.estimar_segundos_stt(len(audio)))
     return {"texto": r.json().get("text", "")}
