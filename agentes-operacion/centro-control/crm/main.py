@@ -1,0 +1,179 @@
+from pathlib import Path
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError, OperationalError
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+
+from . import agent, auth, services
+from .config import ROOT, Settings
+from .db import Audit, Database, Message, Proposal, Session, Usage, now
+from .schemas import Chat, Change, Login, PARENTS, ProposalIn, SCHEMAS
+
+
+def create_app(settings=None):
+    settings = settings or Settings()
+    app = FastAPI(title='Costo360 · Centro de control interno', docs_url='/api/docs', redoc_url=None)
+    app.state.settings = settings
+    app.state.db = Database(settings.database)
+    app.state.agent = agent.Agent(app.state.db, settings)
+    gate = auth.RateGate()
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=['127.0.0.1', 'localhost', '[::1]'])
+
+    @app.middleware('http')
+    async def local_boundary(request: Request, call_next):
+        # Aplicación local deliberadamente no publicable. No confiar en X-Forwarded-For.
+        if request.client and request.client.host not in ('127.0.0.1', '::1', 'testclient'):
+            return JSONResponse({'detail': 'Este piloto solo permite conexiones locales.'}, 403)
+        if request.method not in ('GET', 'HEAD', 'OPTIONS'):
+            if request.headers.get('origin') not in settings.origins:
+                return JSONResponse({'detail': 'Origen no autorizado.'}, 403)
+            try:
+                size = int(request.headers.get('content-length', '0'))
+            except ValueError:
+                return JSONResponse({'detail': 'Tamaño inválido.'}, 400)
+            if size > 65536:
+                return JSONResponse({'detail': 'Solicitud demasiado grande.'}, 413)
+            body = await request.body()
+            if len(body) > 65536:
+                return JSONResponse({'detail': 'Solicitud demasiado grande.'}, 413)
+        response = await call_next(request)
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['Referrer-Policy'] = 'no-referrer'
+        response.headers['Cache-Control'] = 'no-store'
+        return response
+
+    @app.exception_handler(RequestValidationError)
+    async def invalid_request(request, exc):
+        fields = ', '.join('.'.join(str(x) for x in error['loc']) for error in exc.errors())
+        return JSONResponse({'detail': 'Revisa los campos de la solicitud: ' + fields}, 422)
+
+    @app.exception_handler(IntegrityError)
+    async def integrity(request, exc):
+        return JSONResponse({'detail': 'El cambio entra en conflicto con un registro existente. Actualiza la vista.'}, 409)
+
+    @app.exception_handler(OperationalError)
+    async def unavailable(request, exc):
+        return JSONResponse({'detail': 'El almacenamiento no está disponible temporalmente. No se confirmó el cambio.'}, 503)
+
+    @app.get('/api/health')
+    def health():
+        return {'status': 'ok', 'local_only': True, 'demo': settings.demo,
+                'gemini_configured': bool(settings.gemini_key and settings.gemini_model)}
+
+    @app.post('/api/login')
+    def login(body: Login, request: Request, response: Response):
+        gate.check('login:' + (request.client.host if request.client else 'local'))
+        token, csrf, user = auth.login(app.state.db, body.email, body.password)
+        response.set_cookie(auth.COOKIE, token, httponly=True, samesite='strict', max_age=28800, path='/api')
+        return {'user': auth.public_user(user), 'csrf': csrf}
+
+    @app.get('/api/me')
+    def me(request: Request, user=Depends(auth.current_user)):
+        return {'user': auth.public_user(user), 'csrf': request.state.csrf}
+
+    @app.post('/api/logout')
+    def logout(request: Request, response: Response, user=Depends(auth.current_user)):
+        with app.state.db.transaction(write=True) as session:
+            session.execute(delete(Session).where(Session.token_hash == auth.digest(request.cookies.get(auth.COOKIE, ''))))
+        response.delete_cookie(auth.COOKIE, path='/api')
+        return {'ok': True}
+
+    @app.get('/api/catalogue')
+    def catalogue(user=Depends(auth.current_user)):
+        return {kind: {'schema': cls.model_json_schema(), 'parent': PARENTS.get(kind)} for kind, cls in SCHEMAS.items()}
+
+    @app.get('/api/summary')
+    def summary(user=Depends(auth.current_user)):
+        with app.state.db.transaction() as session:
+            return services.summary(session)
+
+    @app.get('/api/records/{kind}')
+    def records(kind: str, q: str = Query('', max_length=160), parent_id: str | None = None,
+                archived: bool = False, offset: int = Query(0, ge=0), limit: int = Query(50, ge=1, le=100),
+                user=Depends(auth.current_user)):
+        with app.state.db.transaction() as session:
+            return services.list_records(session, kind, q, parent_id, archived, offset, limit)
+
+    @app.get('/api/records/{kind}/{record_id}')
+    def detail(kind: str, record_id: str, user=Depends(auth.current_user)):
+        with app.state.db.transaction() as session:
+            return services.snapshot(services.get_record(session, kind, record_id))
+
+    @app.post('/api/records/{kind}', status_code=201)
+    def create(kind: str, body: dict, user=Depends(auth.current_user)):
+        with app.state.db.transaction(write=True) as session:
+            return services.mutate(session, user, kind, 'crear', body)
+
+    @app.patch('/api/records/{kind}/{record_id}')
+    def edit(kind: str, record_id: str, body: Change, user=Depends(auth.current_user)):
+        with app.state.db.transaction(write=True) as session:
+            return services.mutate(session, user, kind, 'editar', body.data, record_id, body.version)
+
+    @app.get('/api/audit')
+    def audit(record_id: str | None = None, offset: int = Query(0, ge=0), user=Depends(auth.current_user)):
+        with app.state.db.transaction() as session:
+            query = select(Audit)
+            if record_id:
+                query = query.where(Audit.record_id == services.exact_id(record_id))
+            rows = session.scalars(query.order_by(Audit.created_at.desc()).offset(offset).limit(50)).all()
+            return [{'id': r.id, 'actor_id': r.actor_id, 'record_id': r.record_id, 'action': r.action,
+                     'origin': r.origin, 'before': r.before, 'after': r.after, 'created_at': r.created_at} for r in rows]
+
+    @app.get('/api/proposals')
+    def proposals(user=Depends(auth.current_user)):
+        with app.state.db.transaction() as session:
+            rows = session.scalars(select(Proposal).where(Proposal.actor_id == user.id).order_by(Proposal.created_at.desc()).limit(50)).all()
+            return [services.proposal_view(p) for p in rows]
+
+    @app.post('/api/proposals', status_code=201)
+    def propose(body: ProposalIn, user=Depends(auth.current_user)):
+        with app.state.db.transaction(write=True) as session:
+            return services.propose(session, user, body.kind, body.action, body.data,
+                                    str(body.record_id) if body.record_id else None, body.version, 'manual')
+
+    @app.post('/api/proposals/{proposal_id}/confirm')
+    def confirm(proposal_id: str, user=Depends(auth.current_user)):
+        with app.state.db.transaction(write=True) as session:
+            result = services.resolve(session, user, proposal_id, True)
+            # Hecho del servidor, no enviado por el navegador ni por el modelo.
+            if not session.scalar(select(Message).where(Message.actor_id == user.id, Message.text == f"Confirmación humana registrada: propuesta {proposal_id}.")):
+                session.add(Message(actor_id=user.id, role='model', text=f"Confirmación humana registrada: propuesta {proposal_id}.", evidence=[{'record_id': result['result']['id'], 'action': result['action']}]))
+            return result
+
+    @app.post('/api/proposals/{proposal_id}/reject')
+    def reject(proposal_id: str, user=Depends(auth.current_user)):
+        with app.state.db.transaction(write=True) as session:
+            return services.resolve(session, user, proposal_id, False)
+
+    @app.get('/api/agent/history')
+    def history(user=Depends(auth.current_user)):
+        return agent.history(app.state.db, user)
+
+    @app.post('/api/agent/chat')
+    async def chat(body: Chat, user=Depends(auth.current_user)):
+        gate.check('chat:' + user.id, limit=12, window=60)
+        return await app.state.agent.chat(user, body.message)
+
+    @app.get('/api/agent/status')
+    def agent_status(user=Depends(auth.current_user)):
+        with app.state.db.transaction() as session:
+            usage = session.get(Usage, now()[:10])
+            return {'configured': bool(settings.gemini_key and settings.gemini_model),
+                    'model': settings.gemini_model or None, 'daily_limit': settings.daily_calls,
+                    'calls_today': usage.calls if usage else 0, 'tools': list(agent.catalogue(user)),
+                    'policy_version': '2026-09-17.1', 'confirmation': 'Todas las escrituras requieren confirmación humana.'}
+
+    dist = ROOT / 'web' / 'dist'
+    if dist.exists():
+        app.mount('/assets', StaticFiles(directory=dist / 'assets'), name='assets')
+        @app.get('/')
+        def index():
+            return FileResponse(dist / 'index.html')
+        @app.get('/logo.png')
+        def logo():
+            return FileResponse(dist / 'logo.png')
+    return app
