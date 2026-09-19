@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Eye, EyeOff } from 'lucide-react'
 import { supabase } from '@/lib/supabaseClient'
 import Logo from '@/components/Logo'
 
 /**
  * Página a la que llega el enlace de invitación / restablecimiento de Supabase.
- * Supabase (con `detectSessionInUrl`) crea una sesión temporal de recuperación;
- * aquí la persona define su contraseña. Sirve tanto para "olvidé mi contraseña"
- * como para el primer acceso de un usuario invitado.
+ * El enlace trae los tokens en el fragmento de la URL (formato "implicit");
+ * aquí se arman a mano con `setSession()` y la persona define su contraseña.
+ * Sirve tanto para "olvidé mi contraseña" como para el primer acceso de un
+ * usuario invitado.
  */
 export default function ResetPasswordPage() {
   const navigate = useNavigate()
@@ -15,6 +17,8 @@ export default function ResetPasswordPage() {
   const [sinEnlace, setSinEnlace] = useState(false)
   const [password, setPassword] = useState('')
   const [password2, setPassword2] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showPassword2, setShowPassword2] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -106,26 +110,46 @@ export default function ResetPasswordPage() {
           <p className="text-sm text-brand-text-secondary text-center py-6">Validando el enlace…</p>
         ) : (
           <form onSubmit={submit} className="space-y-4">
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              aria-label="Nueva contraseña"
-              placeholder="Nueva contraseña"
-              autoComplete="new-password"
-              className="w-full bg-brand-input/80 border border-brand-border rounded-lg px-4 py-2.5 text-brand-text text-sm outline-none focus:border-brand-primary transition-all"
-              required
-            />
-            <input
-              type="password"
-              value={password2}
-              onChange={(e) => setPassword2(e.target.value)}
-              aria-label="Repite la contraseña"
-              placeholder="Repite la contraseña"
-              autoComplete="new-password"
-              className="w-full bg-brand-input/80 border border-brand-border rounded-lg px-4 py-2.5 text-brand-text text-sm outline-none focus:border-brand-primary transition-all"
-              required
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                aria-label="Nueva contraseña"
+                placeholder="Nueva contraseña"
+                autoComplete="new-password"
+                className="w-full bg-brand-input/80 border border-brand-border rounded-lg px-4 py-2.5 pr-10 text-brand-text text-sm outline-none focus:border-brand-primary transition-all"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-brand-text-secondary hover:text-brand-text transition-colors cursor-pointer"
+                aria-label="Mostrar u ocultar contraseña"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            <div className="relative">
+              <input
+                type={showPassword2 ? 'text' : 'password'}
+                value={password2}
+                onChange={(e) => setPassword2(e.target.value)}
+                aria-label="Repite la contraseña"
+                placeholder="Repite la contraseña"
+                autoComplete="new-password"
+                className="w-full bg-brand-input/80 border border-brand-border rounded-lg px-4 py-2.5 pr-10 text-brand-text text-sm outline-none focus:border-brand-primary transition-all"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword2(!showPassword2)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-brand-text-secondary hover:text-brand-text transition-colors cursor-pointer"
+                aria-label="Mostrar u ocultar contraseña"
+              >
+                {showPassword2 ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
             {error && <p role="alert" className="text-brand-danger text-xs text-center">{error}</p>}
             <button
               type="submit"
