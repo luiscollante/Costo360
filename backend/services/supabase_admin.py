@@ -43,12 +43,32 @@ def crear_usuario(email: str, app_metadata: dict, *, email_confirm: bool = True)
 
 
 def generar_enlace(email: str, tipo: str = "recovery") -> str:
-    """Genera un enlace de acción (recovery / invite / magiclink). Devuelve el action_link."""
+    """
+    Genera un enlace de acción (recovery / invite / magiclink). Devuelve el action_link.
+
+    Sin `redirect_to`, Supabase manda a la persona al "Site URL" configurado en
+    el proyecto (la raíz del sitio) en vez de a `/reset-password`, que es la
+    única pantalla que sabe leer el enlace y pedir la contraseña nueva —
+    encontrado al probar el correo real por primera vez.
+
+    IMPORTANTE: en este endpoint REST crudo (a diferencia del SDK de JS),
+    `redirect_to` va en el nivel superior del body, NO anidado bajo `options`
+    — verificado a mano contra la API real: `options.redirect_to` y
+    `options.redirectTo` se ignoran en silencio y Supabase cae de vuelta al
+    Site URL por defecto, sin ningún error.
+    """
+    # `.get(clave, default)` no aplica el default si la clave existe pero vacía
+    # (mismo bug ya encontrado en `email_service._from` con RESEND_FROM=).
+    frontend = (os.environ.get("FRONTEND_URL", "").strip() or "http://localhost:5173").rstrip("/")
     with httpx.Client(timeout=_TIMEOUT) as c:
         r = c.post(
             f"{_base()}/admin/generate_link",
             headers=_headers(),
-            json={"type": tipo, "email": email},
+            json={
+                "type": tipo,
+                "email": email,
+                "redirect_to": f"{frontend}/reset-password",
+            },
         )
     r.raise_for_status()
     data = r.json()
