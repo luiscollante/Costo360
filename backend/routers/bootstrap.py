@@ -18,7 +18,7 @@ from pydantic import BaseModel, field_validator
 
 from backend.db.client import db_service
 from backend.middleware.rate_limiter import limiter
-from backend.services import supabase_admin
+from backend.services import email_service, supabase_admin
 
 router = APIRouter(prefix="/api/bootstrap", tags=["bootstrap"])
 
@@ -90,6 +90,9 @@ def crear_empresa(
         )
         user_id = user.get("id") or user.get("user", {}).get("id")
         enlace = supabase_admin.generar_enlace(email, "recovery")
+        email_service.enviar_bienvenida_empresa(
+            email, body.admin_nombre.strip(), body.nombre, body.plan_codigo, enlace
+        )
     except Exception as e:
         print(f"[bootstrap] fallo al aprovisionar {email}: {e}", flush=True)
         # Compensación: si el auth.users llegó a crearse, borrarlo (cascada limpia

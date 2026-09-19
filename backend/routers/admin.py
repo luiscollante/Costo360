@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from backend.db.client import db_rls, db_service
 from backend.db.deps import require_gestion_usuarios, verificar_dispositivo
 from backend.middleware.rate_limiter import limiter
-from backend.services import supabase_admin
+from backend.services import email_service, supabase_admin
 
 router = APIRouter(prefix="/api/admin", tags=["admin"],
                    dependencies=[Depends(verificar_dispositivo)])
@@ -123,6 +123,9 @@ def invitar_usuario(
         )
         user_id = user.get("id") or user.get("user", {}).get("id")
         enlace = supabase_admin.generar_enlace(email, "recovery")
+        email_service.enviar_invitacion_usuario(
+            email, body.nombre_completo.strip(), usuario["empresa_nombre"], body.rol_codigo, enlace
+        )
     except Exception as e:
         print(f"[admin] fallo al invitar {email}: {e}", flush=True)
         if user_id:
