@@ -274,7 +274,14 @@ def _fila_render(r, empresa_id) -> dict:
         "error_detalle": r[8], "creado_en": r[9].isoformat() if r[9] else None,
     }
     if fila["imagen_url"]:
-        fila["imagen_url"] = storage_service.url_firmada(_BUCKET_SALIDA, fila["imagen_url"], empresa_id)
+        try:
+            fila["imagen_url"] = storage_service.url_firmada(_BUCKET_SALIDA, fila["imagen_url"], empresa_id)
+        except Exception:
+            # Si el archivo fue borrado de Storage o la URL no se puede generar,
+            # el render se muestra como fallido en vez de romper toda la lista.
+            fila["imagen_url"] = None
+            fila["estado"] = "fallido"
+            fila["error_detalle"] = fila["error_detalle"] or "La imagen generada ya no está disponible"
     fila["foto_cliente_url"] = None  # nunca se re-expone la foto del cliente por esta vía
     return fila
 
@@ -378,6 +385,15 @@ def generar_render(conn, usuario, *, cotizacion_id: int, material_id: int, super
             (str(e.detail), render_id),
         )
         raise
+    except Exception as e:
+        cur.execute(
+            "UPDATE render_cocina SET estado = 'fallido', error_detalle = %s WHERE id = %s",
+            (f"Error inesperado: {type(e).__name__}", render_id),
+        )
+        raise HTTPException(
+            status_code=502,
+            detail="No se pudo generar el render en este momento",
+        )
 
     log_accion(conn, "RENDER_COCINA_GENERAR",
                {"render_id": render_id, "cotizacion_id": cotizacion_id, "material_id": material_id},
@@ -388,6 +404,16 @@ def generar_render(conn, usuario, *, cotizacion_id: int, material_id: int, super
 
 def listar_renders(conn, empresa_id, cotizacion_id: int) -> list[dict]:
     cur = conn.cursor()
+    # Limpiar renders atascados en 'generando' por más de 5 minutos — si
+    # después de ese tiempo no se completó, algo falló y el usuario no debe
+    # ver "Generando…" indefinidamente.
+    cur.execute(
+        "UPDATE render_cocina SET estado = 'fallido', "
+        "error_detalle = 'Tiempo de generación agotado' "
+        "WHERE cotizacion_id = %s AND estado = 'generando' "
+        "AND creado_en < now() - interval '5 minutes'",
+        (cotizacion_id,),
+    )
     cur.execute(
         f"SELECT {_COLS_RENDER} FROM render_cocina WHERE cotizacion_id = %s ORDER BY creado_en DESC",
         (cotizacion_id,),
