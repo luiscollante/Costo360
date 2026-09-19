@@ -22,7 +22,10 @@ _PLAN_NOMBRE = {"starter": "Starter", "pro": "Pro", "enterprise": "Enterprise"}
 
 
 def _from() -> str:
-    return os.environ.get("RESEND_FROM", "Costo360 <no-responder@costo360.com>")
+    # `.get(..., default)` no aplica el default si la env existe pero está vacía
+    # (backend/.env deja `RESEND_FROM=` vacío a propósito cuando no se usa) — por
+    # eso se comprueba el valor ya leído, no solo la presencia de la clave.
+    return os.environ.get("RESEND_FROM", "").strip() or "Costo360 <no-responder@costo360.com>"
 
 
 def _enviar(destinatario: str, asunto: str, html: str) -> bool:
