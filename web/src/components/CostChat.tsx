@@ -11,6 +11,11 @@ import { resumirFila, etiquetaDePaso, dominioDePaso } from '@/lib/agenteFormato'
 import { hablar, escuchar } from '@/api/voz'
 import { showToast } from '@/lib/toast'
 
+function errDetalle(err: unknown, fallback: string): string {
+  const d = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+  return typeof d === 'string' ? d : fallback
+}
+
 const SUGERENCIAS = [
   'Lista las tareas del proyecto 8',
   'Crea una tarea llamada Revisar corte en el proyecto 8',
@@ -165,9 +170,9 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
       audio.onerror = () => { detenerVoz(); showToast('error', 'No se pudo reproducir la voz de Cost') }
       setVozEstado({ i, fase: 'sonando' })
       await audio.play()
-    } catch {
+    } catch (e) {
       detenerVoz()
-      showToast('error', 'No se pudo generar la voz de Cost')
+      showToast('error', errDetalle(e, 'No se pudo generar la voz de Cost'))
     }
   }
 
@@ -273,8 +278,13 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
       topeGrabacionRef.current = window.setTimeout(() => {
         if (mr.state !== 'inactive') mr.stop()
       }, _TOPE_GRABACION_MS)
-    } catch {
-      showToast('error', 'No se pudo acceder al micrófono')
+    } catch (e) {
+      const msg = e instanceof DOMException && e.name === 'NotAllowedError'
+        ? 'Permiso de micrófono denegado. Revisá la configuración de permisos del navegador.'
+        : e instanceof DOMException && e.name === 'NotFoundError'
+          ? 'No se detectó ningún micrófono en este dispositivo.'
+          : 'No se pudo acceder al micrófono'
+      showToast('error', msg)
     }
   }
 
