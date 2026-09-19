@@ -19,22 +19,41 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    // Espera a que Supabase procese el enlace (evento PASSWORD_RECOVERY o SIGNED_IN).
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) setListo(true)
-    })
-    supabase.auth.getSession().then(({ data }) => {
+    // El enlace de recovery/invitación que genera el Admin API de Supabase
+    // siempre viene en el formato "implicit" (tokens en el fragmento de la URL,
+    // #access_token=...&refresh_token=...) — el cliente de la app usa
+    // `flowType: 'pkce'` para el login normal (más seguro), que espera un
+    // `?code=` y no procesa ese fragmento solo con `detectSessionInUrl`. Por
+    // eso el enlace parecía "inválido" aunque estuviera perfectamente vigente
+    // — se arma la sesión a mano con `setSession()` en vez de depender de la
+    // detección automática.
+    let cancelado = false
+
+    async function procesarEnlace() {
+      const hash = window.location.hash.startsWith('#')
+        ? window.location.hash.slice(1)
+        : window.location.hash
+      const params = new URLSearchParams(hash)
+      const access_token = params.get('access_token')
+      const refresh_token = params.get('refresh_token')
+
+      if (access_token && refresh_token) {
+        const { error } = await supabase.auth.setSession({ access_token, refresh_token })
+        if (!cancelado && !error) {
+          setListo(true)
+          return
+        }
+      }
+      // Respaldo: por si ya había una sesión vigente por otra vía.
+      const { data } = await supabase.auth.getSession()
+      if (cancelado) return
       if (data.session) setListo(true)
-    })
-    // Si a los 6 s no hay sesión, el enlace no es válido (expirado / otro navegador).
-    const t = window.setTimeout(() => {
-      supabase.auth.getSession().then(({ data }) => {
-        if (!data.session) setSinEnlace(true)
-      })
-    }, 6000)
+      else setSinEnlace(true)
+    }
+
+    procesarEnlace()
     return () => {
-      data.subscription.unsubscribe()
-      window.clearTimeout(t)
+      cancelado = true
     }
   }, [])
 
