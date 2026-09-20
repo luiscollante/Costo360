@@ -2362,7 +2362,7 @@ function Step4Resultado({ dir }: { dir: number }) {
               className="grid grid-cols-3 gap-3 mb-8"
             >
               <MetricCard label="m² real" value={`${formatNum(resultado.m2_real)} m²`} />
-              <MetricCard label="Retal" value={formatCOP(resultado.retal)} />
+              <MetricCard label="Retal" value={`${formatNum(resultado.retal)} m²`} />
               <MetricCard label="Categoría" value={resultado.categoria} />
             </motion.div>
 
