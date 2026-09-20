@@ -542,106 +542,168 @@ def exportar_svg_a_pdf(svg_string: str) -> bytes:
 #   }
 # ══════════════════════════════════════════════════════════════════════════════
 
-def _guillotine_pack(bin_w: float, bin_h: float, items: list[dict]):
-    """
-    Guillotine 2D bin packing con Best Short Side Fit. Rota una pieza 90°
-    solo cuando es la única forma de que quepa en algún espacio libre —
-    nunca solo para ajustar mejor el hueco sobrante (ver nota más abajo).
-    Devuelve (placed, unplaced).
-      placed   = [{"nombre":str, "x":float, "y":float, "w":float, "h":float}, ...]
-      unplaced = [nombre, ...]
-    """
-    # Espacios libres: lista de rectángulos disponibles
-    free_rects = [{"x": 0.0, "y": 0.0, "w": bin_w, "h": bin_h}]
-    placed  = []
-    unplaced = []
+def _cabe(w, h, fr):
+    return w <= fr[2] + 1e-9 and h <= fr[3] + 1e-9
 
-    # Ordenar de mayor a menor área para mejor aprovechamiento
-    sorted_items = sorted(
-        items,
-        key=lambda it: it.get("largo", 0) * it.get("ancho", 0),
-        reverse=True,
+
+def _contenido(a, b):
+    """¿El rectángulo `a` cabe completo dentro de `b`? (mismo formato (x,y,w,h))."""
+    return (
+        a[0] >= b[0] - 1e-9 and a[1] >= b[1] - 1e-9
+        and a[0] + a[2] <= b[0] + b[2] + 1e-9
+        and a[1] + a[3] <= b[1] + b[3] + 1e-9
     )
 
+
+_ORDENES_PIEZAS = {
+    "area":        lambda it: it["largo"] * it["ancho"],
+    "lado_mayor":  lambda it: max(it["largo"], it["ancho"]),
+    "lado_menor":  lambda it: min(it["largo"], it["ancho"]),
+    "perimetro":   lambda it: it["largo"] + it["ancho"],
+}
+_HEURISTICAS_AJUSTE = ("bssf", "blsf", "baf", "bl")
+
+
+def _maxrects_pack(bin_w: float, bin_h: float, items: list[dict], orden: str, heuristica: str):
+    """
+    Maximal Rectangles bin packing (una sola configuración de orden +
+    heurística). A diferencia de Guillotine (que corta la lámina en 2
+    rectángulos EXCLUYENTES en cada paso), aquí los rectángulos libres
+    pueden solaparse entre sí — esto le permite recuperar espacio que
+    Guillotine pierde para siempre en cuanto hace un corte de lado a lado
+    (hallazgo real: una pieza larga y angosta que sí cabía quedaba
+    rechazada porque el corte anterior ya había "sellado" la única zona
+    donde cabía, aunque el área libre total alcanzaba de sobra).
+    Referencia: Jukka Jylanki, "A Thousand Ways to Pack the Bin" (2010).
+
+    Rota una pieza 90° solo cuando es la única forma de que quepa en algún
+    espacio libre — nunca solo para ajustar mejor el hueco sobrante (regla
+    del fundador: en piedra natural la dirección de la veta importa, y
+    rotar sin necesidad real no tiene sentido para el operario).
+
+    Devuelve (placed, unplaced) — mismo formato que antes.
+    """
+    free_rects = [(0.0, 0.0, bin_w, bin_h)]
+    placed = []
+    unplaced = []
+
+    sorted_items = sorted(items, key=_ORDENES_PIEZAS[orden], reverse=True)
+
     for item in sorted_items:
-        # iw = candidato eje X (ancho real de la pieza), ih = candidato eje Y
-        # (largo real) -- ver nota de convención de ejes en optimizar_corte_2d.
+        # iw = candidato eje X (ancho real), ih = candidato eje Y (largo
+        # real) -- ver nota de convención de ejes en optimizar_corte_2d.
         iw = float(item.get("ancho", 0))
         ih = float(item.get("largo", 0))
         if iw <= 0 or ih <= 0:
             unplaced.append(item.get("nombre", "?"))
             continue
 
-        best_rect  = None
-        best_score = float("inf")
-        best_rotated = False
+        cabe_sin_rotar = any(_cabe(iw, ih, fr) for fr in free_rects)
+        candidatos = [(False, (iw, ih))] if cabe_sin_rotar else [(False, (iw, ih)), (True, (ih, iw))]
 
-        # Nunca rotar una pieza salvo que sea la única forma de que quepa en
-        # algún espacio libre -- hallazgo real del fundador: la regla anterior
-        # (ajuste más ajustado, "Best Short Side Fit" puro) podía rotar una
-        # pieza sin ninguna ganancia real de aprovechamiento cuando no había
-        # otra pieza compitiendo por ese espacio, produciendo giros sin
-        # sentido para el operario. En piedra natural además importa la
-        # dirección de la veta, que un giro de 90° cambia. Probado sin pérdida
-        # de % de aprovechamiento en los casos de prueba usados para decidir
-        # este cambio (ver PROGRESS.md).
-        candidatos = [(0, (iw, ih)), (1, (ih, iw))]
-        cabe_sin_rotar = any(
-            iw <= fr["w"] + 1e-9 and ih <= fr["h"] + 1e-9 for fr in free_rects
-        )
-        if cabe_sin_rotar:
-            candidatos = [(0, (iw, ih))]
-
+        best = None  # (score, x, y, rotada, pw, ph)
         for fr in free_rects:
-            for rotado, (pw, ph) in candidatos:
-                if pw <= fr["w"] + 1e-9 and ph <= fr["h"] + 1e-9:
-                    # Short side fit score
-                    score = min(fr["w"] - pw, fr["h"] - ph)
-                    if score < best_score:
-                        best_score = score
-                        best_rect  = fr
-                        best_rotated = bool(rotado)
+            fx, fy, fw, fh = fr
+            for rotada, (pw, ph) in candidatos:
+                if pw > fw + 1e-9 or ph > fh + 1e-9:
+                    continue
+                if heuristica == "bssf":       # Best Short Side Fit
+                    score = min(fw - pw, fh - ph)
+                elif heuristica == "blsf":     # Best Long Side Fit
+                    score = max(fw - pw, fh - ph)
+                elif heuristica == "baf":      # Best Area Fit
+                    score = fw * fh - pw * ph
+                else:                          # "bl" -- Bottom-Left
+                    score = fy * 1_000_000 + fx
+                if best is None or score < best[0]:
+                    best = (score, fx, fy, rotada, pw, ph)
 
-        if best_rect is None:
+        if best is None:
             unplaced.append(item.get("nombre", "?"))
             continue
 
-        # Colocar la pieza
-        pw, ph = (ih, iw) if best_rotated else (iw, ih)
+        _, px, py, rotada, pw, ph = best
         placed.append({
-            "nombre":   item.get("nombre", "Pieza"),
-            "x":        best_rect["x"],
-            "y":        best_rect["y"],
-            "w":        pw,
-            "h":        ph,
-            "rotada":   best_rotated,
-            # Ancho/largo tal cual los tecleó la persona, independiente de si
-            # el algoritmo terminó rotando la pieza para que quepa mejor --
-            # la leyenda del plano usa estos 2, nunca "w"/"h" directo (bug
-            # real: mostraba Largo/Ancho cruzados en piezas rotadas).
+            "nombre": item.get("nombre", "Pieza"),
+            "x": px, "y": py, "w": pw, "h": ph,
+            "rotada": rotada,
+            # Ancho/largo tal cual los tecleó la persona, independiente de
+            # si el algoritmo terminó rotando la pieza -- la leyenda del
+            # plano usa estos 2, nunca "w"/"h" directo (bug real: mostraba
+            # Largo/Ancho cruzados en piezas rotadas).
             "ancho_original": iw,
             "largo_original": ih,
         })
 
-        # Guillotine split: dividir el espacio libre en dos nuevos rectángulos
-        bx, by, bw, bh = best_rect["x"], best_rect["y"], best_rect["w"], best_rect["h"]
+        # Recortar/podar cada rectángulo libre que el nuevo rectángulo
+        # colocado invade -- puede tocar varios a la vez (a diferencia de
+        # Guillotine, que solo modifica el rectángulo elegido).
+        rx0, ry0, rx1, ry1 = px, py, px + pw, py + ph
+        sobrevivientes, nuevos = [], []
+        for fr in free_rects:
+            fx, fy, fw, fh = fr
+            fx1, fy1 = fx + fw, fy + fh
+            ix0, iy0 = max(fx, rx0), max(fy, ry0)
+            ix1, iy1 = min(fx1, rx1), min(fy1, ry1)
+            if ix0 >= ix1 - 1e-9 or iy0 >= iy1 - 1e-9:
+                sobrevivientes.append(fr)  # no se tocan
+                continue
+            if rx0 > fx + 1e-9:
+                nuevos.append((fx, fy, rx0 - fx, fh))
+            if rx1 < fx1 - 1e-9:
+                nuevos.append((rx1, fy, fx1 - rx1, fh))
+            if ry0 > fy + 1e-9:
+                nuevos.append((fx, fy, fw, ry0 - fy))
+            if ry1 < fy1 - 1e-9:
+                nuevos.append((fx, ry1, fw, fy1 - ry1))
+        nuevos = [r for r in nuevos if r[2] > 1e-6 and r[3] > 1e-6]
 
-        # Regla de corte: eje más corto primero (mejor para cuadrados)
-        if bw - pw < bh - ph:
-            # Corte horizontal (arriba de la pieza)
-            r1 = {"x": bx,      "y": by + ph, "w": pw,      "h": bh - ph}
-            r2 = {"x": bx + pw, "y": by,      "w": bw - pw, "h": bh}
-        else:
-            # Corte vertical (a la derecha de la pieza)
-            r1 = {"x": bx + pw, "y": by, "w": bw - pw, "h": ph}
-            r2 = {"x": bx,      "y": by + ph, "w": bw,  "h": bh - ph}
+        # Poda de rectángulos redundantes (contenidos por completo en otro):
+        # un sobreviviente solo puede quedar contenido por un rect NUEVO (ya
+        # se sabía no-contenido entre sobrevivientes desde la vuelta
+        # anterior); un nuevo puede quedar contenido por un sobreviviente o
+        # por otro nuevo. Evita comparar todos-contra-todos en cada pieza
+        # (O(R²) completo era el cuello de botella real medido con pedidos
+        # grandes -- más de medio segundo por combinación con 500 piezas).
+        sobrevivientes = [s for s in sobrevivientes if not any(_contenido(s, n) for n in nuevos)]
+        nuevos_finales = []
+        for i, n in enumerate(nuevos):
+            if any(_contenido(n, s) for s in sobrevivientes):
+                continue
+            if any(j != i and _contenido(n, n2) for j, n2 in enumerate(nuevos)):
+                continue
+            nuevos_finales.append(n)
 
-        free_rects.remove(best_rect)
-        for nr in (r1, r2):
-            if nr["w"] > 1e-4 and nr["h"] > 1e-4:
-                free_rects.append(nr)
+        free_rects = sobrevivientes + nuevos_finales
 
     return placed, unplaced
+
+
+def _buscar_mejor_empaque(bin_w: float, bin_h: float, items: list[dict]):
+    """
+    Corre `_maxrects_pack` con 4 órdenes de piezas × 4 heurísticas de ajuste
+    (16 combinaciones) y se queda con la mejor, en este orden estricto de
+    desempate:
+      1) más piezas colocadas (la prioridad real del taller: que quepa el pedido)
+      2) mayor área usada (menos desperdicio)
+      3) menos piezas rotadas (nunca se rota "gratis" solo por rotar menos —
+         esto decide solo entre resultados ya empatados en 1) y 2))
+    Devuelve (placed, unplaced) de la mejor combinación.
+    """
+    if not items:
+        return [], []
+
+    mejor = None
+    for orden in _ORDENES_PIEZAS:
+        for heuristica in _HEURISTICAS_AJUSTE:
+            placed, unplaced = _maxrects_pack(bin_w, bin_h, items, orden, heuristica)
+            area_usada = sum(p["w"] * p["h"] for p in placed)
+            n_rotadas = sum(1 for p in placed if p["rotada"])
+            score = (-len(placed), -area_usada, n_rotadas)
+            if mejor is None or score < mejor[0]:
+                mejor = (score, placed, unplaced)
+
+    return mejor[1], mejor[2]
 
 
 # ── Paleta nesting ────────────────────────────────────────────────────────────
@@ -671,11 +733,16 @@ _NEST_STROKES = [
 ]
 
 
-# Topes anti-DoS sobre el algoritmo de empaquetado (~O(n²) sobre piezas expandidas,
-# `_guillotine_pack` recorre `free_rects` por cada pieza). Estimación razonada, no
-# medida con carga real: quedan muy por encima de un caso real de taller (rara vez
-# más de 20-50 piezas por lámina) — auditado en la Fase 2 del Ciclo 2 del Objetivo 5
-# (dominio Nesting del Agente de IA), ajustar aquí si una medición real lo justifica.
+# Topes anti-DoS sobre el algoritmo de empaquetado. `_buscar_mejor_empaque`
+# corre 16 combinaciones de `_maxrects_pack` (~O(n²) cada una sobre las
+# piezas expandidas). Medido con carga real (no solo estimado): las 16
+# combinaciones con 500 unidades pequeñas que sí llenan la lámina (el peor
+# caso real, más piezas → más rectángulos libres que revisar) tardan ~1.4 s
+# en total; un pedido típico de taller (20-50 piezas) tarda unos pocos
+# milisegundos. Quedan muy por encima de un caso real de taller — auditado
+# en la Fase 2 del Ciclo 2 del Objetivo 5 (dominio Nesting del Agente de IA)
+# y reverificado al mejorar el algoritmo (2026-09-19); ajustar aquí si una
+# medición real futura lo justifica.
 MAX_PIEZAS_DISTINTAS = 200
 MAX_UNIDADES_EXPANDIDAS = 500
 MAX_LARGO_NOMBRE_PIEZA = 60
@@ -778,7 +845,7 @@ def optimizar_corte_2d(placa_ancho: float, placa_alto: float, lista_piezas: list
             })
 
     # bin_w (eje X) = ancho real; bin_h (eje Y) = largo real.
-    placed, unplaced = _guillotine_pack(lamina_ancho, lamina_largo, items_expandidos)
+    placed, unplaced = _buscar_mejor_empaque(lamina_ancho, lamina_largo, items_expandidos)
 
     area_placa    = lamina_ancho * lamina_largo
     area_utilizada = sum(p["w"] * p["h"] for p in placed)
