@@ -453,7 +453,15 @@ function HistorialRow({ row, index }: { row: CotizacionResumen; index: number })
         <span className="min-w-0 font-mono text-xs text-brand-text-secondary tabular-nums">{formatFecha(row.fecha)}</span>
         <div className="min-w-0">
           <p className="font-mono text-sm text-brand-text tabular-nums truncate">{formatCOP(row.precio)}</p>
-          <p className="font-mono text-[10px] text-brand-text-secondary tabular-nums mt-0.5">{row.margen != null ? formatNum(row.margen, 1) : ''}%</p>
+          <p className="font-mono text-[10px] text-brand-text-secondary tabular-nums mt-0.5">
+            {row.margen != null ? formatNum(row.margen, 1) : ''}%
+            {/* Utilidad en pesos junto al %, solo para cotizaciones normales —
+                en AIU el margen se calcula distinto (Administración/Imprevistos/
+                Utilidad separados) y "precio - costo" daría un número falso. */}
+            {!isAIU && row.costo != null && (
+              <span className="text-brand-gold-text"> · {formatCOP(row.precio - row.costo)}</span>
+            )}
+          </p>
         </div>
         <EstadoBadge estado={row.estado} id={row.id} />
         <div className="ml-3">{acciones}</div>

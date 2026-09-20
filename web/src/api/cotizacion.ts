@@ -35,6 +35,7 @@ export interface CotizacionResumen {
   material: string
   tipo: string
   ml: number
+  costo: number | null
   precio: number
   margen: number
   estado: string

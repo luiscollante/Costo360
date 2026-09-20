@@ -117,7 +117,7 @@ def listar_historial(conn, usuario: dict, *, busqueda: str = "", estado: str = "
                       fecha_desde: str = "", fecha_hasta: str = "", limite: int = 200) -> list[dict]:
     restringido, uid = scope_propio(usuario)
     cur = conn.cursor()
-    cols = "id,numero,fecha,cliente,material,tipo,ml,precio,margen,estado"
+    cols = "id,numero,fecha,cliente,material,tipo,ml,costo,precio,margen,estado"
     condiciones, params = [], []
     if restringido:
         condiciones.append("usuario_id = %s")

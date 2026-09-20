@@ -1691,7 +1691,7 @@ function Step2Piezas({ dir }: { dir: number }) {
 // ─── Step 3 — Proyecto ────────────────────────────────────────────────────────
 
 function Step3Proyecto({ dir }: { dir: number }) {
-  const { proyecto, setProyecto, setPaso } = useWizardStore()
+  const { proyecto, setProyecto, setPaso, materiales, piezas } = useWizardStore()
 
   const [nombre, setNombre] = useState(proyecto.nombre_cliente)
   const [tipoProyecto, setTipoProyecto] = useState(proyecto.tipo_proyecto)
@@ -1704,6 +1704,52 @@ function Step3Proyecto({ dir }: { dir: number }) {
   const [incluirIva, setIncluirIva] = useState(proyecto.incluir_iva)
   const [inclusiones, setInclusiones] = useState<string[]>(proyecto.inclusiones ?? [])
   const [exclusiones, setExclusiones] = useState<string[]>(proyecto.exclusiones ?? [])
+
+  // Vista previa en pesos de la utilidad que representa el % de margen
+  // elegido -- pedido explícito del fundador: mientras arrastra el control,
+  // solo veía el número "40%" sin saber a cuántos pesos equivale. Llama al
+  // mismo cálculo real del backend (nunca se reimplementa la fórmula en el
+  // frontend) con un pequeño debounce, para no disparar una llamada por
+  // cada pixel que se mueve el slider.
+  const [previewUtilidad, setPreviewUtilidad] = useState<number | null>(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
+
+  useEffect(() => {
+    const mat = materiales[0]
+    if (!mat) return
+    setPreviewLoading(true)
+    const timer = setTimeout(async () => {
+      try {
+        const body = {
+          categoria: mat.cat,
+          referencia: mat.ref,
+          precio_m2: mat.precio_m2,
+          area_placa_comprada: materiales.reduce((s, m) => s + m.area_placa, 0),
+          materiales_lista: materiales,
+          piezas,
+          tipo_proyecto: tipoProyecto,
+          etapa_label: etapa,
+          nombre_cliente: nombre,
+          margen_pct: margen,
+          dias: parseInt(dias) || 2,
+          personas: parseInt(personas) || 2,
+          zocalo_activo: zocaloActivo,
+          zocalo_ml: parseFloat(zocaloMl) || 0,
+          incluir_iva: incluirIva,
+        }
+        const res = await calcularCotizacionDirecta(body)
+        setPreviewUtilidad(res.utilidad)
+      } catch {
+        // Vista previa best-effort -- si falla, simplemente no se muestra
+        // nada; el error real (si hay uno) lo reporta el botón "Generar".
+        setPreviewUtilidad(null)
+      } finally {
+        setPreviewLoading(false)
+      }
+    }, 400)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [margen, materiales, piezas])
 
   function handleNext() {
     setProyecto({
@@ -1828,6 +1874,16 @@ function Step3Proyecto({ dir }: { dir: number }) {
             <div className="flex justify-between text-[9px] text-brand-text-secondary font-mono mt-1">
               <span>5%</span>
               <span>80%</span>
+            </div>
+            <div className="mt-2 text-center">
+              {previewUtilidad != null ? (
+                <p className="font-mono text-xs text-brand-gold-text font-semibold tabular-nums">
+                  ≈ {formatCOP(previewUtilidad)} de utilidad
+                  {previewLoading && <span className="text-brand-text-secondary font-normal"> · actualizando…</span>}
+                </p>
+              ) : previewLoading ? (
+                <p className="text-xs text-brand-text-secondary">Calculando utilidad estimada…</p>
+              ) : null}
             </div>
           </div>
         </div>
@@ -2205,20 +2261,18 @@ function Step4Resultado({ dir }: { dir: number }) {
 
               <div className="mt-4 flex justify-center gap-6">
                 <div className="text-center">
+                  {/* Margen y Utilidad unidos en una sola tarjeta -- antes se
+                      veían como 2 datos sueltos y no quedaba claro que el %
+                      y el monto en pesos son la misma cosa expresada de 2
+                      formas (pedido explícito del fundador). */}
                   <div className="font-mono text-sm text-brand-gold-text font-bold">
                     {formatNum(resultado.margen_pct, 1)}%
                   </div>
-                  <div className="text-[9px] uppercase tracking-widest text-brand-text-secondary mt-0.5">
-                    Margen
-                  </div>
-                </div>
-                <div className="w-px bg-brand-border" />
-                <div className="text-center">
-                  <div className="font-mono text-sm text-brand-gold-text font-bold">
+                  <div className="font-mono text-[10px] text-brand-gold-text/80 tabular-nums">
                     {formatCOP(resultado.utilidad)}
                   </div>
                   <div className="text-[9px] uppercase tracking-widest text-brand-text-secondary mt-0.5">
-                    Utilidad
+                    Margen de utilidad
                   </div>
                 </div>
                 <div className="w-px bg-brand-border" />
