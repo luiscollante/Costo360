@@ -53,6 +53,7 @@ export interface CotizacionResult {
   c7_adicionales: number
   retal: number
   m2_real: number
+  area_placa: number
   categoria: string
 }
 

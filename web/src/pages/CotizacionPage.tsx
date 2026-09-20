@@ -1707,11 +1707,21 @@ function Step3Proyecto({ dir }: { dir: number }) {
 
   // Vista previa en pesos de la utilidad que representa el % de margen
   // elegido -- pedido explícito del fundador: mientras arrastra el control,
-  // solo veía el número "40%" sin saber a cuántos pesos equivale. Llama al
-  // mismo cálculo real del backend (nunca se reimplementa la fórmula en el
-  // frontend) con un pequeño debounce, para no disparar una llamada por
-  // cada pixel que se mueve el slider.
-  const [previewUtilidad, setPreviewUtilidad] = useState<number | null>(null)
+  // solo veía el número "40%" sin saber a cuántos pesos equivale.
+  //
+  // El costo (`costoTotalBase`) SÍ depende del backend (llamada real,
+  // debounced) porque depende de materiales/piezas/días/personas/zócalo --
+  // pero el costo NO depende del margen. Por eso el margen se saca de esa
+  // llamada: se pide el costo una sola vez por cambio de esos otros campos,
+  // y luego cada movimiento del slider se calcula al instante en el propio
+  // navegador con la misma fórmula exacta del motor real (nunca se
+  // reimplementa el motor completo, solo esta única cuenta):
+  //   margen = margen_pct/100; precio = costo/(1-margen); utilidad = precio-costo
+  //   (ver backend/motor/calculos.py, función que arma "precio_sugerido"/"utilidad")
+  // Antes se llamaba al backend completo en cada cambio de margen y la vista
+  // previa demoraba varios segundos en aparecer -- hallazgo real del
+  // fundador, se esperaba instantáneo al arrastrar.
+  const [costoTotalBase, setCostoTotalBase] = useState<number | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
 
   useEffect(() => {
@@ -1730,7 +1740,7 @@ function Step3Proyecto({ dir }: { dir: number }) {
           tipo_proyecto: tipoProyecto,
           etapa_label: etapa,
           nombre_cliente: nombre,
-          margen_pct: margen,
+          margen_pct: 40, // el costo no depende del margen -- valor fijo solo para esta llamada
           dias: parseInt(dias) || 2,
           personas: parseInt(personas) || 2,
           zocalo_activo: zocaloActivo,
@@ -1738,18 +1748,23 @@ function Step3Proyecto({ dir }: { dir: number }) {
           incluir_iva: incluirIva,
         }
         const res = await calcularCotizacionDirecta(body)
-        setPreviewUtilidad(res.utilidad)
+        setCostoTotalBase(res.costo_total)
       } catch {
         // Vista previa best-effort -- si falla, simplemente no se muestra
         // nada; el error real (si hay uno) lo reporta el botón "Generar".
-        setPreviewUtilidad(null)
+        setCostoTotalBase(null)
       } finally {
         setPreviewLoading(false)
       }
     }, 400)
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [margen, materiales, piezas])
+  }, [materiales, piezas, tipoProyecto, etapa, dias, personas, zocaloActivo, zocaloMl])
+
+  const previewUtilidad =
+    costoTotalBase != null
+      ? costoTotalBase / (1 - Math.min(99, Math.max(1, margen)) / 100) - costoTotalBase
+      : null
 
   function handleNext() {
     setProyecto({
@@ -2359,10 +2374,25 @@ function Step4Resultado({ dir }: { dir: number }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="grid grid-cols-3 gap-3 mb-8"
+              className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8"
             >
-              <MetricCard label="m² real" value={`${formatNum(resultado.m2_real)} m²`} />
-              <MetricCard label="Retal" value={`${formatNum(resultado.retal)} m²`} />
+              {/* Las 3 áreas juntas y explicadas -- antes solo se veían "m²
+                  real" y "Retal" sueltos, sin el área comprada de referencia,
+                  y por eso "Retal" podía verse mayor que "m² real" sin
+                  ninguna explicación (confuso, aunque matemáticamente
+                  correcto: si compraste una lámina completa y usaste solo
+                  una parte, el sobrante puede ser más grande que lo usado). */}
+              <MetricCard label="Área comprada" value={`${formatNum(resultado.area_placa)} m²`} />
+              <MetricCard
+                label="m² usados"
+                value={`${formatNum(resultado.m2_real)} m²`}
+                sub="lo que pidió el cliente"
+              />
+              <MetricCard
+                label="Retal"
+                value={`${formatNum(resultado.retal)} m²`}
+                sub={`de ${formatNum(resultado.area_placa)} m² comprados`}
+              />
               <MetricCard label="Categoría" value={resultado.categoria} />
             </motion.div>
 
@@ -2519,13 +2549,14 @@ function MetricCell({
   )
 }
 
-function MetricCard({ label, value }: { label: string; value: string }) {
+function MetricCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <Card className="p-4 text-center">
       <p className="text-[9px] uppercase tracking-[0.15em] text-brand-text-secondary mb-2 font-semibold">
         {label}
       </p>
       <p className="font-mono text-sm font-bold text-brand-text">{value}</p>
+      {sub && <p className="text-[9px] text-brand-text-secondary mt-1">{sub}</p>}
     </Card>
   )
 }
