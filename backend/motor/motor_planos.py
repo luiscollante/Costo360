@@ -544,7 +544,9 @@ def exportar_svg_a_pdf(svg_string: str) -> bytes:
 
 def _guillotine_pack(bin_w: float, bin_h: float, items: list[dict]):
     """
-    Guillotine 2D bin packing con Best Short Side Fit y rotación libre.
+    Guillotine 2D bin packing con Best Short Side Fit. Rota una pieza 90°
+    solo cuando es la única forma de que quepa en algún espacio libre —
+    nunca solo para ajustar mejor el hueco sobrante (ver nota más abajo).
     Devuelve (placed, unplaced).
       placed   = [{"nombre":str, "x":float, "y":float, "w":float, "h":float}, ...]
       unplaced = [nombre, ...]
@@ -562,8 +564,10 @@ def _guillotine_pack(bin_w: float, bin_h: float, items: list[dict]):
     )
 
     for item in sorted_items:
-        iw = float(item.get("largo", 0))
-        ih = float(item.get("ancho", 0))
+        # iw = candidato eje X (ancho real de la pieza), ih = candidato eje Y
+        # (largo real) -- ver nota de convención de ejes en optimizar_corte_2d.
+        iw = float(item.get("ancho", 0))
+        ih = float(item.get("largo", 0))
         if iw <= 0 or ih <= 0:
             unplaced.append(item.get("nombre", "?"))
             continue
@@ -572,8 +576,24 @@ def _guillotine_pack(bin_w: float, bin_h: float, items: list[dict]):
         best_score = float("inf")
         best_rotated = False
 
+        # Nunca rotar una pieza salvo que sea la única forma de que quepa en
+        # algún espacio libre -- hallazgo real del fundador: la regla anterior
+        # (ajuste más ajustado, "Best Short Side Fit" puro) podía rotar una
+        # pieza sin ninguna ganancia real de aprovechamiento cuando no había
+        # otra pieza compitiendo por ese espacio, produciendo giros sin
+        # sentido para el operario. En piedra natural además importa la
+        # dirección de la veta, que un giro de 90° cambia. Probado sin pérdida
+        # de % de aprovechamiento en los casos de prueba usados para decidir
+        # este cambio (ver PROGRESS.md).
+        candidatos = [(0, (iw, ih)), (1, (ih, iw))]
+        cabe_sin_rotar = any(
+            iw <= fr["w"] + 1e-9 and ih <= fr["h"] + 1e-9 for fr in free_rects
+        )
+        if cabe_sin_rotar:
+            candidatos = [(0, (iw, ih))]
+
         for fr in free_rects:
-            for rotado, (pw, ph) in enumerate([(iw, ih), (ih, iw)]):
+            for rotado, (pw, ph) in candidatos:
                 if pw <= fr["w"] + 1e-9 and ph <= fr["h"] + 1e-9:
                     # Short side fit score
                     score = min(fr["w"] - pw, fr["h"] - ph)
@@ -595,6 +615,12 @@ def _guillotine_pack(bin_w: float, bin_h: float, items: list[dict]):
             "w":        pw,
             "h":        ph,
             "rotada":   best_rotated,
+            # Ancho/largo tal cual los tecleó la persona, independiente de si
+            # el algoritmo terminó rotando la pieza para que quepa mejor --
+            # la leyenda del plano usa estos 2, nunca "w"/"h" directo (bug
+            # real: mostraba Largo/Ancho cruzados en piezas rotadas).
+            "ancho_original": iw,
+            "largo_original": ih,
         })
 
         # Guillotine split: dividir el espacio libre en dos nuevos rectángulos
@@ -711,11 +737,20 @@ def optimizar_corte_2d(placa_ancho: float, placa_alto: float, lista_piezas: list
     """
     Ejecuta el algoritmo Guillotine 2D sobre la lámina indicada y genera el SVG.
 
-    Parámetros:
-        placa_ancho   float  — ancho de la placa (eje X), en metros
-        placa_alto    float  — alto de la placa (eje Y), en metros
+    Parámetros (nombres heredados; ver nota de convención de ejes abajo):
+        placa_ancho   float  — 1er argumento posicional
+        placa_alto    float  — 2do argumento posicional
         lista_piezas  list   — [{"nombre": str, "largo": float, "ancho": float}, ...]
                                (puede incluir "cantidad": int, default 1)
+
+    Convención de ejes (pedida por el fundador, 2026-09-19): el LARGO va
+    siempre en el eje Y (vertical) y el ANCHO en el eje X (horizontal), tanto
+    para la lámina como para cada pieza. Los 2 llamadores reales de esta
+    función (`routers/nesting.py`, `agente/tools/nesting.py`) pasan siempre
+    (largo, ancho) en ese orden posicional -- es decir, pese a sus nombres,
+    `placa_ancho` recibe en la práctica el LARGO y `placa_alto` recibe el
+    ANCHO. Se traduce aquí, en el único punto de entrada, sin tocar esos 2
+    llamadores ni la firma pública de esta función.
 
     Retorna:
         (svg_string: str, metricas: dict)
@@ -727,6 +762,9 @@ def optimizar_corte_2d(placa_ancho: float, placa_alto: float, lista_piezas: list
             "piezas_no_caben":        list[str],
         }
     """
+    lamina_largo = placa_ancho
+    lamina_ancho = placa_alto
+
     # Expandir por cantidad
     items_expandidos = []
     for p in lista_piezas:
@@ -739,9 +777,10 @@ def optimizar_corte_2d(placa_ancho: float, placa_alto: float, lista_piezas: list
                 "ancho":  float(p.get("ancho", 0)),
             })
 
-    placed, unplaced = _guillotine_pack(placa_ancho, placa_alto, items_expandidos)
+    # bin_w (eje X) = ancho real; bin_h (eje Y) = largo real.
+    placed, unplaced = _guillotine_pack(lamina_ancho, lamina_largo, items_expandidos)
 
-    area_placa    = placa_ancho * placa_alto
+    area_placa    = lamina_ancho * lamina_largo
     area_utilizada = sum(p["w"] * p["h"] for p in placed)
     pct_retal     = max(0.0, (1 - area_utilizada / area_placa) * 100) if area_placa > 0 else 0.0
 
@@ -753,7 +792,7 @@ def optimizar_corte_2d(placa_ancho: float, placa_alto: float, lista_piezas: list
         "piezas_no_caben":        unplaced,
     }
 
-    svg = _generar_svg_nesting(placa_ancho, placa_alto, placed, unplaced, metricas)
+    svg = _generar_svg_nesting(lamina_ancho, lamina_largo, placed, unplaced, metricas)
     return svg, metricas
 
 
@@ -853,7 +892,7 @@ def _generar_svg_nesting(
         f'<tspan font-size="12" font-weight="bold" fill="#FFFFFF">NESTING 2D</tspan>'
         f'<tspan font-size="11" fill="{_DORADO}"> · </tspan>'
         f'<tspan font-size="11" fill="#FFFFFF" opacity="0.75">'
-        f'Placa {placa_ancho:.2f} × {placa_alto:.2f} m</tspan>'
+        f'Placa {placa_alto:.2f} × {placa_ancho:.2f} m</tspan>'
         f'</text>'
         f'<text x="{canvas_w - 12:.0f}" y="19" text-anchor="end" '
         f'font-family="Helvetica,Arial,sans-serif" font-size="9" fill="{_DORADO}" opacity="0.85">'
@@ -971,7 +1010,7 @@ def _generar_svg_nesting(
         f'<text x="{ox + 7:.1f}" y="{oy + 15:.1f}" '
         f'font-family="Helvetica,Arial,sans-serif" font-size="10" '
         f'fill="#5FA37D" opacity="0.70">'
-        f'Placa {placa_ancho:.2f}×{placa_alto:.2f} m  ({metricas["area_placa"]:.2f} m²)'
+        f'Placa {placa_alto:.2f}×{placa_ancho:.2f} m  ({metricas["area_placa"]:.2f} m²)'
         f'</text>'
     )
 
@@ -1182,8 +1221,13 @@ def _generar_svg_nesting(
             _nom_ley = f"Pieza {num}"
         if p.get("rotada"):
             _nom_ley += " ↺"
-        largo_m = p["w"]
-        ancho_m = p["h"]
+        # Siempre el largo/ancho tal cual los tecleó la persona -- "w"/"h" son
+        # la extensión ya dibujada (X/Y), que se intercambia con "w"/"h" en
+        # piezas rotadas y por eso NO sirve para esta columna (bug real
+        # reportado por el fundador: la tabla mostraba Largo/Ancho cruzados
+        # justo en las piezas que el algoritmo rotó).
+        largo_m = p["largo_original"]
+        ancho_m = p["ancho_original"]
         area_m2 = largo_m * ancho_m
 
         _row_y  = _hdr_y + LEY_HEADER_H + idx * LEY_ROW_H
