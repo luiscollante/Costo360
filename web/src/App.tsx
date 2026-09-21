@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/auth'
 import { homeDeRol } from '@/lib/capabilities'
 import LoginPage from '@/pages/LoginPage'
 import ResetPasswordPage from '@/pages/ResetPasswordPage'
+import CheckoutPage from '@/pages/CheckoutPage'
 import DashboardPage from '@/pages/DashboardPage'
 import CotizacionPage from '@/pages/CotizacionPage'
 import HistorialPage from '@/pages/HistorialPage'
@@ -102,6 +103,7 @@ export default function App() {
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/dashboard" element={<Private><RoleRoute><DashboardPage /></RoleRoute></Private>} />
               <Route path="/cotizacion" element={<Private><CotizacionPage /></Private>} />
               <Route path="/express" element={<Private><CotizacionExpressPage /></Private>} />

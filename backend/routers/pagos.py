@@ -41,6 +41,46 @@ router = APIRouter(prefix="/api/pagos", tags=["pagos"])
 
 
 # ══════════════════════════════════════════════════════════════════════════
+# GET /planes
+# ══════════════════════════════════════════════════════════════════════════
+
+@router.get("/planes")
+@limiter.limit("30/minute")
+def listar_planes(request: Request, conn=Depends(db_service)):
+    """Público -- el checkout todavía no tiene sesión de usuario. Mismos datos
+    que ya son públicos en la landing (precio de cada plan)."""
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT codigo, nombre, precio_mensual_cop, cupo_usuarios FROM planes ORDER BY precio_mensual_cop"
+    )
+    filas = cur.fetchall()
+    cur.close()
+    return [
+        {"codigo": codigo, "nombre": nombre, "precio_mensual_cop": float(precio), "cupo_usuarios": cupo}
+        for codigo, nombre, precio, cupo in filas
+    ]
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# GET /estado/{reference}
+# ══════════════════════════════════════════════════════════════════════════
+
+@router.get("/estado/{reference}")
+@limiter.limit("60/minute")
+def estado_pago(request: Request, reference: str, conn=Depends(db_service)):
+    """Público -- el frontend hace polling de esto mientras espera la
+    confirmación asíncrona del webhook. Nunca devuelve el enlace de acceso
+    (eso solo llega por correo) -- solo el estado, para pintar la pantalla."""
+    cur = conn.cursor()
+    cur.execute("SELECT estado FROM solicitudes_pago WHERE reference = %s", (reference,))
+    row = cur.fetchone()
+    cur.close()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Solicitud de pago no encontrada")
+    return {"estado": row[0]}
+
+
+# ══════════════════════════════════════════════════════════════════════════
 # POST /iniciar
 # ══════════════════════════════════════════════════════════════════════════
 
@@ -85,6 +125,18 @@ def iniciar_pago(request: Request, body: IniciarPagoIn, conn=Depends(db_service)
         cur.close()
         raise HTTPException(status_code=422, detail="Plan no encontrado")
     monto_cop = row[0]  # SIEMPRE del catálogo -- nunca del cliente
+
+    # Verificado en vivo (2026-09-20): sin este chequeo, alguien con un correo
+    # ya registrado (p. ej. una cuenta demo previa) podía pagar de verdad y
+    # solo ENTONCES enterarse de que el aprovisionamiento falla -- nunca cobrar
+    # antes de saber que la cuenta se puede crear.
+    cur.execute("SELECT 1 FROM auth.users WHERE lower(email) = %s", (body.admin_email,))
+    if cur.fetchone() is not None:
+        cur.close()
+        raise HTTPException(
+            status_code=409,
+            detail="Ya existe una cuenta de Costo360 con este correo. Inicia sesión o usa otro correo.",
+        )
 
     reference = f"costo360-{uuid.uuid4().hex}"
     cur.execute(
@@ -132,17 +184,29 @@ class CobrarIn(BaseModel):
 def cobrar(request: Request, body: CobrarIn, conn=Depends(db_service)):
     cur = conn.cursor()
     cur.execute(
-        "SELECT admin_email, monto_cop, estado FROM solicitudes_pago WHERE reference = %s",
+        "SELECT admin_email, monto_cop, estado, payment_source_id FROM solicitudes_pago WHERE reference = %s",
         (body.reference,),
     )
     row = cur.fetchone()
     if row is None:
         cur.close()
         raise HTTPException(status_code=404, detail="Solicitud de pago no encontrada")
-    email, monto_cop, estado = row
+    email, monto_cop, estado, payment_source_id_previo = row
     if estado != "pendiente":
         cur.close()
         raise HTTPException(status_code=409, detail="Esta solicitud ya fue procesada")
+    if payment_source_id_previo:
+        # Ya se disparó un cobro para esta reference (el campo se guarda ANTES
+        # de cobrar, ver abajo) -- el webhook todavía no confirmó el resultado.
+        # Verificado en vivo (2026-09-20): el frontend puede agotar su timeout
+        # mientras Wompi sigue procesando y el cobro igual queda APPROVED del
+        # lado de Wompi -- sin este bloqueo, un reintento del usuario dispara
+        # un SEGUNDO cobro real por la misma solicitud.
+        cur.close()
+        raise HTTPException(
+            status_code=409,
+            detail="Ya se envió un cobro para esta solicitud. Espera un momento a que se confirme antes de reintentar.",
+        )
 
     try:
         fuente = wompi_service.crear_payment_source(
@@ -265,7 +329,20 @@ async def webhook_wompi(request: Request, conn=Depends(db_service)):
             origen="pago_wompi",
         )
     except AprovisionamientoError as e:
-        print(f"[pagos] pago APPROVED pero aprovisionamiento falló para reference={reference}: {e} -- revisar a mano", flush=True)
+        print(f"[pagos] pago APPROVED pero aprovisionamiento falló para reference={reference}: {e} -- revisar a mano, YA SE COBRÓ", flush=True)
+        # Sin esto la solicitud quedaba 'pendiente' para siempre -- el
+        # frontend nunca sale de "seguimos confirmando" y Wompi no reintenta
+        # el webhook porque ya respondimos 200. Se marca 'fallido' para que la
+        # pantalla al menos muestre un resultado claro; el dinero ya cobrado
+        # y sin cuenta creada queda para revisión manual (log de arriba).
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE solicitudes_pago SET estado = 'fallido', resuelta_en = now() "
+            "WHERE reference = %s AND estado = 'pendiente'",
+            (reference,),
+        )
+        cur.close()
+        conn.commit()
         return {"ok": True}
 
     cur = conn.cursor()

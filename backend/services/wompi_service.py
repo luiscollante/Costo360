@@ -79,13 +79,16 @@ def verificar_checksum_evento(payload: dict) -> bool:
     Algoritmo real de Wompi: tomar los valores de los campos listados en
     `payload["signature"]["properties"]` (en ESE orden, son rutas tipo
     "transaction.id" dentro de payload["data"]), concatenarlos, agregar
-    `payload["signature"]["timestamp"]`, agregar el secreto de eventos, y
-    sacar SHA256. Comparación en tiempo constante contra
-    `payload["signature"]["checksum"]` (evita timing attacks).
+    `payload["timestamp"]` (campo del NIVEL RAÍZ del payload, hermano de
+    "signature" -- NO anidado dentro de "signature", a diferencia de
+    "properties"/"checksum" -- verificado empíricamente contra un webhook real
+    simulado, la confusión inicial hacía que el checksum nunca coincidiera),
+    agregar el secreto de eventos, y sacar SHA256. Comparación en tiempo
+    constante contra `payload["signature"]["checksum"]` (evita timing attacks).
     """
     firma = payload.get("signature") or {}
     properties = firma.get("properties") or []
-    timestamp = firma.get("timestamp")
+    timestamp = payload.get("timestamp")
     checksum_recibido = firma.get("checksum")
     if not properties or timestamp is None or not checksum_recibido:
         return False
@@ -141,6 +144,12 @@ def cobrar_con_payment_source(
         "customer_email": email,
         "reference": reference,
         "payment_source_id": payment_source_id,
+        # Wompi exige estos 2 campos también al cobrar con payment_source_id
+        # (no solo en el checkout widget) -- verificado empíricamente contra el
+        # sandbox real, la documentación no lo deja claro. "installments": 1
+        # porque no ofrecemos cuotas para una suscripción mensual.
+        "payment_method": {"installments": 1},
+        "signature": firma_integridad(reference, monto_cop, "COP"),
     }
     if recurrente:
         body["recurrent"] = True
