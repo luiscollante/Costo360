@@ -1,0 +1,294 @@
+"""
+Pagos con Wompi — checkout, cobro y webhook de confirmación (Paso 3 del
+ciclo de aprovisionamiento automático). Ciclo /goal formal, plan auditado
+por un Security Engineer antes de escribir este archivo.
+
+3 endpoints, todos públicos (sin sesión de usuario — nadie tiene cuenta
+todavía en este flujo):
+  POST /api/pagos/iniciar        — arma el checkout (el monto SIEMPRE se
+                                    resuelve aquí desde `planes`, nunca se
+                                    confía en lo que mande el navegador).
+  POST /api/pagos/cobrar         — el frontend ya tokenizó la tarjeta
+                                    contra Wompi directo (nunca pasa por
+                                    aquí); este endpoint crea el
+                                    payment_source y dispara el primer cobro.
+  POST /api/pagos/webhook/wompi  — Wompi confirma el resultado real del
+                                    pago; SOLO aquí se aprovisiona la
+                                    empresa. Nunca confiar en la respuesta
+                                    síncrona de /cobrar como la verdad
+                                    final (así lo indica la propia
+                                    documentación de Wompi).
+"""
+import re
+import uuid
+from datetime import date, timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel, field_validator
+
+_RE_EMAIL = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+
+from backend.db.client import db_service
+from backend.middleware.rate_limiter import limiter
+from backend.services import wompi_service
+from backend.services.aprovisionamiento_service import (
+    PLANES_VALIDOS,
+    AprovisionamientoError,
+    aprovisionar_empresa,
+)
+
+router = APIRouter(prefix="/api/pagos", tags=["pagos"])
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# POST /iniciar
+# ══════════════════════════════════════════════════════════════════════════
+
+class IniciarPagoIn(BaseModel):
+    nombre_empresa: str
+    nit: str | None = None
+    plan_codigo: str
+    admin_email: str
+    admin_nombre: str = ""
+
+    @field_validator("plan_codigo")
+    @classmethod
+    def _plan_valido(cls, v: str) -> str:
+        if v not in PLANES_VALIDOS:
+            raise ValueError("plan_codigo inválido")
+        return v
+
+    @field_validator("nombre_empresa")
+    @classmethod
+    def _nombre_no_vacio(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 200:
+            raise ValueError("nombre de empresa inválido")
+        return v
+
+    @field_validator("admin_email")
+    @classmethod
+    def _email_valido(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not _RE_EMAIL.fullmatch(v) or len(v) > 254:
+            raise ValueError("correo inválido")
+        return v
+
+
+@router.post("/iniciar", status_code=201)
+@limiter.limit("5/hour")
+def iniciar_pago(request: Request, body: IniciarPagoIn, conn=Depends(db_service)):
+    cur = conn.cursor()
+    cur.execute("SELECT precio_mensual_cop FROM planes WHERE codigo = %s", (body.plan_codigo,))
+    row = cur.fetchone()
+    if row is None:
+        cur.close()
+        raise HTTPException(status_code=422, detail="Plan no encontrado")
+    monto_cop = row[0]  # SIEMPRE del catálogo -- nunca del cliente
+
+    reference = f"costo360-{uuid.uuid4().hex}"
+    cur.execute(
+        "INSERT INTO solicitudes_pago "
+        "(reference, plan_codigo, nombre_empresa, nit, admin_email, admin_nombre, monto_cop) "
+        "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+        (
+            reference, body.plan_codigo, body.nombre_empresa,
+            (body.nit or "").strip() or None,
+            body.admin_email.lower(), body.admin_nombre.strip(), monto_cop,
+        ),
+    )
+    cur.close()
+    conn.commit()
+
+    try:
+        return {
+            "reference": reference,
+            "amount_in_cents": wompi_service.amount_in_cents(monto_cop),
+            "currency": "COP",
+            "public_key": wompi_service.llave_publica(),
+            "signature_integrity": wompi_service.firma_integridad(reference, monto_cop),
+        }
+    except RuntimeError:
+        # Las 4 llaves de Wompi todavía no están configuradas en este
+        # entorno -- la solicitud ya quedó guardada (queda "pendiente" hasta
+        # que expire), pero no hay nada que devolverle al frontend para
+        # armar el checkout.
+        raise HTTPException(status_code=503, detail="Los pagos no están habilitados en este entorno todavía")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# POST /cobrar
+# ══════════════════════════════════════════════════════════════════════════
+
+class CobrarIn(BaseModel):
+    reference: str
+    token: str
+    acceptance_token: str
+    accept_personal_auth: str
+
+
+@router.post("/cobrar")
+@limiter.limit("10/hour")
+def cobrar(request: Request, body: CobrarIn, conn=Depends(db_service)):
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT admin_email, monto_cop, estado FROM solicitudes_pago WHERE reference = %s",
+        (body.reference,),
+    )
+    row = cur.fetchone()
+    if row is None:
+        cur.close()
+        raise HTTPException(status_code=404, detail="Solicitud de pago no encontrada")
+    email, monto_cop, estado = row
+    if estado != "pendiente":
+        cur.close()
+        raise HTTPException(status_code=409, detail="Esta solicitud ya fue procesada")
+
+    try:
+        fuente = wompi_service.crear_payment_source(
+            body.token, email, body.acceptance_token, body.accept_personal_auth
+        )
+        payment_source_id = str(fuente.get("id"))
+    except Exception as e:
+        cur.close()
+        print(f"[pagos] fallo al crear payment_source para {body.reference}: {e}", flush=True)
+        raise HTTPException(status_code=502, detail="No se pudo validar el medio de pago. Intenta de nuevo.")
+
+    # Se guarda ANTES de cobrar -- si el webhook llega antes de que esta
+    # función termine de responder, ya lo encuentra.
+    cur.execute(
+        "UPDATE solicitudes_pago SET payment_source_id = %s WHERE reference = %s AND estado = 'pendiente'",
+        (payment_source_id, body.reference),
+    )
+    cur.close()
+    conn.commit()
+
+    try:
+        transaccion = wompi_service.cobrar_con_payment_source(
+            body.reference, monto_cop, payment_source_id, email, recurrente=False
+        )
+    except Exception as e:
+        print(f"[pagos] fallo al cobrar {body.reference}: {e}", flush=True)
+        raise HTTPException(status_code=502, detail="No se pudo procesar el cobro. Intenta de nuevo.")
+
+    # La confirmación real llega por el webhook -- esto es solo para que el
+    # frontend muestre "procesando"/"aprobado" mientras tanto.
+    return {"estado_transaccion": transaccion.get("status"), "transaction_id": transaccion.get("id")}
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# POST /webhook/wompi
+# ══════════════════════════════════════════════════════════════════════════
+
+@router.post("/webhook/wompi")
+async def webhook_wompi(request: Request, conn=Depends(db_service)):
+    payload = await request.json()
+
+    if not wompi_service.verificar_checksum_evento(payload):
+        # Nunca se procesa nada sin firma válida -- esto NO es Wompi.
+        raise HTTPException(status_code=401, detail="Firma inválida")
+
+    transaction = (payload.get("data") or {}).get("transaction") or {}
+    transaction_id = transaction.get("id")
+    reference = transaction.get("reference")
+    estado_wompi = transaction.get("status")
+    monto_recibido = transaction.get("amount_in_cents")
+    if not transaction_id or not reference or not estado_wompi:
+        # Evento sin la forma esperada -- se responde 200 igual (para que
+        # Wompi no reintente algo que nunca vamos a poder procesar), pero se
+        # deja registrado para revisión manual.
+        print(f"[pagos] webhook con forma inesperada: {payload}", flush=True)
+        return {"ok": True}
+
+    cur = conn.cursor()
+    # Idempotencia real: INSERT primero, con UNIQUE en transaction_id. Si ya
+    # existe, este es un reintento del MISMO pago -- no se reprocesa nada.
+    cur.execute(
+        "INSERT INTO pagos_procesados (transaction_id, reference, monto_cop, estado_wompi) "
+        "VALUES (%s, %s, %s, %s) ON CONFLICT (transaction_id) DO NOTHING RETURNING transaction_id",
+        (transaction_id, reference, (monto_recibido or 0) / 100, estado_wompi),
+    )
+    ya_procesado = cur.fetchone() is None
+    cur.close()
+    conn.commit()
+    if ya_procesado:
+        return {"ok": True}
+
+    if estado_wompi != "APPROVED":
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE solicitudes_pago SET estado = 'fallido', resuelta_en = now() "
+            "WHERE reference = %s AND estado = 'pendiente'",
+            (reference,),
+        )
+        cur.close()
+        conn.commit()
+        return {"ok": True}
+
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT nombre_empresa, nit, plan_codigo, admin_email, admin_nombre, monto_cop, "
+        "       estado, payment_source_id "
+        "FROM solicitudes_pago WHERE reference = %s FOR UPDATE",
+        (reference,),
+    )
+    row = cur.fetchone()
+    if row is None:
+        cur.close()
+        print(f"[pagos] webhook APPROVED sin solicitud_pago para reference={reference} -- revisar a mano", flush=True)
+        return {"ok": True}
+
+    nombre_empresa, nit, plan_codigo, admin_email, admin_nombre, monto_cop, estado, payment_source_id = row
+    if estado != "pendiente":
+        cur.close()
+        return {"ok": True}
+
+    monto_esperado = wompi_service.amount_in_cents(monto_cop)
+    if monto_recibido is not None and int(monto_recibido) != monto_esperado:
+        cur.close()
+        print(
+            f"[pagos] MONTO NO COINCIDE para reference={reference}: "
+            f"esperado={monto_esperado} recibido={monto_recibido} -- revisar a mano, NO se aprovisiona",
+            flush=True,
+        )
+        return {"ok": True}
+    cur.close()
+
+    try:
+        resultado = aprovisionar_empresa(
+            conn,
+            nombre_empresa=nombre_empresa,
+            nit=nit,
+            plan_codigo=plan_codigo,
+            admin_email=admin_email,
+            admin_nombre=admin_nombre,
+            origen="pago_wompi",
+        )
+    except AprovisionamientoError as e:
+        print(f"[pagos] pago APPROVED pero aprovisionamiento falló para reference={reference}: {e} -- revisar a mano", flush=True)
+        return {"ok": True}
+
+    cur = conn.cursor()
+    cur.execute(
+        "UPDATE solicitudes_pago SET estado = 'pagado', empresa_id = %s, resuelta_en = now() "
+        "WHERE reference = %s",
+        (resultado["empresa_id"], reference),
+    )
+
+    if payment_source_id:
+        metodo = transaction.get("payment_method") or {}
+        extra = metodo.get("extra") or {}
+        cur.execute(
+            "INSERT INTO medios_pago_guardados (empresa_id, payment_source_id, marca, ultimos_4) "
+            "VALUES (%s, %s, %s, %s) ON CONFLICT (empresa_id) DO NOTHING",
+            (resultado["empresa_id"], payment_source_id, extra.get("brand"), extra.get("last_four")),
+        )
+        cur.execute(
+            "INSERT INTO suscripciones_wompi (empresa_id, plan_codigo, payment_source_id, proxima_fecha_cobro) "
+            "VALUES (%s, %s, %s, %s) ON CONFLICT (empresa_id) DO NOTHING",
+            (resultado["empresa_id"], plan_codigo, payment_source_id, date.today() + timedelta(days=30)),
+        )
+
+    cur.close()
+    conn.commit()
+    return {"ok": True}
