@@ -3,6 +3,7 @@ import { productScreens, costScreen } from "./productScreens";
 // Única fuente de URLs públicas. Nunca conectar esta landing al backend.
 export const SITE_URL = "https://costo360-landing.vercel.app";
 export const PRODUCT_LOGIN_URL = "https://costo360-web.vercel.app/login";
+export const PRODUCT_CHECKOUT_URL = "https://costo360-web.vercel.app/checkout";
 // Pendiente de confirmación del fundador: URL de agenda, WhatsApp o mailto real.
 // Vacío = no se presenta un formulario ni se simula el envío de una solicitud.
 export const DEMO_CONTACT_URL: string = "";
@@ -50,7 +51,7 @@ export const faqs = [
   {
     question: "¿Cuánto cuesta el software para mi marmolería?",
     answer:
-      "Costo360 tiene planes de suscripción mensual: Starter para 1 usuario, Pro para 3 usuarios y Enterprise para hasta 10 usuarios. Los precios vigentes y las funciones incluidas en cada plan se confirman con el equipo antes de contratar. El acceso al producto es por invitación; no hay registro público ni acceso instantáneo.",
+      "Costo360 tiene planes de suscripción mensual por taller: Starter por $150.000 COP para 1 usuario, Pro por $375.000 COP para 3 usuarios y Enterprise por $2.410.000 COP para hasta 10 usuarios. Las mismas funciones vienen incluidas en los 3 planes -- la diferencia es el número de usuarios. La suscripción se activa al instante, con pago en línea.",
   },
   {
     question: "¿Puedo hacer cotizaciones con AIU en Colombia?",
@@ -93,7 +94,7 @@ export function structuredData() {
         inLanguage: "es-CO",
         publisher: { "@id": `${SITE_URL}/#organization` },
         description:
-          "Software SaaS B2B de cotización para marmolerías y talleres de piedra en Colombia. Acceso por invitación. Planes mensuales Starter (1 usuario), Pro (3 usuarios) y Enterprise (hasta 10 usuarios), con precios por confirmar con el equipo.",
+          "Software SaaS B2B de cotización para marmolerías y talleres de piedra en Colombia. Suscripción mensual con activación inmediata. Planes por taller: Starter $150.000 COP (1 usuario), Pro $375.000 COP (3 usuarios) y Enterprise $2.410.000 COP (hasta 10 usuarios).",
         featureList: [
           "Cotización Directa, Express y AIU",
           "Cotizaciones y cuentas de cobro en PDF",

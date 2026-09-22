@@ -202,7 +202,17 @@ test("initial HTML, images and metadata are complete without JavaScript", async 
     "Tu oficio es",
   );
   await expect(page.locator(".hero-description")).toContainText("marmolerías");
-  await expect(page.locator("#planes")).toContainText("Precio a consultar");
+  for (const [name, price] of [
+    ["Starter", "$150.000"],
+    ["Pro", "$375.000"],
+    ["Enterprise", "$2.410.000"],
+  ]) {
+    const card = page.locator(".plan-card").filter({
+      has: page.getByRole("heading", { name, exact: true }),
+    });
+    await expect(card.locator(".plan-price")).toHaveText(`${price} COP / mes`);
+  }
+  await expect(page.locator("#planes")).not.toContainText("Precio a consultar");
   await expect(page.locator("details")).toHaveCount(faqs.length);
   for (const screen of productScreens)
     await expect(page.locator(`#screen-${screen.id}`)).toBeVisible();
@@ -225,9 +235,12 @@ test("initial HTML, images and metadata are complete without JavaScript", async 
   expect(data["@graph"][1]).not.toHaveProperty("offers");
   const html = await (await request.get("/")).text();
   expect(html).not.toMatch(
-    /costo360\.com|150000|375000|2410000|99\.4|líder en|%VITE_|<!--app-html-->|05-cost-agente-respuesta|Confirmar ejemplo/,
+    /costo360\.com|99\.4|líder en|%VITE_|<!--app-html-->|05-cost-agente-respuesta|Confirmar ejemplo/,
   );
-  expect(html).not.toMatch(/[\p{L}][?\uFFFD][\p{L}]/u);
+  // Solo el car\u00E1cter de reemplazo real (mojibake) -- un "?" entre letras ya no
+  // basta por s\u00ED solo: el checkout ahora aparece como "...checkout?plan=pro"
+  // (falso positivo real, encontrado al agregar el enlace de compra).
+  expect(html).not.toMatch(/[\p{L}]\uFFFD[\p{L}]/u);
   for (const resource of [
     "/media/og-cover.jpg",
     "/media/marble.webp",

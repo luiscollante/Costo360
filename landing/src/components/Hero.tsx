@@ -66,7 +66,7 @@ export function Hero() {
             <Check size={14} /> Hecho para Colombia
           </span>
           <span>
-            <Check size={14} /> Acceso por invitación
+            <Check size={14} /> Cancela cuando quieras
           </span>
         </div>
       </div>

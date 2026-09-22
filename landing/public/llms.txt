@@ -19,8 +19,8 @@
 - Roles: Admin; Gerencia con acceso a dashboard pero sin gestión de usuarios; Operativo que cotiza y ve lo suyo.
 
 ## Planes y acceso
-Suscripción mensual: Starter (1 usuario), Pro (3 usuarios), Enterprise (hasta 10 usuarios). Precios, condiciones y funciones incluidas por plan pendientes de confirmación con el equipo. No publicar precios supuestos.
-El producto requiere invitación: no hay registro público, acceso instantáneo ni prueba gratuita anunciada. Canal público de solicitud de demos pendiente de confirmación.
+Suscripción mensual por taller, en pesos colombianos: Starter $150.000 COP (1 usuario), Pro $375.000 COP (3 usuarios), Enterprise $2.410.000 COP (hasta 10 usuarios). Precios confirmados por el fundador para la landing. Condiciones y funciones incluidas por plan se confirman con el equipo antes de contratar.
+La suscripción se compra directo desde la landing (checkout con pago en línea, activación inmediata) -- no hay registro público independiente ni prueba gratuita anunciada. Canal público de solicitud de demos pendiente de confirmación.
 
 ## Límites y honestidad
 Costo360 no ofrece facturación electrónica DIAN, contabilidad ni logística del taller. No se publican clientes, testimonios, certificaciones, porcentajes de ahorro ni métricas de resultados no verificados.

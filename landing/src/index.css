@@ -1637,16 +1637,16 @@ input[type="range"] {
   gap: 18px;
 }
 .plan-card {
-  background: #ffffff65;
+  background: #ffffff;
   border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 30px;
+  box-shadow: 0 6px 20px #00311d06;
 }
 .plan-featured {
-  background: #ffffff;
   border-color: var(--color-brand);
   position: relative;
-  box-shadow: 0 12px 35px #00311d08;
+  box-shadow: 0 12px 35px #00311d14;
 }
 .plan-featured::before {
   content: "";
@@ -1695,9 +1695,24 @@ input[type="range"] {
 .plan-capacity .up-to {
   font-size: 9px;
 }
-.plan-description {
+.plan-features {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-height: 130px;
+}
+.plan-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   font-size: 11px;
-  min-height: 48px;
+  color: var(--color-body);
+  line-height: 1.4;
+}
+.plan-features svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--color-brand);
 }
 .plan-price {
   padding-top: 23px;
@@ -2356,8 +2371,10 @@ input[type="range"] {
   .plan-heading > span {
     font-size: 6px;
   }
-  .plan-description {
-    min-height: 60px;
+  .plan-features {
+    min-height: 150px;
+  }
+  .plan-features li {
     font-size: 10px;
   }
   .plan-capacity {
@@ -2880,8 +2897,10 @@ input[type="range"] {
     width: auto;
     font-size: 11px;
   }
-  .plan-description {
+  .plan-features {
     min-height: auto;
+  }
+  .plan-features li {
     font-size: 12px;
   }
   .plan-price {

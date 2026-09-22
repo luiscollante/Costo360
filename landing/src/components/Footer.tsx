@@ -21,8 +21,8 @@ export function Footer() {
             <span>Dale claridad a tus costos.</span>
           </h2>
           <p>
-            Costo360 está en etapa de lanzamiento y el acceso es por invitación.
-            Conoce cómo se conectan las piezas de tu taller.
+            Costo360 ya está disponible por suscripción mensual, con activación
+            inmediata. Conoce cómo se conectan las piezas de tu taller.
           </p>
           <div className="contact-actions">
             {DEMO_CONTACT_URL ? (
@@ -40,7 +40,7 @@ export function Footer() {
               </a>
             )}
             <a className="text-button" href={PRODUCT_LOGIN_URL}>
-              Ya tengo una invitación <ArrowUpRight size={17} />
+              Ya tengo una cuenta <ArrowUpRight size={17} />
             </a>
           </div>
           {!DEMO_CONTACT_URL && (

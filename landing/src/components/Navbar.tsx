@@ -76,8 +76,8 @@ export function Navbar() {
           <a href={PRODUCT_LOGIN_URL}>
             Iniciar sesión <ArrowUpRight size={16} />
           </a>
-          <a href="#contacto" onClick={() => setOpen(false)}>
-            Acceso por invitación
+          <a href="#planes" onClick={() => setOpen(false)}>
+            Comprar un plan
           </a>
         </div>
       </nav>

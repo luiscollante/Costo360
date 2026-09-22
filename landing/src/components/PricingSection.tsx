@@ -1,28 +1,46 @@
 import { ArrowUpRight, Check, UserRound, UsersRound } from "lucide-react";
+import { PRODUCT_CHECKOUT_URL } from "../lib/content";
+
+// Mismo set de funciones para los 3 planes -- lo único que cambia entre
+// planes es el cupo de usuarios y el precio (ver tabla `planes` del backend,
+// no hay columnas de features por plan). Mostrar esto explícito en vez de
+// una sola frase genérica es lo que reemplaza el "Precio a consultar" /
+// descripción vaga de antes.
+const features = [
+  "Cotización Directa, Express y con AIU",
+  "Nesting 2D con plano de corte imprimible",
+  "Inventario de láminas y banco de retales",
+  "Proyectos: tablero Kanban, hitos y horas",
+  "Asistente Cost (IA) con confirmación humana",
+];
+
 const plans = [
   {
     name: "Starter",
+    codigo: "starter",
+    price: "$150.000",
     count: "1",
     unit: "usuario",
     subtitle: "Tu taller, un punto de partida.",
     icon: UserRound,
-    description: "Para centralizar el trabajo en una cuenta de usuario.",
   },
   {
     name: "Pro",
+    codigo: "pro",
+    price: "$375.000",
     count: "3",
     unit: "usuarios",
     subtitle: "Más personas, un mismo equipo.",
     icon: UsersRound,
-    description: "Para compartir el uso de Costo360 con tu equipo.",
   },
   {
     name: "Enterprise",
+    codigo: "enterprise",
+    price: "$2.410.000",
     count: "10",
     unit: "usuarios como máximo",
     subtitle: "Espacio para un equipo más amplio.",
     icon: UsersRound,
-    description: "Para talleres que necesitan acceso para hasta diez personas.",
   },
 ];
 export function PricingSection() {
@@ -40,14 +58,14 @@ export function PricingSection() {
           <span>A tu escala.</span>
         </h2>
         <p>
-          Suscripciones mensuales. Conversemos sobre tus necesidades
-          <br className="desktop-break" /> y confirma con el equipo el precio y
-          alcance de cada plan.
+          Suscripciones mensuales por taller, en pesos colombianos.
+          <br className="desktop-break" /> Elige el plan que se adapta a tu
+          equipo.
         </p>
       </div>
       <div className="plans-grid">
         {plans.map(
-          ({ name, count, unit, subtitle, icon: Icon, description }) => (
+          ({ name, codigo, price, count, unit, subtitle, icon: Icon }) => (
             <article
               key={name}
               className={`plan-card ${name === "Pro" ? "plan-featured" : ""}`}
@@ -63,26 +81,33 @@ export function PricingSection() {
                 <strong>{count}</strong>
                 <span>{unit}</span>
               </div>
-              <p className="plan-description">{description}</p>
+              <ul className="plan-features">
+                {features.map((feature) => (
+                  <li key={feature}>
+                    <Check size={13} />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
               <div className="plan-price">
-                Precio a consultar <span>/ mes</span>
+                {price} <span>COP / mes</span>
               </div>
               <a
-                href="#contacto"
+                href={`${PRODUCT_CHECKOUT_URL}?plan=${codigo}`}
                 className={`button ${name === "Pro" ? "" : "button-outline"}`}
               >
-                Cómo acceder a {name} <ArrowUpRight size={17} />
+                Comprar {name} <ArrowUpRight size={17} />
               </a>
               <p className="plan-footnote">
-                <Check size={14} /> Alta por invitación
+                <Check size={14} /> Activación inmediata, sin instalación
               </p>
             </article>
           ),
         )}
       </div>
       <p className="pricing-note">
-        Las capacidades del producto no implican que estén incluidas en todos
-        los planes. Confirma funciones, condiciones y precio antes de contratar.
+        Las mismas funciones en los 3 planes -- la diferencia es el número de
+        usuarios que caben en tu cuenta.
       </p>
     </section>
   );
