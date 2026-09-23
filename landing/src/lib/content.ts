@@ -31,7 +31,7 @@ export const faqs = [
   {
     question: "¿Qué es Costo360 y para quién está diseñado?",
     answer:
-      "Costo360 es un software SaaS B2B de cotización para marmolerías y talleres de transformación de piedra en Colombia. Reúne cotizaciones, catálogo, inventario de láminas, retales, optimización de corte y gestión de proyectos para trabajar con mármol, granito, sinterizado y cuarcita.",
+      "Costo360 es una empresa de tecnología para la industria de la piedra en Colombia. Su software reúne cotizaciones, catálogo, inventario de láminas, retales, optimización de corte y gestión de proyectos para marmolerías y talleres que trabajan con mármol, granito, sinterizado y cuarcita.",
   },
   {
     question: "¿Cómo cotizo un mesón de mármol con Costo360?",
@@ -51,7 +51,12 @@ export const faqs = [
   {
     question: "¿Cuánto cuesta el software para mi marmolería?",
     answer:
-      "Costo360 tiene planes de suscripción mensual por taller: Starter por $150.000 COP para 1 usuario, Pro por $375.000 COP para 3 usuarios y Enterprise por $2.410.000 COP para hasta 10 usuarios. Las mismas funciones vienen incluidas en los 3 planes -- la diferencia es el número de usuarios. La suscripción se activa al instante, con pago en línea.",
+      "La suscripción es mensual por taller: Starter cuesta $150.000 COP para 1 usuario, Pro $375.000 COP para 3 usuarios y Enterprise $2.410.000 COP para hasta 10 usuarios. Todos incluyen las herramientas de cotización, materiales, proyectos y al asistente Cost. Cambian los cupos de usuarios, la capacidad mensual de IA y el tiempo de conservación del registro de acciones de Cost: 1 día, 30 días y 90 días, respectivamente. El acceso se habilita tras confirmar el pago y configurar tu cuenta.",
+  },
+  {
+    question: "¿Cost está incluido en Starter?",
+    answer:
+      "Sí. Cost está incluido desde Starter. Consulta los datos de tu taller, calcula cotizaciones y prepara acciones sobre catálogo, inventario, retales, planos de corte y proyectos. Tú confirmas antes de que cree, edite o borre datos. El uso de IA tiene cupos mensuales por empresa; no es ilimitado. El plazo del registro de acciones de Cost no limita el historial de tus cotizaciones.",
   },
   {
     question: "¿Puedo hacer cotizaciones con AIU en Colombia?",
@@ -94,7 +99,7 @@ export function structuredData() {
         inLanguage: "es-CO",
         publisher: { "@id": `${SITE_URL}/#organization` },
         description:
-          "Software SaaS B2B de cotización para marmolerías y talleres de piedra en Colombia. Suscripción mensual con activación inmediata. Planes por taller: Starter $150.000 COP (1 usuario), Pro $375.000 COP (3 usuarios) y Enterprise $2.410.000 COP (hasta 10 usuarios).",
+          "Software de Costo360 para marmolerías y talleres de piedra en Colombia, con Cost incluido en todos los planes. Suscripción mensual por taller: Starter $150.000 COP (1 usuario), Pro $375.000 COP (3 usuarios) y Enterprise $2.410.000 COP (hasta 10 usuarios). Uso de IA sujeto a cupos mensuales por empresa.",
         featureList: [
           "Cotización Directa, Express y AIU",
           "Cotizaciones y cuentas de cobro en PDF",

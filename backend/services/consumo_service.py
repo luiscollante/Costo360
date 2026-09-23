@@ -65,7 +65,14 @@ TRM_COP_USD = 3048.12  # misma referencia que docs/PLAN_COSTOS_COMPLETO_COSTO360
 # el modelo financiero de la universidad) — por eso el monto es mucho más
 # chico en pesos de lo que sugeriría ese documento, sin perder el mismo
 # margen de seguridad relativo.
-_TOPES_GEMINI_COP_DEFAULT = {"starter": 0, "pro": 55_000, "enterprise": 550_000}
+#
+# Starter en $0 bloqueaba a Cost desde la primera conversación pese a que la
+# landing ya lo anuncia como incluido desde Starter (decisión del fundador,
+# 2026-09-22, ver docs/PLANES_LANDING.md). $20.000 = la misma proporción por
+# usuario que Pro ($55.000 / 3 usuarios ≈ $18.333, redondeado), para una
+# cuenta de 1 solo administrador. Punto de partida, no definitivo -- editable
+# sin redeploy vía `app_config` igual que los demás topes.
+_TOPES_GEMINI_COP_DEFAULT = {"starter": 20_000, "pro": 55_000, "enterprise": 550_000}
 
 # ElevenLabs (créditos/mes/empresa): acotado por el pool COMPARTIDO real
 # entre TODOS los clientes de Costo360 (10.000 créditos/mes hoy, plan

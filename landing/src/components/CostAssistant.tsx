@@ -17,7 +17,7 @@ export function CostAssistant() {
             <span className="cost-orbit" />
           </div>
           <h2 id="cost-title">
-            Una IA que propone.
+            Delega lo repetitivo.
             <br />
             <span>
               La última palabra
@@ -26,12 +26,13 @@ export function CostAssistant() {
             </span>
           </h2>
           <p>
-            Cost no es solo un chat de preguntas y respuestas. Consulta los
-            datos de tu taller, calcula cotizaciones y propone acciones dentro
-            del producto.
+            Cost trabaja tras bambalinas: consulta los datos de tu taller,
+            calcula cotizaciones y prepara cambios en materiales, inventario y
+            proyectos. Tú revisas y confirmas; él ejecuta. Incluido en todos los
+            planes, desde Starter.
           </p>
-          <a className="text-button light-link" href="#contacto">
-            Conoce cómo acceder <ArrowRight size={18} />
+          <a className="text-button light-link" href="#planes">
+            Elige tu plan con Cost <ArrowRight size={18} />
           </a>
         </div>
         <div className="cost-workflow">

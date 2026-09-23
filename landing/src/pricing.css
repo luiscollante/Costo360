@@ -1,0 +1,423 @@
+/* Compact cards with generated stone cutouts, matching the founder's reference. */
+#planes {
+  padding-block: 32px 60px;
+}
+#planes .section-heading {
+  margin-bottom: 28px;
+}
+#planes .section-heading .eyebrow {
+  margin-bottom: 10px;
+}
+#planes .section-heading h2 {
+  font-size: clamp(25px, 2.4vw, 34px);
+  line-height: 1.18;
+}
+#planes .section-heading h2 br {
+  display: none;
+}
+#planes .section-heading h2 span::before {
+  content: " ";
+}
+#planes .section-heading > p:last-child {
+  margin-top: 12px;
+  font-size: 12px;
+}
+#planes .plans-grid {
+  align-items: center;
+  gap: 20px;
+}
+#planes .plan-card {
+  padding: 24px;
+  background: #fcf9f3;
+  border: 1px solid #fff;
+  border-radius: 17px;
+  box-shadow: 0 16px 36px -22px #493b2860;
+  overflow: hidden;
+}
+#planes .plan-header {
+  position: relative;
+  min-height: 140px;
+  isolation: isolate;
+}
+#planes .plan-stone-art {
+  position: absolute;
+  top: -16px;
+  right: -31px;
+  width: 152px;
+  height: 164px;
+  object-fit: contain;
+  z-index: -1;
+  pointer-events: none;
+  filter: drop-shadow(0 10px 8px #30271315);
+}
+#planes .plan-eyebrow {
+  font-size: 10px;
+  letter-spacing: 2.8px;
+}
+#planes .plan-card h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(32px, 3vw, 42px);
+  font-weight: 500;
+  letter-spacing: -1.5px;
+  line-height: 1.06;
+  margin-top: 9px;
+  position: relative;
+  width: fit-content;
+}
+#planes .plan-subtitle {
+  font-size: 13px;
+  margin-top: 12px;
+  max-width: 64%;
+  line-height: 1.35;
+}
+#planes .plan-description {
+  font-size: 11px;
+  line-height: 1.5;
+  margin-top: 7px;
+  max-width: 64%;
+  min-height: 0;
+}
+#planes .plan-team {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin: 8px 0 17px;
+}
+#planes .plan-seats {
+  color: #00311d;
+  background: #eee9de;
+  border-radius: 20px;
+  padding: 5px 11px;
+  font-size: 11px;
+  line-height: 1.2;
+}
+#planes .plan-team-detail {
+  font-size: 9px;
+  color: #4a4a4a;
+}
+#planes .plan-features {
+  margin: 0;
+  min-height: 0;
+  gap: 8px;
+}
+#planes .plan-features li {
+  font-size: 11.5px;
+  line-height: 1.5;
+  gap: 8px;
+}
+#planes .check-badge {
+  width: 17px;
+  height: 17px;
+  margin-top: 0;
+}
+#planes .plan-purchase {
+  position: relative;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #ded4c4;
+}
+#planes .plan-price {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font-size: clamp(26px, 2.5vw, 34px);
+  line-height: 1.25;
+  letter-spacing: -1px;
+}
+#planes .plan-price span {
+  display: inline-block;
+  font-size: 10px;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+#planes .plan-card .button {
+  margin-top: 13px;
+  min-height: 44px;
+  padding: 10px 15px;
+  font-size: 11px;
+}
+#planes .plan-footnote {
+  margin-top: 10px;
+  font-size: 9px;
+  justify-content: flex-start;
+  gap: 5px;
+}
+#planes .plan-featured {
+  padding-top: 38px;
+  padding-bottom: 28px;
+  transform: none;
+  background: radial-gradient(
+    ellipse at top left,
+    #0e654b,
+    #003522 50%,
+    #002518
+  );
+  border: 1px solid #c6a052;
+  box-shadow: 0 18px 38px -15px #00311d65;
+}
+#planes .plan-featured .plan-stone-art {
+  top: 7px;
+  right: -28px;
+  width: 148px;
+  height: 152px;
+}
+#planes .plan-badge {
+  top: 13px;
+  right: 20px;
+  font-size: 8px;
+  padding: 6px 10px;
+  gap: 5px;
+  letter-spacing: 0.5px;
+}
+#planes .plan-featured .plan-seats {
+  background: #174f3e;
+  color: #f5e8d2;
+  border: 1px solid #8f9977;
+}
+#planes .plan-featured .plan-team-detail {
+  color: #f5e8d2;
+}
+#planes .plan-featured .button,
+#planes .plan-badge {
+  background: linear-gradient(120deg, #f5d9a3, #d5ac67);
+  border-color: #e8c78e;
+}
+#planes .plan-featured .check-badge {
+  background: #e6c481;
+}
+#planes .plan-featured .plan-purchase {
+  border-top-color: #678365;
+  padding-bottom: 30px;
+}
+#planes .plan-featured .plan-price,
+#planes .plan-featured .button,
+#planes .plan-featured .plan-footnote {
+  position: relative;
+  z-index: 1;
+  width: calc(100% - 96px);
+}
+#planes .plan-featured .plan-price {
+  white-space: nowrap;
+}
+#planes .plan-featured .plan-price span {
+  display: block;
+}
+#planes .plan-featured .plan-footnote {
+  font-size: 8px;
+}
+#planes .plan-mascot-wrap {
+  position: static;
+  height: 0;
+  margin: 0;
+}
+#planes .plan-mascot {
+  width: 156px;
+  height: 176px;
+  object-fit: contain;
+  right: -35px;
+  bottom: -36px;
+}
+#planes .plan-mascot-note {
+  left: 0;
+  bottom: -13px;
+  font-size: 15px;
+  line-height: 1.15;
+  max-width: 160px;
+  transform: rotate(-3deg);
+}
+#planes .pricing-cost-included {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 22px;
+  padding: 16px 20px;
+  background: #fcf9f3;
+  border: 1px solid #d9c9ac;
+  border-radius: 12px;
+}
+#planes .pricing-cost-included > svg {
+  color: #15612e;
+  flex-shrink: 0;
+  width: 20px;
+  margin-top: 2px;
+}
+#planes .pricing-cost-included h3 {
+  font-size: 13px;
+  color: #00311d;
+}
+#planes .pricing-cost-included p {
+  font-size: 11px;
+  line-height: 1.65;
+  margin-top: 5px;
+}
+#planes .pricing-note {
+  font-size: 10px;
+  line-height: 1.7;
+  max-width: 900px;
+  margin: 15px auto 0;
+}
+#planes .pricing-bottom {
+  margin-top: 22px;
+  padding-top: 20px;
+}
+@media (min-width: 701px) and (max-width: 1100px) {
+  #planes .plans-grid {
+    gap: 12px;
+  }
+  #planes .plan-card {
+    padding: 20px 16px;
+  }
+  #planes .plan-featured {
+    padding-top: 34px;
+    padding-bottom: 24px;
+  }
+  #planes .plan-header {
+  min-height: 128px;
+  }
+  #planes .plan-card h3 {
+    font-size: 31px;
+  }
+  #planes .plan-stone-art,
+  #planes .plan-featured .plan-stone-art {
+    width: 110px;
+    height: 112px;
+    right: -22px;
+    top: 23px;
+  }
+  #planes .plan-subtitle,
+  #planes .plan-description {
+    max-width: 62%;
+  }
+  #planes .plan-subtitle {
+    font-size: 12px;
+  }
+  #planes .plan-description {
+    font-size: 10px;
+  }
+  #planes .plan-team {
+    min-height: 32px;
+    gap: 5px;
+    align-content: center;
+  }
+  #planes .plan-features {
+    min-height: 158px;
+  }
+  #planes .plan-features li {
+    font-size: 10.5px;
+    gap: 6px;
+  }
+  #planes .plan-price {
+    font-size: 25px;
+  }
+  #planes .plan-price span {
+    font-size: 9px;
+  }
+  #planes .plan-card .button {
+    font-size: 10px;
+    padding-inline: 10px;
+  }
+  #planes .plan-featured .plan-price,
+  #planes .plan-featured .button,
+  #planes .plan-featured .plan-footnote {
+    width: calc(100% - 57px);
+  }
+  #planes .plan-featured .button svg {
+    display: none;
+  }
+  #planes .plan-mascot {
+    width: 104px;
+    height: 138px;
+    right: -25px;
+    bottom: -29px;
+  }
+  #planes .plan-mascot-note {
+    font-size: 13px;
+    max-width: 130px;
+  }
+}
+@media (max-width: 700px) {
+  #planes {
+    padding-top: 28px;
+  }
+  #planes .plans-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    max-width: 440px;
+    margin-inline: auto;
+  }
+  #planes .section-heading h2 br {
+    display: block;
+  }
+  #planes .plan-header {
+    min-height: 140px;
+  }
+  #planes .plan-card h3 {
+    font-size: 38px;
+  }
+  #planes .plan-description {
+    font-size: 11px;
+  }
+  #planes .plan-stone-art {
+    width: 136px;
+    height: 151px;
+    right: -30px;
+  }
+  #planes .plan-featured .plan-stone-art {
+    width: 136px;
+    height: 146px;
+    right: -30px;
+  }
+  #planes .plan-team {
+    margin-bottom: 15px;
+  }
+  #planes .plan-features li {
+    font-size: 11.5px;
+  }
+  #planes .plan-card .button {
+    font-size: 11px;
+  }
+  #planes .plan-price {
+    font-size: 29px;
+  }
+  #planes .plan-mascot-note {
+    max-width: 140px;
+    font-size: 14px;
+  }
+  #planes .pricing-cost-included {
+    padding: 15px;
+  }
+}
+@media (max-width: 370px) {
+  #planes .plan-card {
+    padding-inline: 18px;
+  }
+  #planes .plan-card h3 {
+    font-size: 33px;
+  }
+  #planes .plan-header {
+    min-height: 132px;
+  }
+  #planes .plan-subtitle,
+  #planes .plan-description {
+    max-width: 63%;
+  }
+  #planes .plan-stone-art,
+  #planes .plan-featured .plan-stone-art {
+    width: 117px;
+    right: -24px;
+  }
+  #planes .plan-featured .plan-price,
+  #planes .plan-featured .button,
+  #planes .plan-featured .plan-footnote {
+    width: calc(100% - 74px);
+  }
+  #planes .plan-mascot {
+    width: 128px;
+    right: -27px;
+  }
+  #planes .plan-mascot-note {
+    font-size: 13px;
+    max-width: 128px;
+  }
+}

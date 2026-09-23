@@ -21,8 +21,8 @@ export function Footer() {
             <span>Dale claridad a tus costos.</span>
           </h2>
           <p>
-            Costo360 ya está disponible por suscripción mensual, con activación
-            inmediata. Conoce cómo se conectan las piezas de tu taller.
+            Cotiza, organiza tus materiales y coordina tus proyectos con
+            Costo360. Elige una suscripción mensual con Cost incluido.
           </p>
           <div className="contact-actions">
             {DEMO_CONTACT_URL ? (
@@ -69,7 +69,7 @@ export function Footer() {
                 />
               </a>
               <p>
-                Software de cotización para talleres de piedra.
+                Tecnología para empresas de la industria de la piedra.
                 <br />
                 Pensado para el oficio. Hecho en Colombia.
               </p>
