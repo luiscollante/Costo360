@@ -5,6 +5,9 @@ import {
   Settings2,
   ShieldCheck,
 } from "lucide-react";
+import { ModuleArt } from "./ui/ModuleArt";
+import { spotlight } from "./ui/Tactile";
+import { motion } from "framer-motion";
 const modules = [
   {
     icon: Layers3,
@@ -76,20 +79,38 @@ export function BentoEcosystem() {
         </p>
       </div>
       <div className="module-grid">
-        {modules.map(({ icon: Icon, label, title, text, items }) => (
-          <article className="module-card" key={label}>
+        {modules.map(({ icon: Icon, label, title, text, items }, index) => (
+          <motion.article
+            className="module-card tactile-card"
+            key={label}
+            onPointerMove={spotlight}
+            initial={{ y: 28 }}
+            whileInView={{ y: 0 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{
+              duration: 0.65,
+              delay: (index % 2) * 0.08,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+          >
+            <ModuleArt index={index} />
             <div className="card-kicker">
               <Icon size={22} />
               <span>{label}</span>
             </div>
             <h3>{title}</h3>
             <p>{text}</p>
-            <ul>
-              {items.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </article>
+            <details className="module-details">
+              <summary>
+                Explora lo que puedes hacer <span aria-hidden="true">+</span>
+              </summary>
+              <ul>
+                {items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </details>
+          </motion.article>
         ))}
       </div>
       <div className="parameters-strip">

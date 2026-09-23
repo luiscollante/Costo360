@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowUpRight, ScanLine } from "lucide-react";
 import { productScreens } from "../lib/productScreens";
+import { motion } from "framer-motion";
 
 export function ProductTour() {
   const [selected, setSelected] = useState(0);
@@ -19,17 +20,14 @@ export function ProductTour() {
             <ScanLine size={16} /> DENTRO DE COSTO360
           </p>
           <h2 id="product-title">
-            No es un mockup.
+            Entra. Explora.
             <br />
-            <span>Es tu próxima herramienta.</span>
+            <span>Conoce tu próxima herramienta.</span>
           </h2>
         </div>
         <p>
-          Capturas reales del producto.
-          <br />
-          Cuenta de demostración con datos de prueba.
-          <br />
-          Sin resultados de clientes ni cifras de ahorro prometidas.
+          Del primer material a la visión del negocio. Recorre las pantallas
+          reales de Costo360 y descubre cómo se conecta tu trabajo.
         </p>
       </div>
       {enhanced && (
@@ -46,8 +44,16 @@ export function ProductTour() {
               aria-controls={`screen-${screen.id}`}
               onClick={() => setSelected(index)}
             >
+              {selected === index && (
+                <motion.span
+                  className="tour-selection"
+                  layoutId="product-selection"
+                  transition={{ type: "spring", stiffness: 280, damping: 30 }}
+                  aria-hidden="true"
+                />
+              )}
               <span className="mono">0{index + 1}</span>
-              {screen.label}
+              <span>{screen.label}</span>
             </button>
           ))}
         </div>
@@ -66,6 +72,15 @@ export function ProductTour() {
               <p>{screen.description}</p>
             </div>
             <figure className="product-capture">
+              <div className="capture-chrome" aria-hidden="true">
+                <span className="chrome-dots">
+                  <i />
+                  <i />
+                  <i />
+                </span>
+                <span>Costo360 / {screen.label}</span>
+                <ScanLine size={15} />
+              </div>
               <a
                 href={screen.src}
                 target="_blank"

@@ -1,5 +1,6 @@
 import { ArrowUpRight, ArrowUp } from "lucide-react";
 import { DEMO_CONTACT_URL, PRODUCT_LOGIN_URL } from "../lib/content";
+import { MagneticLink } from "./ui/Tactile";
 export function Footer() {
   return (
     <>
@@ -35,20 +36,14 @@ export function Footer() {
                 Solicitar una demo <ArrowUpRight size={18} />
               </a>
             ) : (
-              <a className="button" href="#producto">
-                Ver el producto real <ArrowUpRight size={18} />
-              </a>
+              <MagneticLink href="#planes">
+                Encuentra tu plan <ArrowUpRight size={18} />
+              </MagneticLink>
             )}
             <a className="text-button" href={PRODUCT_LOGIN_URL}>
               Ya tengo una cuenta <ArrowUpRight size={17} />
             </a>
           </div>
-          {!DEMO_CONTACT_URL && (
-            <p className="contact-pending">
-              El canal público de solicitud de demos estará disponible
-              próximamente. Esta página no recoge ni envía solicitudes.
-            </p>
-          )}
         </div>
       </section>
       <footer className="site-footer">

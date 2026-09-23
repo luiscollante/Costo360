@@ -1,5 +1,6 @@
 import { ArrowRight, ArrowUpRight, ShieldCheck, Sparkles } from "lucide-react";
 import { costScreen } from "../lib/productScreens";
+import { CostPreview } from "./CostPreview";
 
 export function CostAssistant() {
   return (
@@ -36,39 +37,7 @@ export function CostAssistant() {
           </a>
         </div>
         <div className="cost-workflow">
-          <h3>De la conversación a la acción.</h3>
-          <ol>
-            <li>
-              <span className="mono">01</span>
-              <div>
-                <h4>Plantea lo que necesitas</h4>
-                <p>
-                  Trabaja con cotizaciones, proyectos y tareas, catálogo,
-                  inventario, retales, nesting o parámetros.
-                </p>
-              </div>
-            </li>
-            <li>
-              <span className="mono">02</span>
-              <div>
-                <h4>Revisa la propuesta de Cost</h4>
-                <p>
-                  El asistente consulta, calcula y propone. Puedes revisar el
-                  detalle antes de decidir.
-                </p>
-              </div>
-            </li>
-            <li>
-              <span className="mono">03</span>
-              <div>
-                <h4>Tú confirmas el cambio</h4>
-                <p>
-                  Crear, editar o borrar datos requiere tu aprobación antes de
-                  ejecutarse.
-                </p>
-              </div>
-            </li>
-          </ol>
+          <CostPreview />
           <div className="human-rule">
             <ShieldCheck size={23} />
             <div>

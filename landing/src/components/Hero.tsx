@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { materials } from "../lib/content";
 import { Particles } from "./ui/Particles";
+import { MagneticLink } from "./ui/Tactile";
 
 export function Hero() {
   const [selected, setSelected] = useState(0);
@@ -51,9 +52,9 @@ export function Hero() {
           <strong>tu taller.</strong>
         </p>
         <div className="hero-buttons">
-          <a className="button" href="#producto">
+          <MagneticLink href="#producto">
             Ver el producto real <ArrowUpRight size={19} />
-          </a>
+          </MagneticLink>
           <a href="#simulador" className="text-button">
             <span className="play-icon">
               <Play size={13} fill="currentColor" />

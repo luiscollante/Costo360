@@ -213,11 +213,11 @@ test("initial HTML, images and metadata are complete without JavaScript", async 
     await expect(card.locator(".plan-price")).toHaveText(`${price} COP / mes`);
   }
   await expect(page.locator("#planes")).not.toContainText("Precio a consultar");
-  await expect(page.locator("details")).toHaveCount(faqs.length);
+  await expect(page.locator("#faq details")).toHaveCount(faqs.length);
   for (const screen of productScreens)
     await expect(page.locator(`#screen-${screen.id}`)).toBeVisible();
-  await page.locator("summary").nth(1).click();
-  await expect(page.locator("details[open] p")).toBeVisible();
+  await page.locator("#faq summary").nth(1).click();
+  await expect(page.locator("#faq details[open] p")).toBeVisible();
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
     "href",
     `${SITE_URL}/`,

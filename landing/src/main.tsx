@@ -17,3 +17,4 @@ if (root.hasChildNodes() && root.querySelector("main")) {
   createRoot(root).render(app);
 }
 import "./product-tour.css";
+import "./experience.css";
