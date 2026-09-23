@@ -153,14 +153,16 @@ function MoneyInput({
 
 // ─── Margin traffic light ─────────────────────────────────────────────────────
 
-function MarginLight({ pct }: { pct: number }) {
+function MarginLight({ pct, monto }: { pct: number; monto: number }) {
   const color = pct >= 30 ? '#15612E' : pct >= 20 ? '#6E5410' : '#B23B3B'
   const label = pct >= 30 ? 'Margen saludable' : pct >= 20 ? 'Margen ajustado' : 'Margen bajo'
   return (
     <div className="flex items-center gap-2 mt-3">
       <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />
       <span className="text-xs font-semibold" style={{ color }}>{label}</span>
-      <span className="text-xs text-brand-text-secondary ml-auto font-mono">{formatPct(pct, 1)}</span>
+      <span className="text-xs text-brand-text-secondary ml-auto font-mono">
+        {formatPct(pct, 1)} · {formatCOP(monto)}
+      </span>
     </div>
   )
 }
@@ -284,7 +286,7 @@ function ResultPanel({
             <p className="text-xs text-brand-text-secondary">+ IVA 19%: <span className="font-mono">{formatCOP(iva)}</span></p>
           </motion.div>
         )}
-        <MarginLight pct={result.margen_pct} />
+        <MarginLight pct={result.margen_pct} monto={result.utilidad} />
       </div>
 
       {/* Key metrics */}
@@ -615,20 +617,23 @@ export default function CotizacionExpressPage() {
                   <Label>Lámina (largo × ancho)</Label>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { v: largo, set: setLargo, ph: '3.20' },
-                      { v: ancho, set: setAncho, ph: '1.60' },
-                    ].map(({ v, set, ph }) => (
-                      <div key={ph} className="relative">
-                        <input
-                          type="number"
-                          value={v}
-                          onChange={(e) => set(e.target.value)}
-                          placeholder={ph}
-                          step={0.01}
-                          min={0}
-                          className={inputCls + ' pr-7 font-mono'}
-                        />
-                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-brand-text-secondary pointer-events-none">m</span>
+                      { key: 'largo', mini: 'Largo', v: largo, set: setLargo, ph: '3.20' },
+                      { key: 'ancho', mini: 'Ancho', v: ancho, set: setAncho, ph: '1.60' },
+                    ].map(({ key, mini, v, set, ph }) => (
+                      <div key={key}>
+                        <span className="block text-[9px] text-brand-text-secondary/80 mb-0.5">{mini}</span>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={v}
+                            onChange={(e) => set(e.target.value)}
+                            placeholder={ph}
+                            step={0.01}
+                            min={0}
+                            className={inputCls + ' pr-7 font-mono'}
+                          />
+                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-brand-text-secondary pointer-events-none">m</span>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -689,7 +694,7 @@ export default function CotizacionExpressPage() {
                   {esMl && (
                     <div>
                       <Label>
-                        Ancho{tipo.ancho !== null ? ` · def. ${tipo.ancho} m` : ''}
+                        Ancho{tipo.ancho !== null ? ` (por defecto ${tipo.ancho} m)` : ''}
                       </Label>
                       <div className="relative">
                         <input

@@ -10,6 +10,7 @@ import { formatNum } from '@/lib/utils'
 import { downloadFile } from '@/lib/downloadFile'
 import { svgToPngBlob, svgToPdfBlob } from '@/lib/svgExport'
 import MaterialCombobox from '@/components/MaterialCombobox'
+import { DataTable } from '@/components/ui/DataTable'
 
 const MATERIALES_NESTING = ['Mármol', 'Granito', 'Sinterizado', 'Quarztone', 'Quarzita'] as const
 
@@ -52,6 +53,7 @@ function MonoInput({
   step,
   suffix,
   decimals,
+  compact,
 }: {
   value: string | number
   onChange: (v: string) => void
@@ -61,6 +63,7 @@ function MonoInput({
   step?: number
   suffix?: string
   decimals?: number
+  compact?: boolean
 }) {
   const fmt = useCallback((v: string | number): string => {
     if (v === '' || v == null) return ''
@@ -78,12 +81,13 @@ function MonoInput({
   }, [value, fmt])
 
   const inputClass = [
-    'w-full bg-brand-input border border-brand-border rounded px-3 py-2.5',
-    'font-mono text-sm text-brand-text placeholder:text-brand-text-secondary',
+    'w-full bg-brand-input border border-brand-border rounded',
+    compact ? 'px-2 py-1.5 text-xs' : 'px-3 py-2.5 text-sm',
+    'font-mono text-brand-text placeholder:text-brand-text-secondary',
     'outline-none transition-all duration-200',
     'focus:border-brand-primary focus:shadow-[0_0_0_1px_#1F6F5440,0_0_12px_#1F6F5418]',
     'group-hover:border-brand-border/80',
-    suffix ? 'pr-6' : '',
+    suffix ? (compact ? 'pr-5' : 'pr-6') : '',
   ].join(' ')
 
   if (decimals !== undefined) {
@@ -106,7 +110,7 @@ function MonoInput({
           className={inputClass}
         />
         {suffix && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-brand-text-secondary font-mono pointer-events-none">
+          <span className={`absolute ${compact ? 'right-2' : 'right-3'} top-1/2 -translate-y-1/2 ${compact ? 'text-[10px]' : 'text-xs'} text-brand-text-secondary font-mono pointer-events-none`}>
             {suffix}
           </span>
         )}
@@ -126,7 +130,7 @@ function MonoInput({
         className={inputClass}
       />
       {suffix && (
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-brand-text-secondary font-mono pointer-events-none">
+        <span className={`absolute ${compact ? 'right-2' : 'right-3'} top-1/2 -translate-y-1/2 ${compact ? 'text-[10px]' : 'text-xs'} text-brand-text-secondary font-mono pointer-events-none`}>
           {suffix}
         </span>
       )}
@@ -138,10 +142,12 @@ function TextInput({
   value,
   onChange,
   placeholder,
+  compact,
 }: {
   value: string
   onChange: (v: string) => void
   placeholder?: string
+  compact?: boolean
 }) {
   return (
     <input
@@ -150,8 +156,9 @@ function TextInput({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       className={[
-        'w-full bg-brand-input border border-brand-border rounded px-3 py-2.5',
-        'text-sm text-brand-text placeholder:text-brand-text-secondary',
+        'w-full bg-brand-input border border-brand-border rounded',
+        compact ? 'px-2 py-1.5 text-xs' : 'px-3 py-2.5 text-sm',
+        'text-brand-text placeholder:text-brand-text-secondary',
         'outline-none transition-all duration-200',
         'focus:border-brand-primary focus:shadow-[0_0_0_1px_#1F6F5440]',
       ].join(' ')}
@@ -341,106 +348,107 @@ function FormPanel({
         </div>
         <p className="text-[10px] text-brand-text-secondary mb-4 pl-2.5">Los cortes que necesitas obtener de la plancha</p>
 
-        <AnimatePresence initial={false}>
-          {piezas.length === 0 ? (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="text-center text-xs text-brand-text-secondary py-6"
+        {piezas.length === 0 ? (
+          <p className="text-center text-xs text-brand-text-secondary py-6">
+            Sin piezas — agrega al menos una
+          </p>
+        ) : (
+          <div className="mb-4 -mx-1">
+            <DataTable
+              caption="Piezas a cortar"
+              columns={[
+                { key: 'idx', label: '#', className: 'w-7' },
+                { key: 'id', label: 'Nombre/ID' },
+                { key: 'largo', label: 'Largo', className: 'w-20' },
+                { key: 'ancho', label: 'Ancho', className: 'w-20' },
+                { key: 'cant', label: 'Cant.', className: 'w-14' },
+                { key: 'area', label: 'Área', className: 'w-16 text-right' },
+                { key: 'del', label: '', className: 'w-7' },
+              ]}
             >
-              Sin piezas — agrega al menos una
-            </motion.p>
-          ) : (
-            <div className="space-y-3 mb-4">
-              {piezas.map((pieza, idx) => {
-                const area =
-                  (parseFloat(pieza.largo) || 0) * (parseFloat(pieza.ancho) || 0)
+              <AnimatePresence initial={false}>
+                {piezas.map((pieza, idx) => {
+                  const area =
+                    (parseFloat(pieza.largo) || 0) * (parseFloat(pieza.ancho) || 0)
 
-                return (
-                  <motion.div
-                    key={pieza.uid}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -16, height: 0, marginBottom: 0 }}
-                    transition={{ delay: idx * 0.03, duration: 0.2 }}
-                    className="relative bg-brand-input rounded-lg border border-brand-border/50 p-4"
-                  >
-                    {/* index badge */}
-                    <span className="absolute top-3 left-3.5 font-mono text-[9px] text-brand-text-secondary tracking-widest">
-                      P{String(idx + 1).padStart(2, '0')}
-                    </span>
-
-                    {/* remove button */}
-                    <button
-                      type="button"
-                      onClick={() => removePieza(pieza.uid)}
-                      className="absolute top-2.5 right-2.5 p-1 rounded text-brand-text-secondary hover:text-brand-danger/70 hover:bg-brand-danger/10 transition-all"
-                      aria-label="Eliminar pieza"
+                  return (
+                    <motion.tr
+                      key={pieza.uid}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ delay: idx * 0.03, duration: 0.15 }}
+                      className="border-b border-brand-border/40 last:border-0"
                     >
-                      <X size={13} />
-                    </button>
-
-                    <div className="mt-3 grid grid-cols-2 sm:grid-cols-6 gap-2 items-end">
-                      <div className="col-span-2">
-                        <FieldLabel>Nombre/ID</FieldLabel>
+                      <td className="px-1.5 py-1.5 align-middle">
+                        <span className="font-mono text-[10px] text-brand-text-secondary">
+                          {String(idx + 1).padStart(2, '0')}
+                        </span>
+                      </td>
+                      <td className="px-1.5 py-1.5 align-middle">
                         <TextInput
+                          compact
                           value={pieza.id}
                           onChange={(v) => updatePieza(pieza.uid, 'id', v)}
-                          placeholder="Ej. Mesón principal"
+                          placeholder="Ej. Mesón"
                         />
-                      </div>
-                      <div>
-                        <FieldLabel>Largo</FieldLabel>
+                      </td>
+                      <td className="px-1.5 py-1.5 align-middle">
                         <MonoInput
+                          compact
                           value={pieza.largo}
                           onChange={(v) => updatePieza(pieza.uid, 'largo', v)}
                           placeholder="0.00"
                           suffix="m"
                           decimals={2}
                         />
-                      </div>
-                      <div>
-                        <FieldLabel>Ancho</FieldLabel>
+                      </td>
+                      <td className="px-1.5 py-1.5 align-middle">
                         <MonoInput
+                          compact
                           value={pieza.ancho}
                           onChange={(v) => updatePieza(pieza.uid, 'ancho', v)}
                           placeholder="0.00"
                           suffix="m"
                           decimals={2}
                         />
-                      </div>
-                      <div>
-                        <FieldLabel>Cant.</FieldLabel>
+                      </td>
+                      <td className="px-1.5 py-1.5 align-middle">
                         <MonoInput
+                          compact
                           value={pieza.cantidad}
                           onChange={(v) => updatePieza(pieza.uid, 'cantidad', v)}
                           placeholder="1"
                           decimals={0}
                         />
-                      </div>
-                      {/* area badge */}
-                      <div className="flex flex-col items-end gap-0.5 pb-0.5">
-                        <span className="text-[9px] uppercase tracking-widest text-brand-text-secondary">
-                          Área
-                        </span>
+                      </td>
+                      <td className="px-1.5 py-1.5 align-middle text-right">
                         <span
                           className={[
-                            'font-mono text-sm font-bold',
+                            'font-mono text-xs font-bold whitespace-nowrap',
                             area > 0 ? 'text-brand-primary' : 'text-brand-text-secondary',
                           ].join(' ')}
                         >
-                          {formatNum(area)}
+                          {formatNum(area)} m²
                         </span>
-                        <span className="text-[9px] text-brand-text-secondary font-mono">m²</span>
-                      </div>
-                    </div>
-                  </motion.div>
-                )
-              })}
-            </div>
-          )}
-        </AnimatePresence>
+                      </td>
+                      <td className="px-1.5 py-1.5 align-middle text-right">
+                        <button
+                          type="button"
+                          onClick={() => removePieza(pieza.uid)}
+                          className="p-1 rounded text-brand-text-secondary hover:text-brand-danger/70 hover:bg-brand-danger/10 transition-all cursor-pointer"
+                          aria-label="Eliminar pieza"
+                        >
+                          <X size={13} />
+                        </button>
+                      </td>
+                    </motion.tr>
+                  )
+                })}
+              </AnimatePresence>
+            </DataTable>
+          </div>
+        )}
 
         {/* Add pieza button */}
         <button
@@ -896,14 +904,17 @@ export default function NestingPage() {
             setMaterialPrecioM2={setMaterialPrecioM2}
           />
 
-          {/* Right — Result */}
-          <ResultPanel
-            result={result}
-            totalPiezas={piezas.length}
-            categoria={categoria}
-            materialRef={materialRef}
-            materialPrecioM2={materialPrecioM2}
-          />
+          {/* Right — Result. Fijo en escritorio para que no se pierda de vista
+              al agregar piezas en el panel izquierdo. */}
+          <div className="xl:sticky xl:top-6">
+            <ResultPanel
+              result={result}
+              totalPiezas={piezas.length}
+              categoria={categoria}
+              materialRef={materialRef}
+              materialPrecioM2={materialPrecioM2}
+            />
+          </div>
         </div>
       </div>
     </AppLayout>

@@ -7,18 +7,14 @@ import { calcularAIU, guardarAIU, descargarPDFAiu, descargarCuentaCobro } from '
 import type { ItemAIU, ResultadoAIU } from '@/types/cotizacion'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Badge } from '@/components/ui/Badge'
+import { DataTable } from '@/components/ui/DataTable'
+import { Card } from '@/components/ui/Card'
 import { formatCOP, formatPct } from '@/lib/utils'
+import { useAiuWizardStore } from '@/store/aiuWizard'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const STEP_LABELS = ['Ítems', 'AIU', 'Resultado']
-
-const DEFAULT_ITEMS: ItemAIU[] = [
-  { id: '1', desc: 'Suministro material pétreo (suministro)', und: 'm²', cant: 10, punit: 250000 },
-  { id: '2', desc: 'Mano de obra corte y elaboración', und: 'm²', cant: 10, punit: 100000 },
-  { id: '3', desc: 'Instalación y nivelación', und: 'm²', cant: 10, punit: 50000 },
-  { id: '4', desc: 'Insumos (disco, adhesivo, silicona)', und: 'glb', cant: 1, punit: 150000 },
-]
 
 const PCT_A_PRESETS = [1, 1.5, 2, 2.5, 3]
 const PCT_I_PRESETS = [1, 1.5, 2, 2.5, 3]
@@ -40,15 +36,16 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   )
 }
 
-function TextInput({ value, onChange, placeholder, className = '' }: {
-  value: string; onChange: (v: string) => void; placeholder?: string; className?: string
+function TextInput({ value, onChange, placeholder, className = '', compact }: {
+  value: string; onChange: (v: string) => void; placeholder?: string; className?: string; compact?: boolean
 }) {
   return (
     <input
       type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
       className={[
-        'w-full bg-brand-input border border-brand-border rounded px-3 py-2.5',
-        'text-sm text-brand-text placeholder:text-brand-text-secondary',
+        'w-full bg-brand-input border border-brand-border rounded',
+        compact ? 'px-2 py-1.5 text-xs' : 'px-3 py-2.5 text-sm',
+        'text-brand-text placeholder:text-brand-text-secondary',
         'outline-none transition-all duration-200 focus:border-brand-primary focus:shadow-[0_0_0_1px_#1F6F5440]',
         className,
       ].join(' ')}
@@ -116,8 +113,12 @@ function PctPills({ label, value, onChange, presets }: {
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }}>
             <div className="relative max-w-32">
               <input
-                type="number" value={customStr} step={0.1} min={0} max={100}
-                onChange={e => { setCustomStr(e.target.value); onChange(parseFloat(e.target.value) || 0) }}
+                type="text" inputMode="decimal" value={customStr}
+                onChange={e => { setCustomStr(e.target.value); const n = parseFloat(e.target.value.replace(',', '.')); onChange(isNaN(n) ? 0 : n) }}
+                onBlur={e => {
+                  const n = parseFloat(e.target.value.replace(',', '.'))
+                  if (!isNaN(n)) { const f = n.toFixed(1); setCustomStr(f); onChange(parseFloat(f)) }
+                }}
                 placeholder="e.g. 4.5"
                 className="w-full bg-brand-input border border-brand-gold/40 rounded px-3 py-1.5 font-mono text-sm text-brand-text outline-none focus:border-brand-gold pr-8 transition-all"
                 autoFocus
@@ -135,7 +136,7 @@ function PctPills({ label, value, onChange, presets }: {
 
 function StepIndicator({ paso }: { paso: number }) {
   return (
-    <nav aria-label="Progreso de la oferta AIU" className="flex items-center justify-center mb-10">
+    <nav aria-label="Progreso de la oferta AIU" className="flex items-center justify-center mb-6">
       {STEP_LABELS.map((label, i) => {
         const done = i < paso; const active = i === paso
         return (
@@ -167,7 +168,7 @@ function StepNav({ onBack, onNext, nextLabel = 'Siguiente', nextDisabled = false
   onBack?: () => void; onNext: () => void; nextLabel?: string; nextDisabled?: boolean; isLast?: boolean; loading?: boolean
 }) {
   return (
-    <div className="flex items-center justify-between mt-10 pt-6 border-t border-brand-border">
+    <div className="flex items-center justify-between mt-4 pt-3 border-t border-brand-border">
       {onBack ? (
         <button type="button" onClick={onBack} className="flex items-center gap-2 text-sm text-brand-text-secondary hover:text-brand-text transition-colors">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -194,13 +195,13 @@ function StepNav({ onBack, onNext, nextLabel = 'Siguiente', nextDisabled = false
 
 function StepHeader({ step, title, subtitle }: { step: string; title: string; subtitle: string }) {
   return (
-    <div className="mb-8">
+    <div className="mb-5">
       <div className="flex items-baseline gap-3 mb-1">
         <span className="font-mono text-[11px] text-brand-text-secondary tracking-[0.2em]">{step}</span>
         <h2 className="text-2xl font-bold text-brand-text tracking-tight">{title}</h2>
       </div>
       <p className="text-sm text-brand-text-secondary ml-9">{subtitle}</p>
-      <div className="mt-4 h-px bg-gradient-to-r from-brand-gold/40 via-brand-border to-transparent" />
+      <div className="mt-3 h-px bg-gradient-to-r from-brand-gold/40 via-brand-border to-transparent" />
     </div>
   )
 }
@@ -237,102 +238,113 @@ function Step0Items({
   return (
     <motion.div key={0} custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit"
       transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }} className="w-full">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <StepHeader step="01" title="Ítems del Contrato" subtitle="Define el cliente y los ítems del Costo Directo" />
 
-        {/* Client info */}
-        <div className="bg-brand-surface rounded-lg border border-brand-border/60 p-5 mb-6">
-          <p className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold mb-4">Datos del Contratante</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2">
-              <FieldLabel>Nombre / Empresa *</FieldLabel>
-              <TextInput value={nombreCliente} onChange={setNombreCliente} placeholder="Constructora XYZ S.A.S." />
-            </div>
-            <div>
-              <FieldLabel>Ciudad</FieldLabel>
-              <TextInput value={ciudad} onChange={setCiudad} placeholder="Ciudad" />
-            </div>
-            <div>
-              <FieldLabel>Teléfono</FieldLabel>
-              <TextInput value={telefono} onChange={setTelefono} placeholder="+57 300 000 0000" />
-            </div>
+        {/* Tabla de ítems (izquierda) + datos del contratante y CD fijos (derecha)
+            — antes cada ítem era una tarjeta de ~150px en una sola columna. */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
+          <div className="min-w-0">
+            <Card className="overflow-hidden">
+              <DataTable
+                caption="Ítems del Costo Directo"
+                columns={[
+                  { key: 'idx', label: '#', className: 'w-8' },
+                  { key: 'desc', label: 'Descripción', className: 'min-w-[12rem]' },
+                  { key: 'und', label: 'Unidad', className: 'w-20' },
+                  { key: 'cant', label: 'Cant.', className: 'w-20' },
+                  { key: 'punit', label: 'Precio unitario', className: 'w-28' },
+                  { key: 'subtotal', label: 'Subtotal', className: 'w-28 text-right' },
+                  { key: 'del', label: '', className: 'w-8' },
+                ]}
+              >
+                {items.map((item, idx) => (
+                  <tr key={item.id} className="border-b border-brand-border/40 last:border-0">
+                    <td className="px-2 py-1.5 align-middle">
+                      <span className="font-mono text-[10px] text-brand-text-secondary">
+                        {String(idx + 1).padStart(2, '0')}
+                      </span>
+                    </td>
+                    <td className="px-2 py-1.5 align-middle">
+                      <TextInput compact value={item.desc} onChange={v => updateItem(item.id, 'desc', v)} placeholder="Ej: Suministro de mármol Carrara" />
+                    </td>
+                    <td className="px-2 py-1.5 align-middle">
+                      <TextInput compact value={item.und} onChange={v => updateItem(item.id, 'und', v)} placeholder="m², ml…" />
+                    </td>
+                    <td className="px-2 py-1.5 align-middle">
+                      <input
+                        type="number" value={item.cant} min={0} step={0.1}
+                        onChange={e => updateItem(item.id, 'cant', parseFloat(e.target.value) || 0)}
+                        className="w-full bg-brand-input border border-brand-border rounded px-2 py-1.5 text-xs text-brand-text text-right tabular-nums outline-none transition-all duration-200 focus:border-brand-primary focus:shadow-[0_0_0_1px_#1F6F5440]"
+                      />
+                    </td>
+                    <td className="px-2 py-1.5 align-middle">
+                      <input
+                        type="number" value={item.punit || ''} min={0} step={1000} placeholder="0"
+                        onChange={e => updateItem(item.id, 'punit', parseFloat(e.target.value) || 0)}
+                        className="w-full bg-brand-input border border-brand-border rounded px-2 py-1.5 text-xs text-brand-text text-right tabular-nums outline-none transition-all duration-200 focus:border-brand-primary focus:shadow-[0_0_0_1px_#1F6F5440]"
+                      />
+                    </td>
+                    <td className="px-2 py-1.5 align-middle text-right">
+                      <span className="font-mono text-xs font-bold text-brand-gold-text whitespace-nowrap">
+                        {formatCOP(item.cant * item.punit)}
+                      </span>
+                    </td>
+                    <td className="px-2 py-1.5 align-middle text-right">
+                      <button
+                        type="button" onClick={() => removeItem(item.id)} disabled={items.length <= 1}
+                        aria-label="Eliminar este ítem"
+                        className="p-1 rounded text-brand-text-secondary hover:text-brand-danger hover:bg-brand-danger/10 transition-colors disabled:opacity-0 disabled:pointer-events-none cursor-pointer"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </DataTable>
+            </Card>
+
+            <button
+              type="button" onClick={addItem}
+              className="w-full mt-4 py-3 rounded-lg border border-dashed border-brand-primary/40 bg-brand-primary/[0.04] text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.08] hover:border-brand-primary/60 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <PlusCircle size={16} aria-hidden="true" />
+              Agregar otro ítem
+            </button>
           </div>
-        </div>
 
-        {/* Items del Costo Directo — una tarjeta clara por ítem, igual en celular y escritorio */}
-        <div className="bg-brand-surface rounded-lg border border-brand-border/60 p-5 mb-4">
-          <span className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold">Ítems del Costo Directo</span>
-          <p className="text-xs text-brand-text-secondary mt-1 mb-4">Agrega cada material o actividad por separado. El subtotal se calcula solo.</p>
-
-          <div className="space-y-3">
-            {items.map((item, idx) => (
-              <div key={item.id} className="rounded-lg border border-brand-border/50 bg-brand-surface/20 p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-bold text-brand-text-secondary uppercase tracking-widest">Ítem {idx + 1}</span>
-                  <button
-                    type="button" onClick={() => removeItem(item.id)} disabled={items.length <= 1}
-                    aria-label="Eliminar este ítem"
-                    className="w-7 h-7 flex items-center justify-center rounded text-brand-text-secondary hover:text-brand-danger hover:bg-brand-danger/10 transition-colors disabled:opacity-0 disabled:pointer-events-none"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+          {/* Contratante + CD — fijo en escritorio */}
+          <div className="space-y-2 lg:sticky lg:top-6">
+            <div className="bg-brand-surface rounded-lg border border-brand-border/60 p-4">
+              <p className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold mb-3">Datos del Contratante</p>
+              <div className="space-y-3">
+                <div>
+                  <FieldLabel>Nombre / Empresa *</FieldLabel>
+                  <TextInput compact value={nombreCliente} onChange={setNombreCliente} placeholder="Constructora XYZ S.A.S." />
                 </div>
-
-                <div className="mb-3">
-                  <FieldLabel>Descripción</FieldLabel>
-                  <TextInput value={item.desc} onChange={v => updateItem(item.id, 'desc', v)} placeholder="Ej: Suministro de mármol Carrara" />
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <FieldLabel>Unidad</FieldLabel>
-                    <TextInput value={item.und} onChange={v => updateItem(item.id, 'und', v)} placeholder="m², ml, día…" />
+                    <FieldLabel>Ciudad</FieldLabel>
+                    <TextInput compact value={ciudad} onChange={setCiudad} placeholder="Ciudad" />
                   </div>
                   <div>
-                    <FieldLabel>Cantidad</FieldLabel>
-                    <input
-                      type="number" value={item.cant} min={0} step={0.1}
-                      onChange={e => updateItem(item.id, 'cant', parseFloat(e.target.value) || 0)}
-                      className="w-full bg-brand-input border border-brand-border rounded px-3 py-2.5 text-sm text-brand-text text-right tabular-nums outline-none transition-all duration-200 focus:border-brand-primary focus:shadow-[0_0_0_1px_#1F6F5440]"
-                    />
+                    <FieldLabel>Teléfono</FieldLabel>
+                    <TextInput compact value={telefono} onChange={setTelefono} placeholder="+57 300…" />
                   </div>
-                  <div className="col-span-2 sm:col-span-1">
-                    <FieldLabel>Precio unitario</FieldLabel>
-                    <input
-                      type="number" value={item.punit || ''} min={0} step={1000} placeholder="0"
-                      onChange={e => updateItem(item.id, 'punit', parseFloat(e.target.value) || 0)}
-                      className="w-full bg-brand-input border border-brand-border rounded px-3 py-2.5 text-sm text-brand-text text-right tabular-nums outline-none transition-all duration-200 focus:border-brand-primary focus:shadow-[0_0_0_1px_#1F6F5440]"
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-3 pt-3 border-t border-brand-border/40 flex items-center justify-between">
-                  <span className="text-xs text-brand-text-secondary">Subtotal de este ítem</span>
-                  <span className="font-mono text-sm font-bold text-brand-gold-text">{formatCOP(item.cant * item.punit)}</span>
                 </div>
               </div>
-            ))}
-          </div>
-
-          <button
-            type="button" onClick={addItem}
-            className="w-full mt-3 py-3 rounded-lg border border-dashed border-brand-primary/40 bg-brand-primary/[0.04] text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.08] hover:border-brand-primary/60 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <PlusCircle size={16} aria-hidden="true" />
-            Agregar otro ítem
-          </button>
-
-          {/* CD Total */}
-          <div className="mt-4 p-4 rounded-lg bg-brand-primary/[0.06] border border-brand-primary/20 flex items-center justify-between">
-            <div>
-              <p className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold">Costo Directo (CD)</p>
-              <p className="text-[10px] text-brand-text-secondary mt-0.5">Base de cálculo AIU — Decreto 1372/92</p>
             </div>
-            <span className="font-mono text-xl font-bold text-brand-gold-text">{formatCOP(cd)}</span>
+
+            <div className="p-3 rounded-lg bg-brand-primary/[0.06] border border-brand-primary/20">
+              <p className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold">Costo Directo (CD)</p>
+              <p className="text-[10px] text-brand-text-secondary mt-0.5 mb-1">Base de cálculo AIU — Decreto 1372/92</p>
+              <span className="font-mono text-xl font-bold text-brand-gold-text">{formatCOP(cd)}</span>
+            </div>
+
+            {/* Siguiente vive junto al panel fijo -- así queda visible sin bajar hasta el final de la tabla */}
+            <StepNav onNext={onNext} nextDisabled={!canNext} />
           </div>
         </div>
-
-        <StepNav onNext={onNext} nextDisabled={!canNext} />
       </div>
     </motion.div>
   )
@@ -474,7 +486,7 @@ function CCModalAIU({ cotId, onClose }: { cotId: number; onClose: () => void }) 
 // ─── Step 2 — Resultado ───────────────────────────────────────────────────────
 
 function Step2Resultado({
-  dir, resultado, saved, saving, onBack, onSave,
+  dir, resultado, saved, saving, onBack, onSave, onNuevaCotizacion,
 }: {
   dir: number
   resultado: ResultadoAIU
@@ -482,6 +494,7 @@ function Step2Resultado({
   saving: boolean
   onBack: () => void
   onSave: () => void
+  onNuevaCotizacion: () => void
 }) {
   const navigate = useNavigate()
   const [pdfLoading, setPdfLoading] = useState(false)
@@ -599,6 +612,10 @@ function Step2Resultado({
               className="flex-1 py-3 rounded border border-brand-border text-sm text-brand-text-secondary hover:text-brand-text transition-colors">
               Ajustar parámetros
             </button>
+            <button onClick={onNuevaCotizacion}
+              className="flex-1 py-3 rounded bg-brand-surface border border-brand-border text-sm text-brand-text hover:border-brand-primary/40 transition-colors font-semibold">
+              Nueva cotización AIU
+            </button>
           </div>
         </div>
       </motion.div>
@@ -613,23 +630,22 @@ function Step2Resultado({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function CotizacionAIUPage() {
-  const [paso, setPaso] = useState(0)
+  const {
+    paso, setPaso,
+    nombreCliente, setNombreCliente,
+    ciudad, setCiudad,
+    telefono, setTelefono,
+    items, setItems,
+    pctA, setPctA,
+    pctI, setPctI,
+    pctU, setPctU,
+    incluirIva, setIncluirIva,
+    resultado, setResultado,
+    reset,
+  } = useAiuWizardStore()
   const [dir, setDir] = useState(1)
 
-  // Step 0
-  const [nombreCliente, setNombreCliente] = useState('')
-  const [ciudad, setCiudad] = useState('')
-  const [telefono, setTelefono] = useState('')
-  const [items, setItems] = useState<ItemAIU[]>(DEFAULT_ITEMS)
-
-  // Step 1
-  const [pctA, setPctA] = useState(2.0)
-  const [pctI, setPctI] = useState(2.0)
-  const [pctU, setPctU] = useState(5.0)
-  const [incluirIva, setIncluirIva] = useState(true)
-
-  // Step 2
-  const [resultado, setResultado] = useState<ResultadoAIU | null>(null)
+  // Step 2 (estado efímero de la operación en curso, no se persiste)
   const [loading, setLoading] = useState(false)
   const [calcError, setCalcError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -714,7 +730,9 @@ export default function CotizacionAIUPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-4xl mx-auto py-6 px-2">
+      {/* max-w-6xl para que Step0Items (tabla + panel lateral) tenga espacio real --
+          Step1AIU y Step2Resultado ya limitan su propio ancho por dentro. */}
+      <div className="max-w-6xl mx-auto py-6 px-2">
         <PageHeader
           kicker="Crear"
           title="Cotización AIU"
@@ -763,6 +781,7 @@ export default function CotizacionAIUPage() {
               saving={saving}
               onBack={() => navigate(1)}
               onSave={handleSave}
+              onNuevaCotizacion={() => { reset(); setSaved(null); setCalcError(null) }}
             />
           )}
         </AnimatePresence>

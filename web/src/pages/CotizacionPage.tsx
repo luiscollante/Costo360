@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { FileDown, Receipt, Loader2, Plus } from 'lucide-react'
+import { FileDown, Receipt, Loader2, Plus, Trash2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, useLocation } from 'react-router-dom'
 import AppLayout from '@/components/AppLayout'
@@ -9,6 +9,7 @@ import type { MaterialItem, PiezaItem } from '@/types/cotizacion'
 import MaterialCombobox from '@/components/MaterialCombobox'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
+import { DataTable } from '@/components/ui/DataTable'
 import { formatCOP, formatNum, formatPct } from '@/lib/utils'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -218,6 +219,8 @@ function MonoInput({
   readOnly,
   suffix,
   decimals,
+  compact,
+  title,
 }: {
   value: string | number
   onChange?: (v: string) => void
@@ -229,6 +232,9 @@ function MonoInput({
   readOnly?: boolean
   suffix?: string
   decimals?: number
+  /** Fila de tabla (Step2Piezas, Nesting): padding/tamaño reducidos, sin perder la lógica de formato decimal. */
+  compact?: boolean
+  title?: string
 }) {
   const fmt = React.useCallback((v: string | number): string => {
     if (v === '' || v === 0 || v == null) return ''
@@ -246,13 +252,14 @@ function MonoInput({
   }, [value, fmt])
 
   const baseClass = [
-    'w-full bg-brand-input border border-brand-border rounded px-3 py-2.5',
-    'font-mono text-sm text-brand-text placeholder-brand-muted/40',
+    'w-full bg-brand-input border border-brand-border rounded',
+    compact ? 'px-2 py-1.5 text-xs' : 'px-3 py-2.5 text-sm',
+    'font-mono text-brand-text placeholder-brand-muted/40',
     'outline-none transition-all duration-200',
     'focus:border-brand-primary focus:shadow-[0_0_0_1px_#1F6F5440,0_0_12px_#1F6F5418]',
     'group-hover:border-brand-border/80',
     readOnly ? 'cursor-default text-brand-primary/80' : '',
-    suffix ? 'pr-6' : '',
+    suffix ? (compact ? 'pr-5' : 'pr-6') : '',
     className,
   ].join(' ')
 
@@ -273,10 +280,11 @@ function MonoInput({
             }
           }}
           placeholder={placeholder}
+          title={title}
           className={baseClass}
         />
         {suffix && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-brand-text-secondary font-mono pointer-events-none">
+          <span className={`absolute ${compact ? 'right-2' : 'right-3'} top-1/2 -translate-y-1/2 ${compact ? 'text-[10px]' : 'text-xs'} text-brand-text-secondary font-mono pointer-events-none`}>
             {suffix}
           </span>
         )}
@@ -297,7 +305,7 @@ function MonoInput({
         className={baseClass}
       />
       {suffix && (
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-brand-text-secondary font-mono pointer-events-none">
+        <span className={`absolute ${compact ? 'right-2' : 'right-3'} top-1/2 -translate-y-1/2 ${compact ? 'text-[10px]' : 'text-xs'} text-brand-text-secondary font-mono pointer-events-none`}>
           {suffix}
         </span>
       )}
@@ -310,11 +318,13 @@ function TextInput({
   onChange,
   placeholder,
   className = '',
+  compact,
 }: {
   value: string
   onChange: (v: string) => void
   placeholder?: string
   className?: string
+  compact?: boolean
 }) {
   return (
     <input
@@ -323,8 +333,9 @@ function TextInput({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       className={[
-        'w-full bg-brand-input border border-brand-border rounded px-3 py-2.5',
-        'text-sm text-brand-text placeholder-brand-muted/40',
+        'w-full bg-brand-input border border-brand-border rounded',
+        compact ? 'px-2 py-1.5 text-xs' : 'px-3 py-2.5 text-sm',
+        'text-brand-text placeholder-brand-muted/40',
         'outline-none transition-all duration-200',
         'focus:border-brand-primary focus:shadow-[0_0_0_1px_#1F6F5440]',
         className,
@@ -338,19 +349,22 @@ function SelectInput({
   onChange,
   options,
   className = '',
+  compact,
 }: {
   value: string
   onChange: (v: string) => void
   options: { value: string; label: string }[]
   className?: string
+  compact?: boolean
 }) {
   return (
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className={[
-        'w-full bg-brand-input border border-brand-border rounded px-3 py-2.5',
-        'text-sm text-brand-text',
+        'w-full bg-brand-input border border-brand-border rounded',
+        compact ? 'px-2 py-1.5 text-xs' : 'px-3 py-2.5 text-sm',
+        'text-brand-text',
         'outline-none transition-all duration-200',
         'focus:border-brand-primary focus:shadow-[0_0_0_1px_#1F6F5440]',
         className,
@@ -1443,7 +1457,7 @@ function Step2Piezas({ dir }: { dir: number }) {
 
   return (
     <StepMotion stepKey={1} dir={dir}>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <StepHeader
           step="02"
           title="Piezas"
@@ -1492,191 +1506,196 @@ function Step2Piezas({ dir }: { dir: number }) {
           </div>
         )}
 
-        {/* Piece list — fades when changing plate */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={placaActivaId}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.12 }}
-          >
-            <AnimatePresence initial={false}>
-              {piezasFiltradas.length === 0 ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-brand-surface rounded-lg p-12 text-center border border-dashed border-brand-border"
-                >
-                  <div className="text-brand-text-secondary text-4xl mb-4">⊕</div>
-                  <p className="text-sm text-brand-text-secondary mb-2">
-                    {showTabs ? `Sin piezas para ${placaActiva?.ref || `Placa ${placaActivaIdx + 1}`}` : 'Sin piezas aún'}
-                  </p>
-                  <p className="text-xs text-brand-text-secondary mb-6">
-                    Agrega las piezas que componen el proyecto
-                  </p>
-                  <button
-                    type="button"
-                    onClick={addPieza}
-                    className="text-xs text-brand-text-secondary hover:text-brand-primary transition-colors"
+        {/* Tabla de piezas (izquierda) + resumen fijo (derecha) — antes cada pieza
+            era una tarjeta de ~130px apilada en una sola columna angosta; con 5-6
+            piezas eso eran 800-1000px de solo lista. Ahora cada pieza es una fila. */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
+          <div className="min-w-0">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={placaActivaId}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.12 }}
+              >
+                {piezasFiltradas.length === 0 ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-brand-surface rounded-lg p-12 text-center border border-dashed border-brand-border"
                   >
-                    + Agregar primera pieza
-                  </button>
-                </motion.div>
-              ) : (
-                <div className="space-y-3">
-                  {piezasFiltradas.map((pieza, idx) => {
-                    const tipoAncho = ANCHOS_ESTANDAR[pieza.tipoElemento]
-                    const isCustom = tipoAncho === null
-                    const m2 = piezaM2(pieza)
-                    const colorIdx = materiales.findIndex((m) => m.id === pieza.placaId)
-                    const color = PLACA_COLORS[(colorIdx >= 0 ? colorIdx : 0) % PLACA_COLORS.length]
+                    <div className="text-brand-text-secondary text-4xl mb-4">⊕</div>
+                    <p className="text-sm text-brand-text-secondary mb-2">
+                      {showTabs ? `Sin piezas para ${placaActiva?.ref || `Placa ${placaActivaIdx + 1}`}` : 'Sin piezas aún'}
+                    </p>
+                    <p className="text-xs text-brand-text-secondary mb-6">
+                      Agrega las piezas que componen el proyecto
+                    </p>
+                    <button
+                      type="button"
+                      onClick={addPieza}
+                      className="text-xs text-brand-text-secondary hover:text-brand-primary transition-colors"
+                    >
+                      + Agregar primera pieza
+                    </button>
+                  </motion.div>
+                ) : (
+                  <Card className="overflow-hidden">
+                    <DataTable
+                      caption="Piezas del proyecto"
+                      columns={[
+                        { key: 'idx', label: '#', className: 'w-8' },
+                        { key: 'nombre', label: 'Nombre', className: 'min-w-[9rem]' },
+                        { key: 'tipo', label: 'Tipo de elemento', className: 'min-w-[10rem]' },
+                        { key: 'largo', label: 'Largo', className: 'w-24' },
+                        { key: 'ancho', label: 'Ancho', className: 'w-24' },
+                        { key: 'cant', label: 'Cant.', className: 'w-16' },
+                        { key: 'area', label: 'Área', className: 'w-24 text-right' },
+                        { key: 'del', label: '', className: 'w-8' },
+                      ]}
+                    >
+                      <AnimatePresence initial={false}>
+                        {piezasFiltradas.map((pieza, idx) => {
+                          const tipoAncho = ANCHOS_ESTANDAR[pieza.tipoElemento]
+                          const m2 = piezaM2(pieza)
+                          const colorIdx = materiales.findIndex((m) => m.id === pieza.placaId)
+                          const color = PLACA_COLORS[(colorIdx >= 0 ? colorIdx : 0) % PLACA_COLORS.length]
 
-                    return (
-                      <motion.div
-                        key={pieza.id}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, x: -20, height: 0 }}
-                        transition={{ delay: idx * 0.04, duration: 0.2 }}
-                        className="bg-brand-surface rounded-lg p-5 border border-brand-border/60 relative"
-                        style={showTabs ? { borderLeft: `2px solid ${color.hex}30` } : undefined}
-                      >
-                        <div className="absolute top-4 left-5">
-                          <span className="font-mono text-[9px] text-brand-text-secondary tracking-widest">
-                            P{String(idx + 1).padStart(2, '0')}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removePieza(pieza.id)}
-                          className="absolute top-3.5 right-4 text-brand-text-secondary hover:text-brand-danger/70 transition-colors text-lg leading-none"
-                        >
-                          ×
-                        </button>
-
-                        <div className="mt-2 grid grid-cols-12 gap-3 items-end">
-                          <div className="col-span-12 sm:col-span-3">
-                            <FieldLabel>Nombre</FieldLabel>
-                            <TextInput
-                              value={pieza.nombre}
-                              onChange={(v) => updatePieza(pieza.id, 'nombre', v)}
-                              placeholder="Opcional"
-                            />
-                          </div>
-                          <div className="col-span-12 sm:col-span-4">
-                            <FieldLabel>Tipo de elemento</FieldLabel>
-                            <SelectInput
-                              value={pieza.tipoElemento}
-                              onChange={(v) => {
-                                const anchoDefault = ANCHOS_ESTANDAR[v]
-                                updatePieza(pieza.id, 'tipoElemento', v)
-                                if (anchoDefault !== null && anchoDefault !== undefined) {
-                                  updatePieza(pieza.id, 'anchoCustom', String(anchoDefault))
-                                }
-                              }}
-                              options={TIPO_ELEMENT_KEYS.map((k) => ({ value: k, label: k }))}
-                            />
-                          </div>
-                          <div className="col-span-4 sm:col-span-2">
-                            <FieldLabel>Largo</FieldLabel>
-                            <MonoInput
-                              value={pieza.ml}
-                              onChange={(v) => updatePieza(pieza.id, 'ml', v)}
-                              placeholder="0.00"
-                              suffix="m"
-                              decimals={2}
-                            />
-                          </div>
-                          <div className="col-span-4 sm:col-span-2">
-                            <FieldLabel>
-                              Ancho{!isCustom && tipoAncho !== null ? ` · def. ${tipoAncho}m` : ''}
-                            </FieldLabel>
-                            <MonoInput
-                              value={pieza.anchoCustom}
-                              onChange={(v) => updatePieza(pieza.id, 'anchoCustom', v)}
-                              placeholder="0.00"
-                              suffix="m"
-                              decimals={2}
-                            />
-                          </div>
-                          <div className="col-span-4 sm:col-span-1">
-                            <FieldLabel>Cant.</FieldLabel>
-                            <MonoInput
-                              value={pieza.cantidad}
-                              onChange={(v) => updatePieza(pieza.id, 'cantidad', v)}
-                              decimals={0}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="mt-3 flex justify-end">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] text-brand-text-secondary uppercase tracking-widest">
-                              Área
-                            </span>
-                            <span
-                              className={[
-                                'font-mono text-sm font-bold transition-colors',
-                                m2 > 0 ? 'text-brand-gold-text' : 'text-brand-text-secondary',
-                              ].join(' ')}
+                          return (
+                            <motion.tr
+                              key={pieza.id}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              transition={{ delay: idx * 0.03, duration: 0.15 }}
+                              className="border-b border-brand-border/40 last:border-0"
+                              style={showTabs ? { borderLeft: `2px solid ${color.hex}` } : undefined}
                             >
-                              {formatNum(m2)} m²
-                            </span>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )
-                  })}
-                </div>
-              )}
+                              <td className="px-2 py-1.5 align-middle">
+                                <span className="font-mono text-[10px] text-brand-text-secondary">
+                                  {String(idx + 1).padStart(2, '0')}
+                                </span>
+                              </td>
+                              <td className="px-2 py-1.5 align-middle">
+                                <TextInput
+                                  compact
+                                  value={pieza.nombre}
+                                  onChange={(v) => updatePieza(pieza.id, 'nombre', v)}
+                                  placeholder="Opcional"
+                                />
+                              </td>
+                              <td className="px-2 py-1.5 align-middle">
+                                <SelectInput
+                                  compact
+                                  value={pieza.tipoElemento}
+                                  onChange={(v) => {
+                                    const anchoDefault = ANCHOS_ESTANDAR[v]
+                                    updatePieza(pieza.id, 'tipoElemento', v)
+                                    if (anchoDefault !== null && anchoDefault !== undefined) {
+                                      updatePieza(pieza.id, 'anchoCustom', String(anchoDefault))
+                                    }
+                                  }}
+                                  options={TIPO_ELEMENT_KEYS.map((k) => ({ value: k, label: k }))}
+                                />
+                              </td>
+                              <td className="px-2 py-1.5 align-middle">
+                                <MonoInput
+                                  compact
+                                  value={pieza.ml}
+                                  onChange={(v) => updatePieza(pieza.id, 'ml', v)}
+                                  placeholder="0.00"
+                                  suffix="m"
+                                  decimals={2}
+                                />
+                              </td>
+                              <td className="px-2 py-1.5 align-middle">
+                                <MonoInput
+                                  compact
+                                  value={pieza.anchoCustom}
+                                  onChange={(v) => updatePieza(pieza.id, 'anchoCustom', v)}
+                                  placeholder="0.00"
+                                  suffix="m"
+                                  decimals={2}
+                                  title={tipoAncho !== null && tipoAncho !== undefined ? `Ancho por defecto: ${tipoAncho}m` : undefined}
+                                />
+                              </td>
+                              <td className="px-2 py-1.5 align-middle">
+                                <MonoInput
+                                  compact
+                                  value={pieza.cantidad}
+                                  onChange={(v) => updatePieza(pieza.id, 'cantidad', v)}
+                                  decimals={0}
+                                />
+                              </td>
+                              <td className="px-2 py-1.5 align-middle text-right">
+                                <span
+                                  className={[
+                                    'font-mono text-xs font-bold whitespace-nowrap',
+                                    m2 > 0 ? 'text-brand-gold-text' : 'text-brand-text-secondary',
+                                  ].join(' ')}
+                                >
+                                  {formatNum(m2)} m²
+                                </span>
+                              </td>
+                              <td className="px-2 py-1.5 align-middle text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => removePieza(pieza.id)}
+                                  className="text-brand-text-secondary hover:text-brand-danger/70 transition-colors cursor-pointer"
+                                  aria-label="Eliminar pieza"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </td>
+                            </motion.tr>
+                          )
+                        })}
+                      </AnimatePresence>
+                    </DataTable>
+                  </Card>
+                )}
+              </motion.div>
             </AnimatePresence>
-          </motion.div>
-        </AnimatePresence>
 
-        {/* Consumption indicator */}
-        {placaActiva && (
-          <div className="mt-4">
-            <ConsumoIndicador
-              placa={placaActiva}
-              placaIdx={placaActivaIdx >= 0 ? placaActivaIdx : 0}
-              piezasFiltradas={piezasFiltradas}
-            />
+            {/* Add piece button */}
+            <button
+              type="button"
+              onClick={addPieza}
+              className="mt-4 w-full py-3 rounded-lg border border-dashed border-brand-primary/40 bg-brand-primary/[0.04] text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.08] hover:border-brand-primary/60 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Plus size={16} aria-hidden="true" />
+              {showTabs
+                ? `Agregar pieza a ${placaActiva?.ref ? placaActiva.ref.slice(0, 20) : `Placa ${(placaActivaIdx >= 0 ? placaActivaIdx : 0) + 1}`}`
+                : 'Agregar pieza'}
+            </button>
           </div>
-        )}
 
-        {/* Add piece button */}
-        <button
-          type="button"
-          onClick={addPieza}
-          className="mt-4 w-full py-3 rounded-lg border border-dashed border-brand-primary/40 bg-brand-primary/[0.04] text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.08] hover:border-brand-primary/60 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
-        >
-          <Plus size={16} aria-hidden="true" />
-          {showTabs
-            ? `Agregar pieza a ${placaActiva?.ref ? placaActiva.ref.slice(0, 20) : `Placa ${(placaActivaIdx >= 0 ? placaActivaIdx : 0) + 1}`}`
-            : 'Agregar pieza'}
-        </button>
+          {/* Resumen — fijo en escritorio para que no se pierda de vista al agregar piezas */}
+          <div className="space-y-4 lg:sticky lg:top-6">
+            {placaActiva && (
+              <ConsumoIndicador
+                placa={placaActiva}
+                placaIdx={placaActivaIdx >= 0 ? placaActivaIdx : 0}
+                piezasFiltradas={piezasFiltradas}
+              />
+            )}
 
-        {/* Global summary */}
-        {showTabs && (
-          <>
-            <SectionDivider label="Resumen global" />
-            <ResumenGlobal materiales={materiales} piezas={piezas} />
-          </>
-        )}
+            {showTabs && <ResumenGlobal materiales={materiales} piezas={piezas} />}
 
-        {/* Total */}
-        {piezas.length > 0 && (
-          <div className="mt-6 bg-brand-surface rounded-lg px-5 py-4 flex items-center justify-between border border-brand-border/60">
-            <span className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold">
-              Total proyecto
-            </span>
-            <span className="font-mono text-xl font-bold text-brand-text">
-              {formatNum(totalM2)}{' '}
-              <span className="text-sm text-brand-text-secondary font-normal">m²</span>
-            </span>
+            {piezas.length > 0 && (
+              <div className="bg-brand-surface rounded-lg px-5 py-4 flex items-center justify-between border border-brand-border/60">
+                <span className="text-[9px] tracking-[0.2em] uppercase text-brand-text-secondary font-semibold">
+                  Total proyecto
+                </span>
+                <span className="font-mono text-xl font-bold text-brand-text">
+                  {formatNum(totalM2)}{' '}
+                  <span className="text-sm text-brand-text-secondary font-normal">m²</span>
+                </span>
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
         <StepNav
           onBack={() => setPaso(0)}
@@ -2616,7 +2635,10 @@ export default function CotizacionPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-4xl mx-auto py-6 px-2">
+      {/* max-w-6xl para que Step2Piezas (tabla + panel lateral) tenga espacio real --
+          los otros 3 pasos ya limitan su propio ancho por dentro (max-w-2xl/4xl),
+          así que esto no los afecta visualmente. */}
+      <div className="max-w-6xl mx-auto py-6 px-2">
         <PageHeader
           kicker="Crear"
           title="Nueva cotización"
