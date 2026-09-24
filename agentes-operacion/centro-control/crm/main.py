@@ -1,10 +1,13 @@
 from pathlib import Path
+import hmac
+import logging
 import httpx
-from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import delete, select
+from pydantic import BaseModel, Field
+from sqlalchemy import delete, select, text
 from sqlalchemy.exc import IntegrityError, OperationalError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
@@ -13,23 +16,49 @@ from .config import ROOT, Settings
 from .db import Audit, Database, Message, Proposal, Session, Usage, now
 from .schemas import Chat, Change, Login, PARENTS, ProposalIn, SCHEMAS
 
+log = logging.getLogger('crm.main')
+
+# Cabeceras de seguridad del modo en línea (el HTML estático recibe las
+# mismas desde vercel.json).
+_CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+        "font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'")
+
+
+class CodigoIn(BaseModel):
+    codigo: str = Field(min_length=6, max_length=20)
+
+
+def client_ip(request: Request, settings) -> str:
+    # En línea, Vercel fija `x-real-ip` (no falsificable por el cliente);
+    # NUNCA se confía en X-Forwarded-For.
+    if settings.online:
+        return request.headers.get('x-real-ip', 'desconocida')[:64]
+    return request.client.host if request.client else 'local'
+
 
 def create_app(settings=None):
     settings = settings or Settings()
-    app = FastAPI(title='Costo360 · Centro de control interno', docs_url='/api/docs', redoc_url=None)
+    app = FastAPI(title='Costo360 · Centro de control interno',
+                  docs_url=None if settings.online else '/api/docs', redoc_url=None, openapi_url=None if settings.online else '/openapi.json')
     app.state.settings = settings
     app.state.db = Database(settings.database)
     app.state.agent = agent.Agent(app.state.db, settings)
-    gate = auth.RateGate()
-    app.add_middleware(TrustedHostMiddleware, allowed_hosts=['127.0.0.1', 'localhost', '[::1]'])
+    gate = auth.RateGate()  # solo modo local; en línea los límites viven en la BD
+    hosts = list(settings.public_hosts) if settings.online else ['127.0.0.1', 'localhost', '[::1]']
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=hosts)
 
     @app.middleware('http')
-    async def local_boundary(request: Request, call_next):
-        # Aplicación local deliberadamente no publicable. No confiar en X-Forwarded-For.
-        if request.client and request.client.host not in ('127.0.0.1', '::1', 'testclient'):
+    async def boundary(request: Request, call_next):
+        if settings.online:
+            if settings.disabled:
+                return JSONResponse({'detail': 'El Centro de Control en línea está apagado temporalmente.'}, 503)
+        # Local: aplicación deliberadamente no publicable. No confiar en X-Forwarded-For.
+        elif request.client and request.client.host not in ('127.0.0.1', '::1', 'testclient'):
             return JSONResponse({'detail': 'Este piloto solo permite conexiones locales.'}, 403)
         if request.method not in ('GET', 'HEAD', 'OPTIONS'):
             if request.headers.get('origin') not in settings.origins:
+                return JSONResponse({'detail': 'Origen no autorizado.'}, 403)
+            if settings.online and request.headers.get('sec-fetch-site', 'same-origin') not in ('same-origin', 'none'):
                 return JSONResponse({'detail': 'Origen no autorizado.'}, 403)
             try:
                 size = int(request.headers.get('content-length', '0'))
@@ -45,6 +74,10 @@ def create_app(settings=None):
         response.headers['X-Frame-Options'] = 'DENY'
         response.headers['Referrer-Policy'] = 'no-referrer'
         response.headers['Cache-Control'] = 'no-store'
+        if settings.online:
+            response.headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains'
+            response.headers['Content-Security-Policy'] = _CSP
+            response.headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=(), payment=()'
         return response
 
     @app.exception_handler(RequestValidationError)
@@ -60,16 +93,37 @@ def create_app(settings=None):
     async def unavailable(request, exc):
         return JSONResponse({'detail': 'El almacenamiento no está disponible temporalmente. No se confirmó el cambio.'}, 503)
 
+    @app.exception_handler(Exception)
+    async def unexpected(request, exc):
+        # Nunca devolver trazas ni detalles internos.
+        log.exception('Error no controlado')
+        return JSONResponse({'detail': 'Ocurrió un error inesperado. No se confirmó ningún cambio.'}, 500)
+
     @app.get('/api/health')
     def health():
-        return {'status': 'ok', 'local_only': True, 'demo': settings.demo,
+        return {'status': 'ok', 'local_only': not settings.online, 'online': settings.online, 'demo': settings.demo,
                 'gemini_configured': bool(settings.gemini_key and settings.gemini_model)}
 
     @app.post('/api/login')
     def login(body: Login, request: Request, response: Response):
-        gate.check('login:' + (request.client.host if request.client else 'local'))
-        token, csrf, user = auth.login(app.state.db, body.email, body.password)
-        response.set_cookie(auth.COOKIE, token, httponly=True, samesite='strict', max_age=28800, path='/api')
+        ip = client_ip(request, settings)
+        if not settings.online:
+            gate.check('login:' + ip)
+        token, csrf, user = auth.login(app.state.db, body.email, body.password, settings, ip)
+        if settings.online:
+            # Falta el segundo factor: cookie de vida corta, sin datos de usuario.
+            auth.set_cookie(response, settings, token, 1)
+            return {'mfa_required': True}
+        auth.set_cookie(response, settings, token, 8)
+        return {'user': auth.public_user(user), 'csrf': csrf}
+
+    @app.post('/api/login/codigo')
+    def login_codigo(body: CodigoIn, request: Request, response: Response):
+        if not settings.online:
+            raise HTTPException(404, 'No disponible en modo local.')
+        token = request.cookies.get(auth.cookie_name(settings), '')
+        nuevo, csrf, user = auth.verificar_codigo(app.state.db, token, body.codigo, settings, client_ip(request, settings))
+        auth.set_cookie(response, settings, nuevo, 12)
         return {'user': auth.public_user(user), 'csrf': csrf}
 
     @app.get('/api/me')
@@ -79,8 +133,27 @@ def create_app(settings=None):
     @app.post('/api/logout')
     def logout(request: Request, response: Response, user=Depends(auth.current_user)):
         with app.state.db.transaction(write=True) as session:
-            session.execute(delete(Session).where(Session.token_hash == auth.digest(request.cookies.get(auth.COOKIE, ''))))
-        response.delete_cookie(auth.COOKIE, path='/api')
+            session.execute(delete(Session).where(Session.token_hash == auth.digest(request.cookies.get(auth.cookie_name(settings), ''))))
+        auth.delete_cookie(response, settings)
+        return {'ok': True}
+
+    @app.post('/api/logout/todas')
+    def logout_todas(response: Response, user=Depends(auth.current_user)):
+        """Cierra TODAS las sesiones de esta cuenta, en todos los dispositivos."""
+        auth.cerrar_todas(app.state.db, user.id)
+        auth.delete_cookie(response, settings)
+        return {'ok': True}
+
+    @app.get('/api/cron/keepalive')
+    def keepalive(authorization: str | None = Header(default=None)):
+        """Cron diario de Vercel: toca la BD para que el proyecto gratuito de
+        Supabase no se pause tras 7 días sin uso. Solo con CRON_SECRET."""
+        esperado = settings.cron_secret
+        recibido = authorization[7:] if authorization and authorization.startswith('Bearer ') else ''
+        if not esperado or not hmac.compare_digest(recibido.encode(), esperado.encode()):
+            raise HTTPException(401, 'No autorizado.')
+        with app.state.db.transaction() as session:
+            session.execute(text('SELECT 1'))
         return {'ok': True}
 
     @app.get('/api/catalogue')
@@ -186,8 +259,9 @@ def create_app(settings=None):
                     'calls_today': usage.calls if usage else 0, 'tools': list(agent.catalogue(user)),
                     'policy_version': '2026-09-17.1', 'confirmation': 'Todas las escrituras requieren confirmación humana.'}
 
+    # En línea el HTML/JS lo sirve Vercel directamente; aquí solo en local.
     dist = ROOT / 'web' / 'dist'
-    if dist.exists():
+    if dist.exists() and not settings.online:
         app.mount('/assets', StaticFiles(directory=dist / 'assets'), name='assets')
         @app.get('/')
         def index():
