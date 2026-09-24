@@ -10,6 +10,8 @@ import MaterialCombobox from '@/components/MaterialCombobox'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { DataTable } from '@/components/ui/DataTable'
+import { Dialog } from '@/components/ui/Dialog'
+import { Button } from '@/components/ui/Button'
 import { formatCOP, formatNum, formatPct } from '@/lib/utils'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -1430,6 +1432,10 @@ function Step2Piezas({ dir }: { dir: number }) {
     setPiezasLocal((prev) => prev.filter((p) => p.id !== id))
   }
 
+  // Borrar una pieza pide confirmación — un toque accidental en la canasta
+  // (sobre todo en celular) ya no se lleva la pieza sin aviso.
+  const [piezaAEliminar, setPiezaAEliminar] = useState<{ pieza: PiezaLocal; numero: number } | null>(null)
+
   const totalM2 = piezas.reduce((acc, p) => acc + piezaM2(p), 0)
 
   function handleNext() {
@@ -1541,7 +1547,82 @@ function Step2Piezas({ dir }: { dir: number }) {
                     </button>
                   </motion.div>
                 ) : (
-                  <Card className="overflow-hidden">
+                  <>
+                  {/* Celular: una tarjeta por pieza. La tabla de 8 columnas no cabe en
+                      ~390px — obligaba a scroll lateral y Largo/Ancho quedaban tan
+                      angostos que no se leía el número (feedback del fundador). */}
+                  <div className="md:hidden space-y-3">
+                    {piezasFiltradas.map((pieza, idx) => {
+                      const m2 = piezaM2(pieza)
+                      const colorIdx = materiales.findIndex((m) => m.id === pieza.placaId)
+                      const color = PLACA_COLORS[(colorIdx >= 0 ? colorIdx : 0) % PLACA_COLORS.length]
+                      return (
+                        <Card
+                          key={pieza.id}
+                          className="p-3 space-y-3"
+                          style={showTabs ? { borderLeft: `3px solid ${color.hex}` } : undefined}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-[11px] text-brand-text-secondary shrink-0">
+                              {String(idx + 1).padStart(2, '0')}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <TextInput
+                                compact
+                                value={pieza.nombre}
+                                onChange={(v) => updatePieza(pieza.id, 'nombre', v)}
+                                placeholder="Nombre (opcional)"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setPiezaAEliminar({ pieza, numero: idx + 1 })}
+                              className="shrink-0 p-2 -mr-1 text-brand-text-secondary hover:text-brand-danger/70 transition-colors cursor-pointer"
+                              aria-label={`Eliminar pieza ${idx + 1}`}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                          <div>
+                            <FieldLabel>Tipo de elemento</FieldLabel>
+                            <SelectInput
+                              compact
+                              value={pieza.tipoElemento}
+                              onChange={(v) => {
+                                const anchoDefault = ANCHOS_ESTANDAR[v]
+                                updatePieza(pieza.id, 'tipoElemento', v)
+                                if (anchoDefault !== null && anchoDefault !== undefined) {
+                                  updatePieza(pieza.id, 'anchoCustom', String(anchoDefault))
+                                }
+                              }}
+                              options={TIPO_ELEMENT_KEYS.map((k) => ({ value: k, label: k }))}
+                            />
+                          </div>
+                          <div className="grid grid-cols-[1fr_1fr_4.5rem] gap-2">
+                            <div className="min-w-0">
+                              <FieldLabel>Largo</FieldLabel>
+                              <MonoInput compact value={pieza.ml} onChange={(v) => updatePieza(pieza.id, 'ml', v)} placeholder="0.00" suffix="m" decimals={2} />
+                            </div>
+                            <div className="min-w-0">
+                              <FieldLabel>Ancho</FieldLabel>
+                              <MonoInput compact value={pieza.anchoCustom} onChange={(v) => updatePieza(pieza.id, 'anchoCustom', v)} placeholder="0.00" suffix="m" decimals={2} />
+                            </div>
+                            <div className="min-w-0">
+                              <FieldLabel>Cant.</FieldLabel>
+                              <MonoInput compact value={pieza.cantidad} onChange={(v) => updatePieza(pieza.id, 'cantidad', v)} decimals={0} />
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between border-t border-brand-border/40 pt-2">
+                            <span className="text-xs text-brand-text-secondary">Área</span>
+                            <span className={['font-mono text-sm font-bold', m2 > 0 ? 'text-brand-gold-text' : 'text-brand-text-secondary'].join(' ')}>
+                              {formatNum(m2)} m²
+                            </span>
+                          </div>
+                        </Card>
+                      )
+                    })}
+                  </div>
+                  <Card className="overflow-hidden hidden md:block">
                     <DataTable
                       caption="Piezas del proyecto"
                       columns={[
@@ -1641,7 +1722,7 @@ function Step2Piezas({ dir }: { dir: number }) {
                               <td className="px-2 py-1.5 align-middle text-right">
                                 <button
                                   type="button"
-                                  onClick={() => removePieza(pieza.id)}
+                                  onClick={() => setPiezaAEliminar({ pieza, numero: idx + 1 })}
                                   className="text-brand-text-secondary hover:text-brand-danger/70 transition-colors cursor-pointer"
                                   aria-label="Eliminar pieza"
                                 >
@@ -1654,6 +1735,7 @@ function Step2Piezas({ dir }: { dir: number }) {
                       </AnimatePresence>
                     </DataTable>
                   </Card>
+                  </>
                 )}
               </motion.div>
             </AnimatePresence>
@@ -1703,6 +1785,42 @@ function Step2Piezas({ dir }: { dir: number }) {
           nextDisabled={!canNext}
         />
       </div>
+
+      <Dialog
+        open={piezaAEliminar !== null}
+        onClose={() => setPiezaAEliminar(null)}
+        role="alertdialog"
+        title="¿Eliminar esta pieza?"
+      >
+        {piezaAEliminar && (
+          <>
+            <p className="text-sm text-brand-text-secondary mb-6">
+              Vas a eliminar la pieza{' '}
+              <strong className="text-brand-text">
+                {String(piezaAEliminar.numero).padStart(2, '0')}
+                {' · '}
+                {piezaAEliminar.pieza.nombre || piezaAEliminar.pieza.tipoElemento}
+                {parseFloat(piezaAEliminar.pieza.ml) > 0 ? ` (${formatNum(parseFloat(piezaAEliminar.pieza.ml))} m)` : ''}
+              </strong>
+              . Esta acción no se puede deshacer.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setPiezaAEliminar(null)}>
+                Cancelar
+              </Button>
+              <Button
+                variant="danger"
+                onClick={() => {
+                  removePieza(piezaAEliminar.pieza.id)
+                  setPiezaAEliminar(null)
+                }}
+              >
+                Eliminar
+              </Button>
+            </div>
+          </>
+        )}
+      </Dialog>
     </StepMotion>
   )
 }
