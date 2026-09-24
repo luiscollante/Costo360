@@ -98,9 +98,17 @@ def main():
     email = input('Correo: ').strip()
     name = input('Nombre: ').strip()
     role = 'fundador' if args.action == 'init' else input('Rol (fundador/comercial/lectura): ').strip()
-    password = getpass.getpass('Contraseña (mínimo 12 caracteres): ')
-    if password != getpass.getpass('Repite la contraseña: '):
-        raise SystemExit('Las contraseñas no coinciden. No se creó el usuario.')
+    # La contraseña no se ve al escribirla (a propósito): si está corta o no
+    # coincide, se avisa en lenguaje simple y se vuelve a pedir.
+    while True:
+        password = getpass.getpass('Contraseña (mínimo 12 caracteres, no se ve al escribir): ')
+        if len(password) < 12:
+            print(f'  Esa contraseña tiene {len(password)} caracteres y necesita mínimo 12. Intenta de nuevo.')
+            continue
+        if password != getpass.getpass('Repite la contraseña: '):
+            print('  Las dos contraseñas no coinciden. Intenta de nuevo.')
+            continue
+        break
     create_user(db, email, name, password, role)
     print('Usuario creado. Inicia la aplicación local para entrar.')
 
