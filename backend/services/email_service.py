@@ -10,12 +10,31 @@ solo se registra el error y se devuelve `False`; el aprovisionamiento de la
 cuenta (que ya generó el link) nunca debe fallar por esto, y el link sigue
 devolviéndose también en la respuesta del endpoint como respaldo manual.
 """
+import base64
 import os
+from functools import lru_cache
+from pathlib import Path
 
 import httpx
 
 _TIMEOUT = 15.0
-_LOGO_URL = "https://costo360-web.vercel.app/logo.png"
+# Logo INCRUSTADO en el correo (imagen en línea, `cid:`), no enlazado por URL:
+# un enlace externo depende de que el cliente de correo descargue imágenes y el
+# PNG original tenía tanto margen transparente que a 28 px de alto el logo era
+# casi invisible (hallazgo del fundador, 2026-09-24 — falta de identidad de
+# marca). `email_logo.png` es el mismo logo recortado sin margen, a 2x.
+_LOGO_CID = "costo360-logo"
+_LOGO_PATH = Path(__file__).resolve().parents[1] / "static" / "email_logo.png"
+
+
+@lru_cache(maxsize=1)
+def _logo_adjunto() -> dict | None:
+    try:
+        contenido = base64.b64encode(_LOGO_PATH.read_bytes()).decode()
+    except OSError:
+        print("[email] no se encontró static/email_logo.png — correo sin logo", flush=True)
+        return None
+    return {"filename": "costo360.png", "content": contenido, "content_id": _LOGO_CID}
 
 _ROL_NOMBRE = {"admin": "Administrador", "gerencia": "Gerencia", "operativo": "Operativo"}
 _PLAN_NOMBRE = {"starter": "Starter", "pro": "Pro", "enterprise": "Enterprise"}
@@ -34,11 +53,15 @@ def _enviar(destinatario: str, asunto: str, html: str, *, timeout: float = _TIME
         print(f"[email] RESEND_API_KEY no configurada — no se envió '{asunto}' a {destinatario}", flush=True)
         return False
     try:
+        payload = {"from": _from(), "to": [destinatario], "subject": asunto, "html": html}
+        logo = _logo_adjunto()
+        if logo:
+            payload["attachments"] = [logo]
         with httpx.Client(timeout=timeout) as c:
             r = c.post(
                 "https://api.resend.com/emails",
                 headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
-                json={"from": _from(), "to": [destinatario], "subject": asunto, "html": html},
+                json=payload,
             )
         r.raise_for_status()
         return True
@@ -57,7 +80,7 @@ def _shell(preheader: str, cuerpo_html: str) -> str:
     <tr><td align="center">
       <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border:1px solid #E5D5BA;border-radius:12px;overflow:hidden;max-width:480px;">
         <tr><td style="background:#00472B;padding:28px 32px;">
-          <img src="{_LOGO_URL}" alt="Costo360" height="28" style="display:block;border:0;">
+          <img src="cid:{_LOGO_CID}" alt="Costo360" width="200" height="52" style="display:block;border:0;width:200px;height:auto;max-width:100%;">
         </td></tr>
         <tr><td style="padding:32px;">
           {cuerpo_html}
