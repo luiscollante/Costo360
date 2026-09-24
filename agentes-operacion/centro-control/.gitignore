@@ -8,3 +8,4 @@ dist/
 __pycache__/
 *.pyc
 test-results/
+admin_token.txt
