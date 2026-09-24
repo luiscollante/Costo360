@@ -8,7 +8,7 @@ import { AgentScreen, AuditView, Dashboard, Detail, Proposals } from './screens'
 import { ConsumoIA } from './consumo'
 import './style.css'
 
-type Health = { demo: boolean; gemini_configured: boolean }
+type Health = { demo: boolean; online?: boolean; gemini_configured: boolean }
 const sections = [
   { group: 'DIRECCIÓN', items: [{ id: 'inicio', label: 'Vista general', icon: LayoutDashboard }] },
   { group: 'RELACIONES Y CRECIMIENTO', items: [{ id: 'empresas', label: 'Empresas', icon: Building2 }, { id: 'contactos', label: 'Contactos', icon: Users }, { id: 'oportunidades', label: 'Oportunidades', icon: Target }, { id: 'actividades', label: 'Actividades', icon: Activity }] },
@@ -24,14 +24,28 @@ function Login({ onLogin, health }: { onLogin: (user: User) => void; health: Hea
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  // En línea, después de la contraseña se pide el código de 6 dígitos de
+  // Microsoft Authenticator (o un código de recuperación).
+  const [pideCodigo, setPideCodigo] = useState(false)
+  const [codigo, setCodigo] = useState('')
   async function submit(e: React.FormEvent) {
     e.preventDefault(); setBusy(true); setError('')
-    try { const result = await api<{ user: User; csrf: string }>('/login', { method: 'POST', body: JSON.stringify({ email, password }) }); setCsrf(result.csrf); onLogin(result.user) } catch (e) { setError((e as Error).message) } finally { setBusy(false) }
+    try {
+      const result = await api<{ user?: User; csrf?: string; mfa_required?: boolean }>('/login', { method: 'POST', body: JSON.stringify({ email, password }) })
+      if (result.mfa_required) { setPassword(''); setPideCodigo(true); return }
+      setCsrf(result.csrf!); onLogin(result.user!)
+    } catch (e) { setError((e as Error).message) } finally { setBusy(false) }
   }
-  return <div className="login-page"><section className="login-story"><img src="/logo.png" alt="Costo360"/><span className="eyebrow light">CENTRO DE CONTROL · USO INTERNO</span><h1>Tu empresa.<br/>Una sola visión.</h1><p>Construye relaciones, coordina tu operación y trabaja con IA. Siempre con el control en tus manos.</p><div className="login-points"><span><Building2 size={20}/> CRM propio</span><span><Sparkles size={20}/> IA con herramientas</span><span><ShieldCheck size={20}/> Control humano</span></div></section><section className="login-form"><div><span className="eyebrow">COSTO360 S.A.S.</span><h2>Bienvenido a tu centro de control</h2><p className="muted">Acceso privado para el fundador y su equipo.</p>{health?.demo && <div className="demo-login"><strong>Demostración local · datos ficticios</strong><p>demo@costo360.local<br/>Contraseña: Demo-local-360!</p><button className="secondary" onClick={() => { setEmail('demo@costo360.local'); setPassword('Demo-local-360!') }}>Usar cuenta de demostración</button></div>}<form onSubmit={submit}><label>Correo electrónico<input type="email" autoComplete="username" required value={email} onChange={e => setEmail(e.target.value)}/></label><label>Contraseña<input type="password" autoComplete="current-password" required maxLength={256} value={password} onChange={e => setPassword(e.target.value)}/></label>{error && <Alert>{error}</Alert>}<button className="primary" disabled={busy}>{busy ? 'Ingresando…' : 'Entrar a mi empresa'}<ArrowRight size={18}/></button></form><p className="login-footnote">Piloto local. Para datos reales crea tu cuenta desde la consola; no uses la cuenta demo.</p></div></section></div>
+  async function submitCodigo(e: React.FormEvent) {
+    e.preventDefault(); setBusy(true); setError('')
+    try { const result = await api<{ user: User; csrf: string }>('/login/codigo', { method: 'POST', body: JSON.stringify({ codigo: codigo.trim() }) }); setCsrf(result.csrf); onLogin(result.user) }
+    catch (e) { setError((e as Error).message); setCodigo('') } finally { setBusy(false) }
+  }
+  if (pideCodigo) return <div className="login-page"><section className="login-story"><img src="/logo.png" alt="Costo360"/><span className="eyebrow light">VERIFICACIÓN EN DOS PASOS</span><h1>Un paso más.</h1><p>Abre Microsoft Authenticator y escribe el código de 6 dígitos de Costo360.</p></section><section className="login-form"><div><span className="eyebrow">COSTO360 S.A.S.</span><h2>Código de verificación</h2><p className="muted">El código cambia cada 30 segundos. Si perdiste el celular, usa uno de tus códigos de recuperación.</p><form onSubmit={submitCodigo}><label>Código<input inputMode="numeric" autoComplete="one-time-code" autoFocus required minLength={6} maxLength={20} value={codigo} onChange={e => setCodigo(e.target.value)}/></label>{error && <Alert>{error}</Alert>}<button className="primary" disabled={busy}>{busy ? 'Verificando…' : 'Verificar y entrar'}<ArrowRight size={18}/></button></form><button className="secondary" onClick={() => { setPideCodigo(false); setCodigo(''); setError('') }}>Volver</button></div></section></div>
+  return <div className="login-page"><section className="login-story"><img src="/logo.png" alt="Costo360"/><span className="eyebrow light">CENTRO DE CONTROL · USO INTERNO</span><h1>Tu empresa.<br/>Una sola visión.</h1><p>Construye relaciones, coordina tu operación y trabaja con IA. Siempre con el control en tus manos.</p><div className="login-points"><span><Building2 size={20}/> CRM propio</span><span><Sparkles size={20}/> IA con herramientas</span><span><ShieldCheck size={20}/> Control humano</span></div></section><section className="login-form"><div><span className="eyebrow">COSTO360 S.A.S.</span><h2>Bienvenido a tu centro de control</h2><p className="muted">Acceso privado para el fundador y su equipo.</p>{health?.demo && <div className="demo-login"><strong>Demostración local · datos ficticios</strong><p>demo@costo360.local<br/>Contraseña: Demo-local-360!</p><button className="secondary" onClick={() => { setEmail('demo@costo360.local'); setPassword('Demo-local-360!') }}>Usar cuenta de demostración</button></div>}<form onSubmit={submit}><label>Correo electrónico<input type="email" autoComplete="username" required value={email} onChange={e => setEmail(e.target.value)}/></label><label>Contraseña<input type="password" autoComplete="current-password" required maxLength={256} value={password} onChange={e => setPassword(e.target.value)}/></label>{error && <Alert>{error}</Alert>}<button className="primary" disabled={busy}>{busy ? 'Ingresando…' : 'Entrar a mi empresa'}<ArrowRight size={18}/></button></form><p className="login-footnote">{health?.online ? 'Acceso protegido con verificación en dos pasos. Cada inicio de sesión se notifica por Telegram.' : 'Piloto local. Para datos reales crea tu cuenta desde la consola; no uses la cuenta demo.'}</p></div></section></div>
 }
 
-function Workspace({ user, health, logout }: { user: User; health: Health | null; logout: () => void }) {
+function Workspace({ user, health, logout, logoutAll }: { user: User; health: Health | null; logout: () => void; logoutAll: () => void }) {
   const [page, setPage] = useState('inicio')
   const [revision, setRevision] = useState(0)
   const [sidebar, setSidebar] = useState(false)
@@ -60,7 +74,8 @@ function Workspace({ user, health, logout }: { user: User; health: Health | null
     <aside className={'sidebar ' + (sidebar ? 'open' : '')}><div className="brand"><img src="/logo.png" alt="Costo360"/><span>CENTRO DE CONTROL</span><button className="mobile-close icon-button" aria-label="Cerrar menú" onClick={() => setSidebar(false)}><X size={19}/></button></div><div className="workspace-label"><span className="workspace-icon">C</span><span><strong>Costo360 S.A.S.</strong><small>Espacio de trabajo interno</small></span></div>
       <nav aria-label="Navegación principal">{sections.map((section, index) => <div key={section.group} className="nav-group"><span className="nav-label">{section.group}</span>{section.items.map(item => <button key={item.id} aria-current={page === item.id ? 'page' : undefined} className={'nav-item ' + (page === item.id ? 'active' : '')} onClick={() => go(item.id)}><item.icon size={18}/><span>{item.label}</span>{page === item.id && <ChevronRight size={14}/>}</button>)}{index === 0 && <button className={'agent-nav ' + (page === 'agente' ? 'active' : '')} onClick={() => go('agente')} aria-current={page === 'agente' ? 'page' : undefined}><Sparkles size={19}/><span>Agente de operación</span><small>IA</small></button>}</div>)}</nav>
       <div className="user-card"><span className="avatar small">{user.name.slice(0, 1)}</span><div className="grow"><strong>{user.name}</strong><small>{user.role === 'fundador' ? 'CEO / Fundador' : user.role}</small></div><button className="icon-button" aria-label="Cerrar sesión" onClick={logout}><LogOut size={17}/></button></div>
-    </aside><main id="main" className="main-content"><header className="topbar"><button className="mobile-menu icon-button" aria-label="Abrir navegación" onClick={() => setSidebar(true)}><Menu size={22}/></button><span>Costo360 S.A.S. <ChevronRight size={14}/> <strong>{name}</strong></span><div className="topbar-right"><span className="local-pill"><i/> {health?.demo ? 'Demostración local' : 'Espacio privado local'}</span><span className="avatar tiny">{user.name.slice(0, 1)}</span></div></header>
+      {health?.online && <button className="secondary logout-all" onClick={logoutAll}>Cerrar sesión en todos los dispositivos</button>}
+    </aside><main id="main" className="main-content"><header className="topbar"><button className="mobile-menu icon-button" aria-label="Abrir navegación" onClick={() => setSidebar(true)}><Menu size={22}/></button><span>Costo360 S.A.S. <ChevronRight size={14}/> <strong>{name}</strong></span><div className="topbar-right"><span className="local-pill"><i/> {health?.online ? 'En línea · protegido' : health?.demo ? 'Demostración local' : 'Espacio privado local'}</span><span className="avatar tiny">{user.name.slice(0, 1)}</span></div></header>
       {health?.demo && <div className="demo-strip">Datos ficticios para explorar el sistema. No hay clientes reales ni servicios externos conectados.</div>}
       <div className="page-content"><div className="page-heading"><div><span className="eyebrow">{page === 'inicio' ? 'TU CENTRO DE OPERACIONES' : 'CENTRO DE CONTROL'}</span><h1>{name}</h1><p>{descriptions[page]}</p></div>{page !== 'agente' && <button className="secondary ask-agent" onClick={() => go('agente')}><Sparkles size={17}/> Consultar al agente</button>}</div>
       {(error || meta.error) && <Alert>{error || meta.error}</Alert>}
@@ -86,9 +101,10 @@ function App() {
     return () => { controller.abort(); window.removeEventListener('crm-session-expired', expired) }
   }, [])
   async function logout() { try { await api('/logout', { method: 'POST' }); setUser(null); setCsrf('') } catch (e) { setError((e as Error).message) } }
+  async function logoutAll() { try { await api('/logout/todas', { method: 'POST' }); setUser(null); setCsrf('') } catch (e) { setError((e as Error).message) } }
   if (starting) return <Loading/>
   if (health.error) return <div className="connection-error"><Alert>No se puede conectar al servidor del CRM. {health.error}</Alert><button className="primary" onClick={() => location.reload()}>Reintentar</button></div>
-  return <>{error && <Alert>{error}</Alert>}{user ? <Workspace user={user} health={health.data} logout={logout}/> : <Login onLogin={setUser} health={health.data}/>}</>
+  return <>{error && <Alert>{error}</Alert>}{user ? <Workspace user={user} health={health.data} logout={logout} logoutAll={logoutAll}/> : <Login onLogin={setUser} health={health.data}/>}</>
 }
 
 createRoot(document.getElementById('root')!).render(<StrictMode><App/></StrictMode>)

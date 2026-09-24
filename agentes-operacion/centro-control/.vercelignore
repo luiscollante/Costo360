@@ -1,0 +1,11 @@
+# Nunca publicar datos locales, secretos ni herramientas de escritorio.
+data/
+admin_token.txt
+*.sqlite3
+.env
+.env.*
+*.bat
+*.ico
+tests/
+**/__pycache__/
+web/node_modules/

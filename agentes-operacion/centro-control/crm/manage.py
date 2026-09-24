@@ -6,7 +6,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from sqlalchemy import func, select
 
-from .auth import create_user
+from .auth import configurar_totp, create_user
 from .config import ROOT, Settings
 from .db import Database, Record, User
 from .services import mutate
@@ -45,10 +45,41 @@ def seed_demo(db):
     print('Demostración creada con datos ficticios. No usar esta cuenta con datos reales.')
 
 
+def activar_totp():
+    """Activa el código de verificación (Microsoft Authenticator u otra app)
+    de una cuenta. Se ejecuta en el computador del fundador contra la BD en
+    línea (CRM_DATABASE + CRM_TOTP_KEY en el entorno). Muestra un QR para
+    escanear y 10 códigos de recuperación que NO se vuelven a mostrar."""
+    import tempfile
+    import webbrowser
+    settings = Settings()
+    if not settings.totp_key:
+        raise SystemExit('Falta CRM_TOTP_KEY en el entorno.')
+    email = input('Correo de la cuenta: ').strip()
+    secreto, uri, codigos = configurar_totp(Database(settings.database), email, settings)
+    try:
+        import qrcode
+        ruta = Path(tempfile.gettempdir()) / 'costo360_codigo_qr.png'
+        qrcode.make(uri).save(ruta)
+        webbrowser.open(ruta.as_uri())
+        print(f'\nSe abrió el código QR ({ruta}). Escanéalo con Microsoft Authenticator y luego BORRA esa imagen.')
+    except ImportError:
+        print('\nNo está instalada la librería qrcode; agrega la cuenta a mano con esta clave:')
+    print(f'Clave para ingreso manual (tipo "basada en tiempo"): {secreto}')
+    print('\nCódigos de recuperación (úsalos si pierdes el celular; cada uno sirve una sola vez).')
+    print('Guárdalos en un lugar seguro, NO en el celular:')
+    for c in codigos:
+        print('   ', c)
+    print('\nTodas las sesiones abiertas de esta cuenta se cerraron.')
+
+
 def main():
     parser = argparse.ArgumentParser(description='Administración local del Centro de Control Costo360')
-    parser.add_argument('action', choices=['init', 'user', 'demo'])
+    parser.add_argument('action', choices=['init', 'user', 'demo', 'totp'])
     args = parser.parse_args()
+    if args.action == 'totp':
+        activar_totp()
+        return
     if args.action == 'demo':
         os.environ['CRM_DEMO'] = '1'
         os.environ['CRM_DATABASE'] = str(ROOT / 'data' / 'demo.sqlite3')
