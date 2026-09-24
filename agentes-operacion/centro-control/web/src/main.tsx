@@ -1,10 +1,11 @@
 import { StrictMode, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Activity, ArrowRight, Building2, CheckSquare2, ChevronRight, ClipboardCheck, CreditCard, Headphones, History, LayoutDashboard, LogOut, Menu, ShieldCheck, ShoppingCart, Sparkles, Target, Truck, Users, X } from 'lucide-react'
+import { Activity, ArrowRight, Building2, CheckSquare2, ChevronRight, ClipboardCheck, CreditCard, Gauge, Headphones, History, LayoutDashboard, LogOut, Menu, ShieldCheck, ShoppingCart, Sparkles, Target, Truck, Users, X } from 'lucide-react'
 import { api, setCsrf, title } from './api'
 import type { Meta, Row, User } from './api'
 import { Alert, Editor, Loading, Modal, Records, useLoad } from './components'
 import { AgentScreen, AuditView, Dashboard, Detail, Proposals } from './screens'
+import { ConsumoIA } from './consumo'
 import './style.css'
 
 type Health = { demo: boolean; gemini_configured: boolean }
@@ -12,10 +13,10 @@ const sections = [
   { group: 'DIRECCIÓN', items: [{ id: 'inicio', label: 'Vista general', icon: LayoutDashboard }] },
   { group: 'RELACIONES Y CRECIMIENTO', items: [{ id: 'empresas', label: 'Empresas', icon: Building2 }, { id: 'contactos', label: 'Contactos', icon: Users }, { id: 'oportunidades', label: 'Oportunidades', icon: Target }, { id: 'actividades', label: 'Actividades', icon: Activity }] },
   { group: 'OPERACIÓN', items: [{ id: 'tareas', label: 'Tareas y seguimiento', icon: CheckSquare2 }, { id: 'tickets', label: 'Atención al cliente', icon: Headphones }, { id: 'suscripciones', label: 'Suscripciones', icon: CreditCard }, { id: 'proveedores', label: 'Proveedores', icon: Truck }, { id: 'compras', label: 'Compras', icon: ShoppingCart }] },
-  { group: 'CONTROL Y CONFIANZA', items: [{ id: 'aprobaciones', label: 'Aprobaciones', icon: ClipboardCheck }, { id: 'auditoria', label: 'Historial de cambios', icon: History }] },
+  { group: 'CONTROL Y CONFIANZA', items: [{ id: 'consumo', label: 'Consumo de IA', icon: Gauge }, { id: 'aprobaciones', label: 'Aprobaciones', icon: ClipboardCheck }, { id: 'auditoria', label: 'Historial de cambios', icon: History }] },
 ]
 const descriptions: Record<string, string> = {
-  inicio: 'Lo importante de tu operación, sin perder de vista a tus clientes.', empresas: 'De la primera conversación a una relación de largo plazo.', contactos: 'Conoce a las personas que están detrás de cada empresa.', oportunidades: 'Cada oportunidad, con una etapa clara y un próximo paso.', actividades: 'La memoria de cada llamada, reunión y conversación.', tareas: 'Que ningún compromiso se quede sin seguimiento.', tickets: 'Acompaña a tus clientes y resuelve lo que necesitan.', suscripciones: 'Registro administrativo de planes y renovaciones. No ejecuta cobros.', proveedores: 'Tus aliados y servicios, organizados en un solo lugar.', compras: 'Registra necesidades y gastos. Ninguna acción transfiere dinero.', aprobaciones: 'Revisa exactamente qué cambiará antes de autorizarlo.', auditoria: 'Quién cambió qué y cuándo, tanto de forma manual como con IA.', agente: 'Pregunta, consulta y prepara acciones sin perder el control.',
+  inicio: 'Lo importante de tu operación, sin perder de vista a tus clientes.', empresas: 'De la primera conversación a una relación de largo plazo.', contactos: 'Conoce a las personas que están detrás de cada empresa.', oportunidades: 'Cada oportunidad, con una etapa clara y un próximo paso.', actividades: 'La memoria de cada llamada, reunión y conversación.', tareas: 'Que ningún compromiso se quede sin seguimiento.', tickets: 'Acompaña a tus clientes y resuelve lo que necesitan.', suscripciones: 'Registro administrativo de planes y renovaciones. No ejecuta cobros.', proveedores: 'Tus aliados y servicios, organizados en un solo lugar.', compras: 'Registra necesidades y gastos. Ninguna acción transfiere dinero.', aprobaciones: 'Revisa exactamente qué cambiará antes de autorizarlo.', auditoria: 'Quién cambió qué y cuándo, tanto de forma manual como con IA.', consumo: 'Cuánto usa cada empresa de Cost, la voz y los renders este mes, para recargar a tiempo.', agente: 'Pregunta, consulta y prepara acciones sin perder el control.',
 }
 
 function Login({ onLogin, health }: { onLogin: (user: User) => void; health: Health | null }) {
@@ -63,7 +64,7 @@ function Workspace({ user, health, logout }: { user: User; health: Health | null
       {health?.demo && <div className="demo-strip">Datos ficticios para explorar el sistema. No hay clientes reales ni servicios externos conectados.</div>}
       <div className="page-content"><div className="page-heading"><div><span className="eyebrow">{page === 'inicio' ? 'TU CENTRO DE OPERACIONES' : 'CENTRO DE CONTROL'}</span><h1>{name}</h1><p>{descriptions[page]}</p></div>{page !== 'agente' && <button className="secondary ask-agent" onClick={() => go('agente')}><Sparkles size={17}/> Consultar al agente</button>}</div>
       {(error || meta.error) && <Alert>{error || meta.error}</Alert>}
-      {page === 'inicio' ? <Dashboard revision={revision} onGo={go} onDetail={setDetail}/> : page === 'agente' ? <AgentScreen revision={revision} refresh={refresh} onGo={go}/> : page === 'aprobaciones' ? <Proposals revision={revision} refresh={refresh}/> : page === 'auditoria' ? <AuditView revision={revision}/> : meta.loading ? <Loading/> : <Records key={page} kind={page} revision={revision} user={user} onEdit={edit} onDetail={setDetail} onArchive={setArchive}/>}
+      {page === 'inicio' ? <Dashboard revision={revision} onGo={go} onDetail={setDetail}/> : page === 'agente' ? <AgentScreen revision={revision} refresh={refresh} onGo={go}/> : page === 'aprobaciones' ? <Proposals revision={revision} refresh={refresh}/> : page === 'auditoria' ? <AuditView revision={revision}/> : page === 'consumo' ? <ConsumoIA revision={revision}/> : meta.loading ? <Loading/> : <Records key={page} kind={page} revision={revision} user={user} onEdit={edit} onDetail={setDetail} onArchive={setArchive}/>}
       <footer className="page-footer"><ShieldCheck size={14}/> Sistema propio · datos locales · cambios trazables <span>Costo360 S.A.S.</span></footer></div>
     </main>{toast && <div className="toast" role="status"><CheckSquare2 size={19}/>{toast}</div>}
     {detail && <Detail key={detail.id} initial={detail} revision={revision} user={user} onClose={() => setDetail(null)} onEdit={edit} onDetail={setDetail} onArchive={setArchive}/>}

@@ -1,4 +1,5 @@
 from pathlib import Path
+import httpx
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
@@ -85,6 +86,24 @@ def create_app(settings=None):
     @app.get('/api/catalogue')
     def catalogue(user=Depends(auth.current_user)):
         return {kind: {'schema': cls.model_json_schema(), 'parent': PARENTS.get(kind)} for kind, cls in SCHEMAS.items()}
+
+    @app.get('/api/consumo-ia')
+    def consumo_ia(user=Depends(auth.current_user)):
+        """Solo lectura: consumo del mes de la plataforma Costo360 (Cost, voz,
+        renders) y los avisos enviados. El token de administración se usa aquí,
+        en el servidor local — nunca llega al navegador."""
+        if user.role != 'fundador':
+            raise HTTPException(403, 'Solo el fundador puede ver el consumo de IA.')
+        if not settings.admin_token:
+            raise HTTPException(503, 'Falta configurar COSTO360_ADMIN_TOKEN en el Centro de Control.')
+        try:
+            r = httpx.get(settings.costo360_api.rstrip('/') + '/api/admin/consumo',
+                          headers={'X-Admin-Token': settings.admin_token}, timeout=20)
+        except httpx.HTTPError:
+            raise HTTPException(502, 'No se pudo conectar con Costo360. Revisa tu conexión a internet.')
+        if r.status_code != 200:
+            raise HTTPException(502, 'Costo360 no entregó el consumo (código %s).' % r.status_code)
+        return r.json()
 
     @app.get('/api/summary')
     def summary(user=Depends(auth.current_user)):
