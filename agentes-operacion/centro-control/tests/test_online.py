@@ -173,6 +173,26 @@ class OnlineTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             settings(self.path, demo=True)
 
+    def test_tres_codigos_errados_obligan_a_repetir_la_contrasena(self):
+        self.password()
+        malo = '000000' if self.codigo() != '000000' else '111111'
+        with patch('crm.security.avisar') as avisar:
+            for _ in range(3):
+                self.assertEqual(self.client.post('/api/login/codigo', json={'codigo': malo}).status_code, 401)
+        self.assertTrue(any('incorrecto' in str(c.args[1]) for c in avisar.call_args_list))
+        # La sesión pendiente se descartó: ni el código correcto sirve sin volver a la contraseña.
+        self.assertEqual(self.client.post('/api/login/codigo', json={'codigo': self.codigo()}).status_code, 401)
+
+    def test_un_solo_aviso_por_bloqueo(self):
+        with patch('crm.security.avisar') as avisar:
+            for _ in range(8):
+                self.password(password='contrasena-equivocada-1')
+        bloqueos = [c for c in avisar.call_args_list if 'bloqueada' in str(c.args[1])]
+        self.assertEqual(len(bloqueos), 1)
+
+    def test_health_en_linea_no_revela_configuracion(self):
+        self.assertEqual(self.client.get('/api/health').json(), {'status': 'ok', 'online': True, 'demo': False})
+
     def test_cuenta_sin_codigo_configurado_no_entra(self):
         create_user(self.db, 'sin2fa@example.invalid', 'Sin 2FA', PASSWORD)
         r = self.client.post('/api/login', json={'email': 'sin2fa@example.invalid', 'password': PASSWORD})

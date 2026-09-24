@@ -28,9 +28,9 @@ def cookie_path(settings):
     return '/' if settings.online else '/api'
 
 
-def set_cookie(response, settings, token, horas):
+def set_cookie(response, settings, token, horas=0, minutos=0):
     response.set_cookie(cookie_name(settings), token, httponly=True, samesite='strict',
-                        secure=settings.online, max_age=horas * 3600, path=cookie_path(settings))
+                        secure=settings.online, max_age=horas * 3600 + minutos * 60, path=cookie_path(settings))
 
 
 def delete_cookie(response, settings):
@@ -104,6 +104,7 @@ def login(db, email, password, settings=None, ip='local'):
     email = email.strip().lower()
     fallo = None
     fallidos = 0
+    primer_aviso = False
     with db.transaction(write=True) as session:
         if online:
             security.purgar(session)
@@ -111,6 +112,10 @@ def login(db, email, password, settings=None, ip='local'):
             if security.contar(session, 'fail:' + email, 1800) >= 5:
                 security.bitacora(session, 'login_bloqueado', ip=ip)
                 fallo = 'bloqueado'
+                # Un solo aviso por bloqueo (no uno por cada intento contra la cuenta bloqueada).
+                primer_aviso = security.contar(session, 'aviso-bloqueo:' + email, 1800) == 0
+                if primer_aviso:
+                    security.registrar(session, 'aviso-bloqueo:' + email)
         if not fallo:
             user = session.scalar(select(User).where(User.email == email))
             ok = verify(password, user.password if user else DUMMY)
@@ -120,17 +125,20 @@ def login(db, email, password, settings=None, ip='local'):
                     security.registrar(session, 'fail:' + email)
                     security.bitacora(session, 'login_fallido', user.id if user else None, ip=ip)
                     fallidos = security.contar(session, 'fail:' + email, 1800) + 1
+        if not fallo and online and not user.totp_secret:
+            fallo = 'sin_codigo'  # se lanza fuera: el evento de límite por IP no se revierte
         if not fallo:
-            if online and not user.totp_secret:
-                raise HTTPException(403, 'Tu cuenta no tiene configurado el código de verificación. Pídele al administrador activarlo.')
             token, csrf = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
             session.execute(delete(Session).where(Session.expires <= now()))
             session.add(Session(token_hash=digest(token), user_id=user.id, csrf=csrf, mfa=not online,
                                 last_seen=now(),
                                 expires=_en(minutos=_PENDIENTE_MIN) if online else _en(horas=_SESION_HORAS_LOCAL)))
     # Fuera de la transacción: el fallo ya quedó guardado (no se revierte).
+    if fallo == 'sin_codigo':
+        raise HTTPException(403, 'Tu cuenta no tiene configurado el código de verificación. Pídele al administrador activarlo.')
     if fallo == 'bloqueado':
-        security.avisar(settings, f'⛔ Cuenta bloqueada 30 min por intentos fallidos: {email}')
+        if primer_aviso:
+            security.avisar(settings, f'⛔ Cuenta bloqueada 30 min por intentos fallidos: {email}')
         raise HTTPException(429, 'Demasiados intentos fallidos. La cuenta quedó bloqueada 30 minutos.')
     if fallo:
         if online and fallidos >= 3:
@@ -143,6 +151,7 @@ def verificar_codigo(db, token, codigo, settings, ip='local'):
     """Segundo factor: código de la app autenticadora o de recuperación. Si es
     válido, descarta la sesión pendiente y emite un token NUEVO (rotación)."""
     ok = False
+    errados = 0
     with db.transaction(write=True) as session:
         auth = session.get(Session, digest(token)) if token else None
         if not auth or auth.mfa or auth.expires <= now():
@@ -169,8 +178,20 @@ def verificar_codigo(db, token, codigo, settings, ip='local'):
                                 last_seen=now(), expires=_en(horas=_SESION_HORAS_ONLINE)))
             security.bitacora(session, 'login_ok', user.id, ip=ip)
         else:
+            # Un código errado también cuenta para el bloqueo de 30 min de la
+            # cuenta, y a los 3 errores se descarta la sesión pendiente (hay que
+            # volver a poner la contraseña) — auditoría Fase 5.
             security.bitacora(session, 'codigo_fallido', user.id, ip=ip)
+            security.registrar(session, 'fail:' + user.email)
+            errados = security.contar(session, 'codigo-fallido:' + auth.token_hash, 300) + 1
+            security.registrar(session, 'codigo-fallido:' + auth.token_hash)
+            if errados >= 3:
+                session.delete(auth)
     if not ok:
+        security.avisar(settings, f'⚠️ Código de verificación incorrecto para {user.email} (IP {ip}). '
+                                  'Alguien que conoce la contraseña podría estar intentando entrar.')
+        if errados >= 3:
+            raise HTTPException(401, 'Demasiados códigos incorrectos. Vuelve a ingresar tu contraseña.')
         raise HTTPException(401, 'Código incorrecto o ya usado. Espera el siguiente código de la app.')
     security.avisar(settings, f'✅ Inicio de sesión de {user.email} (IP {ip}). Si no fuiste tú, activa el interruptor de apagado.')
     return nuevo, csrf, user

@@ -21,7 +21,7 @@ log = logging.getLogger('crm.main')
 # Cabeceras de seguridad del modo en línea (el HTML estático recibe las
 # mismas desde vercel.json).
 _CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
-        "font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'")
+        "font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; manifest-src 'self'")
 
 
 class CodigoIn(BaseModel):
@@ -101,6 +101,8 @@ def create_app(settings=None):
 
     @app.get('/api/health')
     def health():
+        if settings.online:  # en internet no se revela configuración interna
+            return {'status': 'ok', 'online': True, 'demo': False}
         return {'status': 'ok', 'local_only': not settings.online, 'online': settings.online, 'demo': settings.demo,
                 'gemini_configured': bool(settings.gemini_key and settings.gemini_model)}
 
@@ -112,7 +114,7 @@ def create_app(settings=None):
         token, csrf, user = auth.login(app.state.db, body.email, body.password, settings, ip)
         if settings.online:
             # Falta el segundo factor: cookie de vida corta, sin datos de usuario.
-            auth.set_cookie(response, settings, token, 1)
+            auth.set_cookie(response, settings, token, minutos=5)
             return {'mfa_required': True}
         auth.set_cookie(response, settings, token, 8)
         return {'user': auth.public_user(user), 'csrf': csrf}
