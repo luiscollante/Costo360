@@ -2,6 +2,25 @@
 
 ---
 
+## ✅ Hecho (2026-09-22/23) — Jerarquía visual en 3 módulos + 5 bugs de Express/AIU + landing desplegada
+
+- **Rediseño de jerarquía visual** (aprobado por el fundador, con "revierte" como red de seguridad que no se usó): Nueva Cotización (Step2Piezas), Nesting y Cotización AIU (Step0) pasaron de tarjetas por fila a `DataTable` compacta + panel lateral fijo (`sticky`). Express se dejó igual (ya estaba empaquetada). Bug encontrado en dos páginas: el contenedor externo `max-w-4xl` recortaba el layout ancho interno → subido a `max-w-6xl`.
+- **Express:** etiqueta "Ancho · def." → "Ancho (por defecto X m)"; el margen ahora muestra % **y** monto en pesos (`MarginLight` recibe `result.utilidad`); campos de Lámina con mini-etiquetas "Largo"/"Ancho".
+- **Cotización AIU:** (1) el wizard ya no pierde los datos al cambiar de sección — nuevo store `web/src/store/aiuWizard.ts` (Zustand + localStorage, clave `costo360-aiu-wizard-v1`) + botón "Nueva cotización AIU" para reiniciar a propósito; (2) el campo "Otro" de A/I/U acepta coma decimal (`1,5` → `1.5`), igual que `MonoInput`; (3) "Siguiente"/"Calcular" visible sin scroll en pantallas de ~710px de alto (spacing compacto + botón dentro del panel lateral fijo).
+- **Backend:** `_TOPES_GEMINI_COP_DEFAULT["starter"]` = 20.000 (antes 0) para que "Cost incluido desde Starter" sea verdad (decisión del fundador 2026-09-22).
+- **Landing (costo360.com):** rediseño de tarjetas de planes (commit `a015f13`) y pulido de interacción hecho por otra IA (recorrido con scroll, ejemplos ilustrativos de Cost, nav con sección activa; commit `f22e29b`, doc en `docs/LANDING_INTERACCIONES.md`). Ambos ya en producción vía auto-deploy de GitHub.
+- **Web (costo360-web):** commit `6a68be0` desplegado con `vercel deploy --prod` desde `web/` y verificado contra el bundle real.
+
+## 🔄 En progreso
+- Nada a medio camino.
+
+## 📋 Siguiente
+1. Pendiente de aviso del fundador: ¿borrar el proyecto Vercel sobrante `landing` (equipo `marmoles-collante-y-castro`, creado por error)?
+2. Revisar el tope de voz por defecto de Pro (~30 s/mes, ver sesión 2026-09-16).
+3. `PROGRESS.md`/`SESSION.md` no registran el ciclo de pagos Wompi (commits `74a933a`…`1b669fa`, 2026-09-17→22); documentarlo si el fundador lo pide.
+
+---
+
 ## ✅ Hecho (2026-09-16, mismo día) — Desglose de costos profesional (Excel) + cuotas mensuales de consumo por empresa (Gemini/ElevenLabs)
 
 Tras cerrar el ciclo del render de cocina con IA, el fundador pidió dos cosas más el mismo día:
@@ -1685,4 +1704,4 @@ de este dominio, sin subir a GitHub todavía.
 
 ---
 
-*Última actualización: 2026-09-17*
+*Última actualización: 2026-09-23*

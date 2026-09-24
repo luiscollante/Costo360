@@ -4,6 +4,10 @@
 
 ## ¿Qué es?
 
+### Decisión comercial vigente · 2026-09-22
+
+Costo360 se presenta públicamente como **empresa**, sin describirla como idea o proyecto ni afirmar que ya esté constituida. El fundador decidió incluir **Cost también en Starter**. Los precios y cupos vigentes son Starter $150.000/1 usuario, Pro $375.000/3 usuarios y Enterprise $2.410.000/hasta 10; sustituyen las cifras históricas diferentes de este documento. El registro de acciones de Cost conserva 1/30/90 días respectivamente. El uso de IA tiene cupos mensuales por empresa. **Resuelto el 2026-09-22:** el cupo por defecto de Cost en Starter pasó de 0 a 20.000 COP/mes (`backend/services/consumo_service.py`, editable sin redeploy vía `app_config`). Detalle y fuentes: `docs/PLANES_LANDING.md`.
+
 **Costo360** es un SaaS B2B de estimación y gestión de costos para **empresas de la industria de la marmolería en Colombia** —desde pymes hasta empresas medianas y grandes— que se dedican a la confección, corte, tallado y transformación de piedra natural (mármol, granito, sinterizado, Quartzstone, cuarcita). Permite cotizar proyectos de cocinas, pisos, baños y remodelaciones de interiores en general, con precisión profesional en minutos.
 
 Nació como **CostoMarmol**, el trabajo de grado de Luis Alejandro Collante Castro (Universidad de la Costa), validado con la empresa piloto **Mármoles Collante & Castro Ltda.** (Barranquilla). La visión de negocio completa —problema, cliente objetivo, modelo de negocio, precios, métricas y validación— vive en **`IDEA_PRINCIPAL_COSTO360.md`**; este documento se enfoca en el estado técnico.

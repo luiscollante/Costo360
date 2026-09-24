@@ -2,6 +2,35 @@
 
 ---
 
+## Sesión: 2026-09-22/23 — Jerarquía visual (Cotización/Nesting/AIU), bugs de Express y AIU, landing desplegada
+
+### Qué se hizo
+- **Rediseño de jerarquía visual** aprobado por el fundador ("si no me gusta te diré 'revierte'"; nunca lo dijo): tablas compactas + panel lateral `sticky` en `CotizacionPage` (Step2Piezas), `NestingPage` y `CotizacionAIUPage` (Step0). Se añadió prop `compact` a los inputs locales. Hallazgo: el wrapper externo `max-w-4xl` de `CotizacionPage` y `CotizacionAIUPage` anulaba el `max-w-6xl` interno → se subió el externo a `max-w-6xl`.
+- **Feedback posterior del fundador**, todo corregido y verificado en vivo en el navegador:
+  - Express: etiqueta "Ancho · def." confusa → "Ancho (por defecto X m)"; margen ahora `% · $monto`; mini-etiquetas "Largo"/"Ancho" sobre los dos campos de Lámina.
+  - AIU: amnesia al cambiar de sección (el más grave) → `store/aiuWizard.ts` (Zustand persist) + botón "Nueva cotización AIU"; coma decimal en "Otro" (`type="text"` + `inputMode="decimal"`, normaliza a 1 decimal al salir del campo); "Siguiente" sin scroll (spacing compacto, botón dentro del panel sticky). Se probó primero un `sticky bottom-0` global y se descartó: se solapaba con el panel lateral sticky-top.
+- **Backend:** tope Gemini por defecto de Starter 0 → 20.000 COP (`consumo_service.py`), porque la landing ya prometía Cost desde Starter.
+- **Deploys:** landing (`a015f13`, luego `f22e29b` de otra IA) y web (`6a68be0`).
+
+### Archivos modificados / creados
+`web/src/pages/{CotizacionPage,NestingPage,CotizacionAIUPage,CotizacionExpressPage}.tsx`; nuevo `web/src/store/aiuWizard.ts`; `backend/services/consumo_service.py`; landing: `PricingSection.tsx`, `pricing.css`, `CostAssistant.tsx`, `Footer.tsx` y (otra IA) `ScrollyStory`, `BentoEcosystem`, `Navbar`, `ProductTour`, `Hero`, `App`, nuevos `CostPreview`, `ui/ModuleArt`, `ui/Tactile`, `experience.css`, `tests/experience.spec.ts`, `docs/LANDING_INTERACCIONES.md`.
+
+### Decisiones tomadas
+- Cost incluido en Starter (tope inicial 20.000 COP, editable vía `app_config` sin redeploy).
+- Solo se comitea/deploya lo relacionado; se dejaron fuera los archivos sueltos (`CONTEXTO_COSTO360.md` con nota "pendiente técnico" ya obsoleta, imágenes sin usar en `web/public`, archivo vacío `web/src/pages/0)`, `_scratch/`, etc.).
+
+### Riesgos / pendientes detectados
+- **Dos cuentas de Vercel:** `costo360-landing` (costo360.com, equipo `wasesitowaginal-1630`) se despliega SOLO por auto-deploy de GitHub; `web` vive en `marmoles-collante-y-castro` y se despliega con la CLI local. `landing/` no tiene `.vercel/` a propósito: correr `vercel deploy` ahí crea un proyecto equivocado (pasó: quedó el proyecto vacío `landing`, pendiente de borrar si el fundador lo aprueba). La memoria vieja "Vercel sin auto-deploy" es falsa para la landing.
+- No se corrió el suite de Playwright de la landing (el fundador interrumpió); sí `tsc` y `vite build` limpios.
+- Lint previo sin tocar: `PreviewRow` definido dentro de `Step1AIU` (react-hooks/static-components).
+- `landing/.gitignore` quedó modificado (+`.vercel`), sin commitear.
+- Pendiente de sesiones anteriores: tope de voz de Pro (~30 s/mes).
+
+### Primera tarea de la próxima sesión
+Preguntar al fundador si borra el proyecto Vercel sobrante `landing`; luego correr `npx playwright test` en `landing/` como verificación pendiente.
+
+---
+
 ## Sesión: 2026-09-16 (mismo día) — Excel de costos profesional + cuotas de consumo por empresa (Gemini/ElevenLabs)
 
 ### Qué se hizo
