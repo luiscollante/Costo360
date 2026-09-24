@@ -33,6 +33,8 @@ class Settings:
     telegram_token: str = field(default_factory=lambda: os.getenv('TELEGRAM_BOT_TOKEN', ''))
     telegram_chat: str = field(default_factory=lambda: os.getenv('TELEGRAM_CHAT_ID', ''))
     disabled: bool = field(default_factory=lambda: os.getenv('CRM_ONLINE_DISABLED') == '1')  # interruptor de apagado
+    # Solo pruebas automáticas: permite el modo en línea sobre SQLite temporal.
+    testing: bool = False
 
     @property
     def online(self) -> bool:
@@ -55,9 +57,9 @@ class Settings:
                 raise ValueError('El modo demostración está prohibido en línea.')
             if not self.public_hosts:
                 raise ValueError('CRM_PUBLIC_HOSTS es obligatorio en línea.')
-            if not self.database.startswith('postgresql'):
+            if not self.database.startswith('postgresql') and not self.testing:
                 raise ValueError('En línea la base de datos debe ser Postgres.')
             if len(self.totp_key) < 40:
                 raise ValueError('CRM_TOTP_KEY (32 bytes en base64) es obligatoria en línea.')
-        elif self.database != ':memory:' and not self.database.startswith('postgresql'):
+        if self.database != ':memory:' and not self.database.startswith('postgresql'):
             Path(self.database).parent.mkdir(parents=True, exist_ok=True)

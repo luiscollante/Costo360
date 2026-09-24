@@ -176,6 +176,28 @@ def verificar_codigo(db, token, codigo, settings, ip='local'):
     return nuevo, csrf, user
 
 
+def configurar_totp(db, email, settings):
+    """Activa (o reemplaza) el código de verificación de una cuenta. Solo se
+    ejecuta desde la consola (crm.manage), nunca por la web: así nadie que
+    adivine la contraseña puede registrar SU propio celular. Devuelve el
+    secreto (para el QR) y 10 códigos de recuperación, que se muestran UNA vez."""
+    secreto = security.nuevo_secreto()
+    codigos = security.nuevos_codigos_recuperacion()
+    with db.transaction(write=True) as session:
+        user = session.scalar(select(User).where(User.email == email.strip().lower()))
+        if not user:
+            raise ValueError('No existe esa cuenta.')
+        user.totp_secret = security.cifrar(secreto, settings.totp_key)
+        user.totp_last_step = None
+        session.execute(delete(RecoveryCode).where(RecoveryCode.user_id == user.id))
+        for c in codigos:
+            session.add(RecoveryCode(user_id=user.id, code_hash=security.hash_recuperacion(c)))
+        # Cambiar el 2º factor invalida todas las sesiones abiertas.
+        session.execute(delete(Session).where(Session.user_id == user.id))
+        security.bitacora(session, 'totp_configurado', user.id)
+    return secreto, security.uri_totp(secreto, user.email), codigos
+
+
 def cerrar_todas(db, user_id):
     with db.transaction(write=True) as session:
         session.execute(delete(Session).where(Session.user_id == user_id))
