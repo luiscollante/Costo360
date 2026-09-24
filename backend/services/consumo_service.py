@@ -55,7 +55,7 @@ _USD_POR_CREDITO = 0.0
 # mide y se topea en CRÉDITOS directamente, no convertido a USD. `costo_usd`
 # en `consumo_api` queda en 0 para 'elevenlabs_voz' a propósito (ver
 # `registrar_consumo_voz`); el tope real de esta API vive en
-# `_TOPES_VOZ_CREDITOS_DEFAULT`, no en `_TOPES_GEMINI_COP_DEFAULT`.
+# `_TOPES_VOZ_MENSAJES_USUARIO_DEFAULT`, no en `_TOPES_GEMINI_COP_DEFAULT`.
 
 TRM_COP_USD = 3048.12  # misma referencia que docs/PLAN_COSTOS_COMPLETO_COSTO360.md
 

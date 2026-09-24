@@ -28,13 +28,13 @@ def _from() -> str:
     return os.environ.get("RESEND_FROM", "").strip() or "Costo360 <no-responder@costo360.com>"
 
 
-def _enviar(destinatario: str, asunto: str, html: str) -> bool:
+def _enviar(destinatario: str, asunto: str, html: str, *, timeout: float = _TIMEOUT) -> bool:
     key = os.environ.get("RESEND_API_KEY", "")
     if not key:
         print(f"[email] RESEND_API_KEY no configurada — no se envió '{asunto}' a {destinatario}", flush=True)
         return False
     try:
-        with httpx.Client(timeout=_TIMEOUT) as c:
+        with httpx.Client(timeout=timeout) as c:
             r = c.post(
                 "https://api.resend.com/emails",
                 headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},

@@ -82,6 +82,27 @@ def test_puntos_de_entrada_nunca_lanzan(monkeypatch):
     alertas_service.tras_consumo_render("e1", pendiente_usd=0.05)
 
 
+def test_el_aviso_sale_despues_del_commit(monkeypatch):
+    from contextlib import contextmanager
+    orden = []
+
+    @contextmanager
+    def conexion():
+        class C:
+            def cursor(self):
+                return None
+        yield C()
+        orden.append("commit")
+
+    monkeypatch.setattr(alertas_service, "_conexion_servicio", conexion)
+    monkeypatch.setattr(alertas_service, "_evaluar_empresa_gemini",
+                        lambda conn, cur, e, p: p.append(("titulo", "texto")))
+    monkeypatch.setattr(alertas_service, "_evaluar_global_gemini", lambda conn, cur, p: None)
+    monkeypatch.setattr(alertas_service, "_notificar", lambda t, x: orden.append("envio"))
+    alertas_service.tras_consumo_gemini("e1")
+    assert orden == ["commit", "envio"]
+
+
 def test_telegram_sin_configurar_no_lanza(monkeypatch):
     monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
     assert alertas_service._enviar_telegram("hola") is False

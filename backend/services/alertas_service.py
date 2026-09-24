@@ -96,12 +96,23 @@ def _enviar_correo(asunto: str, texto: str) -> None:
         f"{html.escape(texto).replace(chr(10), '<br>')}</p>",
     )
     for dest in _destinatarios_correo():
-        email_service._enviar(dest, asunto, cuerpo)
+        email_service._enviar(dest, asunto, cuerpo, timeout=_TIMEOUT)
 
 
 def _notificar(titulo: str, texto: str) -> None:
     _enviar_telegram(f"{titulo}\n\n{texto}")
     _enviar_correo(titulo, texto)
+
+
+def _despachar(pendientes: list[tuple[str, str]]) -> None:
+    """Se llama SOLO después del commit de `alerta_consumo_enviada` (auditoría
+    Fase 5): así el registro no queda bloqueado mientras se envía, y un commit
+    fallido nunca produce un aviso que luego se repita."""
+    for titulo, texto in pendientes:
+        try:
+            _notificar(titulo, texto)
+        except Exception:
+            _log.exception("Fallo al despachar un aviso de consumo")
 
 
 # ── Núcleo: cruzar umbrales con deduplicación ────────────────────────────────
@@ -138,12 +149,18 @@ def _mensaje(sujeto: str, api: str, umbral: int, detalle: str) -> tuple[str, str
     return titulo, f"{detalle}\n\n{cierre}"
 
 
-def _evaluar(cur, ambito: str, sujeto: str, api: str, gasto: float, tope: float, detalle: str) -> None:
+def _evaluar(cur, ambito: str, sujeto: str, api: str, gasto: float, tope: float, detalle: str,
+             pendientes: list | None = None) -> None:
+    """Registra los umbrales cruzados. Si recibe `pendientes`, encola el aviso
+    para despacharlo tras el commit; si no, lo envía de inmediato (pruebas)."""
     pct = consumo_service.porcentaje(gasto, tope)
     umbral = _registrar_umbrales(cur, ambito, api, pct, detalle)
     if umbral is not None:
-        titulo, texto = _mensaje(sujeto, api, umbral, f"{detalle} ({pct:.0f}% usado este mes).")
-        _notificar(titulo, texto)
+        aviso = _mensaje(sujeto, api, umbral, f"{detalle} ({pct:.0f}% usado este mes).")
+        if pendientes is None:
+            _notificar(*aviso)
+        else:
+            pendientes.append(aviso)
 
 
 def _empresa(cur, empresa_id):
@@ -152,15 +169,15 @@ def _empresa(cur, empresa_id):
     return (fila[0], fila[1]) if fila else ("Empresa sin nombre", "")
 
 
-def _evaluar_empresa_gemini(conn, cur, empresa_id) -> None:
+def _evaluar_empresa_gemini(conn, cur, empresa_id, pendientes) -> None:
     nombre, plan = _empresa(cur, empresa_id)
     tope = consumo_service.tope_gemini_cop(conn, {"empresa_id": empresa_id, "plan_codigo": plan})
     gasto = consumo_service.gasto_mes_gemini_cop(conn, empresa_id)
     _evaluar(cur, f"empresa:{empresa_id}", f"{nombre} (plan {plan})", "gemini_cost", gasto, tope,
-             f"Gasto en Cost: ${gasto:,.0f} de ${tope:,.0f} COP".replace(",", "."))
+             f"Gasto en Cost: ${gasto:,.0f} de ${tope:,.0f} COP".replace(",", "."), pendientes)
 
 
-def _evaluar_usuario_voz(conn, cur, usuario_id, pendiente: float = 0.0) -> None:
+def _evaluar_usuario_voz(conn, cur, usuario_id, pendientes, pendiente: float = 0.0) -> None:
     cur.execute(
         "SELECT u.nombre_completo, u.empresa_id, e.nombre, e.plan_codigo "
         "FROM usuarios u JOIN empresas e ON e.id = u.empresa_id WHERE u.id = %s",
@@ -173,38 +190,38 @@ def _evaluar_usuario_voz(conn, cur, usuario_id, pendiente: float = 0.0) -> None:
     tope = consumo_service.tope_voz_mensajes_usuario(conn, empresa_id, plan)
     usados = consumo_service.mensajes_voz_mes_usuario(conn, usuario_id) + pendiente
     _evaluar(cur, f"usuario:{usuario_id}", f"{nombre_usuario or 'Un usuario'} de {nombre_empresa} (plan {plan})",
-             "elevenlabs_voz", usados, tope, f"Mensajes de voz: {usados:.1f} de {tope:.0f}")
+             "elevenlabs_voz", usados, tope, f"Mensajes de voz: {usados:.1f} de {tope:.0f}", pendientes)
 
 
-def _evaluar_empresa_render(conn, cur, empresa_id, pendiente: float = 0.0) -> None:
+def _evaluar_empresa_render(conn, cur, empresa_id, pendientes, pendiente: float = 0.0) -> None:
     nombre, plan = _empresa(cur, empresa_id)
     tope = render_service.obtener_tope_mensual(conn, empresa_id)
     gasto = render_service.gasto_mensual(conn, empresa_id) + pendiente
     _evaluar(cur, f"empresa:{empresa_id}", f"{nombre} (plan {plan})", "openai_render", gasto, tope,
-             f"Gasto en renders: USD {gasto:.2f} de USD {tope:.2f}")
+             f"Gasto en renders: USD {gasto:.2f} de USD {tope:.2f}", pendientes)
 
 
-def _evaluar_global_gemini(conn, cur) -> None:
+def _evaluar_global_gemini(conn, cur, pendientes) -> None:
     cur.execute(
         "SELECT COALESCE(SUM(costo_usd), 0) FROM consumo_api "
         f"WHERE api = 'gemini_cost' AND creado_en >= {consumo_service.INICIO_MES_SQL}"
     )
     gasto = float(cur.fetchone()[0] or 0) * consumo_service.TRM_COP_USD
     _evaluar(cur, "global", "Costo360 (todas las empresas)", "gemini_cost", gasto, _PRESUPUESTO_GEMINI_COP,
-             f"Gasto total en Gemini: ${gasto:,.0f} de ${_PRESUPUESTO_GEMINI_COP:,.0f} COP".replace(",", "."))
+             f"Gasto total en Gemini: ${gasto:,.0f} de ${_PRESUPUESTO_GEMINI_COP:,.0f} COP".replace(",", "."), pendientes)
 
 
-def _evaluar_global_render(conn, cur, pendiente: float = 0.0) -> None:
+def _evaluar_global_render(conn, cur, pendientes, pendiente: float = 0.0) -> None:
     cur.execute(
         "SELECT COALESCE(SUM(costo_usd), 0) FROM render_cocina "
         f"WHERE creado_en >= {consumo_service.INICIO_MES_SQL}"
     )
     gasto = float(cur.fetchone()[0] or 0) + pendiente
     _evaluar(cur, "global", "Costo360 (todas las empresas)", "openai_render", gasto, _PRESUPUESTO_OPENAI_USD,
-             f"Gasto total en OpenAI: USD {gasto:.2f} de USD {_PRESUPUESTO_OPENAI_USD:.2f}")
+             f"Gasto total en OpenAI: USD {gasto:.2f} de USD {_PRESUPUESTO_OPENAI_USD:.2f}", pendientes)
 
 
-def evaluar_cuenta_elevenlabs(cur) -> dict | None:
+def evaluar_cuenta_elevenlabs(cur, pendientes) -> dict | None:
     """Saldo REAL de la cuenta compartida de ElevenLabs (/v1/user/subscription).
     Solo desde el cron — no en cada request (suma un viaje de red)."""
     key = os.environ.get("ELEVENLABS_API_KEY", "")
@@ -221,45 +238,58 @@ def evaluar_cuenta_elevenlabs(cur) -> dict | None:
     usados = float(data.get("character_count") or 0)
     limite = float(data.get("character_limit") or 0)
     _evaluar(cur, "global", "La cuenta de ElevenLabs de Costo360", "elevenlabs_cuenta", usados, limite,
-             f"Créditos usados: {usados:,.0f} de {limite:,.0f}".replace(",", "."))
+             f"Créditos usados: {usados:,.0f} de {limite:,.0f}".replace(",", "."), pendientes)
     return {"usados": usados, "limite": limite}
 
 
 # ── Puntos de entrada (best-effort, nunca lanzan) ────────────────────────────
+# Patrón común: evaluar y registrar en la conexión de servicio, COMMIT al salir
+# del `with`, y recién entonces despachar los avisos (auditoría Fase 5).
 
 def tras_consumo_gemini(empresa_id) -> None:
+    pendientes: list = []
     try:
         with _conexion_servicio() as conn:
             cur = conn.cursor()
-            _evaluar_empresa_gemini(conn, cur, empresa_id)
-            _evaluar_global_gemini(conn, cur)
+            _evaluar_empresa_gemini(conn, cur, empresa_id, pendientes)
+            _evaluar_global_gemini(conn, cur, pendientes)
     except Exception:
         _log.exception("Evaluación de alertas (Gemini) falló — se reintenta en el cron diario")
+        return
+    _despachar(pendientes)
 
 
 def tras_consumo_voz(usuario_id, *, pendiente_segundos: float = 0.0) -> None:
     """`pendiente_segundos`: el evento recién registrado en la transacción del
     request, que esta conexión aparte todavía no ve (sin comitear)."""
+    pendientes: list = []
     try:
         pendiente = consumo_service.segundos_a_mensajes_voz(pendiente_segundos)
         with _conexion_servicio() as conn:
-            _evaluar_usuario_voz(conn, conn.cursor(), usuario_id, pendiente)
+            _evaluar_usuario_voz(conn, conn.cursor(), usuario_id, pendientes, pendiente)
     except Exception:
         _log.exception("Evaluación de alertas (voz) falló — se reintenta en el cron diario")
+        return
+    _despachar(pendientes)
 
 
 def tras_consumo_render(empresa_id, *, pendiente_usd: float = 0.0) -> None:
+    pendientes: list = []
     try:
         with _conexion_servicio() as conn:
             cur = conn.cursor()
-            _evaluar_empresa_render(conn, cur, empresa_id, pendiente_usd)
-            _evaluar_global_render(conn, cur, pendiente_usd)
+            _evaluar_empresa_render(conn, cur, empresa_id, pendientes, pendiente_usd)
+            _evaluar_global_render(conn, cur, pendientes, pendiente_usd)
     except Exception:
         _log.exception("Evaluación de alertas (render) falló — se reintenta en el cron diario")
+        return
+    _despachar(pendientes)
 
 
 def revision_completa(conn) -> dict:
-    """Barrido del cron diario: re-evalúa todo lo que tuvo consumo este mes."""
+    """Barrido del cron diario: re-evalúa todo lo que tuvo consumo este mes.
+    Comitea el registro de umbrales ANTES de enviar los avisos."""
+    pendientes: list = []
     cur = conn.cursor()
     cur.execute(f"SELECT DISTINCT empresa_id FROM consumo_api WHERE api = 'gemini_cost' AND creado_en >= {consumo_service.INICIO_MES_SQL}")
     empresas_gemini = [r[0] for r in cur.fetchall()]
@@ -269,13 +299,15 @@ def revision_completa(conn) -> dict:
     empresas_render = [r[0] for r in cur.fetchall()]
 
     for e in empresas_gemini:
-        _evaluar_empresa_gemini(conn, cur, e)
+        _evaluar_empresa_gemini(conn, cur, e, pendientes)
     for u in usuarios_voz:
-        _evaluar_usuario_voz(conn, cur, u)
+        _evaluar_usuario_voz(conn, cur, u, pendientes)
     for e in empresas_render:
-        _evaluar_empresa_render(conn, cur, e)
-    _evaluar_global_gemini(conn, cur)
-    _evaluar_global_render(conn, cur)
-    cuenta = evaluar_cuenta_elevenlabs(cur)
+        _evaluar_empresa_render(conn, cur, e, pendientes)
+    _evaluar_global_gemini(conn, cur, pendientes)
+    _evaluar_global_render(conn, cur, pendientes)
+    cuenta = evaluar_cuenta_elevenlabs(cur, pendientes)
+    conn.commit()
+    _despachar(pendientes)
     return {"empresas_gemini": len(empresas_gemini), "usuarios_voz": len(usuarios_voz),
-            "empresas_render": len(empresas_render), "elevenlabs": cuenta}
+            "empresas_render": len(empresas_render), "elevenlabs": cuenta, "avisos_enviados": len(pendientes)}
