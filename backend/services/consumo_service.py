@@ -15,17 +15,23 @@ APIs que hoy NO tienen ningún control real: Gemini (Cost) y ElevenLabs (voz).
 Reglas de negocio decididas con el fundador (2026-09-16):
 - Medición con TOKENS/segundos reales, nunca un conteo aproximado de turnos
   — el gasto acumulado debe ser el costo real, no un estimado.
-- Bloqueo duro por función (no de toda la app) al superar el tope, con aviso
-  temprano al 80% y un colchón de gracia del 20% (el bloqueo real ocurre al
-  120% del tope nominal, no exacto al 100%) para no cortar a alguien a mitad
-  de una tarea importante.
 - El taller ve su propio consumo en lenguaje simple ("te quedan
-  aproximadamente X interacciones/minutos este mes"), nunca cifras técnicas
-  en dólares — ver `resumen_consumo`.
-"""
-from fastapi import HTTPException
+  aproximadamente X interacciones/mensajes de voz este mes"), nunca cifras
+  técnicas en dólares — ver `resumen_consumo`.
 
+Cambio 2026-09-23/24 (decisión del fundador): durante la fase de medición con
+clientes reales NUNCA se bloquea a nadie al pasar su cupo — se eliminó el
+bloqueo al 120% (`verificar_tope_*`). Los topes quedan solo como referencia
+para avisarle al fundador (Telegram + correo, `alertas_service.py`) y que
+recargue a tiempo. La voz pasa a cupo POR USUARIO, medido en "mensajes de
+voz" (pregunta ≤30 s + respuesta completa de Cost, nunca cortada).
+"""
 from backend.db.config_helpers import cfg_get
+
+# Inicio del mes en hora de Colombia — `date_trunc('month', now())` a secas
+# corre en UTC y reiniciaba el mes el día anterior a las 7 p. m. (auditoría
+# del ciclo de alertas). Usar SIEMPRE esta expresión en sumas mensuales.
+INICIO_MES_SQL = "(date_trunc('month', now() at time zone 'America/Bogota') at time zone 'America/Bogota')"
 
 _CLAVE_CONFIG = "consumo_ia_config"
 
@@ -74,16 +80,17 @@ TRM_COP_USD = 3048.12  # misma referencia que docs/PLAN_COSTOS_COMPLETO_COSTO360
 # sin redeploy vía `app_config` igual que los demás topes.
 _TOPES_GEMINI_COP_DEFAULT = {"starter": 20_000, "pro": 55_000, "enterprise": 550_000}
 
-# ElevenLabs (créditos/mes/empresa): acotado por el pool COMPARTIDO real
-# entre TODOS los clientes de Costo360 (10.000 créditos/mes hoy, plan
-# gratuito) — deliberadamente conservador. Revisar y subir el plan de
-# ElevenLabs en cuanto haya más de 1-2 clientes activos usando la voz
-# seguido; estos topes no alcanzan a proteger contra ESO, solo evitan que
-# UNA empresa se coma todo el pool ella sola.
-_TOPES_VOZ_CREDITOS_DEFAULT = {"starter": 0, "pro": 500, "enterprise": 2_000}
+# Voz (mensajes de voz/mes POR USUARIO, decisión del fundador 2026-09-23 —
+# "quienes mueven los hilos son las personas"). Starter incluye voz para
+# enganchar. Provisionales hasta calibrar con uso real; editables sin
+# redeploy vía `app_config` (clave 'voz_tope_mensajes_usuario').
+_TOPES_VOZ_MENSAJES_USUARIO_DEFAULT = {"starter": 5, "pro": 10, "enterprise": 15}
 
-_TOPE_GRACIA = 1.20   # 20% de colchón antes del bloqueo real (decisión del fundador)
-_AVISO_TEMPRANO = 0.80
+# Un "mensaje de voz" = pregunta hablada (≤30 s, ~500 créditos) + respuesta
+# de Cost (longitud variable, nunca cortada; ~500 créditos en promedio).
+# ESTIMADO provisional — calibrar contra el descuento real en la cuenta de
+# ElevenLabs y ajustar aquí, un solo lugar.
+_CREDITOS_POR_MENSAJE_VOZ = 1000.0
 
 # Costo/consumo promedio por unidad "amigable" — solo para traducir el gasto
 # real a un lenguaje simple ("te quedan X interacciones/minutos"), nunca para
@@ -139,11 +146,11 @@ def tope_gemini_cop(conn, usuario) -> float:
     return _tope_plan(_TOPES_GEMINI_COP_DEFAULT, usuario.get("plan_codigo", ""), api="gemini_cost")
 
 
-def tope_voz_creditos(conn, usuario) -> float:
-    cfg = _config_empresa(conn, usuario["empresa_id"])
-    if "voz_tope_creditos" in cfg:
-        return float(cfg["voz_tope_creditos"])
-    return _tope_plan(_TOPES_VOZ_CREDITOS_DEFAULT, usuario.get("plan_codigo", ""), api="elevenlabs_voz")
+def tope_voz_mensajes_usuario(conn, empresa_id, plan_codigo: str) -> float:
+    cfg = _config_empresa(conn, empresa_id)
+    if "voz_tope_mensajes_usuario" in cfg:
+        return float(cfg["voz_tope_mensajes_usuario"])
+    return _tope_plan(_TOPES_VOZ_MENSAJES_USUARIO_DEFAULT, plan_codigo, api="elevenlabs_voz")
 
 
 # ── Registro de consumo real ─────────────────────────────────────────────────
@@ -170,74 +177,58 @@ def registrar_consumo_voz(conn, usuario, *, segundos_audio: float) -> None:
 
 # ── Gasto acumulado del mes ──────────────────────────────────────────────────
 
-def _gasto_mes_cop(conn, empresa_id, api: str) -> float:
+def gasto_mes_gemini_cop(conn, empresa_id) -> float:
     cur = conn.cursor()
     cur.execute(
         "SELECT COALESCE(SUM(costo_usd), 0) FROM consumo_api "
-        "WHERE empresa_id = %s AND api = %s AND creado_en >= date_trunc('month', now())",
-        (empresa_id, api),
+        f"WHERE empresa_id = %s AND api = 'gemini_cost' AND creado_en >= {INICIO_MES_SQL}",
+        (empresa_id,),
     )
     return float(cur.fetchone()[0] or 0) * TRM_COP_USD
 
 
-def _gasto_mes_creditos(conn, empresa_id, api: str) -> float:
+def mensajes_voz_mes_usuario(conn, usuario_id) -> float:
+    """Mensajes de voz equivalentes gastados por UN usuario este mes."""
     cur = conn.cursor()
     cur.execute(
         "SELECT COALESCE(SUM(cantidad), 0) FROM consumo_api "
-        "WHERE empresa_id = %s AND api = %s AND creado_en >= date_trunc('month', now())",
-        (empresa_id, api),
+        f"WHERE usuario_id = %s AND api = 'elevenlabs_voz' AND creado_en >= {INICIO_MES_SQL}",
+        (usuario_id,),
     )
-    segundos = float(cur.fetchone()[0] or 0)
-    return segundos * _CREDITOS_POR_SEGUNDO
+    return segundos_a_mensajes_voz(float(cur.fetchone()[0] or 0))
 
 
-# ── Chequeo antes de llamar a la API real ────────────────────────────────────
-
-def verificar_tope_gemini(conn, usuario) -> None:
-    tope = tope_gemini_cop(conn, usuario)
-    gasto = _gasto_mes_cop(conn, usuario["empresa_id"], "gemini_cost")
-    if gasto >= tope * _TOPE_GRACIA:
-        raise HTTPException(
-            status_code=429,
-            detail="Se acabaron las interacciones de Cost de este mes para tu empresa. "
-                   "Vuelven a estar disponibles el primer día del próximo mes.",
-        )
+def segundos_a_mensajes_voz(segundos: float) -> float:
+    return segundos * _CREDITOS_POR_SEGUNDO / _CREDITOS_POR_MENSAJE_VOZ
 
 
-def verificar_tope_voz(conn, usuario) -> None:
-    tope = tope_voz_creditos(conn, usuario)
-    gasto = _gasto_mes_creditos(conn, usuario["empresa_id"], "elevenlabs_voz")
-    if gasto >= tope * _TOPE_GRACIA:
-        raise HTTPException(
-            status_code=429,
-            detail="Se acabaron los minutos de voz de este mes para tu empresa. "
-                   "Vuelven a estar disponibles el primer día del próximo mes.",
-        )
+def porcentaje(gasto: float, tope: float) -> float:
+    """Tope 0 (plan desconocido) → 0% en vez de dividir por cero. Sin bloqueo,
+    un porcentaje 'infinito' solo dispararía avisos falsos."""
+    return round(gasto / tope * 100, 1) if tope > 0 else 0.0
 
 
 # ── Resumen amigable para el taller ("te quedan aproximadamente X...") ──────
 
 def resumen_consumo(conn, usuario) -> dict:
     tope_gemini = tope_gemini_cop(conn, usuario)
-    gasto_gemini = _gasto_mes_cop(conn, usuario["empresa_id"], "gemini_cost")
+    gasto_gemini = gasto_mes_gemini_cop(conn, usuario["empresa_id"])
     costo_conv_cop = _COSTO_PROMEDIO_CONVERSACION_USD * TRM_COP_USD
     restante_cop = max(tope_gemini - gasto_gemini, 0)
     interacciones_restantes = int(restante_cop // costo_conv_cop) if costo_conv_cop else 0
 
-    tope_voz = tope_voz_creditos(conn, usuario)
-    gasto_voz = _gasto_mes_creditos(conn, usuario["empresa_id"], "elevenlabs_voz")
-    restante_creditos = max(tope_voz - gasto_voz, 0)
-    minutos_restantes = round(restante_creditos / _CREDITOS_POR_MINUTO, 1) if _CREDITOS_POR_MINUTO else 0
+    tope_voz = tope_voz_mensajes_usuario(conn, usuario["empresa_id"], usuario.get("plan_codigo", ""))
+    usados_voz = mensajes_voz_mes_usuario(conn, usuario["id"])
 
     return {
         "cost": {
             "restante_estimado": interacciones_restantes,
             "unidad": "interacciones",
-            "porcentaje_usado": round(gasto_gemini / tope_gemini * 100, 1) if tope_gemini else 100.0,
+            "porcentaje_usado": porcentaje(gasto_gemini, tope_gemini),
         },
         "voz": {
-            "restante_estimado": minutos_restantes,
-            "unidad": "minutos",
-            "porcentaje_usado": round(gasto_voz / tope_voz * 100, 1) if tope_voz else 100.0,
+            "restante_estimado": int(max(tope_voz - usados_voz, 0)),
+            "unidad": "mensajes de voz",
+            "porcentaje_usado": porcentaje(usados_voz, tope_voz),
         },
     }

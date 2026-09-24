@@ -33,13 +33,12 @@ from typing import AsyncIterator
 
 from ag_ui.core import events as ag
 from ag_ui.encoder import EventEncoder
-from fastapi import HTTPException
 from google import genai
 from google.genai import types as gtypes
 
 from backend.agente import registry
 from backend.db.client import rls_connection
-from backend.services import consumo_service
+from backend.services import alertas_service, consumo_service
 
 _MODELO = "gemini-3.5-flash"  # ver auditoría: Flash-Lite queda corto para tool-calling real
 _MAX_PASOS = 6  # tope de idas-y-vueltas modelo↔tools por turno
@@ -212,20 +211,11 @@ async def _generar(client, contents, tools, tope_tokens):
     )
 
 
-# ── Cuota mensual por empresa (ciclo 2026-09-16) ─────────────────────────────
+# ── Consumo mensual por empresa (ciclo 2026-09-16) ───────────────────────────
 # Conexión CORTA (mismo criterio que `_ejecutar_handler` más abajo): se abre,
 # se usa y se cierra antes de volver al modelo, nunca sostenida durante el
-# razonamiento. Ambas funciones van envueltas en `asyncio.to_thread` porque
-# `rls_connection`/psycopg2 son síncronos (ver docstring del archivo).
-
-def _verificar_tope_sync(usuario) -> None:
-    with rls_connection(usuario) as conn:
-        consumo_service.verificar_tope_gemini(conn, usuario)
-
-
-async def _verificar_tope(usuario) -> None:
-    await asyncio.to_thread(_verificar_tope_sync, usuario)
-
+# razonamiento. Envuelta en `asyncio.to_thread` porque `rls_connection`/
+# psycopg2 son síncronos (ver docstring del archivo).
 
 def _registrar_consumo_sync(usuario, response) -> None:
     meta = getattr(response, "usage_metadata", None)
@@ -237,6 +227,8 @@ def _registrar_consumo_sync(usuario, response) -> None:
         return
     with rls_connection(usuario) as conn:
         consumo_service.registrar_consumo_gemini(conn, usuario, tokens_in=tokens_in, tokens_out=tokens_out)
+    # Ya comiteado → la conexión aparte de alertas lo ve. Best-effort, nunca lanza.
+    alertas_service.tras_consumo_gemini(usuario["empresa_id"])
 
 
 async def _registrar_consumo(usuario, response) -> None:
@@ -267,23 +259,9 @@ async def ejecutar_turno(usuario: dict, mensaje: str, historial: list[dict],
         ))
         return
 
-    # Cuota mensual por empresa (ciclo 2026-09-16) — chequeo ANTES de construir
-    # el contenido/tools, para no gastar nada si la empresa ya se pasó de su
-    # tope. Nunca un RunErrorEvent (esto no es una falla técnica, es una regla
-    # de negocio esperada) — un mensaje humano normal y un cierre limpio del
-    # turno, mismo criterio de "nunca fallar en silencio ni asustar" del resto
-    # del agente.
-    try:
-        await _verificar_tope(usuario)
-    except HTTPException as e:
-        msg_id_tope = str(uuid.uuid4())
-        yield encoder.encode(ag.TextMessageStartEvent(type=ag.EventType.TEXT_MESSAGE_START, message_id=msg_id_tope, role="assistant"))
-        yield encoder.encode(ag.TextMessageContentEvent(
-            type=ag.EventType.TEXT_MESSAGE_CONTENT, message_id=msg_id_tope, delta=e.detail,
-        ))
-        yield encoder.encode(ag.TextMessageEndEvent(type=ag.EventType.TEXT_MESSAGE_END, message_id=msg_id_tope))
-        yield encoder.encode(ag.RunFinishedEvent(type=ag.EventType.RUN_FINISHED, thread_id=thread_id, run_id=run_id))
-        return
+    # Sin chequeo de cupo antes del turno (decisión del fundador 2026-09-23,
+    # fase de medición): Cost nunca se bloquea. El consumo real se sigue
+    # registrando y `alertas_service` avisa al fundador al cruzar umbrales.
 
     specs = registry.tools_para_usuario(usuario)
     tools = [gtypes.Tool(function_declarations=[s.declaracion for s in specs])] if specs else None

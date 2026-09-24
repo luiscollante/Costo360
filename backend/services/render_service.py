@@ -21,7 +21,7 @@ import httpx
 from fastapi import HTTPException
 
 from backend.db.config_helpers import cfg_get
-from backend.services import catalogo_service, storage_service
+from backend.services import catalogo_service, consumo_service, storage_service
 from backend.services.audit_service import log_accion
 
 _TIMEOUT = 90.0
@@ -184,7 +184,7 @@ def gasto_mensual(conn, empresa_id) -> float:
     cur = conn.cursor()
     cur.execute(
         "SELECT COALESCE(SUM(costo_usd), 0) FROM render_cocina "
-        "WHERE empresa_id = %s AND creado_en >= date_trunc('month', now())",
+        f"WHERE empresa_id = %s AND creado_en >= {consumo_service.INICIO_MES_SQL}",
         (empresa_id,),
     )
     return float(cur.fetchone()[0] or 0)
@@ -200,14 +200,10 @@ def gasto_info(conn, empresa_id) -> dict:
     }
 
 
-def _verificar_tope_mensual(conn, empresa_id) -> None:
-    info = gasto_info(conn, empresa_id)
-    if info["gasto_usd"] + _COSTO_ESTIMADO_USD > info["tope_usd"]:
-        raise HTTPException(
-            status_code=429,
-            detail="Tu empresa alcanzó el límite de renders con IA de este mes.",
-        )
-
+# El tope MENSUAL ya no bloquea (decisión del fundador 2026-09-23, fase de
+# medición): solo alimenta los avisos de `alertas_service`. El límite de 3
+# renders POR COTIZACIÓN sí se mantiene — no es presupuesto, evita generar
+# imágenes sin fin sobre una misma cotización (decisión del fundador).
 
 def _verificar_tope_cotizacion(conn, cotizacion_id: int) -> None:
     cur = conn.cursor()
@@ -296,7 +292,6 @@ def generar_render(conn, usuario, *, cotizacion_id: int, material_id: int, super
     if superficie not in _SUPERFICIES_COCINA:
         raise HTTPException(status_code=422, detail="Superficie no válida para cocina")
 
-    _verificar_tope_mensual(conn, empresa_id)
     _verificar_tope_cotizacion(conn, cotizacion_id)
 
     material = catalogo_service.obtener_material_visual(conn, material_id)
@@ -398,6 +393,12 @@ def generar_render(conn, usuario, *, cotizacion_id: int, material_id: int, super
     log_accion(conn, "RENDER_COCINA_GENERAR",
                {"render_id": render_id, "cotizacion_id": cotizacion_id, "material_id": material_id},
                empresa_id=empresa_id, usuario_id=usuario["id"])
+
+    # Aviso al fundador si la empresa cruza un umbral de su cupo. Import local:
+    # alertas_service importa este módulo. La conexión de alertas es aparte y
+    # todavía no ve esta fila sin comitear → se suma su costo como pendiente.
+    from backend.services import alertas_service
+    alertas_service.tras_consumo_render(empresa_id, pendiente_usd=_COSTO_ESTIMADO_USD)
 
     return _fila_render(row, empresa_id)
 

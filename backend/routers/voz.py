@@ -36,13 +36,13 @@ from backend.db.deps import verificar_dispositivo
 from backend.middleware.auth import get_current_user
 from backend.middleware.rate_limiter import limiter
 from backend.models.voz import HablarIn
-from backend.services import consumo_service
+from backend.services import alertas_service, consumo_service
 from backend.services.voz_service import normalizar_para_voz
 
 router = APIRouter(prefix="/api/voz", tags=["voz"],
                    dependencies=[Depends(verificar_dispositivo)])
 
-_TIMEOUT = 30.0
+_TIMEOUT = 55.0  # respuestas largas de Cost se generan completas
 _BASE = "https://api.elevenlabs.io/v1"
 _MODEL_ID = "eleven_flash_v2_5"
 _VOICE_SETTINGS = {
@@ -52,13 +52,18 @@ _VOICE_SETTINGS = {
     "style": 0.1,
     "use_speaker_boost": True,
 }
-_MAX_CARACTERES = 2000  # ya lo topa HablarIn, doble candado si cambia el modelo — sobre el texto CRUDO, antes de normalizar
+# Topes altos a propósito (2026-09-24): la respuesta de Cost NUNCA se corta —
+# un audio que termina a mitad de frase parece una falla técnica (decisión del
+# fundador). Solo existen como freno contra un texto absurdo, muy por encima
+# de cualquier respuesta real de Cost; eleven_flash_v2_5 acepta hasta 40.000.
+_MAX_CARACTERES = 8000  # ya lo topa HablarIn, doble candado si cambia el modelo — sobre el texto CRUDO, antes de normalizar
 # La normalización puede EXPANDIR el texto (deletrea montos en palabras: "$2.914.000"
 # de 11 caracteres pasa a "dos millones novecientos catorce mil pesos", 44) — tope
 # aparte sobre el resultado ya normalizado, para no mandarle a ElevenLabs algo
 # desproporcionado si un mensaje viene cargado de montos.
-_MAX_CARACTERES_NORMALIZADO = 4000
+_MAX_CARACTERES_NORMALIZADO = 16000
 _MAX_BYTES_AUDIO = 10 * 1024 * 1024  # 10 MB — un mensaje de voz no debería pasar de esto
+_MAX_SEGUNDOS_PREGUNTA = 30  # decisión del fundador 2026-09-23: la pregunta hablada dura máx. 30 s
 
 
 def _recortar_en_oracion(texto: str, limite: int) -> str:
@@ -88,8 +93,10 @@ def _voice_id() -> str:
 @router.post("/hablar")
 @limiter.limit("30/hour")
 def hablar(request: Request, body: HablarIn, conn=Depends(db_rls), usuario=Depends(get_current_user)):
-    """Convierte el texto de un mensaje de Cost a voz. Devuelve el audio (mp3) directo."""
-    consumo_service.verificar_tope_voz(conn, usuario)
+    """Convierte el texto de un mensaje de Cost a voz. Devuelve el audio (mp3) directo.
+    Sin bloqueo por cupo (decisión del fundador, fase de medición) y la
+    respuesta de Cost nunca se corta por duración — solo se le avisa al
+    fundador al cruzar umbrales (`alertas_service`)."""
     api_key = _api_key()
     voice_id = _voice_id()
     texto_crudo = body.texto.strip()[:_MAX_CARACTERES]
@@ -107,21 +114,24 @@ def hablar(request: Request, body: HablarIn, conn=Depends(db_rls), usuario=Depen
         )
     if r.status_code != 200:
         raise HTTPException(status_code=502, detail="ElevenLabs no pudo generar el audio")
-    consumo_service.registrar_consumo_voz(conn, usuario, segundos_audio=consumo_service.estimar_segundos_tts(texto))
+    segundos = consumo_service.estimar_segundos_tts(texto)
+    consumo_service.registrar_consumo_voz(conn, usuario, segundos_audio=segundos)
+    alertas_service.tras_consumo_voz(usuario["id"], pendiente_segundos=segundos)
     return Response(content=r.content, media_type="audio/mpeg")
 
 
 @router.post("/escuchar")
 @limiter.limit("30/hour")
 async def escuchar(request: Request, file: UploadFile = File(...), conn=Depends(db_rls), usuario=Depends(get_current_user)):
-    """Transcribe un audio grabado en el navegador (el micrófono) a texto."""
-    consumo_service.verificar_tope_voz(conn, usuario)
+    """Transcribe un audio grabado en el navegador (el micrófono) a texto.
+    La grabación dura máximo 30 s (el frontend la detiene sola); aquí se
+    rechaza lo que claramente la supere, con margen por variación del códec."""
     api_key = _api_key()
     audio = await file.read()
     if not audio:
         raise HTTPException(status_code=400, detail="No se recibió audio")
-    if len(audio) > _MAX_BYTES_AUDIO:
-        raise HTTPException(status_code=400, detail="El audio es demasiado largo")
+    if len(audio) > _MAX_BYTES_AUDIO or consumo_service.estimar_segundos_stt(len(audio)) > _MAX_SEGUNDOS_PREGUNTA * 2:
+        raise HTTPException(status_code=400, detail="El mensaje de voz puede durar máximo 30 segundos")
     with httpx.Client(timeout=_TIMEOUT) as c:
         r = c.post(
             f"{_BASE}/speech-to-text",
@@ -131,5 +141,7 @@ async def escuchar(request: Request, file: UploadFile = File(...), conn=Depends(
         )
     if r.status_code != 200:
         raise HTTPException(status_code=502, detail="ElevenLabs no pudo transcribir el audio")
-    consumo_service.registrar_consumo_voz(conn, usuario, segundos_audio=consumo_service.estimar_segundos_stt(len(audio)))
+    segundos = consumo_service.estimar_segundos_stt(len(audio))
+    consumo_service.registrar_consumo_voz(conn, usuario, segundos_audio=segundos)
+    alertas_service.tras_consumo_voz(usuario["id"], pendiente_segundos=segundos)
     return {"texto": r.json().get("text", "")}

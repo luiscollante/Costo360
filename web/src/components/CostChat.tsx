@@ -208,11 +208,16 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
 
   const _UMBRAL_SILENCIO = 0.02
   const _SILENCIO_MS = 1500
-  const _TOPE_GRABACION_MS = 60_000 // respaldo si el silencio nunca se detecta (ruido de fondo)
+  // Un mensaje de voz dura máx. 30 s (decisión del fundador 2026-09-23) — con
+  // contador visible para que no se sienta como un corte inesperado.
+  const _TOPE_GRABACION_MS = 30_000
+  const [segRestantes, setSegRestantes] = useState(30)
+  const contadorRef = useRef<number | null>(null)
 
   function limpiarDeteccionSilencio() {
     if (rafSilencioRef.current != null) { cancelAnimationFrame(rafSilencioRef.current); rafSilencioRef.current = null }
     if (topeGrabacionRef.current != null) { window.clearTimeout(topeGrabacionRef.current); topeGrabacionRef.current = null }
+    if (contadorRef.current != null) { window.clearInterval(contadorRef.current); contadorRef.current = null }
     if (audioCtxGrabacionRef.current) { audioCtxGrabacionRef.current.close().catch(() => {}); audioCtxGrabacionRef.current = null }
   }
 
@@ -278,9 +283,14 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
       topeGrabacionRef.current = window.setTimeout(() => {
         if (mr.state !== 'inactive') mr.stop()
       }, _TOPE_GRABACION_MS)
+      const inicio = Date.now()
+      setSegRestantes(_TOPE_GRABACION_MS / 1000)
+      contadorRef.current = window.setInterval(() => {
+        setSegRestantes(Math.max(0, Math.ceil((_TOPE_GRABACION_MS - (Date.now() - inicio)) / 1000)))
+      }, 250)
     } catch (e) {
       const msg = e instanceof DOMException && e.name === 'NotAllowedError'
-        ? 'Permiso de micrófono denegado. Revisá la configuración de permisos del navegador.'
+        ? 'Permiso de micrófono denegado. Revisa la configuración de permisos del navegador.'
         : e instanceof DOMException && e.name === 'NotFoundError'
           ? 'No se detectó ningún micrófono en este dispositivo.'
           : 'No se pudo acceder al micrófono'
@@ -532,7 +542,7 @@ export function CostChat({ compacto = false }: { compacto?: boolean }) {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={grabando ? 'Escuchando… (se envía sola al terminar)' : 'Escribe tu mensaje…'}
+          placeholder={grabando ? `Escuchando… ${segRestantes} s (se envía sola al terminar)` : 'Escribe tu mensaje…'}
           aria-label="Mensaje para el asistente"
           disabled={grabando || transcribiendo}
           className={`h-9 flex-1 rounded-lg border border-brand-border bg-brand-input px-3 text-brand-text focus-visible:outline-none focus-visible:border-brand-primary disabled:opacity-60 ${txt.input}`}

@@ -20,6 +20,10 @@
     {
       "path": "/api/proyectos/cron/barrido-diario",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/consumo/cron/revision",
+      "schedule": "0 12 * * *"
     }
   ]
 }

@@ -5,7 +5,7 @@ import { api } from '@/api/client'
 // llama a estos 2 endpoints propios. Timeout más largo que el default de
 // `api` (10s) porque generar/transcribir audio real toma más que una
 // consulta normal a la base de datos.
-const _TIMEOUT_VOZ = 30_000
+const _TIMEOUT_VOZ = 60_000 // respuestas largas de Cost se leen completas (nunca se cortan)
 
 /** Convierte el texto de un mensaje de Cost a voz. Devuelve el audio (mp3) listo para reproducir. */
 export async function hablar(texto: string): Promise<Blob> {
