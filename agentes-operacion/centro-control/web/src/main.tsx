@@ -1,6 +1,6 @@
 import { StrictMode, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Activity, ArrowRight, Building2, CheckSquare2, ChevronRight, ClipboardCheck, CreditCard, Eye, EyeOff, Gauge, Headphones, History, LayoutDashboard, LogOut, Menu, ShieldCheck, ShoppingCart, Sparkles, Target, Truck, Users, X } from 'lucide-react'
+import { Activity, ArrowRight, Building2, CheckSquare2, ChevronRight, ClipboardCheck, CreditCard, Eye, EyeOff, Gauge, Headphones, RefreshCw, History, LayoutDashboard, LogOut, Menu, ShieldCheck, ShoppingCart, Sparkles, Target, Truck, Users, X } from 'lucide-react'
 import { api, setCsrf, title } from './api'
 import type { Meta, Row, User } from './api'
 import { Alert, Editor, Loading, Modal, Records, useLoad } from './components'
@@ -64,6 +64,15 @@ function Workspace({ user, health, logout, logoutAll }: { user: User; health: He
   const name = page === 'agente' ? 'Agente de operación' : sections.flatMap(s => s.items).find(x => x.id === page)?.label || 'Centro de control'
   useEffect(() => { document.title = name + ' · Costo360' }, [name])
   useEffect(() => { if (!toast) return; const id = window.setTimeout(() => setToast(''), 5000); return () => clearTimeout(id) }, [toast])
+  async function sincronizar() {
+    setBusy(true); setError('')
+    try {
+      const r = await api<{ talleres: number; creados: number; actualizados: number; contactos: number; errores: string[] }>('/sync/clientes', { method: 'POST' })
+      setToast(`Clientes de Costo360 al día: ${r.talleres} talleres (${r.creados} nuevos, ${r.actualizados} actualizados, ${r.contactos} contactos).` + (r.errores.length ? ` Con ${r.errores.length} aviso(s).` : ''))
+      if (r.errores.length) setError(r.errores.join(' · '))
+      refresh()
+    } catch (e) { setError((e as Error).message) } finally { setBusy(false) }
+  }
   async function requestArchive() {
     if (!archive) return
     setBusy(true); setError('')
@@ -79,7 +88,7 @@ function Workspace({ user, health, logout, logoutAll }: { user: User; health: He
       {health?.online && <button className="secondary logout-all" onClick={logoutAll}>Cerrar sesión en todos los dispositivos</button>}
     </aside><main id="main" className="main-content"><header className="topbar"><button className="mobile-menu icon-button" aria-label="Abrir navegación" onClick={() => setSidebar(true)}><Menu size={22}/></button><span>Costo360 S.A.S. <ChevronRight size={14}/> <strong>{name}</strong></span><div className="topbar-right"><span className="local-pill"><i/> {health?.online ? 'En línea · protegido' : health?.demo ? 'Demostración local' : 'Espacio privado local'}</span><span className="avatar tiny">{user.name.slice(0, 1)}</span></div></header>
       {health?.demo && <div className="demo-strip">Datos ficticios para explorar el sistema. No hay clientes reales ni servicios externos conectados.</div>}
-      <div className="page-content"><div className="page-heading"><div><span className="eyebrow">{page === 'inicio' ? 'TU CENTRO DE OPERACIONES' : 'CENTRO DE CONTROL'}</span><h1>{name}</h1><p>{descriptions[page]}</p></div>{page !== 'agente' && <button className="secondary ask-agent" onClick={() => go('agente')}><Sparkles size={17}/> Consultar al agente</button>}</div>
+      <div className="page-content"><div className="page-heading"><div><span className="eyebrow">{page === 'inicio' ? 'TU CENTRO DE OPERACIONES' : 'CENTRO DE CONTROL'}</span><h1>{name}</h1><p>{descriptions[page]}</p></div>{page === 'empresas' && user.role === 'fundador' && <button className="secondary ask-agent" disabled={busy} onClick={sincronizar}><RefreshCw size={17}/> {busy ? 'Sincronizando…' : 'Sincronizar con Costo360'}</button>}{page !== 'agente' && <button className="secondary ask-agent" onClick={() => go('agente')}><Sparkles size={17}/> Consultar al agente</button>}</div>
       {(error || meta.error) && <Alert>{error || meta.error}</Alert>}
       {page === 'inicio' ? <Dashboard revision={revision} onGo={go} onDetail={setDetail}/> : page === 'agente' ? <AgentScreen revision={revision} refresh={refresh} onGo={go}/> : page === 'aprobaciones' ? <Proposals revision={revision} refresh={refresh}/> : page === 'auditoria' ? <AuditView revision={revision}/> : page === 'consumo' ? <ConsumoIA revision={revision}/> : meta.loading ? <Loading/> : <Records key={page} kind={page} revision={revision} user={user} onEdit={edit} onDetail={setDetail} onArchive={setArchive}/>}
       <footer className="page-footer"><ShieldCheck size={14}/> Sistema propio · datos locales · cambios trazables <span>Costo360 S.A.S.</span></footer></div>

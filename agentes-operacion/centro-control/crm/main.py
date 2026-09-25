@@ -11,7 +11,7 @@ from sqlalchemy import delete, select, text
 from sqlalchemy.exc import IntegrityError, OperationalError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from . import agent, auth, services
+from . import agent, auth, services, sync
 from .config import ROOT, Settings
 from .db import Audit, Database, Message, Proposal, Session, Usage, now
 from .schemas import Chat, Change, Login, PARENTS, ProposalIn, SCHEMAS
@@ -166,6 +166,7 @@ def create_app(settings=None):
             raise HTTPException(401, 'No autorizado.')
         with app.state.db.transaction() as session:
             session.execute(text('SELECT 1'))
+        sync.sincronizar_si_toca(app.state.db, settings, minutos=60)
         return {'ok': True}
 
     @app.get('/api/catalogue')
@@ -190,8 +191,16 @@ def create_app(settings=None):
             raise HTTPException(502, 'Costo360 no entregó el consumo (código %s).' % r.status_code)
         return r.json()
 
+    @app.post('/api/sync/clientes')
+    def sync_clientes(user=Depends(auth.current_user)):
+        """Trae ya los talleres reales de Costo360 al CRM (solo el fundador)."""
+        if user.role != 'fundador':
+            raise HTTPException(403, 'Solo el fundador puede sincronizar los clientes.')
+        return sync.sincronizar_clientes(app.state.db, settings)
+
     @app.get('/api/summary')
     def summary(user=Depends(auth.current_user)):
+        sync.sincronizar_si_toca(app.state.db, settings)  # el CRM nunca se ve desactualizado
         with app.state.db.transaction() as session:
             return services.summary(session)
 

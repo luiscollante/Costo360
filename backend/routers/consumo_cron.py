@@ -49,6 +49,41 @@ def verificar_token_admin(x_admin_token: str | None = Header(default=None)) -> N
         raise HTTPException(status_code=401, detail="Token inválido")
 
 
+@router.get("/api/admin/clientes")
+@limiter.limit("60/hour")
+def clientes_plataforma(request: Request, _tok=Depends(verificar_token_admin), conn=Depends(db_service)):
+    """Solo lectura para sincronizar el CRM del Centro de Control: cada taller
+    (cliente de Costo360) con su plan, estado, suscripción y usuarios. Sin
+    datos de los clientes finales de los talleres (ni cotizaciones ni obras)."""
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT e.id, e.nombre, e.nit, e.direccion, e.telefono, e.plan_codigo, e.activa, e.creado_en, "
+        "       p.nombre, p.precio_mensual_cop, s.estado, s.proxima_fecha_cobro "
+        "FROM empresas e JOIN planes p ON p.codigo = e.plan_codigo "
+        "LEFT JOIN suscripciones_wompi s ON s.empresa_id = e.id ORDER BY e.creado_en"
+    )
+    empresas = []
+    for (eid, nombre, nit, direccion, telefono, plan, activa, creado, plan_nombre, precio,
+         sus_estado, proximo) in cur.fetchall():
+        cur.execute(
+            "SELECT u.id, u.nombre_completo, u.rol_codigo, u.cargo_visible, u.activo, a.email "
+            "FROM usuarios u LEFT JOIN auth.users a ON a.id = u.id WHERE u.empresa_id = %s "
+            "ORDER BY u.rol_codigo = 'admin' DESC, u.nombre_completo",
+            (eid,),
+        )
+        usuarios = [{"id": str(uid), "nombre": n or "Sin nombre", "rol": r, "cargo": c or "", "activo": act,
+                     "email": em or ""} for uid, n, r, c, act, em in cur.fetchall()]
+        empresas.append({
+            "id": str(eid), "nombre": nombre, "nit": nit or "", "direccion": direccion or "",
+            "telefono": telefono or "", "plan": plan_nombre, "plan_codigo": plan,
+            "precio_mensual_cop": float(precio or 0), "activa": activa,
+            "creado_en": creado.isoformat() if creado else None,
+            "suscripcion_estado": sus_estado, "proximo_cobro": proximo.isoformat() if proximo else None,
+            "usuarios": usuarios,
+        })
+    return JSONResponse({"empresas": empresas}, headers={"Cache-Control": "no-store"})
+
+
 @router.get("/api/admin/consumo")
 @limiter.limit("60/hour")
 def consumo_plataforma(request: Request, _tok=Depends(verificar_token_admin), conn=Depends(db_service)):
