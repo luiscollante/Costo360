@@ -1,48 +1,71 @@
-import { ArrowUpRight, ArrowUp } from "lucide-react";
-import { DEMO_CONTACT_URL, PRODUCT_LOGIN_URL } from "../lib/content";
+import { ArrowUpRight, ArrowUp, Check } from "lucide-react";
+import { PRODUCT_LOGIN_URL } from "../lib/content";
 import { MagneticLink } from "./ui/Tactile";
 export function Footer() {
   return (
     <>
       <section
-        className="contact-section container"
+        className="atelier-cta"
         id="contacto"
         aria-labelledby="contact-title"
       >
-        <div className="contact-art" aria-hidden="true">
-          <div />
-          <div />
-          <div />
-        </div>
-        <div className="contact-copy">
-          <p className="eyebrow">TU PRÓXIMA COTIZACIÓN EMPIEZA AQUÍ</p>
-          <h2 id="contact-title">
-            Tú conoces la piedra.
-            <br />
-            <span>Dale claridad a tus costos.</span>
-          </h2>
-          <p>
-            Cotiza, organiza tus materiales y coordina tus proyectos con
-            Costo360. Elige una suscripción mensual con Cost incluido.
-          </p>
-          <div className="contact-actions">
-            {DEMO_CONTACT_URL ? (
-              <a
+        <div className="container atelier-cta-grid">
+          <div className="atelier-copy">
+            <p className="eyebrow">TU PRÓXIMA COTIZACIÓN EMPIEZA AQUÍ</p>
+            <h2 id="contact-title">
+              Haz que cada
+              <br />
+              cotización cuente.
+              <br />
+              <em>
+                Empieza con
+                <br />
+                Costo360 hoy.
+              </em>
+            </h2>
+            <p>
+              Cotiza, organiza tus materiales y coordina tus proyectos con
+              Costo360. Elige una suscripción mensual con Cost incluido.
+            </p>
+            <div className="atelier-actions">
+              <button
                 className="button"
-                href={DEMO_CONTACT_URL}
-                target="_blank"
-                rel="noopener noreferrer"
+                onClick={() =>
+                  window.dispatchEvent(new Event("costo360:open-chat"))
+                }
               >
-                Solicitar una demo <ArrowUpRight size={18} />
-              </a>
-            ) : (
-              <MagneticLink href="#planes">
-                Encuentra tu plan <ArrowUpRight size={18} />
+                Conversemos sobre tu taller <ArrowUpRight size={18} />
+              </button>
+              <MagneticLink href="#planes" className="button button-outline">
+                Ver planes <ArrowUpRight size={17} />
               </MagneticLink>
-            )}
-            <a className="text-button" href={PRODUCT_LOGIN_URL}>
-              Ya tengo una cuenta <ArrowUpRight size={17} />
-            </a>
+            </div>
+            <div className="atelier-proof">
+              <span>
+                <Check size={16} /> Cost en todos los planes
+              </span>
+              <span>
+                <Check size={16} /> Suscripción mensual por empresa
+              </span>
+            </div>
+          </div>
+          <div className="atelier-cta-art">
+            <img
+              src="/media/editorial/cta-workshop.webp"
+              alt="Cost te da la bienvenida junto a un mesón de piedra terminado. Ilustración de marca."
+              width="1536"
+              height="1024"
+              loading="lazy"
+              decoding="async"
+            />
+            <div className="atelier-cta-note">
+              <span>DEL OFICIO A LOS DATOS</span>
+              <strong>
+                Tu próximo trabajo.
+                <br />
+                Una decisión más clara.
+              </strong>
+            </div>
           </div>
         </div>
       </section>
@@ -72,7 +95,7 @@ export function Footer() {
             <nav aria-label="Enlaces del pie de página">
               <a href="#producto">Producto real</a>
               <a href="#solucion">La solución</a>
-              <a href="#simulador">Simulador ilustrativo</a>
+              <a href="#simulador">Simulador de nesting</a>
               <a href="#cost">Asistente Cost</a>
               <a href="#planes">Planes</a>
               <a href="#faq">Preguntas frecuentes</a>

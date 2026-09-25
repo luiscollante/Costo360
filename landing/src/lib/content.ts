@@ -1,6 +1,6 @@
 import { productScreens, costScreen } from "./productScreens";
 
-// Única fuente de URLs públicas. Nunca conectar esta landing al backend.
+// URLs públicas. Atención usa un servicio separado, sin acceso al backend del producto.
 export const SITE_URL = "https://costo360-landing.vercel.app";
 export const PRODUCT_LOGIN_URL = "https://costo360-web.vercel.app/login";
 export const PRODUCT_CHECKOUT_URL = "https://costo360-web.vercel.app/checkout";
@@ -26,7 +26,7 @@ export const faqs = [
   {
     question: "¿Las imágenes muestran el producto real o una simulación?",
     answer:
-      "El recorrido del producto y la pantalla de Cost son capturas reales de una cuenta de demostración, con datos de prueba. Sus cifras no representan resultados de clientes ni precios de suscripción. El simulador de distribución es un ejemplo local simplificado, separado del motor del producto: no guarda datos ni genera una cotización real.",
+      "El recorrido del producto y la pantalla de Cost son capturas reales de una cuenta de demostración, con datos de prueba. Sus cifras no representan resultados de clientes ni precios de suscripción. El simulador de nesting usa el mismo algoritmo de corte de la plataforma, pero corre solo en tu navegador: no guarda datos ni genera una cotización real.",
   },
   {
     question: "¿Qué es Costo360 y para quién está diseñado?",
@@ -41,7 +41,7 @@ export const faqs = [
   {
     question: "¿Cómo funciona la optimización de corte o nesting 2D?",
     answer:
-      "El motor de empaquetado Guillotine 2D distribuye piezas rectangulares sobre las dimensiones de una lámina y genera un plano visual SVG. Calcula el aprovechamiento de esa distribución e identifica piezas que no caben. El resultado depende de las medidas y piezas del proyecto; no se promete un porcentaje fijo de ahorro.",
+      "El motor de nesting prueba 16 combinaciones para acomodar piezas rectangulares sobre la lámina y se queda con la que ubica más piezas y aprovecha más área. Solo gira una pieza 90° cuando es la única forma de que quepa, para respetar la veta. Genera un plano descargable, calcula el aprovechamiento y el retal, e indica qué piezas no caben. Puedes probar el mismo cálculo en el simulador de esta página. El resultado depende de las medidas y piezas del proyecto; no se promete un porcentaje fijo de ahorro.",
   },
   {
     question: "¿Cost puede modificar mis datos sin permiso?",
@@ -56,7 +56,7 @@ export const faqs = [
   {
     question: "¿Cost está incluido en Starter?",
     answer:
-      "Sí. Cost está incluido desde Starter. Consulta los datos de tu taller, calcula cotizaciones y prepara acciones sobre catálogo, inventario, retales, planos de corte y proyectos. Tú confirmas antes de que cree, edite o borre datos. El uso de IA tiene cupos mensuales por empresa; no es ilimitado. El plazo del registro de acciones de Cost no limita el historial de tus cotizaciones.",
+      "Sí. Cost está incluido desde Starter. Consulta los datos de tu taller, calcula cotizaciones y prepara acciones sobre catálogo, inventario, retales, planos de corte y proyectos. Tú confirmas antes de que cree, edite o borre datos. Cost tiene referencias de consumo mensuales por empresa. La voz se mide por usuario: 5 mensajes de referencia en Starter, 10 en Pro y 15 en Enterprise. La medición de voz es aproximada y depende de la duración. El plazo del registro de acciones de Cost no limita el historial de tus cotizaciones.",
   },
   {
     question: "¿Puedo hacer cotizaciones con AIU en Colombia?",
@@ -105,7 +105,7 @@ export function structuredData() {
           "Cotizaciones y cuentas de cobro en PDF",
           "Catálogo editable por taller",
           "Inventario de láminas y banco de retales",
-          "Nesting Guillotine 2D con plano SVG",
+          "Nesting 2D con rotación solo cuando hace falta y plano descargable",
           "Parámetros de costo del taller",
           "Dashboard e historial de cotizaciones",
           "Proyectos Kanban, tareas, hitos y registro de horas",

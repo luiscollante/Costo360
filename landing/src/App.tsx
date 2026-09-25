@@ -4,13 +4,14 @@ import { Navbar } from "./components/Navbar";
 import { ProductTour } from "./components/ProductTour";
 import { Hero } from "./components/Hero";
 import { MetricsBar } from "./components/MetricsBar";
-import { ScrollyStory } from "./components/ScrollyStory";
 import { InteractiveStudio } from "./components/InteractiveStudio";
 import { BentoEcosystem } from "./components/BentoEcosystem";
 import { CostAssistant } from "./components/CostAssistant";
 import { PricingSection } from "./components/PricingSection";
 import { FaqSection } from "./components/FaqSection";
 import { Footer } from "./components/Footer";
+import { SupportChat } from "./components/SupportChat";
+import { CraftDetail } from "./components/CraftDetail";
 
 export default function App() {
   useEffect(() => {
@@ -46,7 +47,7 @@ export default function App() {
           <Hero />
           <MetricsBar />
           <ProductTour />
-          <ScrollyStory />
+          <CraftDetail />
           <InteractiveStudio />
           <BentoEcosystem />
           <CostAssistant />
@@ -54,6 +55,10 @@ export default function App() {
           <FaqSection />
         </main>
         <Footer />
+        {/* Chat de soporte oculto (decisión del fundador 2026-09-25): su servicio
+            `agentes-operacion/atencion` aún no está publicado. Activar con
+            VITE_SUPPORT_CHAT=1 cuando lo esté. */}
+        {import.meta.env.VITE_SUPPORT_CHAT === "1" && <SupportChat />}
       </div>
     </MotionConfig>
   );

@@ -14,9 +14,9 @@ export default function AgentePage() {
     <AppLayout>
       <div className="mx-auto max-w-2xl">
         <PageHeader
-          kicker="Objetivo 5 · Ciclo 3"
+          kicker="Asistente con IA"
           title="Cost"
-          subtitle="Tu asistente de Costo360 — hoy entiende de Proyectos, Tareas, Cotización, Catálogo, Inventario, Retales, Nesting y Parámetros."
+          subtitle="Tu asistente de Costo360: consulta y te ayuda con proyectos, tareas, cotizaciones, catálogo, inventario, retales, nesting y parámetros."
         />
         <Card className="flex h-[min(72vh,calc(100vh-11rem))] flex-col overflow-hidden">
           <CostChat />

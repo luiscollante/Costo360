@@ -92,15 +92,7 @@ export function PricingSection() {
       </div>
       <div className="plans-grid">
         {plans.map(
-          ({
-            name,
-            codigo,
-            price,
-            count,
-            unit,
-            subtitle,
-            features,
-          }) => {
+          ({ name, codigo, price, count, unit, subtitle, features }) => {
             const featured = name === "Pro";
             return (
               <article
@@ -165,9 +157,9 @@ export function PricingSection() {
                   {featured && (
                     <div className="plan-mascot-wrap">
                       <p className="plan-mascot-note">
-                      Cost se encarga.
+                        Cost se encarga.
                         <br />
-                      Tú avanzas.
+                        Tú avanzas.
                       </p>
                       <img
                         src="/media/plans/cost-pricing.png"
@@ -199,10 +191,12 @@ export function PricingSection() {
       </div>
       <p className="pricing-note" id="pricing-conditions">
         *Cost requiere tu confirmación para crear, editar o borrar datos. El uso
-        de IA tiene cupos mensuales por empresa. El registro de acciones de Cost
-        conserva 1 día en Starter, 30 en Pro y 90 en Enterprise; estos plazos no
-        corresponden al historial de cotizaciones. Los permisos de cada rol
-        determinan el acceso a los datos y al dashboard.
+        de Cost tiene referencias mensuales por empresa; la voz se mide por
+        usuario (Starter: 5, Pro: 10, Enterprise: 15 mensajes de referencia al
+        mes). El registro de acciones de Cost conserva 1 día en Starter, 30 en
+        Pro y 90 en Enterprise; estos plazos no corresponden al historial de
+        cotizaciones. Los permisos de cada rol determinan el acceso a los datos
+        y al dashboard.
       </p>
       <div className="pricing-bottom">
         <ul className="pricing-trust">

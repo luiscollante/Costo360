@@ -87,6 +87,17 @@ for (const width of [320, 390, 768, 1440]) {
       path: `artifacts/landing-${width}.png`,
       fullPage: true,
     });
+    if (width === 390 || width === 1440) {
+      for (const [name, selector] of [
+        ["hero", ".atelier-hero"],
+        ["cost", ".atelier-cost"],
+        ["cta", ".atelier-cta"],
+      ]) {
+        await page
+          .locator(selector)
+          .screenshot({ path: `artifacts/editorial-${name}-${width}.png` });
+      }
+    }
     expect(errors).toEqual([]);
     expect(network).toEqual([]);
   });
@@ -138,12 +149,13 @@ test("real captures, keyboard selection and safe enlargement", async ({
   await expect(page.locator("#cost")).toContainText(
     "Sin tu confirmación, no hay cambios.",
   );
-  await expect(page.locator("#cost img")).toHaveAttribute(
+  await page.locator(".cost-real-disclosure summary").click();
+  await expect(page.locator("#cost .cost-capture img")).toHaveAttribute(
     "src",
     costScreen.src,
   );
   await expect(page.locator("#cost")).toContainText(
-    "Esta landing no ejecuta IA",
+    "Esta captura no es una conversación activa",
   );
 });
 
@@ -166,7 +178,7 @@ test("FAQ and mobile keyboard navigation", async ({ page }) => {
   await expect(page.locator("details[open]")).toContainText(faq.answer);
 });
 
-test("light mode and animations remain active with reduced-motion preference", async ({
+test("light mode and new editorial art respects reduced-motion preference", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce", colorScheme: "dark" });
@@ -176,19 +188,17 @@ test("light mode and animations remain active with reduced-motion preference", a
       .locator("html")
       .evaluate((el) => getComputedStyle(el).colorScheme),
   ).toBe("light");
-  const animation = await page.locator(".slab-float").evaluate((el) => {
-    const style = getComputedStyle(el);
-    return {
-      name: style.animationName,
-      state: style.animationPlayState,
-      duration: style.animationDuration,
-    };
-  });
-  expect(animation).toEqual({
-    name: "slab-float",
-    state: "running",
-    duration: "7s",
-  });
+  const animation = await page
+    .locator(".atelier-scene-image")
+    .evaluate((el) => {
+      const style = getComputedStyle(el);
+      return {
+        name: style.animationName,
+        state: style.animationPlayState,
+        duration: style.animationDuration,
+      };
+    });
+  expect(animation.name).toBe("none");
 });
 
 test("initial HTML, images and metadata are complete without JavaScript", async ({
@@ -199,7 +209,7 @@ test("initial HTML, images and metadata are complete without JavaScript", async 
   const page = await context.newPage();
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
-    "Tu oficio es",
+    "Deja de cotizar",
   );
   await expect(page.locator(".hero-description")).toContainText("marmolerías");
   for (const [name, price] of [

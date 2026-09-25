@@ -1,174 +1,113 @@
-import { useState, type PointerEvent } from "react";
-import { motion, useMotionValue, useSpring } from "framer-motion";
+import { useState } from "react";
 import {
-  ArrowDown,
   ArrowUpRight,
   Check,
+  ChartNoAxesCombined,
   Layers3,
-  MoveUpRight,
   Play,
-  ScanLine,
 } from "lucide-react";
 import { materials } from "../lib/content";
-import { Particles } from "./ui/Particles";
 import { MagneticLink } from "./ui/Tactile";
 
 export function Hero() {
   const [selected, setSelected] = useState(0);
-  const x = useMotionValue(0),
-    y = useMotionValue(0);
-  const rotateX = useSpring(x, { stiffness: 95, damping: 22 });
-  const rotateY = useSpring(y, { stiffness: 95, damping: 22 });
-  const material = materials[selected];
-  function tilt(event: PointerEvent<HTMLDivElement>) {
-    if (event.pointerType === "touch") return;
-    const box = event.currentTarget.getBoundingClientRect();
-    x.set(-((event.clientY - box.top) / box.height - 0.5) * 10);
-    y.set(((event.clientX - box.left) / box.width - 0.5) * 10);
-  }
   return (
-    <section
-      className="hero container"
-      id="inicio"
-      aria-labelledby="hero-title"
-    >
-      <div className="hero-copy">
-        <div className="eyebrow">
-          <span className="status-dot" /> SOFTWARE PARA TALLERES DE PIEDRA
+    <section className="atelier-hero" id="inicio" aria-labelledby="hero-title">
+      <div className="container atelier-hero-layout">
+        <div className="atelier-copy">
+          <p className="eyebrow">
+            <span className="editorial-rule" /> HECHO PARA EL OFICIO. PENSADO
+            PARA TU EMPRESA.
+          </p>
+          <h1 id="hero-title">
+            Deja de cotizar
+            <br />a ojo.
+            <br />
+            Empieza a saber
+            <br />
+            <em>cuánto ganas.</em>
+          </h1>
+          <p className="hero-description">
+            Costo360 ayuda a marmolerías y talleres de piedra a calcular cada
+            trabajo con sus propios costos. Cotizaciones, materiales y
+            proyectos, <strong>con más claridad para decidir.</strong>
+          </p>
+          <div className="atelier-actions">
+            <MagneticLink href="#producto">
+              Quiero conocer Costo360 <ArrowUpRight size={18} />
+            </MagneticLink>
+            <a className="text-button" href="#simulador">
+              <Play size={14} /> Ver cómo funciona
+            </a>
+          </div>
+          <div className="atelier-proof">
+            <span>
+              <Check size={16} /> Para talleres de piedra en Colombia
+            </span>
+            <span>
+              <Check size={16} /> Cost incluido desde Starter
+            </span>
+          </div>
         </div>
-        <h1 id="hero-title">
-          Tu oficio es
-          <br />
-          la piedra.
-          <br />
-          <span>
-            Tu margen,
-            <br className="mobile-break" /> no se improvisa.
-          </span>
-        </h1>
-        <p className="hero-description">
-          Software de cotización para marmolerías y talleres de piedra en
-          Colombia. Conecta costos, cortes y proyectos con las reglas de{" "}
-          <strong>tu taller.</strong>
-        </p>
-        <div className="hero-buttons">
-          <MagneticLink href="#producto">
-            Ver el producto real <ArrowUpRight size={19} />
-          </MagneticLink>
-          <a href="#simulador" className="text-button">
-            <span className="play-icon">
-              <Play size={13} fill="currentColor" />
-            </span>{" "}
-            Probar el simulador
-          </a>
-        </div>
-        <div className="hero-notes">
-          <span>
-            <Check size={14} /> Hecho para Colombia
-          </span>
-          <span>
-            <Check size={14} /> Cancela cuando quieras
-          </span>
-        </div>
-      </div>
-      <div
-        className="hero-scene"
-        onPointerMove={tilt}
-        onPointerLeave={() => {
-          x.set(0);
-          y.set(0);
-        }}
-      >
-        <div className="scene-grid" aria-hidden="true" />
-        <Particles paused={false} />
-        <div className="scene-heading">
-          <span>
-            <span className="status-dot" /> DEL MATERIAL A LA DECISIÓN
-          </span>
-          <ScanLine size={18} />
-        </div>
-        <div className="orbit orbit-one" aria-hidden="true" />
-        <div className="orbit orbit-two" aria-hidden="true" />
-        <motion.div
-          className="slab-stage"
-          style={{
-            rotateX: rotateX,
-            rotateY: rotateY,
-          }}
-        >
-          <div className="slab-float">
-            <div
-              className={`stone-slab stone-${selected}`}
-              style={{ backgroundImage: `url('${material.image}')` }}
-            >
-              <div className="stone-grid" />
-              <span className="cut-line cut-line-one" />
-              <span className="cut-line cut-line-two" />
-              <span className="cut-line cut-line-three" />
-              <div className="slab-stamp">
-                <Layers3 size={19} />
-                <span>
-                  C360
-                  <br />
-                  MATERIAL STUDIO
-                </span>
-              </div>
+        <div className="atelier-hero-art">
+          <img
+            className="atelier-scene-image"
+            src="/media/editorial/hero-workshop.webp"
+            alt="Cost junto a un despiece de mármol en un taller de piedra. Ilustración de marca."
+            width="1536"
+            height="1024"
+            fetchPriority="high"
+          />
+          <div className="atelier-callout hero-value">
+            <ChartNoAxesCombined size={23} />
+            <div>
+              <strong>Protege tu margen</strong>
+              <span>Conoce tus costos antes de cotizar.</span>
             </div>
-            <div className="slab-shadow" />
           </div>
-        </motion.div>
-        <div className="scene-tag tag-top">
-          <span className="tag-icon">
-            <ScanLine size={18} />
-          </span>
-          <div>
-            <span className="micro-label">CADA PIEZA CUENTA</span>
-            <strong>Visualiza tu despiece</strong>
+          <div className="atelier-sample" aria-live="polite">
+            <img
+              src={materials[selected].image}
+              alt=""
+              width="42"
+              height="42"
+            />
+            <div>
+              <span>MATERIALES DE TU OFICIO</span>
+              <strong>
+                {materials[selected].name} / {materials[selected].reference}
+              </strong>
+            </div>
           </div>
-          <MoveUpRight size={16} />
-        </div>
-        <div className="scene-tag tag-bottom">
-          <span className="tag-icon">
-            <Check size={18} />
-          </span>
-          <div>
-            <span className="micro-label">COSTOS A TU MEDIDA</span>
-            <strong>Tu material. Tus tarifas.</strong>
-          </div>
-        </div>
-        <div className="material-picker">
-          <div className="material-info" aria-live="polite">
-            <span className="micro-label">EXPLORA EL MATERIAL</span>
-            <strong>
-              {material.name} <span>/ {material.reference}</span>
-            </strong>
+          <div className="atelier-callout hero-control">
+            <Layers3 size={23} />
+            <div>
+              <strong>Cada pieza cuenta</strong>
+              <span>Materiales, costos y proyectos conectados.</span>
+            </div>
           </div>
           <div
-            className="material-swatches"
+            className="atelier-materials"
             role="group"
             aria-label="Material de la visualización"
           >
-            {materials.map((item, index) => (
+            {materials.map((item, i) => (
               <button
                 key={item.name}
-                type="button"
-                className={`swatch ${selected === index ? "selected" : ""}`}
-                style={{ backgroundImage: `url('${item.image}')` }}
                 aria-label={`Ver ${item.name}`}
-                aria-pressed={selected === index}
-                onClick={() => setSelected(index)}
-              />
+                aria-pressed={selected === i}
+                onClick={() => setSelected(i)}
+              >
+                <span style={{ backgroundImage: `url('${item.image}')` }} />
+                {item.name}
+              </button>
             ))}
           </div>
+          <span className="atelier-art-caption">
+            Ilustración de marca · Explora las pantallas reales a continuación.
+          </span>
         </div>
-        <span className="scene-caption">
-          Visualización conceptual · No es una captura del producto
-        </span>
       </div>
-      <a className="hero-scroll" href="#solucion">
-        <ArrowDown size={15} /> DEL OFICIO A LOS DATOS{" "}
-        <span className="scroll-line" />
-      </a>
     </section>
   );
 }

@@ -18,3 +18,5 @@ if (root.hasChildNodes() && root.querySelector("main")) {
 }
 import "./product-tour.css";
 import "./experience.css";
+import "./support-chat.css";
+import "./atelier.css";

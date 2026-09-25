@@ -1,37 +1,23 @@
 import { test, expect } from "@playwright/test";
 
-test("workshop scene follows the story and can also be selected directly", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
+test("stone cost details work by pointer and keyboard", async ({ page }) => {
   await page.goto("/");
-  for (let index = 0; index < 3; index++) {
-    await page
-      .locator(".journey-step")
-      .nth(index)
-      .evaluate((el) =>
-        el.scrollIntoView({ block: "center", behavior: "instant" }),
-      );
-    await expect(page.locator(".journey-scene")).toHaveAttribute(
-      "data-stage",
-      String(index),
-    );
-  }
-  const stages = page.getByRole("group", { name: "Etapas del proceso" });
-  await stages.getByRole("button", { name: /Material/ }).click();
-  await expect(page.locator(".journey-scene")).toHaveAttribute(
-    "data-stage",
-    "0",
+  const factors = page.getByRole("group", { name: "Factores del costo" });
+  await factors.getByRole("button", { name: /Mano de obra/ }).click();
+  await expect(page.locator(".detail-explanation")).toContainText(
+    "cortes, ensambles",
   );
-  await stages.getByRole("button", { name: /Costos/ }).focus();
+  await factors.getByRole("button", { name: /Riesgo de rotura/ }).focus();
   await page.keyboard.press("Enter");
-  await expect(page.locator(".journey-scene")).toHaveAttribute(
-    "data-stage",
-    "1",
+  await expect(page.locator(".detail-explanation")).toContainText(
+    "riesgo de rotura",
   );
+  await expect(
+    factors.getByRole("button", { name: /Riesgo de rotura/ }),
+  ).toHaveAttribute("aria-pressed", "true");
   await page
-    .locator(".journey-scene")
-    .screenshot({ path: "artifacts/journey-desktop.png" });
+    .locator(".detail-art")
+    .screenshot({ path: "artifacts/detail-desktop.png" });
 });
 
 test("Cost examples and module details work on mobile without product requests", async ({
