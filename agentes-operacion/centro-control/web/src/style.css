@@ -37,3 +37,21 @@
 .password-eye:hover { color: #00472b; background: rgba(0,71,43,.06); }
 .check-row { display: flex !important; flex-direction: row !important; align-items: center; gap: 10px; font-size: 14px; }
 .check-row input { width: 20px; height: 20px; min-height: 20px; accent-color: #00472b; }
+
+/* Celular: cada registro es una tarjeta, sin tabla de 650 px que desborde la
+   pantalla (Empresas y Contactos se rompían con notas y correos largos). 2026-09-25 */
+@media (max-width: 640px) {
+  .page-heading { flex-wrap: wrap; }
+  .page-heading > div:first-child { min-width: 0; flex: 1 1 100%; }
+  .records-panel { min-width: 0; }
+  .table-wrap { overflow-x: visible; border: 0; }
+  .table-wrap table { min-width: 0 !important; }
+  .table-wrap thead { display: none; }
+  .table-wrap table, .table-wrap tbody, .table-wrap tr, .table-wrap td { display: block; width: 100%; }
+  .table-wrap tr { border: 1px solid var(--line); border-radius: 10px; margin: 10px 0; padding: 8px 0; background: #fff; }
+  .table-wrap td { padding: 5px 14px !important; max-width: none; border: 0; overflow-wrap: anywhere; }
+  .table-wrap td:empty { display: none; }
+  .subline { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+  .row-actions { justify-content: flex-start; }
+  .pagination { flex-wrap: wrap; gap: 8px; }
+}

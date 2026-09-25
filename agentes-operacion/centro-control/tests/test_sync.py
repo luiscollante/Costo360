@@ -60,6 +60,19 @@ class SyncTest(unittest.TestCase):
         self.assertEqual(self.filas('contactos')[0].data['email'], 'ana@taller.test')
         self.assertEqual(self.filas('suscripciones')[0].data['estado'], 'Activa')
 
+    def test_plan_asignado_a_mano_tambien_es_suscripcion_activa(self):
+        r = self.sync([taller()])  # sin cobro de Wompi
+        self.assertEqual(r['suscripciones'], 1)
+        sus = self.filas('suscripciones')[0].data
+        self.assertEqual((sus['estado'], sus['plan']), ('Activa', 'Pro'))
+        self.assertIn('manualmente', sus['notas'])
+        self.assertGreaterEqual(sus['renovacion'], sus['inicio'])
+
+    def test_segunda_sincronizacion_sin_wompi_no_cambia_nada(self):
+        self.sync([taller()])
+        r = self.sync([taller()])
+        self.assertEqual((r['actualizados'], r['contactos'], r['suscripciones']), (0, 0, 0))
+
     def test_segunda_sincronizacion_no_cambia_nada(self):
         self.sync([taller(sus='activa')])
         r = self.sync([taller(sus='activa')])

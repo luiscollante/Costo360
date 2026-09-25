@@ -93,17 +93,40 @@ def _contactos(session, actor, empresa_row, usuarios):
     return n
 
 
+def _proximo_aniversario(inicio: str) -> str:
+    """Próxima renovación mensual (mismo día del mes que el alta) a partir de hoy."""
+    d0 = date.fromisoformat(inicio)
+    hoy = date.today()
+    y, m = hoy.year, hoy.month
+    for _ in range(2):
+        dia = min(d0.day, [31, 29 if y % 4 == 0 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1])
+        cand = date(y, m, dia)
+        if cand >= hoy and cand >= d0:
+            return cand.isoformat()
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+    return cand.isoformat()
+
+
 def _suscripcion(session, actor, empresa_row, e):
-    if not e['suscripcion_estado'] or not e['proximo_cobro'] or e['plan'] not in ('Starter', 'Pro', 'Enterprise'):
+    """Todo taller con plan tiene su suscripción en el CRM (hallazgo del fundador
+    2026-09-25: "Suscripciones" salía vacío porque los planes se asignaron a mano,
+    sin cobro de Wompi). Si hay suscripción de Wompi, manda su estado y fecha."""
+    if e['plan'] not in ('Starter', 'Pro', 'Enterprise'):
         return None
-    estado = {'activa': 'Activa', 'pausada': 'Pausada', 'cancelada': 'Cancelada'}.get(e['suscripcion_estado'], 'Pausada')
     inicio = (e['creado_en'] or date.today().isoformat())[:10]
-    renovacion = e['proximo_cobro'][:10]
+    if e['suscripcion_estado']:
+        estado = {'activa': 'Activa', 'pausada': 'Pausada', 'cancelada': 'Cancelada'}.get(e['suscripcion_estado'], 'Pausada')
+        renovacion = (e['proximo_cobro'] or _proximo_aniversario(inicio))[:10]
+        nota = 'Cobro automático con Wompi.'
+    else:
+        estado = 'Activa' if e['activa'] else 'Cancelada'
+        renovacion = _proximo_aniversario(inicio)
+        nota = 'Plan asignado manualmente en Costo360 (sin cobro automático por Wompi).'
     if renovacion < inicio:
         renovacion = inicio
     row = session.scalar(select(Record).where(Record.kind == 'suscripciones', Record.parent_id == empresa_row.id))
     data = {'empresa_id': empresa_row.id, 'plan': e['plan'], 'importe_mensual': str(e['precio_mensual_cop']),
-            'inicio': inicio, 'renovacion': renovacion, 'estado': estado}
+            'inicio': inicio, 'renovacion': renovacion, 'estado': estado, 'notas': nota}
     return _guardar(session, actor, 'suscripciones', row, data)
 
 
