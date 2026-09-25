@@ -2,18 +2,18 @@ import { Calculator, FileText, ScanLine, Sparkles } from "lucide-react";
 const capabilities = [
   {
     icon: Calculator,
-    title: "Costos desglosados",
-    text: "Directa, Express y AIU",
+    title: "Cotiza sin adivinar",
+    text: "Ten en cuenta cada costo",
   },
   {
     icon: ScanLine,
-    title: "Cortes con criterio",
-    text: "Optimización Guillotine 2D",
+    title: "Aprovecha tu material",
+    text: "Mira cómo caben tus piezas",
   },
   { icon: FileText, title: "Propuestas en PDF", text: "Listas para compartir" },
   {
     icon: Sparkles,
-    title: "IA bajo tu control",
+    title: "Menos trabajo repetido",
     text: "Cost propone. Tú confirmas.",
   },
 ];

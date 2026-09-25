@@ -32,7 +32,7 @@ const details = [
     title: "Riesgo de rotura",
     icon: TriangleAlert,
     short: "Anticípate a los imprevistos.",
-    text: "Incorpora el riesgo de rotura con tus parámetros. Revisar este factor ayuda a preparar una propuesta más consciente del trabajo.",
+    text: "Una pieza que se rompe puede cambiar las cuentas del trabajo. Incluye el riesgo de rotura con el valor que definas para tu taller, antes de presentar el precio.",
   },
 ];
 export function CraftDetail() {
@@ -56,8 +56,9 @@ export function CraftDetail() {
               <small>También en tus números.</small>
             </h2>
             <p>
-              Tu experiencia mueve el taller. Costo360 organiza la información
-              con la que tomas cada decisión.
+              Cotizaste la piedra, pero ¿incluiste el pegante, los cortes y
+              la instalación? Lo que olvidas cobrar sale de tu bolsillo.
+              Revisa cada costo antes de enviar la propuesta.
             </p>
             <div
               className="detail-explanation"

@@ -6,8 +6,8 @@ const examples = [
     label: "Cotización",
     prompt: "Ayúdame a cotizar un mesón con las tarifas de mi taller.",
     action:
-      "Consulta materiales y parámetros. Calcula la propuesta para que revises el detalle.",
-    tags: ["Materiales", "Parámetros", "Cotización"],
+      "Busca los materiales y las tarifas de tu taller. Calcula la propuesta para que revises cada costo.",
+    tags: ["Materiales", "Tus tarifas", "Cotización"],
   },
   {
     label: "Inventario",

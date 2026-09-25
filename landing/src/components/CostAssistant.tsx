@@ -23,10 +23,10 @@ export function CostAssistant() {
             </em>
           </h2>
           <p>
-            Cost trabaja tras bambalinas: consulta los datos de tu taller,
-            calcula cotizaciones y prepara cambios en materiales, inventario y
-            proyectos. Tú revisas y confirmas; él ejecuta. Incluido en todos los
-            planes, desde Starter.
+            Cuando estás atendiendo al cliente, no quieres pasar la tarde
+            buscando precios o llenando registros. Pídeselo a Cost: consulta
+            tus materiales, calcula una cotización o prepara una tarea.
+            Tú revisas y confirmas los cambios. Incluido en todos los planes.
           </p>
           <a className="text-button light-link" href="#planes">
             Elige tu plan con Cost <ArrowRight size={18} />
@@ -71,7 +71,7 @@ export function CostAssistant() {
               href={costScreen.src}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Ampliar captura: inicio de Cost (abre una pestaña nueva)"
+              aria-label="Ampliar captura: respuesta real de Cost (abre una pestaña nueva)"
             >
               <img {...costScreen} loading="lazy" decoding="async" />
               <span className="capture-zoom">
@@ -79,9 +79,9 @@ export function CostAssistant() {
               </span>
             </a>
             <figcaption>
-              <strong>Pantalla real · Cuenta de demostración.</strong> Inicio de
-              Cost antes de conversar. Esta captura no es una conversación
-              activa ni consulta datos del producto.
+              <strong>Pantalla real · Cuenta de demostración.</strong> Cost
+              responde sobre los materiales más cotizados con datos de prueba.
+              Esta captura no es una conversación activa ni consulta datos del producto.
             </figcaption>
           </figure>
         </details>

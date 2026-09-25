@@ -26,42 +26,42 @@ export const faqs = [
   {
     question: "¿Las imágenes muestran el producto real o una simulación?",
     answer:
-      "El recorrido del producto y la pantalla de Cost son capturas reales de una cuenta de demostración, con datos de prueba. Sus cifras no representan resultados de clientes ni precios de suscripción. El simulador de nesting usa el mismo algoritmo de corte de la plataforma, pero corre solo en tu navegador: no guarda datos ni genera una cotización real.",
+      "Las pantallas del recorrido y de Cost pertenecen al producto real, en una cuenta con datos de prueba. Las cifras son ejemplos, no resultados de clientes. También puedes probar aquí cómo acomodar piezas en una lámina: utiliza el mismo cálculo de Costo360, sin guardar tus datos ni crear una cotización.",
   },
   {
     question: "¿Qué es Costo360 y para quién está diseñado?",
     answer:
-      "Costo360 es una empresa de tecnología para la industria de la piedra en Colombia. Su software reúne cotizaciones, catálogo, inventario de láminas, retales, optimización de corte y gestión de proyectos para marmolerías y talleres que trabajan con mármol, granito, sinterizado y cuarcita.",
+      "Costo360 es una empresa de tecnología para marmolerías y talleres de piedra en Colombia. Te ayuda a cotizar con tus propios costos, revisar cómo aprovechar las láminas, tener ubicados los retales y organizar los trabajos pendientes. Está pensado para quienes trabajan con mármol, granito, sinterizado y cuarcita.",
   },
   {
     question: "¿Cómo cotizo un mesón de mármol con Costo360?",
     answer:
-      "Seleccionas el material e ingresas el largo, ancho y cantidad de las piezas. La Cotización Directa incorpora mano de obra, zócalos, insumos, riesgo de rotura y adicionales por etapa para desglosar el costo con los parámetros de tu taller. También existe una modalidad Express y puedes generar la cotización en PDF.",
+      "Eliges el material y escribes las medidas y cantidades de las piezas. Añades mano de obra, zócalos, insumos y otros costos del trabajo con las tarifas de tu taller. Revisas cuánto cuesta y lo que vas a cobrar, y generas un PDF para compartir con tu cliente. También hay una modalidad Express para cotizar de forma más rápida.",
   },
   {
-    question: "¿Cómo funciona la optimización de corte o nesting 2D?",
+    question: "¿Cómo me ayuda a aprovechar mejor una lámina?",
     answer:
-      "El motor de nesting prueba 16 combinaciones para acomodar piezas rectangulares sobre la lámina y se queda con la que ubica más piezas y aprovecha más área. Solo gira una pieza 90° cuando es la única forma de que quepa, para respetar la veta. Genera un plano descargable, calcula el aprovechamiento y el retal, e indica qué piezas no caben. Puedes probar el mismo cálculo en el simulador de esta página. El resultado depende de las medidas y piezas del proyecto; no se promete un porcentaje fijo de ahorro.",
+      "Costo360 compara distintas formas de acomodar tus piezas rectangulares en la lámina. Te muestra un plano, cuánto material usas, qué retal queda y qué piezas no caben. Solo gira una pieza cuando es necesario para que quepa; tú revisas el plano y el sentido de la veta antes de cortar. Puedes probarlo aquí con tus medidas. El aprovechamiento depende de cada trabajo, por eso no prometemos un porcentaje fijo de ahorro.",
   },
   {
     question: "¿Cost puede modificar mis datos sin permiso?",
     answer:
-      "No. Cost es un asistente de IA que consulta datos, calcula y propone acciones sobre cotizaciones, proyectos, tareas, catálogo, inventario, retales, nesting y parámetros. Toda acción que escriba o borre datos requiere confirmación humana antes de ejecutarse.",
+      "No. Puedes pedirle que busque información de tu taller, calcule una cotización o prepare una tarea. Antes de crear, cambiar o borrar información, Cost te pide que revises y confirmes. Tú mantienes la última palabra.",
   },
   {
     question: "¿Cuánto cuesta el software para mi marmolería?",
     answer:
-      "La suscripción es mensual por taller: Starter cuesta $150.000 COP para 1 usuario, Pro $375.000 COP para 3 usuarios y Enterprise $2.410.000 COP para hasta 10 usuarios. Todos incluyen las herramientas de cotización, materiales, proyectos y al asistente Cost. Cambian los cupos de usuarios, la capacidad mensual de IA y el tiempo de conservación del registro de acciones de Cost: 1 día, 30 días y 90 días, respectivamente. El acceso se habilita tras confirmar el pago y configurar tu cuenta.",
+      "Pagas una suscripción mensual por tu empresa: Starter cuesta $150.000 COP para 1 persona, Pro $375.000 COP para 3 y Enterprise $875.000 COP para hasta 10. Todos incluyen cotizaciones, materiales, proyectos y Cost. Cambian el tamaño del equipo, la capacidad mensual de uso de Cost y los días que puedes consultar sus acciones: 1, 30 y 90, respectivamente. El acceso se habilita tras confirmar el pago y configurar tu cuenta.",
   },
   {
     question: "¿Cost está incluido en Starter?",
     answer:
-      "Sí. Cost está incluido desde Starter. Consulta los datos de tu taller, calcula cotizaciones y prepara acciones sobre catálogo, inventario, retales, planos de corte y proyectos. Tú confirmas antes de que cree, edite o borre datos. Cost tiene referencias de consumo mensuales por empresa. La voz se mide por usuario: 5 mensajes de referencia en Starter, 10 en Pro y 15 en Enterprise. La medición de voz es aproximada y depende de la duración. El plazo del registro de acciones de Cost no limita el historial de tus cotizaciones.",
+      "Sí, también te acompaña si trabajas solo. Cost puede buscar datos de tu taller, calcular y preparar registros para que los revises. Su uso tiene referencias mensuales por empresa. Cada persona dispone de una referencia de 5 mensajes de voz en Starter, 10 en Pro o 15 en Enterprise; la medición es aproximada y depende de la duración. El tiempo que guardamos las acciones de Cost no limita el historial de tus cotizaciones.",
   },
   {
     question: "¿Puedo hacer cotizaciones con AIU en Colombia?",
     answer:
-      "Sí. Costo360 incluye una modalidad de cotización con Administración, Imprevistos y Utilidad (AIU) para licitaciones y obra pública, con IVA sobre la Utilidad según el Decreto 1372/92. No sustituye la revisión tributaria que corresponda a tu contrato.",
+      "Sí. Si un trabajo requiere separar Administración, Imprevistos y Utilidad (AIU), cuentas con una modalidad específica para preparar esa cotización. Revisa con tu contador qué impuestos y condiciones corresponden a tu contrato.",
   },
   {
     question: "¿Reemplaza la contabilidad o la facturación electrónica DIAN?",
@@ -99,7 +99,7 @@ export function structuredData() {
         inLanguage: "es-CO",
         publisher: { "@id": `${SITE_URL}/#organization` },
         description:
-          "Software de Costo360 para marmolerías y talleres de piedra en Colombia, con Cost incluido en todos los planes. Suscripción mensual por taller: Starter $150.000 COP (1 usuario), Pro $375.000 COP (3 usuarios) y Enterprise $2.410.000 COP (hasta 10 usuarios). Uso de IA sujeto a cupos mensuales por empresa.",
+          "Software de Costo360 para marmolerías y talleres de piedra en Colombia, con Cost incluido en todos los planes. Suscripción mensual por taller: Starter $150.000 COP (1 usuario), Pro $375.000 COP (3 usuarios) y Enterprise $875.000 COP (hasta 10 usuarios). Uso de IA sujeto a cupos mensuales por empresa.",
         featureList: [
           "Cotización Directa, Express y AIU",
           "Cotizaciones y cuentas de cobro en PDF",

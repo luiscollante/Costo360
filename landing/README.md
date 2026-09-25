@@ -46,7 +46,7 @@ Capturas por ancho en `artifacts/landing-*.png`; reporte en `playwright-report/`
 - `DEMO_CONTACT_URL`: **pendiente de confirmación del fundador**. Puede ser agenda, WhatsApp o `mailto:` real. Vacío significa que se ofrece explorar la demo y se informa que el canal público aún no está disponible. No hay formularios falsos ni solicitudes simuladas.
 - FAQ y Schema.org comparten los mismos datos.
 
-Los planes son mensuales por taller: Starter $150.000 COP (1 usuario), Pro $375.000 COP (3) y Enterprise $2.410.000 COP (hasta 10). **Precios confirmados por el fundador para la landing**. El alcance de funciones y las condiciones por plan siguen sujetos a confirmación; no se publican beneficios supuestos ni ofertas estructuradas de precio cero.
+Los planes son mensuales por taller: Starter $150.000 COP (1 usuario), Pro $375.000 COP (3) y Enterprise $875.000 COP (hasta 10). **Precios confirmados por el fundador para la landing**. El alcance de funciones y las condiciones por plan siguen sujetos a confirmación; no se publican beneficios supuestos ni ofertas estructuradas de precio cero.
 
 Las funciones se describen conforme a `docs/PROMPT_REDISENO_LANDING.md`. Las ilustraciones se identifican como conceptuales. Los porcentajes del simulador son cocientes de áreas del ejemplo, no ahorros medidos ni resultados comerciales. No se importó código del motor de producción.
 

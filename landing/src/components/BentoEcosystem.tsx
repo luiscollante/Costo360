@@ -2,7 +2,6 @@ import {
   FileText,
   FolderKanban,
   Layers3,
-  Settings2,
   ShieldCheck,
 } from "lucide-react";
 import { ModuleArt } from "./ui/ModuleArt";
@@ -12,45 +11,45 @@ const modules = [
   {
     icon: Layers3,
     label: "MATERIAL BAJO CONTROL",
-    title: "Lo que tienes. Lo que puedes aprovechar.",
-    text: "Catálogo con referencias y precios por m². Inventario de láminas con cantidad, dimensiones, costo, proveedor, ubicación y stock mínimo.",
+    title: "Antes de comprar, mira lo que ya tienes.",
+    text: "Es fácil olvidar una lámina o un retal guardado. Consulta qué material tienes, dónde está y cuánto cuesta antes de pedir más.",
     items: [
-      "Catálogo editable por taller",
-      "Láminas físicas en inventario",
-      "Retales con m² y precio de recuperación",
+      "Tus materiales y precios por metro cuadrado",
+      "Medidas, cantidades y ubicación de tus láminas",
+      "Retales guardados para próximos trabajos",
     ],
   },
   {
     icon: FileText,
     label: "DEL CÁLCULO A LA PROPUESTA",
     title: "Tu trabajo, bien presentado.",
-    text: "Genera cotizaciones y cuentas de cobro en PDF profesional para compartir con tu cliente. Conserva el contexto de cada propuesta en el historial.",
+    text: "¿Vuelves a armar la propuesta cada vez que te piden un precio? Reúne los costos y genera un PDF claro para tu cliente. Después, encuentra lo que cotizaste sin buscar entre mensajes.",
     items: [
-      "Cotización Directa, Express y AIU",
-      "Documentos PDF",
-      "Historial por cliente, estado, fecha y material",
+      "Cotiza según el tipo de trabajo",
+      "Cotizaciones y cuentas de cobro en PDF",
+      "Encuentra propuestas por cliente, fecha o estado",
     ],
   },
   {
     icon: FolderKanban,
     label: "DESPUÉS DE COTIZAR",
-    title: "El proyecto sigue. Tú también.",
-    text: "Organiza el trabajo posterior a la cotización en un tablero Kanban. Relaciona tareas e hitos para seguir el avance de cada proyecto.",
+    title: "Que una entrega no te tome por sorpresa.",
+    text: "El cliente pregunta cómo va su trabajo y tú también tienes que averiguarlo. Organiza las tareas, sus responsables y las fechas para ver qué falta antes de entregar.",
     items: [
-      "Hitos con dependencias y registro de horas",
-      "Comentarios y tareas",
-      "Avisos de plazos y de hitos en riesgo",
+      "Etapas del trabajo y horas dedicadas",
+      "Tareas, responsables y comentarios en un lugar",
+      "Avisos de fechas próximas y etapas en riesgo",
     ],
   },
   {
     icon: ShieldCheck,
     label: "CADA PERSONA, SU ACCESO",
     title: "Un equipo. Distintas responsabilidades.",
-    text: "Los roles definen qué puede hacer cada persona dentro del producto. No todos necesitan ver ni administrar lo mismo.",
+    text: "Cuando más personas cotizan, necesitas orden. Dale a cada integrante su propio acceso y los permisos que corresponden a su trabajo.",
     items: [
-      "Admin: administración del taller y usuarios",
-      "Gerencia: Dashboard/BI, sin gestionar usuarios",
-      "Operativo: cotiza y ve lo suyo",
+      "Administración: configura el taller y el equipo",
+      "Gerencia: consulta los números del negocio",
+      "Operación: cotiza y consulta su propio trabajo",
     ],
   },
 ];
@@ -71,11 +70,9 @@ export function BentoEcosystem() {
           </h2>
         </div>
         <p>
-          Materiales, propuestas y proyectos,
-          <br />
-          dentro del mismo ecosistema.
-          <br />
-          Cada módulo tiene un propósito.
+          Que la información no se quede en una libreta, una hoja de cálculo
+          o un mensaje perdido. Consulta materiales, propuestas y pendientes
+          en el mismo lugar.
         </p>
       </div>
       <div className="module-grid">
@@ -113,23 +110,24 @@ export function BentoEcosystem() {
           </motion.article>
         ))}
       </div>
-      <div className="parameters-strip">
-        <span className="parameters-icon">
-          <Settings2 size={24} />
-        </span>
-        <div>
-          <h3>No todos los talleres cuestan lo mismo.</h3>
+      <div className="workshop-costs">
+        <div className="workshop-costs-copy">
+          <p className="eyebrow">HECHO A LA MEDIDA DE TU TALLER</p>
+          <h3>Cada taller tiene sus propias cuentas.</h3>
           <p>
-            Configura mano de obra, maquinaria, consumibles, merma por material
-            y adicionales por etapa de obra. Tus parámetros alimentan tus
-            próximas cotizaciones.
+            Tu material, tu mano de obra, tus herramientas. Guarda lo que te
+            cuesta trabajar y úsalo en cada cotización, sin volver a sacar
+            las mismas cuentas.
           </p>
         </div>
-        <span className="mono">
-          TUS REGLAS.
-          <br />
-          TU COSTO360.
-        </span>
+        <img
+          src="/media/editorial/workshop-own-costs.webp"
+          alt="Ilustración de las manos de un artesano calculando un trabajo, junto a muestras de piedra, insumos y herramientas."
+          width={1200}
+          height={600}
+          loading="lazy"
+          decoding="async"
+        />
       </div>
     </section>
   );

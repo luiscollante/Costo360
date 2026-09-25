@@ -11,7 +11,7 @@
 .atelier-copy h1,
 .atelier-copy h2,
 .atelier-cost h2 {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-display);
   font-weight: 600;
   letter-spacing: -2.8px;
   line-height: 0.98;
@@ -355,7 +355,7 @@
   color: #715623;
 }
 .detail-explanation h3 {
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   font-size: 26px;
   margin: 12px 0 5px;
   color: #24422e;
@@ -981,4 +981,166 @@
   .atelier-cta-art > img {
     transition: none;
   }
+}
+
+/* One editorial type system across the landing: display titles, readable UI. */
+.module-art.module-editorial-art {
+  display: block;
+  height: auto;
+  aspect-ratio: 5 / 2;
+  margin: 0 0 28px;
+  overflow: hidden;
+  border-radius: 12px;
+  perspective: none;
+  background: #eee3cf;
+}
+.module-editorial-art img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.65s ease;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .module-card:hover .module-editorial-art img {
+    transform: scale(1.025);
+  }
+}
+.section-heading h2,
+.faq-heading h2,
+#planes .section-heading h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(34px, 4vw, 54px);
+  line-height: 1.1;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+.section-heading h2 span,
+.faq-heading h2 span {
+  color: #956014;
+}
+#planes .section-heading h2 {
+  font-size: clamp(30px, 3.2vw, 42px);
+}
+.module-card h3,
+.tour-description h3,
+.parameters-strip h3,
+.atelier-process h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+.module-card h3,
+.tour-description h3 {
+  font-size: clamp(25px, 2.4vw, 32px);
+  text-wrap: balance;
+}
+.capability h2 {
+  font-family: var(--font-display);
+  font-size: clamp(16px, 1.5vw, 20px);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+.eyebrow,
+.card-kicker,
+.capture-chrome,
+.window-bar,
+.demo-label,
+.pill,
+.detail-explanation > span,
+.atelier-cta-note > span,
+.atelier-sample > div > span,
+.cost-demo-label,
+.example-tags,
+.parameters-strip .mono {
+  font-family: var(--font-sans);
+}
+#planes .plan-mascot-note {
+  font-family: var(--font-display);
+  font-style: italic;
+  transform: none;
+}
+.section-heading > p,
+.section-heading > div > p:not(.eyebrow),
+.faq-heading > p:not(.eyebrow) {
+  font-size: clamp(14px, 1.2vw, 16px);
+  line-height: 1.8;
+}
+@media (max-width: 600px) {
+  .section-heading h2,
+  .faq-heading h2 {
+    max-width: 100%;
+  }
+  .tour-description {
+    gap: 16px;
+  }
+}
+
+/* Uniform desktop cards; content stays flexible when details expand. */
+@media (min-width: 1001px) {
+  .ecosystem .module-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: 1fr;
+    align-items: stretch;
+  }
+  .ecosystem .module-card:nth-child(n) {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    height: 100%;
+    min-width: 0;
+  }
+  .ecosystem .module-art { flex-shrink: 0; }
+  .ecosystem .module-details {
+    margin-top: auto;
+    padding-top: 24px;
+    border-top: 0;
+  }
+  .ecosystem .module-details summary {
+    border-top: 1px solid #dcccb3;
+  }
+  .ecosystem .module-card:first-child .module-details summary {
+    border-color: #406049;
+  }
+}
+.workshop-costs {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  align-items: center;
+  margin-top: 28px;
+  overflow: hidden;
+  background: #fbf8f1;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+}
+.workshop-costs-copy { padding: clamp(24px, 3vw, 44px); }
+.workshop-costs-copy .eyebrow { font-size: 9px; line-height: 1.7; }
+.workshop-costs h3 {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 3vw, 40px);
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+  margin: 16px 0;
+  text-wrap: balance;
+}
+.workshop-costs-copy > p:last-child { font-size: 14px; line-height: 1.8; }
+.workshop-costs > img {
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  object-fit: cover;
+}
+.faq-heading > p:not(.eyebrow) { margin-top: 22px; max-width: 360px; }
+.faq-cost-image {
+  display: block;
+  width: min(100%, 300px);
+  height: auto;
+  margin: 28px auto 0;
+}
+@media (max-width: 760px) {
+  .workshop-costs { grid-template-columns: minmax(0, 1fr); }
+  .workshop-costs > img { min-height: 0; height: auto; }
+  .faq-cost-image { width: 165px; margin: 20px auto 0; }
 }

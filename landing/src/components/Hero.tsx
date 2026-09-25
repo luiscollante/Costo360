@@ -28,9 +28,9 @@ export function Hero() {
             <em>cuánto ganas.</em>
           </h1>
           <p className="hero-description">
-            Costo360 ayuda a marmolerías y talleres de piedra a calcular cada
-            trabajo con sus propios costos. Cotizaciones, materiales y
-            proyectos, <strong>con más claridad para decidir.</strong>
+            ¿Terminas un trabajo y no sabes cuánto te quedó? Costo360 ayuda a
+            marmolerías y talleres de piedra a reunir material, mano de obra e
+            insumos para <strong>saber cuánto cuesta antes de dar un precio.</strong>
           </p>
           <div className="atelier-actions">
             <MagneticLink href="#producto">
@@ -61,7 +61,7 @@ export function Hero() {
           <div className="atelier-callout hero-value">
             <ChartNoAxesCombined size={23} />
             <div>
-              <strong>Protege tu margen</strong>
+              <strong>Cuida lo que ganas</strong>
               <span>Conoce tus costos antes de cotizar.</span>
             </div>
           </div>
@@ -83,7 +83,7 @@ export function Hero() {
             <Layers3 size={23} />
             <div>
               <strong>Cada pieza cuenta</strong>
-              <span>Materiales, costos y proyectos conectados.</span>
+              <span>Revisa qué necesitas antes de empezar.</span>
             </div>
           </div>
           <div

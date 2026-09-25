@@ -22,11 +22,11 @@ const plans = [
     unit: "usuario",
     subtitle: "Cotiza con confianza.",
     features: [
-      "Cotización Directa, Express y AIU",
+      "Cotiza con los costos de tu taller",
       "Cotizaciones y cuentas de cobro en PDF",
       "Inventario, retales y planos de corte",
-      "Proyectos, tareas y dashboard",
-      "Cost incluido: consulta, calcula y ejecuta*",
+      "Organiza trabajos y revisa tus números",
+      "Cost te ayuda a calcular y registrar*",
       "Registro de acciones de Cost: 1 día",
     ],
   },
@@ -40,22 +40,22 @@ const plans = [
     features: [
       "Todas las herramientas de Starter",
       "Cotizaciones y proyectos compartidos",
-      "Roles Admin, Gerencia y Operativo",
+      "Cada integrante con su propio acceso",
       "Cost para los 3 usuarios",
-      "Dashboard para Admin y Gerencia",
+      "Tus números a la vista de quien dirige",
       "Registro de acciones de Cost: 30 días",
     ],
   },
   {
     name: "Enterprise",
     codigo: "enterprise",
-    price: "$2.410.000",
+    price: "$875.000",
     count: "Hasta 10",
     unit: "usuarios",
     subtitle: "Más equipo. Más control.",
     features: [
       "Todas las herramientas de Pro",
-      "Un mismo entorno para todo el equipo",
+      "Todo tu equipo trabaja en un lugar",
       "Permisos según la responsabilidad",
       "Cost para cada usuario",
       "Mayor capacidad mensual para usar Cost",
@@ -87,7 +87,7 @@ export function PricingSection() {
         <p>
           Suscripciones mensuales por taller, en pesos colombianos.
           <br className="desktop-break" /> Cost incluido desde Starter. Elige
-          según tu equipo y el seguimiento que necesitas.
+          según cuántas personas trabajan contigo.
         </p>
       </div>
       <div className="plans-grid">
@@ -183,9 +183,9 @@ export function PricingSection() {
         <div>
           <h3>Cost trabaja tras bambalinas. Tú mantienes el control.</h3>
           <p>
-            En todos los planes, consulta tus datos, calcula cotizaciones y
-            prepara acciones sobre materiales, inventario y proyectos. Tú
-            confirmas; Cost ejecuta.
+            Pídele que busque un material, calcule una cotización o prepare
+            el registro de una lámina. Tú revisas y confirmas los cambios;
+            Cost se ocupa de registrarlos.
           </p>
         </div>
       </div>
@@ -196,7 +196,7 @@ export function PricingSection() {
         mes). El registro de acciones de Cost conserva 1 día en Starter, 30 en
         Pro y 90 en Enterprise; estos plazos no corresponden al historial de
         cotizaciones. Los permisos de cada rol determinan el acceso a los datos
-        y al dashboard.
+        y al resumen del negocio.
       </p>
       <div className="pricing-bottom">
         <ul className="pricing-trust">

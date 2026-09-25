@@ -5,9 +5,9 @@ export const productScreens = [
   {
     id: "nesting",
     label: "Plano de corte",
-    title: "Cada pieza, dentro del plano.",
+    title: "Revisa si el material alcanza antes de cortar.",
     description:
-      "El motor de nesting prueba 16 formas de acomodar tus piezas sobre la lámina y se queda con la que ubica más y desperdicia menos. Solo gira una pieza cuando es la única forma de que quepa, porque la veta importa. Ves el aprovechamiento, el retal y descargas el plano.",
+      "Ingresa las medidas y mira cómo quedan tus piezas en la lámina, qué sobra y qué no cabe. Costo360 compara distintas formas de acomodarlas y solo gira una pieza si es necesario para que quepa. Revisa el plano y descárgalo antes de cortar.",
     src: "/media/producto/02-nesting-plano-generado.webp",
     width: 1512,
     height: 795,
@@ -17,9 +17,9 @@ export const productScreens = [
   {
     id: "cotizacion",
     label: "Cotización Directa",
-    title: "Tu material es el punto de partida.",
+    title: "Da un precio con las cuentas claras.",
     description:
-      "El recorrido Material → Piezas → Proyecto → Resultado organiza la cotización. Registra cada pieza con su tipo, medidas y cantidad, mira en vivo cuánto de la lámina consumes y revisa el desglose antes de generar tu propuesta en PDF.",
+      "No tienes que sacar las mismas cuentas una y otra vez. Elige el material, agrega las piezas y revisa cuánto consumen de la lámina. Después comprueba los costos antes de preparar la cotización para tu cliente.",
     src: "/media/producto/06-cotizacion-piezas.webp",
     width: 1512,
     height: 795,
@@ -31,7 +31,7 @@ export const productScreens = [
     label: "Catálogo de materiales",
     title: "Tus referencias. Tus precios.",
     description:
-      "Cada taller administra categorías, referencias y precios por m². Puedes adaptar los materiales base de Costo360 a tu operación sin perder la referencia original.",
+      "Deja de buscar el precio del material entre mensajes y listas sueltas. Reúne tus referencias y precios por metro cuadrado, y actualízalos para usarlos en tus próximas cotizaciones.",
     src: "/media/producto/03-catalogo-materiales.webp",
     width: 1512,
     height: 795,
@@ -43,7 +43,7 @@ export const productScreens = [
     label: "Proyectos",
     title: "Del sí del cliente a la entrega.",
     description:
-      "Cuando una cotización se aprueba, el trabajo sigue en Proyectos: etapas, tareas, avance y alertas de riesgo en un tablero que todo el taller entiende.",
+      "¿Qué falta para entregar y quién lo tiene pendiente? Organiza cada proyecto por etapas, asigna tareas y revisa el avance para coordinar al equipo sin tener que preguntar por todo.",
     src: "/media/producto/07-proyectos.webp",
     width: 1512,
     height: 794,
@@ -52,10 +52,10 @@ export const productScreens = [
   },
   {
     id: "dashboard",
-    label: "Dashboard",
-    title: "Mira el negocio con contexto.",
+    label: "Resumen del negocio",
+    title: "Mira cómo van tus cotizaciones.",
     description:
-      "Consulta cotizaciones, facturación y margen del mes, el estado de tus cotizaciones y los materiales más cotizados. La información del taller reunida para acompañar tus decisiones.",
+      "Revisa cuánto has cotizado, en qué estado están las propuestas y qué materiales te piden más. Usa los costos y las ganancias estimadas que muestran tus cotizaciones para decidir con más información.",
     src: "/media/producto/01-dashboard.webp",
     width: 1512,
     height: 795,

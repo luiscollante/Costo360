@@ -20,15 +20,26 @@ export function ProductTour() {
             <ScanLine size={16} /> DENTRO DE COSTO360
           </p>
           <h2 id="product-title">
-            Entra. Explora.
+            Menos cuentas sueltas.
             <br />
-            <span>Conoce tu próxima herramienta.</span>
+            <span>Más claridad en cada trabajo.</span>
           </h2>
         </div>
-        <p>
-          Del primer material a la visión del negocio. Recorre las pantallas
-          reales de Costo360 y descubre cómo se conecta tu trabajo.
-        </p>
+        <div className="tour-intro">
+          <img
+            className="tour-intro-image"
+            src="/media/editorial/tour-workbench.webp"
+            alt="Ilustración de una mesa de taller con muestras de piedra, medidas, calculadora y bocetos de un mesón."
+            width={1440}
+            height={480}
+            loading="lazy"
+            decoding="async"
+          />
+          <p>
+            Buscar precios, repetir cálculos y preguntar cómo va cada entrega
+            te quita tiempo. Mira cómo puedes reunir ese trabajo en Costo360.
+          </p>
+        </div>
       </div>
       {enhanced && (
         <div
@@ -109,7 +120,7 @@ export function ProductTour() {
       <div className="tour-next">
         <p>¿Quieres experimentar con las medidas?</p>
         <a href="#simulador" className="text-button">
-          Prueba el modelo interactivo <ArrowUpRight size={17} />
+          Prueba con tus medidas <ArrowUpRight size={17} />
         </a>
       </div>
     </section>

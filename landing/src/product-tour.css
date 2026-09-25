@@ -1,4 +1,32 @@
 /* Product evidence: solid brand colors, real captures, no opacity on text. */
+.product-tour .section-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.2fr);
+  gap: clamp(28px, 4vw, 64px);
+  align-items: end;
+}
+.tour-intro {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.tour-intro-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 1;
+  border-radius: 16px;
+  border: 1px solid #ddc9a8;
+}
+@media (max-width: 760px) {
+  .product-tour .section-heading {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .tour-intro {
+    gap: 16px;
+  }
+}
 .product-tour {
   padding-bottom: 60px;
 }

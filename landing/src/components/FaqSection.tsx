@@ -8,17 +8,24 @@ export function FaqSection() {
       aria-labelledby="faq-title"
     >
       <div className="faq-heading">
-        <p className="eyebrow">SIN LETRA PEQUEÑA</p>
+        <p className="eyebrow">ANTES DE ELEGIR TU PLAN</p>
         <h2 id="faq-title">
-          Buenas preguntas.
+          ¿Costo360 es
           <br />
-          <span>Respuestas claras.</span>
+          <span>para tu taller?</span>
         </h2>
         <p>
-          Lo que necesitas saber antes
-          <br />
-          de dar el siguiente paso.
+          Conoce qué puedes hacer, cuánto cuesta y cómo te ayuda en el día a día.
         </p>
+        <img
+          className="faq-cost-image"
+          src="/media/editorial/cost-faq-wave.webp"
+          alt="Cost te saluda y te invita a conocer cómo puede ayudarte Costo360."
+          width={660}
+          height={880}
+          loading="lazy"
+          decoding="async"
+        />
       </div>
       <div className="faq-list">
         {faqs.map((faq, index) => (

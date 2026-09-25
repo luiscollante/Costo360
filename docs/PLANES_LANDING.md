@@ -6,7 +6,9 @@ Costo360 se presenta al público como empresa de tecnología para la industria d
 | --- | ---: | --- | --- |
 | Starter | $150.000 | 1 administrador | 1 día |
 | Pro | $375.000 | 1 administrador + 2 integrantes | 30 días |
-| Enterprise | $2.410.000 | Hasta 10 | 90 días |
+| Enterprise | $875.000 | Hasta 10 | 90 días |
+
+Precio Enterprise confirmado expresamente por el fundador el 2026-09-25. Sustituye la tarifa anterior de $2.410.000 en la oferta comercial. La migración `0016_precio_enterprise_875000.sql` se aplicó a la tabla `planes` el mismo día: Enterprise $875.000, Pro $375.000 y Starter $150.000. El checkout consulta ese catálogo para las nuevas solicitudes; no se modificaron pagos existentes.
 
 Fuentes: `ARQUITECTURA_MAESTRA.md` (§7.1 y planes), `backend/agente/bitacora.py` y decisión expresa del fundador sobre Starter. Las cifras antiguas de 1 usuario en Pro y $600.000 en Enterprise están desactualizadas.
 

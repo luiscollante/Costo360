@@ -84,21 +84,21 @@ export function InteractiveStudio() {
       <div className="container">
         <div className="section-heading split-heading">
           <div>
-            <p className="eyebrow">02 / MENOS SUPOSICIONES. MÁS VISIBILIDAD.</p>
+            <p className="eyebrow">02 / ANTES DE CORTAR, HAZ LAS CUENTAS</p>
             <h2 id="studio-title">
-              No lo imagines.
+              ¿Caben todas las piezas?
               <br />
-              <span>Muévelo. Mídelo. Entiéndelo.</span>
+              <span>Compruébalo antes de cortar.</span>
             </h2>
           </div>
           <div>
             <span className="pill">
-              <span className="status-dot" /> MISMO MOTOR DE COSTO360
+              <span className="status-dot" /> PRUÉBALO CON TUS MEDIDAS
             </span>
             <p>
-              Una lámina. Tus piezas.
+              Descubrir que falta material a mitad del trabajo cuesta.
               <br />
-              El mismo cálculo que hace la plataforma.
+              Ingresa tus medidas y revisa cómo acomodar las piezas.
             </p>
           </div>
         </div>
@@ -106,7 +106,7 @@ export function InteractiveStudio() {
         <div className="studio-window">
           <div className="window-bar">
             <div className="window-dots" aria-hidden="true"><i /><i /><i /></div>
-            <span>Costo360 <span className="window-path">/ Nesting 2D</span></span>
+            <span>Costo360 <span className="window-path">/ Plano de corte</span></span>
             <span className="demo-label">PRUEBA SIN CUENTA</span>
           </div>
 
@@ -172,7 +172,7 @@ export function InteractiveStudio() {
               </div>
               <div className="ns-board">
                 <div className="ns-board-head">
-                  <p className="ns-board-title">NESTING 2D <span>· Placa {num(lamina.largo)} × {num(lamina.ancho)} m</span></p>
+                  <p className="ns-board-title">PLANO DE CORTE <span>· Placa {num(lamina.largo)} × {num(lamina.ancho)} m</span></p>
                   <span className="ns-board-brand">Costo360</span>
                 </div>
                 <div className="ns-chips">
@@ -249,7 +249,7 @@ export function InteractiveStudio() {
             <Info size={16} />
             <p>
               <strong>Es el mismo cálculo de la plataforma.</strong> Aquí no se guarda nada ni se crea una cotización.
-              Dentro de Costo360 además descargas el plano en SVG, usas el inventario de láminas y guardas el retal
+              Dentro de Costo360 además descargas el plano, consultas tus láminas y guardas el retal
               sobrante en el banco de retales. Revisa siempre el plano antes de cortar.
             </p>
           </div>

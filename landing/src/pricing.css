@@ -55,7 +55,7 @@
   letter-spacing: 2.8px;
 }
 #planes .plan-card h3 {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-display);
   font-size: clamp(32px, 3vw, 42px);
   font-weight: 500;
   letter-spacing: -1.5px;

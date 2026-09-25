@@ -53,7 +53,7 @@ test("Cost examples and module details work on mobile without product requests",
   const material = page.locator(".module-card").first();
   await material.locator("summary").click();
   await expect(
-    material.getByText("Retales con m² y precio de recuperación"),
+    material.getByText("Retales guardados para próximos trabajos"),
   ).toBeVisible();
   await expect(page.locator("#cost .human-rule")).toContainText(
     "Sin tu confirmación, no hay cambios.",

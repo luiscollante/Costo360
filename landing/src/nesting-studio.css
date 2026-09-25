@@ -103,7 +103,7 @@
 .ns-piece-id {
   font-family: var(--font-mono);
   font-size: 10px;
-  color: #8a8a8a;
+  color: #707070;
 }
 .ns-piece-top input {
   flex: 1;
@@ -227,6 +227,6 @@
 .ns-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; font-size: 10px; letter-spacing: .06em; color: #cfe3d6; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); }
 .ns-chip strong { font-family: var(--font-mono); font-size: 13px; }
 .ns-chip i { width: 9px; height: 9px; border-radius: 2px; }
-.ns-chip-uso strong { color: #3fa968; } .ns-chip-uso i { background: #3fa968; }
+.ns-chip-uso strong { color: #65c88b; } .ns-chip-uso i { background: #3fa968; }
 .ns-chip-retal strong { color: var(--color-gold); } .ns-chip-retal i { border: 1.5px solid var(--color-gold); }
 .ns-board .dimension-bottom { color: #c9dccf; }

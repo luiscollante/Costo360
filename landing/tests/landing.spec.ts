@@ -34,7 +34,7 @@ for (const width of [320, 390, 768, 1440]) {
     await page.getByRole("button", { name: "Ver Mármol", exact: true }).click();
     for (const screen of productScreens) {
       await page
-        .getByRole("button", { name: new RegExp(screen.label) })
+        .locator(`button[aria-controls="screen-${screen.id}"]`)
         .click();
       await expect(page.locator(`#screen-${screen.id}`)).toBeVisible();
       await expect(page.locator(`#screen-${screen.id} img`)).toHaveJSProperty(
@@ -215,7 +215,7 @@ test("initial HTML, images and metadata are complete without JavaScript", async 
   for (const [name, price] of [
     ["Starter", "$150.000"],
     ["Pro", "$375.000"],
-    ["Enterprise", "$2.410.000"],
+    ["Enterprise", "$875.000"],
   ]) {
     const card = page.locator(".plan-card").filter({
       has: page.getByRole("heading", { name, exact: true }),
@@ -240,7 +240,7 @@ test("initial HTML, images and metadata are complete without JavaScript", async 
     data["@graph"].map((item: { "@type": string }) => item["@type"]),
   ).toEqual(["Organization", "SoftwareApplication", "FAQPage"]);
   expect(data["@graph"][2].mainEntity).toHaveLength(faqs.length);
-  expect(data["@graph"][1].screenshot).toHaveLength(5);
+  expect(data["@graph"][1].screenshot).toHaveLength(productScreens.length + 1);
   expect(data["@graph"][1]).not.toHaveProperty("aggregateRating");
   expect(data["@graph"][1]).not.toHaveProperty("offers");
   const html = await (await request.get("/")).text();

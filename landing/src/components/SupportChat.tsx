@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, CheckCircle2, Copy, MessageCircle, Send, X } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, Copy, Calculator, Layers3, UsersRound, Send, Sparkles, X } from "lucide-react";
 
 /*
  * Chat de atención de Costo360 (primer contacto con los visitantes).
@@ -20,8 +20,14 @@ const permitido = (href: string) =>
 const bienvenida: ChatMessage = {
   role: "assistant",
   content:
-    "Hola, soy el asistente de Costo360. Te ayudo a descubrir cómo cotizar con tus costos reales, aprovechar mejor cada lámina y ordenar a tu equipo. ¿Cuántas personas usarían el sistema en tu taller?",
+    "Hola, soy el asistente de Costo360. Te ayudo a conocer qué puedes hacer y a elegir un plan para tu equipo. ¿Qué te gustaría mejorar en tu taller?",
 };
+
+const sugerencias = [
+  { icon: Calculator, label: "Cotizar con más confianza", detail: "Tener claros mis costos", message: "Quiero cotizar con mis costos y saber cuánto me queda en cada trabajo." },
+  { icon: Layers3, label: "Aprovechar mejor el material", detail: "Revisar láminas y retales", message: "¿Cómo me ayuda Costo360 a aprovechar mis láminas y retales?" },
+  { icon: UsersRound, label: "Elegir un plan para mi taller", detail: "Conocer precios y usuarios", message: "¿Cuánto cuesta y qué plan me conviene para mi taller?" },
+];
 
 const nuevaSesion = () =>
   (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`).replace(/[^a-zA-Z0-9-]/g, "");
@@ -36,7 +42,7 @@ function WhatsAppIcono() {
 
 export function SupportChat() {
   const dialog = useRef<HTMLDialogElement>(null);
-  const input = useRef<HTMLInputElement>(null);
+  const input = useRef<HTMLTextAreaElement>(null);
   const last = useRef<HTMLDivElement>(null);
   const abierto = useRef(0);
   const sesion = useRef(nuevaSesion());
@@ -136,21 +142,30 @@ export function SupportChat() {
 
   return (
     <>
-      <button className="support-launcher" onClick={abrir} aria-haspopup="dialog" aria-controls="support-dialog">
-        <MessageCircle size={20} aria-hidden="true" />
-        <span>Hablemos de tu taller</span>
+      <button className="support-launcher" onClick={abrir} aria-haspopup="dialog" aria-controls="support-dialog" aria-label="Hablemos de tu taller">
+        <span className="support-avatar" aria-hidden="true"><img src="/media/editorial/cost-faq-wave.webp" alt="" width={660} height={880} /></span>
+        <span className="support-launcher-copy"><small>¿Tienes una duda?</small><strong>Hablemos de tu taller</strong></span>
+        <ArrowUpRight size={18} aria-hidden="true" />
       </button>
       <dialog className="support-dialog" id="support-dialog" ref={dialog} aria-labelledby="support-title">
         <header className="support-heading">
+          <span className="support-avatar" aria-hidden="true"><img src="/media/editorial/cost-faq-wave.webp" alt="" width={660} height={880} /></span>
           <div>
-            <p className="support-kicker">COSTO360 / ATENCIÓN</p>
-            <h2 id="support-title">Tu siguiente paso, más claro.</h2>
+            <p className="support-kicker">ESTAMOS PARA ORIENTARTE</p>
+            <h2 id="support-title">Hablemos de tu taller</h2>
+            <p className="support-identity"><Sparkles size={12} aria-hidden="true" /> Asistente virtual de Costo360</p>
           </div>
           <button className="support-close" aria-label="Cerrar chat" onClick={() => dialog.current?.close()}>
             <X size={22} />
           </button>
         </header>
         <div className="support-messages" role="log" aria-label="Conversación con atención de Costo360" aria-live="polite" aria-relevant="additions">
+          {messages.length === 1 && (
+            <div className="support-welcome-art" aria-hidden="true">
+              <div><span>EL PRIMER PASO ES CONOCERTE</span><h3>¿Qué te quita<br />más tiempo?</h3><p>Veamos cómo podemos ayudarte.</p></div>
+              <img src="/media/editorial/cost-faq-wave.webp" alt="" width={660} height={880} />
+            </div>
+          )}
           {messages.map((message, i) => (
             <div key={i} className={`support-message support-${message.role}`}>
               <span className="support-speaker">{message.role === "user" ? "Tú" : "Atención Costo360"}</span>
@@ -177,7 +192,20 @@ export function SupportChat() {
               )}
             </div>
           ))}
-          {busy && <p className="support-wait"><i /><i /><i /> Escribiendo…</p>}
+          {busy && <p className="support-wait" role="status"><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /> Preparando tu respuesta…</p>}
+
+          {messages.length === 1 && (
+            <div className="support-suggestions" aria-label="Ideas para empezar">
+              <p>Podemos empezar por aquí</p>
+              {sugerencias.map(({ icon: Icon, label, detail, message }) => (
+                <button key={label} onClick={() => void send(message)}>
+                  <Icon size={19} aria-hidden="true" />
+                  <span><strong>{label}</strong><small>{detail}</small></span>
+                  <ArrowUpRight size={16} aria-hidden="true" />
+                </button>
+              ))}
+            </div>
+          )}
 
           {pedirContacto && !leadEnviado && (
             <form className="support-lead" onSubmit={enviarLead}>
@@ -211,13 +239,6 @@ export function SupportChat() {
           <div ref={last} />
         </div>
 
-        {messages.length === 1 && (
-          <div className="support-suggestions">
-            {["Trabajo solo", "Somos 3 en el taller", "¿Cuánto cuesta?", "¿Qué hace Cost?"].map((label) => (
-              <button key={label} onClick={() => void send(label)}>{label}</button>
-            ))}
-          </div>
-        )}
         {error && (
           <p className="support-error" role="alert">
             {error}{" "}
@@ -226,24 +247,32 @@ export function SupportChat() {
         )}
         <form className="support-form" onSubmit={(e) => { e.preventDefault(); void send(draft); }}>
           <label className="sr-only" htmlFor="support-message">Tu consulta sobre Costo360</label>
-          <input id="support-message" ref={input} value={draft} onChange={(e) => setDraft(e.target.value)}
-            placeholder="Cuéntanos qué necesitas…" maxLength={600} required autoComplete="off" />
+          <textarea id="support-message" ref={input} value={draft} onChange={(e) => setDraft(e.target.value)}
+            placeholder="Cuéntame qué pasa en tu taller…" maxLength={600} required autoComplete="off" rows={2}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                void send(draft);
+              }
+            }} />
           {/* Campo trampa para robots: invisible para personas. */}
           <input className="support-hp" tabIndex={-1} autoComplete="off" aria-hidden="true" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} name="website" />
           <button type="submit" disabled={busy || !draft.trim()} aria-label="Enviar consulta"><Send size={19} /></button>
         </form>
         <footer className="support-footer">
+          <div className="support-footer-tools">
           <a className="support-wa support-wa-mini" href={WHATSAPP} target="_blank" rel="noopener noreferrer">
-            <WhatsAppIcono /> WhatsApp
+            <WhatsAppIcono /> Prefiero WhatsApp
           </a>
+          <button onClick={() => void copy()} aria-label="Copiar conversación">
+            <Copy size={13} aria-hidden="true" />
+            {copied ? "Copiada" : "Copiar"}
+          </button>
+          </div>
           <span>
             Respuestas con IA (Google Gemini). No compartas contraseñas ni datos bancarios.{" "}
             <a href="/privacidad/" target="_blank" rel="noopener">Privacidad</a>
           </span>
-          <button onClick={() => void copy()}>
-            <Copy size={13} aria-hidden="true" />
-            {copied ? "Copiada" : "Copiar"}
-          </button>
         </footer>
       </dialog>
     </>
