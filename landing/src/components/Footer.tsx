@@ -24,8 +24,9 @@ export function Footer() {
               </em>
             </h2>
             <p>
-              Cotiza, organiza tus materiales y coordina tus proyectos con
-              Costo360. Elige una suscripción mensual con Cost incluido.
+              La próxima vez que te pidan un precio, ten tus cuentas a la mano.
+              Reúne tus costos, revisa lo que vas a cobrar y presenta una
+              propuesta clara con Costo360.
             </p>
             <div className="atelier-actions">
               <button
@@ -59,7 +60,7 @@ export function Footer() {
               decoding="async"
             />
             <div className="atelier-cta-note">
-              <span>DEL OFICIO A LOS DATOS</span>
+              <span>TU EXPERIENCIA, CON LAS CUENTAS CLARAS</span>
               <strong>
                 Tu próximo trabajo.
                 <br />
@@ -95,17 +96,21 @@ export function Footer() {
             <nav aria-label="Enlaces del pie de página">
               <a href="#producto">Producto real</a>
               <a href="#solucion">La solución</a>
-              <a href="#simulador">Simulador de nesting</a>
+              <a href="#simulador">Prueba el plano de corte</a>
               <a href="#cost">Asistente Cost</a>
               <a href="#planes">Planes</a>
               <a href="#faq">Preguntas frecuentes</a>
+              <a href="/privacidad/">Privacidad y datos personales</a>
               <a href={PRODUCT_LOGIN_URL}>
                 Ir a la plataforma <ArrowUpRight size={14} />
               </a>
             </nav>
           </div>
           <div className="footer-bottom">
-            <p>© {new Date().getFullYear()} Costo360</p>
+            <p>
+              © {new Date().getFullYear()} Costo360 S.A.S. (en constitución) ·{" "}
+              <a href="/privacidad/">Política de tratamiento de datos</a>
+            </p>
             <span>Del oficio a los datos.</span>
             <a href="#inicio" className="back-top" aria-label="Volver arriba">
               <ArrowUp size={18} />
