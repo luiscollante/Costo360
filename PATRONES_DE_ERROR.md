@@ -131,3 +131,12 @@ parche) / **Checklist accionable** (qué revisar la próxima vez para no repetir
   potencialmente lento (llamadas a modelos de IA, reportes pesados, PDFs grandes): la pregunta de
   auditoría correcta no es "¿la función es `async`?" sino "¿todo lo que hace dentro usa `await`
   sobre algo que de verdad libera el event loop?".
+
+## 8. Editar archivos con `Get-Content`/`Set-Content` de PowerShell 5.1 daña las tildes (2026-09-24)
+
+**Síntoma:** un archivo `.py`/`.ts` en UTF-8 queda con "ejecuciÃ³n" en vez de "ejecución" tras un reemplazo hecho con `(Get-Content -Raw f).Replace(...) | Set-Content -Encoding utf8 f`; además se agrega un BOM. Una prueba que compara textos en español falla y, si el commit va encadenado con `;`/`&&` detrás de un `| tail`, se comitea igual.
+
+**Causa:** PowerShell 5.1 lee sin `-Encoding` con la página de códigos ANSI, así que decodifica mal el UTF-8 antes de volver a escribirlo.
+
+**Regla:** para editar archivos usar SIEMPRE la herramienta Edit o Python con `encoding='utf-8'`; nunca `Get-Content`/`Set-Content` para reescribir código. Comitear solo con `if ($LASTEXITCODE -eq 0) { git commit ... }` después de las pruebas, nunca detrás de un pipe que oculta el código de salida.
+
