@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { MotionConfig } from 'framer-motion'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabaseClient'
@@ -30,6 +30,8 @@ import CotizacionAIUPage from '@/pages/CotizacionAIUPage'
 import ToastHost from '@/components/ToastHost'
 import AgentePage from '@/pages/AgentePage'
 import SessionGuard from '@/components/SessionGuard'
+import MaintenancePage from '@/components/MaintenancePage'
+import { recordarRuta, useMantenimiento } from '@/store/mantenimiento'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -89,13 +91,27 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+/** Recuerda la última pantalla visitada, para volver a ella tras un mantenimiento. */
+function RouteTracker() {
+  const location = useLocation()
+  useEffect(() => { recordarRuta(location.pathname + location.search) }, [location])
+  return null
+}
+
+function MaintenanceGate() {
+  const activo = useMantenimiento((s) => s.activo)
+  return activo ? <MaintenancePage /> : null
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <MotionConfig reducedMotion="never">
+        <MaintenanceGate />
         <ToastHost />
         <AuthGate>
           <BrowserRouter>
+            <RouteTracker />
             <Routes>
               {/* La landing embebida se retiró a propósito (2026-09-09): ahora vive
                   aparte en el proyecto `landing/`, con mejor diseño — este dominio

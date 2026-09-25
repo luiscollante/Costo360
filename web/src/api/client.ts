@@ -1,6 +1,7 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios'
 import { supabase } from '@/lib/supabaseClient'
 import { getDeviceIdSync } from '@/lib/deviceId'
+import { useMantenimiento, verificarServidor } from '@/store/mantenimiento'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? ''
 
@@ -50,6 +51,15 @@ api.interceptors.response.use(
       await supabase.auth.signOut()
       if (window.location.pathname !== '/login') window.location.href = '/login'
       return Promise.reject(err)
+    }
+
+    // Servidor caído o en mantenimiento → página amable (nunca el login). Un
+    // 503 con `mantenimiento` es planeado; cualquier otro fallo sin respuesta
+    // o 5xx se confirma primero contra /api/health (ver store/mantenimiento).
+    if (status === 503 && err.response?.data?.mantenimiento) {
+      useMantenimiento.getState().activar(true)
+    } else if (!err.response || (status && status >= 500)) {
+      void verificarServidor()
     }
 
     if (status === 409 && err.response?.data?.detail?.code === 'SESSION_SUPERSEDED') {

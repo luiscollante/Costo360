@@ -162,6 +162,28 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_handler)
 
+
+# ── Mantenimiento (pedido del fundador 2026-09-25) ───────────────────────────
+# `MODO_MANTENIMIENTO=1` en Vercel = mantenimiento PLANEADO: toda la API
+# responde 503 con `mantenimiento: true` y la app muestra la página amable de
+# "estamos mejorando Costo360" en vez de errores o del login. `/api/health`
+# siempre responde (la app lo consulta cada 30 s para saber cuándo volver).
+# Se declara ANTES que CORS para que CORS envuelva también estas respuestas.
+@app.middleware("http")
+async def modo_mantenimiento(request, call_next):
+    if os.getenv("MODO_MANTENIMIENTO") == "1" and request.url.path != "/api/health" \
+            and request.method != "OPTIONS" and "/cron/" not in request.url.path:
+        return JSONResponse({"detail": "Costo360 está en mantenimiento. Volvemos en unos minutos.",
+                             "mantenimiento": True}, status_code=503)
+    return await call_next(request)
+
+
+@app.get("/api/health")
+def health():
+    """Público y liviano: sin BD ni sesión. Lo usan la página de mantenimiento
+    de la app y el monitor que avisa por Telegram si el servidor se cae."""
+    return {"status": "ok", "mantenimiento": os.getenv("MODO_MANTENIMIENTO") == "1"}
+
 # Tokens Bearer (header que el JS fija explícitamente) → no se necesitan credenciales
 # (cookies) en CORS. Orígenes: desarrollo local + el dominio real de despliegue
 # (hallazgo S10, cerrado 2026-09-09 — sin esto el login se veía "funcionar" del
