@@ -68,6 +68,18 @@ class SyncTest(unittest.TestCase):
         self.assertIn('manualmente', sus['notas'])
         self.assertGreaterEqual(sus['renovacion'], sus['inicio'])
 
+    def test_taller_borrado_en_costo360_queda_inactivo_y_cancelado(self):
+        otro = taller(eid='e9', nombre='Taller Que Se Va')
+        otro['nit'] = '900999'
+        self.sync([taller(), otro])
+        r = self.sync([taller()])
+        self.assertEqual(r['retirados'], 1)
+        ido = [e for e in self.filas('empresas') if e.data['nombre'] == 'Taller Que Se Va'][0]
+        self.assertEqual(ido.data['estado'], 'Inactivo')
+        sus = [s for s in self.filas('suscripciones') if s.parent_id == ido.id][0]
+        self.assertEqual(sus.data['estado'], 'Cancelada')
+        self.assertEqual(self.sync([taller()])['retirados'], 0)  # no se repite
+
     def test_la_lista_de_suscripciones_muestra_el_nombre_del_taller(self):
         from crm.services import list_records
         self.sync([taller()])

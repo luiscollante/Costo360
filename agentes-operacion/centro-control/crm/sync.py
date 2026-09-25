@@ -161,8 +161,36 @@ def sincronizar_clientes(db, settings) -> dict:
                         resumen['suscripciones'] += 1
             except HTTPException as exc:
                 resumen['errores'].append(f"{e['nombre']}: {exc.detail}")
+        resumen['retirados'] = _retirar_borrados(session, actor, {e['id'] for e in empresas})
         security.registrar(session, 'sync-clientes')
     return resumen
+
+
+def _retirar_borrados(session, actor, vigentes: set) -> int:
+    """Talleres que ya no existen en Costo360: quedan como 'Inactivo' y su
+    suscripción como 'Cancelada' (nunca se borran del CRM: es historia)."""
+    n = 0
+    for row in session.scalars(select(Record).where(Record.kind == 'empresas', Record.archived.is_(False))).all():
+        notas = row.data.get('notas') or ''
+        if 'costo360:' not in notas:
+            continue
+        eid = notas.split('costo360:', 1)[1].split(')', 1)[0].split()[0]
+        if eid in vigentes or row.data.get('estado') == 'Inactivo':
+            continue
+        try:
+            with session.begin_nested():
+                services.mutate(session, actor, 'empresas', 'editar',
+                                {'estado': 'Inactivo', 'notas': (notas + '\n\nYa no existe en Costo360 (retirado).')[:3000]},
+                                row.id, row.version, origin=ORIGEN)
+                for sus in session.scalars(select(Record).where(Record.kind == 'suscripciones', Record.parent_id == row.id,
+                                                                 Record.archived.is_(False))).all():
+                    if sus.data.get('estado') != 'Cancelada':
+                        services.mutate(session, actor, 'suscripciones', 'editar', {'estado': 'Cancelada'},
+                                        sus.id, sus.version, origin=ORIGEN)
+                n += 1
+        except HTTPException as exc:
+            log.warning('No se pudo retirar %s: %s', row.id, exc.detail)
+    return n
 
 
 def sincronizar_si_toca(db, settings, minutos=30) -> None:
