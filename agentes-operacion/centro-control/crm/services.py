@@ -72,7 +72,16 @@ def list_records(session, kind, q='', parent_id=None, archived=False, offset=0, 
                                 for key in ['nombre', 'titulo', 'concepto', 'email', 'ciudad', 'nit']]))
     total = session.scalar(select(func.count()).select_from(query.subquery()))
     rows = session.scalars(query.order_by(Record.updated_at.desc(), Record.id).offset(offset).limit(limit)).all()
-    return {'items': [snapshot(x) for x in rows], 'total': total, 'offset': offset, 'limit': limit}
+    items = [snapshot(x) for x in rows]
+    # Nombre de la empresa/proveedor "padre" en cada fila (p. ej. de qué taller
+    # es una suscripción), sin que el navegador tenga que abrir cada registro.
+    padres = {x.parent_id for x in rows if x.parent_id}
+    if padres:
+        nombres = {r.id: r.data.get('nombre', '') for r in session.scalars(select(Record).where(Record.id.in_(padres)))}
+        for item, row in zip(items, rows):
+            if row.parent_id:
+                item['parent_name'] = nombres.get(row.parent_id, '')
+    return {'items': items, 'total': total, 'offset': offset, 'limit': limit}
 
 
 def validated(session, kind, data, existing_id=None):

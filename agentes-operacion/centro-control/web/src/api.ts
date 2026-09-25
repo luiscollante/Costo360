@@ -1,4 +1,4 @@
-export type Row = { id: string; kind: string; data: Record<string, string | null>; version: number; archived: boolean; created_at: string; updated_at: string }
+export type Row = { id: string; kind: string; data: Record<string, string | null>; version: number; archived: boolean; created_at: string; updated_at: string; parent_name?: string }
 export type User = { id: string; name: string; email: string; role: 'fundador' | 'comercial' | 'lectura' }
 export type List = { items: Row[]; total: number; offset: number; limit: number }
 export type FieldSchema = { type?: string; title?: string; enum?: string[]; default?: string | number | null; anyOf?: FieldSchema[]; format?: string; maxLength?: number; minLength?: number; minimum?: number; maximum?: number }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { AlertCircle, LoaderCircle, X, Search, Plus, Pencil, ArchiveRestore, Archive } from 'lucide-react'
+import { AlertCircle, LoaderCircle, X, Search, Plus, Pencil, ArchiveRestore, Archive, Building2 } from 'lucide-react'
 import { api, dateText, label, money, title } from './api'
 import type { List, Meta, Row, User } from './api'
 
@@ -114,7 +114,7 @@ export function Records({ kind, revision, user, onEdit, onDetail, parent, onArch
         {group.map(row => <button className="deal-card" key={row.id} onClick={() => onDetail(row)}><span className="deal-plan">{row.data.plan}</span><strong>{title(row)}</strong><span className="deal-value">{money(row.data.valor_mensual)}<small> / mes</small></span><span className="deal-next">{row.data.proximo_paso || 'Define el siguiente paso'}</span><span className="deal-date">{dateText(row.data.fecha_seguimiento)}</span></button>)}{!group.length && <div className="column-empty">Sin oportunidades</div>}
       </section> })}</div> :
       <div className="table-wrap"><table><caption className="sr-only">Registros de {kind}</caption><thead><tr><th>Registro</th><th>Estado / categoría</th><th>Detalle</th><th>Actualizado</th><th><span className="sr-only">Acciones</span></th></tr></thead><tbody>{items.map(row => <tr key={row.id}>
-        <td><button className="record-link" onClick={() => onDetail(row)}>{title(row)}</button><small className="subline">{row.data.email || row.data.ciudad || row.data.proximo_paso || row.data.segmento || ''}</small></td>
+        <td><button className="record-link" onClick={() => onDetail(row)}>{title(row)}</button>{row.parent_name && <small className="parent-name"><Building2 size={13} aria-hidden="true"/>{row.parent_name}</small>}<small className="subline">{row.data.email || row.data.ciudad || row.data.proximo_paso || row.data.segmento || ''}</small></td>
         <td><Badge text={row.archived ? 'Archivado' : row.data.etapa || row.data.estado || row.data.permiso_contacto || row.data.tipo || row.data.categoria}/></td>
         <td className={detalle(row) ? 'cell-detalle' : 'cell-detalle vacio'}>{detalle(row) || '—'}</td>
         <td className="muted">{dateText(row.updated_at)}</td><td><div className="row-actions">{user.role !== 'lectura' && !row.archived && <button className="icon-button" aria-label={'Editar ' + title(row)} onClick={() => onEdit(kind, row)}><Pencil size={16}/></button>}{user.role === 'fundador' && <button className="icon-button" aria-label={(row.archived ? 'Restaurar ' : 'Archivar ') + title(row)} onClick={() => onArchive(row)}>{row.archived ? <ArchiveRestore size={16}/> : <Archive size={16}/>}</button>}</div></td>

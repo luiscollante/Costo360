@@ -86,3 +86,6 @@
   .row-actions button { min-height: 40px; min-width: 40px; border-radius: 10px; }
   .pagination { flex-wrap: wrap; gap: 8px; }
 }
+
+/* Empresa a la que pertenece el registro (suscripción, contacto, tarea…) */
+.parent-name { display: flex; align-items: center; gap: 5px; margin-top: 4px; font-size: 12px; font-weight: 650; color: #8a6d1c; }

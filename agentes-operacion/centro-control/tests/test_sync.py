@@ -68,6 +68,13 @@ class SyncTest(unittest.TestCase):
         self.assertIn('manualmente', sus['notas'])
         self.assertGreaterEqual(sus['renovacion'], sus['inicio'])
 
+    def test_la_lista_de_suscripciones_muestra_el_nombre_del_taller(self):
+        from crm.services import list_records
+        self.sync([taller()])
+        with self.db.transaction() as s:
+            item = list_records(s, 'suscripciones')['items'][0]
+        self.assertEqual(item['parent_name'], 'Marmolería Uno')
+
     def test_segunda_sincronizacion_sin_wompi_no_cambia_nada(self):
         self.sync([taller()])
         r = self.sync([taller()])
