@@ -140,3 +140,11 @@ parche) / **Checklist accionable** (qué revisar la próxima vez para no repetir
 
 **Regla:** para editar archivos usar SIEMPRE la herramienta Edit o Python con `encoding='utf-8'`; nunca `Get-Content`/`Set-Content` para reescribir código. Comitear solo con `if ($LASTEXITCODE -eq 0) { git commit ... }` después de las pruebas, nunca detrás de un pipe que oculta el código de salida.
 
+## 9. Dependencias sin versión fija tumban producción sin tocar el código (2026-09-25)
+
+**Síntoma:** TODO el backend responde 500 `FUNCTION_INVOCATION_FAILED` en Vercel justo después de un deploy que no tocó el backend (ni siquiera un rollback a la versión anterior lo arregla). Localmente arranca bien.
+
+**Causa:** `backend/requirements.txt` sin versiones → cada deploy instala lo último. Ese día salieron ag-ui-protocol 1.0, anthropic 1.x y SQLAlchemy 2.1. Además, en Vercel Hobby solo se puede volver UNA versión atrás, y tras un rollback las versiones nuevas NO se activan solas (hay que "promover" la nueva a mano: `request_promote`).
+
+**Regla:** todo `requirements.txt` con `==` (ya aplicado en backend y Centro de Control). Actualizar una librería es un cambio deliberado y probado. Tras cualquier rollback, promover explícitamente el deploy arreglado. Monitor de caídas: `monitor.revisar()` en costo360-operaciones avisa por Telegram.
+
