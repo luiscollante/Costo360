@@ -26,6 +26,7 @@ _CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'
 
 class CodigoIn(BaseModel):
     codigo: str = Field(min_length=6, max_length=20)
+    recordar: bool = False
 
 
 def client_ip(request: Request, settings) -> str:
@@ -111,7 +112,11 @@ def create_app(settings=None):
         ip = client_ip(request, settings)
         if not settings.online:
             gate.check('login:' + ip)
-        token, csrf, user = auth.login(app.state.db, body.email, body.password, settings, ip)
+        token, csrf, user, completa = auth.login(app.state.db, body.email, body.password, settings, ip,
+                                                 request.cookies.get(auth.DEVICE_COOKIE))
+        if settings.online and completa:
+            auth.set_cookie(response, settings, token, 12)
+            return {'user': auth.public_user(user), 'csrf': csrf}
         if settings.online:
             # Falta el segundo factor: cookie de vida corta, sin datos de usuario.
             auth.set_cookie(response, settings, token, minutos=5)
@@ -124,8 +129,12 @@ def create_app(settings=None):
         if not settings.online:
             raise HTTPException(404, 'No disponible en modo local.')
         token = request.cookies.get(auth.cookie_name(settings), '')
-        nuevo, csrf, user = auth.verificar_codigo(app.state.db, token, body.codigo, settings, client_ip(request, settings))
+        nuevo, csrf, user, device = auth.verificar_codigo(app.state.db, token, body.codigo, settings,
+                                                          client_ip(request, settings), body.recordar,
+                                                          request.headers.get('user-agent', ''))
         auth.set_cookie(response, settings, nuevo, 12)
+        if device:
+            auth.set_device_cookie(response, device)
         return {'user': auth.public_user(user), 'csrf': csrf}
 
     @app.get('/api/me')
@@ -144,6 +153,7 @@ def create_app(settings=None):
         """Cierra TODAS las sesiones de esta cuenta, en todos los dispositivos."""
         auth.cerrar_todas(app.state.db, user.id)
         auth.delete_cookie(response, settings)
+        response.delete_cookie(auth.DEVICE_COOKIE, path='/', secure=True, httponly=True, samesite='strict')
         return {'ok': True}
 
     @app.get('/api/cron/keepalive')

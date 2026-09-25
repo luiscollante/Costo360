@@ -141,13 +141,60 @@ class OnlineTest(unittest.TestCase):
         self.assertIn('max-age', h['strict-transport-security'])
         self.assertIn("frame-ancestors 'none'", h['content-security-policy'])
 
-    def test_inactividad_cierra_la_sesion(self):
+    def test_la_sesion_sigue_abierta_tras_horas_sin_uso(self):
+        # Decisión del fundador: sin cierre por inactividad, solo el límite de 12 h.
         self.entrar()
-        viejo = (datetime.now(timezone.utc) - timedelta(minutes=31)).isoformat()
+        viejo = (datetime.now(timezone.utc) - timedelta(hours=3)).isoformat()
         with self.db.transaction(write=True) as s:
             for ses in s.query(Session).all():
                 ses.last_seen = viejo
+        self.assertEqual(self.client.get('/api/me').status_code, 200)
+
+    def test_sesion_vencida_a_las_12_horas(self):
+        self.entrar()
+        with self.db.transaction(write=True) as s:
+            for ses in s.query(Session).all():
+                ses.expires = (datetime.now(timezone.utc) - timedelta(seconds=1)).isoformat()
         self.assertEqual(self.client.get('/api/me').status_code, 401)
+
+    def recordar(self, client=None, desplazamiento=0):
+        client = client or self.client
+        self.password(client)
+        r = client.post('/api/login/codigo', json={'codigo': self.codigo(desplazamiento), 'recordar': True})
+        self.assertEqual(r.status_code, 200, r.text)
+        self.assertIn('__Host-c360_device=', r.headers['set-cookie'])
+        return client.cookies.get('__Host-c360_device')
+
+    def test_dispositivo_reconocido_entra_sin_codigo(self):
+        device = self.recordar()
+        otro = self.nuevo_cliente()
+        otro.cookies.set('__Host-c360_device', device)
+        r = self.password(otro)
+        self.assertIn('csrf', r.json())  # entró directo, sin pedir código
+        self.assertEqual(otro.get('/api/me').status_code, 200)
+        otro.close()
+
+    def test_dispositivo_reconocido_sigue_pidiendo_la_contrasena(self):
+        device = self.recordar()
+        otro = self.nuevo_cliente()
+        otro.cookies.set('__Host-c360_device', device)
+        self.assertEqual(self.password(otro, 'contrasena-equivocada-1').status_code, 401)
+        otro.close()
+
+    def test_sin_recordar_se_sigue_pidiendo_el_codigo(self):
+        self.entrar()
+        otro = self.nuevo_cliente()
+        self.assertEqual(self.password(otro).json(), {'mfa_required': True})
+        otro.close()
+
+    def test_cerrar_todas_olvida_los_dispositivos(self):
+        device = self.recordar()
+        self.client.headers['X-CSRF-Token'] = self.client.get('/api/me').json()['csrf']
+        self.assertEqual(self.client.post('/api/logout/todas').status_code, 200)
+        otro = self.nuevo_cliente()
+        otro.cookies.set('__Host-c360_device', device)
+        self.assertEqual(self.password(otro).json(), {'mfa_required': True})
+        otro.close()
 
     def test_cerrar_todas_las_sesiones(self):
         self.entrar()

@@ -53,6 +53,19 @@ class Session(Base):
     last_seen: Mapped[str | None] = mapped_column(String, nullable=True)
 
 
+class TrustedDevice(Base):
+    """Dispositivo reconocido (casilla "Recordar este dispositivo"): durante 30
+    días ese navegador entra solo con la contraseña, sin pedir el código de
+    Authenticator. Se guarda solo el hash del token de la cookie."""
+    __tablename__ = 'trusted_devices'
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=uid)
+    user_id: Mapped[str] = mapped_column(ForeignKey('users.id'), index=True)
+    token_hash: Mapped[str] = mapped_column(String, unique=True)
+    label: Mapped[str] = mapped_column(String, default='')
+    expires: Mapped[str] = mapped_column(String)
+    created_at: Mapped[str] = mapped_column(String, default=now)
+
+
 class RateEvent(Base):
     """Límites y bloqueos compartidos entre instancias (en serverless la
     memoria del proceso no sirve)."""

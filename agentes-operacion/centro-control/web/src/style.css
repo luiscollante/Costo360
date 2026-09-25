@@ -29,3 +29,11 @@
   .app-shell { padding-bottom: env(safe-area-inset-bottom); }
   .main-content { min-height: 100dvh; }
 }
+
+/* Ojito de la contraseña + casilla "recordar dispositivo" (2026-09-24) */
+.password-field { position: relative; display: block; }
+.password-field input { width: 100%; padding-right: 48px; }
+.password-eye { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: transparent; border: 0; color: #5b6b62; width: 40px; height: 40px; min-height: 40px; display: grid; place-items: center; cursor: pointer; border-radius: 8px; }
+.password-eye:hover { color: #00472b; background: rgba(0,71,43,.06); }
+.check-row { display: flex !important; flex-direction: row !important; align-items: center; gap: 10px; font-size: 14px; }
+.check-row input { width: 20px; height: 20px; min-height: 20px; accent-color: #00472b; }

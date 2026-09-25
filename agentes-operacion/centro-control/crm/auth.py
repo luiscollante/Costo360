@@ -10,13 +10,14 @@ from fastapi import HTTPException, Request
 from sqlalchemy import delete, select
 
 from . import security
-from .db import RecoveryCode, Session, User, now
+from .db import RecoveryCode, Session, TrustedDevice, User, now
 
 COOKIE = 'costo360_crm_session'          # modo local (piloto de siempre)
 COOKIE_ONLINE = '__Host-c360_session'    # en línea: Secure, path=/, sin dominio
 _SESION_HORAS_LOCAL = 8
 _SESION_HORAS_ONLINE = 12                # vida máxima absoluta en línea
-_INACTIVIDAD_MIN = 30                    # en línea: cierre por inactividad
+DEVICE_COOKIE = '__Host-c360_device'     # en línea: dispositivo reconocido
+_DISPOSITIVO_DIAS = 30
 _PENDIENTE_MIN = 5                       # sesión a medio camino (falta el código)
 
 
@@ -38,8 +39,21 @@ def delete_cookie(response, settings):
                            secure=settings.online, httponly=True, samesite='strict')
 
 
-def _en(minutos=0, horas=0):
-    return (datetime.now(timezone.utc) + timedelta(minutes=minutos, hours=horas)).isoformat()
+def set_device_cookie(response, token):
+    response.set_cookie(DEVICE_COOKIE, token, httponly=True, samesite='strict', secure=True,
+                        max_age=_DISPOSITIVO_DIAS * 86400, path='/')
+
+
+def _dispositivo_valido(session, user_id, device_token):
+    if not device_token:
+        return None
+    return session.scalar(select(TrustedDevice).where(
+        TrustedDevice.token_hash == digest(device_token), TrustedDevice.user_id == user_id,
+        TrustedDevice.expires > now()))
+
+
+def _en(minutos=0, horas=0, dias=0):
+    return (datetime.now(timezone.utc) + timedelta(minutes=minutos, hours=horas, days=dias)).isoformat()
 
 
 def digest(value):
@@ -97,9 +111,11 @@ def create_user(db, email, name, password, role='fundador'):
         return user
 
 
-def login(db, email, password, settings=None, ip='local'):
+def login(db, email, password, settings=None, ip='local', device_token=None):
     """Local: igual que siempre (sesión completa). En línea: la sesión nace
-    SIN segundo factor (mfa=False, 5 min) y solo sirve para verificar el código."""
+    SIN segundo factor (mfa=False, 5 min) y solo sirve para verificar el código,
+    salvo que el navegador sea un dispositivo reconocido: entonces nace completa.
+    Devuelve (token, csrf, user, completa)."""
     online = bool(settings and settings.online)
     email = email.strip().lower()
     fallo = None
@@ -127,12 +143,17 @@ def login(db, email, password, settings=None, ip='local'):
                     fallidos = security.contar(session, 'fail:' + email, 1800) + 1
         if not fallo and online and not user.totp_secret:
             fallo = 'sin_codigo'  # se lanza fuera: el evento de límite por IP no se revierte
+        completa = not online
         if not fallo:
+            if online and _dispositivo_valido(session, user.id, device_token):
+                completa = True
+                security.bitacora(session, 'login_dispositivo_reconocido', user.id, ip=ip)
             token, csrf = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
             session.execute(delete(Session).where(Session.expires <= now()))
-            session.add(Session(token_hash=digest(token), user_id=user.id, csrf=csrf, mfa=not online,
+            session.add(Session(token_hash=digest(token), user_id=user.id, csrf=csrf, mfa=completa,
                                 last_seen=now(),
-                                expires=_en(minutos=_PENDIENTE_MIN) if online else _en(horas=_SESION_HORAS_LOCAL)))
+                                expires=(_en(horas=_SESION_HORAS_ONLINE) if completa else _en(minutos=_PENDIENTE_MIN))
+                                if online else _en(horas=_SESION_HORAS_LOCAL)))
     # Fuera de la transacción: el fallo ya quedó guardado (no se revierte).
     if fallo == 'sin_codigo':
         raise HTTPException(403, 'Tu cuenta no tiene configurado el código de verificación. Pídele al administrador activarlo.')
@@ -144,14 +165,15 @@ def login(db, email, password, settings=None, ip='local'):
         if online and fallidos >= 3:
             security.avisar(settings, f'⚠️ {fallidos} intentos fallidos de inicio de sesión para {email} (IP {ip}).')
         raise HTTPException(401, 'Correo o contraseña incorrectos.')
-    return token, csrf, user
+    return token, csrf, user, completa
 
 
-def verificar_codigo(db, token, codigo, settings, ip='local'):
+def verificar_codigo(db, token, codigo, settings, ip='local', recordar=False, label=''):
     """Segundo factor: código de la app autenticadora o de recuperación. Si es
     válido, descarta la sesión pendiente y emite un token NUEVO (rotación)."""
     ok = False
     errados = 0
+    device = None
     with db.transaction(write=True) as session:
         auth = session.get(Session, digest(token)) if token else None
         if not auth or auth.mfa or auth.expires <= now():
@@ -177,6 +199,11 @@ def verificar_codigo(db, token, codigo, settings, ip='local'):
             session.add(Session(token_hash=digest(nuevo), user_id=user.id, csrf=csrf, mfa=True,
                                 last_seen=now(), expires=_en(horas=_SESION_HORAS_ONLINE)))
             security.bitacora(session, 'login_ok', user.id, ip=ip)
+            if recordar:
+                device = secrets.token_urlsafe(32)
+                session.add(TrustedDevice(user_id=user.id, token_hash=digest(device), label=label[:120],
+                                          expires=_en(dias=_DISPOSITIVO_DIAS)))
+                security.bitacora(session, 'dispositivo_recordado', user.id, ip=ip)
         else:
             # Un código errado también cuenta para el bloqueo de 30 min de la
             # cuenta, y a los 3 errores se descarta la sesión pendiente (hay que
@@ -193,8 +220,9 @@ def verificar_codigo(db, token, codigo, settings, ip='local'):
         if errados >= 3:
             raise HTTPException(401, 'Demasiados códigos incorrectos. Vuelve a ingresar tu contraseña.')
         raise HTTPException(401, 'Código incorrecto o ya usado. Espera el siguiente código de la app.')
-    security.avisar(settings, f'✅ Inicio de sesión de {user.email} (IP {ip}). Si no fuiste tú, activa el interruptor de apagado.')
-    return nuevo, csrf, user
+    extra = ' Este dispositivo quedó reconocido por 30 días.' if device else ''
+    security.avisar(settings, f'✅ Inicio de sesión de {user.email} (IP {ip}).{extra} Si no fuiste tú, activa el interruptor de apagado.')
+    return nuevo, csrf, user, device
 
 
 def configurar_totp(db, email, settings):
@@ -215,6 +243,7 @@ def configurar_totp(db, email, settings):
             session.add(RecoveryCode(user_id=user.id, code_hash=security.hash_recuperacion(c)))
         # Cambiar el 2º factor invalida todas las sesiones abiertas.
         session.execute(delete(Session).where(Session.user_id == user.id))
+        session.execute(delete(TrustedDevice).where(TrustedDevice.user_id == user.id))
         security.bitacora(session, 'totp_configurado', user.id)
     return secreto, security.uri_totp(secreto, user.email), codigos
 
@@ -222,6 +251,7 @@ def configurar_totp(db, email, settings):
 def cerrar_todas(db, user_id):
     with db.transaction(write=True) as session:
         session.execute(delete(Session).where(Session.user_id == user_id))
+        session.execute(delete(TrustedDevice).where(TrustedDevice.user_id == user_id))
 
 
 def public_user(user):
@@ -235,12 +265,9 @@ def current_user(request: Request):
         auth = session.get(Session, digest(token)) if token else None
         if not auth or auth.expires <= now() or not auth.mfa:
             raise HTTPException(401, 'Inicia sesión para continuar.')
+        # Decisión del fundador (2026-09-24): sin cierre por inactividad; la
+        # sesión dura 12 h aunque se cierre el navegador o la app.
         if settings.online:
-            limite = (datetime.now(timezone.utc) - timedelta(minutes=_INACTIVIDAD_MIN)).isoformat()
-            if not auth.last_seen or auth.last_seen < limite:
-                session.delete(auth)
-                session.commit()
-                raise HTTPException(401, 'Tu sesión se cerró por inactividad. Vuelve a iniciar sesión.')
             if auth.last_seen < (datetime.now(timezone.utc) - timedelta(seconds=60)).isoformat():
                 auth.last_seen = now()
         user = session.get(User, auth.user_id)
