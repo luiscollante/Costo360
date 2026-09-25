@@ -92,6 +92,9 @@ export function Editor({ kind, row, parent, meta, onClose, onSaved }: { kind: st
   </Modal>
 }
 
+/** Dato secundario de la fila (valor, fecha o contacto); '' si no hay. */
+const detalle = (row: Row) => row.data.valor_mensual !== undefined ? money(row.data.valor_mensual) : row.data.importe !== undefined ? money(row.data.importe) : row.data.importe_mensual !== undefined ? money(row.data.importe_mensual) : row.data.vence ? dateText(row.data.vence) : row.data.telefono || row.data.origen || ''
+
 export function Records({ kind, revision, user, onEdit, onDetail, parent, onArchive }: { kind: string; revision: number; user: User; onEdit: (kind: string, row?: Row, parent?: string) => void; onDetail: (row: Row) => void; parent?: string; onArchive: (row: Row) => void }) {
   const [q, setQ] = useState('')
   const [offset, setOffset] = useState(0)
@@ -113,7 +116,7 @@ export function Records({ kind, revision, user, onEdit, onDetail, parent, onArch
       <div className="table-wrap"><table><caption className="sr-only">Registros de {kind}</caption><thead><tr><th>Registro</th><th>Estado / categoría</th><th>Detalle</th><th>Actualizado</th><th><span className="sr-only">Acciones</span></th></tr></thead><tbody>{items.map(row => <tr key={row.id}>
         <td><button className="record-link" onClick={() => onDetail(row)}>{title(row)}</button><small className="subline">{row.data.email || row.data.ciudad || row.data.proximo_paso || row.data.segmento || ''}</small></td>
         <td><Badge text={row.archived ? 'Archivado' : row.data.etapa || row.data.estado || row.data.permiso_contacto || row.data.tipo || row.data.categoria}/></td>
-        <td>{row.data.valor_mensual !== undefined ? money(row.data.valor_mensual) : row.data.importe !== undefined ? money(row.data.importe) : row.data.importe_mensual !== undefined ? money(row.data.importe_mensual) : row.data.vence ? dateText(row.data.vence) : row.data.telefono || row.data.origen || '—'}</td>
+        <td className={detalle(row) ? 'cell-detalle' : 'cell-detalle vacio'}>{detalle(row) || '—'}</td>
         <td className="muted">{dateText(row.updated_at)}</td><td><div className="row-actions">{user.role !== 'lectura' && !row.archived && <button className="icon-button" aria-label={'Editar ' + title(row)} onClick={() => onEdit(kind, row)}><Pencil size={16}/></button>}{user.role === 'fundador' && <button className="icon-button" aria-label={(row.archived ? 'Restaurar ' : 'Archivar ') + title(row)} onClick={() => onArchive(row)}>{row.archived ? <ArchiveRestore size={16}/> : <Archive size={16}/>}</button>}</div></td>
       </tr>)}</tbody></table></div>}
     {result.data && <div className="pagination"><span>{items.length ? offset + 1 : 0}–{offset + items.length} de {result.data.total} registros{board && ' · el tablero muestra esta página'}</span><div><button className="secondary" disabled={!offset} onClick={() => setOffset(Math.max(0, offset-50))}>Anterior</button><button className="secondary" disabled={offset+50 >= result.data.total} onClick={() => setOffset(offset+50)}>Siguiente</button></div></div>}
