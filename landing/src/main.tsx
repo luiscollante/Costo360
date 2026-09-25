@@ -1,8 +1,12 @@
+import { initBotId } from "botid/client/core";
 import { StrictMode } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import "./pricing.css";
+
+// Protección contra robots de Vercel (BotID) en las rutas del chat.
+initBotId({ protect: [{ path: "/api/atencion/chat", method: "POST" }, { path: "/api/atencion/lead", method: "POST" }] });
 
 const root = document.getElementById("root")!;
 const app = (

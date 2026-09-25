@@ -11,10 +11,13 @@
     "format": "prettier --write src scripts tests vite.config.ts playwright.config.ts index.html"
   },
   "dependencies": {
+    "@google/genai": "2.24.0",
+    "botid": "1.5.11",
     "clsx": "^2.1.1",
     "framer-motion": "^12.4.7",
     "lenis": "^1.1.18",
     "lucide-react": "^0.475.0",
+    "postgres": "3.4.9",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^3.0.1"

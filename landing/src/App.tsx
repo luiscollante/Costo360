@@ -11,6 +11,10 @@ import { PricingSection } from "./components/PricingSection";
 import { FaqSection } from "./components/FaqSection";
 import { Footer } from "./components/Footer";
 import { SupportChat } from "./components/SupportChat";
+
+const mostrarChat =
+  import.meta.env.VITE_SUPPORT_CHAT === "1" ||
+  (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("chat") === "1");
 import { CraftDetail } from "./components/CraftDetail";
 
 export default function App() {
@@ -55,10 +59,9 @@ export default function App() {
           <FaqSection />
         </main>
         <Footer />
-        {/* Chat de soporte oculto (decisión del fundador 2026-09-25): su servicio
-            `agentes-operacion/atencion` aún no está publicado. Activar con
-            VITE_SUPPORT_CHAT=1 cuando lo esté. */}
-        {import.meta.env.VITE_SUPPORT_CHAT === "1" && <SupportChat />}
+        {/* Chat de atención: público con VITE_SUPPORT_CHAT=1; en modo sombra solo
+            aparece entrando con ?chat=1 (prueba del fundador antes del lanzamiento). */}
+        {mostrarChat && <SupportChat />}
       </div>
     </MotionConfig>
   );

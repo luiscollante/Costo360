@@ -5,3 +5,7 @@ test-results/
 playwright-report/
 *.tsbuildinfo
 .vercel
+
+evals/reporte.json
+evals/reporte.html
+evals/ultima_corrida.txt

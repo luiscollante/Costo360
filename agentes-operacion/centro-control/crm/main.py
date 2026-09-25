@@ -11,7 +11,7 @@ from sqlalchemy import delete, select, text
 from sqlalchemy.exc import IntegrityError, OperationalError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from . import agent, auth, services, sync
+from . import agent, auth, leads, services, sync
 from .config import ROOT, Settings
 from .db import Audit, Database, Message, Proposal, Session, Usage, now
 from .schemas import Chat, Change, Login, PARENTS, ProposalIn, SCHEMAS
@@ -190,6 +190,15 @@ def create_app(settings=None):
         if r.status_code != 200:
             raise HTTPException(502, 'Costo360 no entregó el consumo (código %s).' % r.status_code)
         return r.json()
+
+    @app.get('/api/cron/leads')
+    def cron_leads(authorization: str | None = Header(default=None)):
+        """pg_cron (cada 10 min) trae los prospectos del chat de la landing al CRM."""
+        esperado = settings.cron_secret
+        recibido = authorization[7:] if authorization and authorization.startswith('Bearer ') else ''
+        if not esperado or not hmac.compare_digest(recibido.encode(), esperado.encode()):
+            raise HTTPException(401, 'No autorizado.')
+        return leads.importar(app.state.db)
 
     @app.post('/api/sync/clientes')
     def sync_clientes(user=Depends(auth.current_user)):
