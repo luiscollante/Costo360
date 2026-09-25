@@ -1,17 +1,20 @@
-fastapi
-uvicorn[standard]
-python-dotenv
-psycopg2-binary
-SQLAlchemy
-pydantic
-pyjwt[crypto]
-anthropic
-reportlab
-Pillow
-python-multipart
-httpx
-slowapi
-google-genai
-ag-ui-protocol
-defusedxml
-tzdata
+# Versiones FIJAS (2026-09-25): sin fijar, cada deploy instalaba lo mas nuevo y
+# ag-ui-protocol 1.0 / anthropic 1.x / SQLAlchemy 2.1 tumbaron el servidor en Vercel.
+# Actualizar una libreria = cambiar su version aqui a proposito y probar antes.
+fastapi==0.141.1
+uvicorn[standard]==0.52.1
+python-dotenv==1.2.2
+psycopg2-binary==2.9.12
+SQLAlchemy==2.0.51
+pydantic==2.13.4
+pyjwt[crypto]==2.13.0
+anthropic==0.121.0
+reportlab==5.0.0
+Pillow==12.3.0
+python-multipart==0.0.32
+httpx==0.28.1
+slowapi==0.1.10
+google-genai==2.17.0
+ag-ui-protocol==0.1.22
+defusedxml==0.7.1
+tzdata==2026.3
