@@ -25,6 +25,8 @@ class Settings:
     # El token vive SOLO del lado del servidor, nunca en el navegador.
     costo360_api: str = field(default_factory=lambda: os.getenv('COSTO360_API_URL', 'https://costo360-backend.vercel.app'))
     admin_token: str = field(default_factory=lambda: os.getenv('COSTO360_ADMIN_TOKEN', ''))
+    # Token SOLO de métricas del negocio (distinto de admin_token): lectura de finanzas.
+    metricas_token: str = field(default_factory=lambda: os.getenv('COSTO360_METRICAS_TOKEN', ''))
     daily_calls: int = field(default_factory=lambda: int(os.getenv('CRM_DAILY_CALLS', '50')))
     # Solo modo online:
     public_hosts: tuple[str, ...] = field(default_factory=_hosts)
