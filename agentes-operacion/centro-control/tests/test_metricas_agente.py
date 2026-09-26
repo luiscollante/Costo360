@@ -78,9 +78,9 @@ class CatalogoTest(unittest.TestCase):
 
 class VerificadorTest(unittest.TestCase):
     def test_formatos_colombianos(self):
-        nums = dict(verificador.numeros_de_texto('Cuesta $262.249, margen 32,5 % y -$1.500; corte 2026-09-26 10:00'))
+        nums = {t: v for t, v, _ in verificador.numeros_de_texto('Cuesta $262.249, margen 32,5 % y -$1.500; corte 2026-09-26 10:00')}
         self.assertEqual(nums['$262.249'], 262249)
-        self.assertEqual(nums['32,5'], 32.5)
+        self.assertEqual(nums['32,5 %'], 32.5)
         self.assertEqual(nums['-$1.500'], -1500)
         self.assertNotIn(2026.0, nums.values())
 
@@ -106,3 +106,33 @@ class VerificadorTest(unittest.TestCase):
     def test_explicacion_no_se_duplica(self):
         t = verificador.asegurar_explicaciones('Te cuesta $262.249. ' + EXPL, [COSTO])
         self.assertNotIn('Por qué este valor:', t)
+
+
+class VerificadorEstrictoTest(unittest.TestCase):
+    """Casos que el auditor encontró que se colaban (2026-09-26)."""
+
+    def test_porcentaje_pequeno_inventado_se_marca(self):
+        self.assertEqual(verificador.verificar('Tu margen es 8 %.', [COSTO]), ['8 %'])
+
+    def test_millones_inventados_se_marcan(self):
+        self.assertEqual(verificador.verificar('Facturaste 1,1 millones.', [COSTO]), ['1,1 millones'])
+
+    def test_millones_redondeados_de_una_fuente_pasan(self):
+        fuente = {**COSTO, 'datos': {'ingreso_cobrado_mes_cop': 1_150_000}}
+        self.assertEqual(verificador.verificar('Cobraste 1,15 millones.', [fuente]), [])
+
+    def test_fecha_escrita_no_se_marca(self):
+        self.assertEqual(verificador.verificar('Corte del 26 de septiembre de 2026: $262.249.', [COSTO]), [])
+
+    def test_solo_cuentan_resultados_de_metricas(self):
+        crm = {'items': [{'id': 980000}], 'total': 980000}
+        self.assertEqual(verificador.verificar('Ganas $980.000.', [crm]), ['$980.000'])
+
+    def test_explicacion_con_consulta_fallida(self):
+        t = verificador.asegurar_explicaciones('No pude consultar.', [{'ok': False, '_tool': 'costo_por_cliente'}])
+        self.assertIn('Por qué este valor: no disponible', t)
+
+    def test_meses_como_decimal_se_acepta(self):
+        self.assertTrue(metricas_client._entero(6.0))
+        self.assertFalse(metricas_client._entero(6.5))
+        self.assertFalse(metricas_client._entero(True))

@@ -202,6 +202,8 @@ class Agent:
                             traces.append(trace)
                         except HTTPException as exc:
                             result = {'error': exc.detail, 'status': exc.status_code}
+                            if call.name in metricas_client.CONSULTAS:
+                                tool_results.append({'ok': False, 'error': exc.detail, '_tool': call.name})
                             traces.append({'tool': call.name, 'ok': False, 'at': now(), 'error': exc.detail})
                         results.append(types.Part.from_function_response(name=call.name, response={'resultado': result, 'contenido_no_confiable': True}))
                     contents.append(types.Content(role='user', parts=results))
@@ -215,6 +217,9 @@ class Agent:
             await client.aio.aclose()
             client.close()
         metricas = [r for r in tool_results if isinstance(r, dict) and r.get('_tool')]
+        # Cifras de dinero o % en un turno del fundador sin consultar métricas: también se verifican.
+        if not metricas and user.role == 'fundador' and any(n for _, _, n in verificador.numeros_de_texto(text)):
+            metricas = [{'_tool': 'ninguna'}]
         if metricas:
             text = verificador.asegurar_explicaciones(text, metricas)
             sin_rastro = verificador.verificar(text, tool_results, message)
