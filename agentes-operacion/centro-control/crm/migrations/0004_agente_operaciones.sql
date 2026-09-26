@@ -1,4 +1,3 @@
-BEGIN;
 -- 0004 — Agente de operaciones autónomo (ciclo /goal 2026-09-25).
 -- Rutinas: 'brief' 06:30 y 'cierre' 18:00 hora Bogotá (pg_cron corre en UTC).
 -- Secreto del disparo en Supabase Vault (NUNCA en este archivo):
@@ -66,4 +65,3 @@ select cron.schedule('agente-brief-alarma',   '0 12 * * *',  $$select monitor.re
 select cron.schedule('agente-cierre',          '0 23 * * *',  $$select monitor.disparar_agente('cierre')$$);
 select cron.schedule('agente-cierre-reintento', '15 23 * * *', $$select monitor.disparar_agente('cierre')$$);
 select cron.schedule('agente-cierre-alarma',   '30 23 * * *', $$select monitor.revisar_agente('cierre')$$);
-COMMIT;

@@ -31,7 +31,6 @@ import httpx
 from fastapi import HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.exc import IntegrityError
 
 from . import security, services
 from .agent import register_tokens
