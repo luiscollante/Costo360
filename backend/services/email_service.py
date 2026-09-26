@@ -175,7 +175,9 @@ def enviar_evento_cobro(ev: dict) -> bool:
     if tipo == "aprobado":
         asunto = "Recibo de tu pago mensual de Costo360"
         cuerpo = base + _parrafo(f"Recibimos tu pago de <strong>{_pesos(ev['monto'])}</strong> correspondiente al "
-                                 f"periodo que inicia el <strong>{ev['periodo']}</strong>. ¡Gracias por seguir con nosotros!")
+                                 f"periodo que inicia el <strong>{ev['periodo']}</strong>. "
+                                 + (f"Tu próximo cobro será el <strong>{ev['proximo_cobro']}</strong>. " if ev.get("proximo_cobro") else "")
+                                 + "¡Gracias por seguir con nosotros!")
     elif tipo == "fallido":
         asunto = "No pudimos cobrar tu plan de Costo360"
         sig = (f"Lo intentaremos de nuevo el <strong>{ev['reintento']}</strong>." if ev.get("reintento")

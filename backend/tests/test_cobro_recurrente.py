@@ -194,3 +194,11 @@ def test_carrera_entre_crons_no_genera_aviso_falso():
 def test_dry_run_no_envia_avisos_previos():
     with patch.object(c, "dry_run", return_value=True):
         assert c.avisos_previos(object()) == []
+
+
+def test_aviso_aprobado_incluye_proximo_cobro():
+    conn = FakeConn()
+    ev = c.aplicar_resultado(conn, "REC-abc", "tx1", "APPROVED", CENTS, "COP")
+    assert ev["proximo_cobro"] == "2026-11-30"
+    _, texto = c.texto_evento(ev)
+    assert "Próximo cobro: 2026-11-30" in texto

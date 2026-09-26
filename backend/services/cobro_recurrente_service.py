@@ -123,13 +123,14 @@ def aplicar_resultado(conn, reference: str, transaction_id: str | None, estado_w
         if cur.rowcount != 1:
             cur.close()
             return None
+        proxima = siguiente_fecha(periodo, ancla or periodo.day)
         cur.execute(
             "UPDATE suscripciones_wompi SET estado = 'activa', proxima_fecha_cobro = %s, proximo_reintento = NULL, "
             "en_mora_desde = NULL WHERE empresa_id = %s",
-            (siguiente_fecha(periodo, ancla or periodo.day), empresa_id))
+            (proxima, empresa_id))
         _excluir_sandbox(cur, amb, transaction_id)
         cur.close()
-        return {**evento, "tipo": "aprobado"}
+        return {**evento, "tipo": "aprobado", "proximo_cobro": str(proxima)}
 
     if estado_wompi in ESTADOS_FINALES_FALLO:
         cur.execute("UPDATE cobros_recurrentes SET estado = 'fallido', estado_wompi = %s, resuelto_en = now() "
@@ -363,7 +364,8 @@ def texto_evento(ev: dict) -> tuple[str, str]:
     prueba = " (PRUEBA sandbox)" if ev.get("ambiente") == "sandbox" else ""
     tipo = ev.get("tipo")
     if tipo == "aprobado":
-        return ("💳 Cobro mensual aprobado" + prueba, f"{empresa}: {_pesos(ev['monto'])} del periodo {ev['periodo']}.")
+        prox = f" Próximo cobro: {ev['proximo_cobro']}." if ev.get("proximo_cobro") else ""
+        return ("💳 Cobro mensual aprobado" + prueba, f"{empresa}: {_pesos(ev['monto'])} del periodo {ev['periodo']}.{prox}")
     if tipo == "fallido":
         sig = f" Próximo reintento: {ev['reintento']}." if ev.get("reintento") else " Sin más reintentos: pasará a suspensión al cumplir 7 días."
         return ("⚠️ Cobro mensual rechazado" + prueba, f"{empresa}: intento {ev['intento']} rechazado.{sig}")
