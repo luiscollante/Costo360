@@ -152,6 +152,8 @@ def deshacer_accion(conn, usuario: dict, historial_id: str) -> dict:
     spec = registry.obtener(herramienta)
     if spec is None or spec.handler_deshacer is None:
         raise HTTPException(status_code=500, detail="Herramienta de deshacer no disponible")
+    if not spec.es_deshacible or not registry.usuario_puede(spec, usuario):
+        raise HTTPException(status_code=403, detail="Tu rol no permite deshacer esta acción.")
     if not filas_afectadas:
         raise HTTPException(status_code=500, detail="Esta acción no tiene snapshot para deshacer")
     # `handler_deshacer` vuelve a leer la fila objetivo bajo esta misma

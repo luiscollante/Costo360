@@ -70,10 +70,13 @@ def registrar(spec: ToolSpec) -> None:
 
 
 def tools_para_usuario(usuario: dict) -> list[ToolSpec]:
-    return [
-        spec for spec in _REGISTRO.values()
-        if not spec.requiere_capacidad or usuario.get(spec.requiere_capacidad)
-    ]
+    return [spec for spec in _REGISTRO.values() if usuario_puede(spec, usuario)]
+
+
+def usuario_puede(spec: ToolSpec, usuario: dict) -> bool:
+    """Misma regla que `tools_para_usuario`, para revalidar al confirmar o
+    deshacer: el rol del usuario pudo cambiar desde que Cost propuso."""
+    return not spec.requiere_capacidad or bool(usuario.get(spec.requiere_capacidad))
 
 
 def obtener(nombre: str) -> Optional[ToolSpec]:

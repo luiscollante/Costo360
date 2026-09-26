@@ -98,8 +98,11 @@ def confirmar_propuesta(conn, usuario: dict, propuesta_id: str) -> dict:
     cur.close()
     herramienta, payload, filas_afectadas = row
     spec = registry.obtener(herramienta)
-    if spec is None or spec.handler_confirmar is None:
+    if spec is None or not spec.es_destructiva or spec.handler_confirmar is None:
         raise HTTPException(status_code=500, detail="Herramienta de confirmación no disponible")
+    if not registry.usuario_puede(spec, usuario):
+        # Lanzar revierte la transacción: la propuesta queda sin confirmar.
+        raise HTTPException(status_code=403, detail="Tu rol no permite confirmar esta acción.")
     # `handler_confirmar` es la función de servicio real (p. ej.
     # `proyectos_service.borrar_tarea`), que vuelve a leer la fila objetivo
     # bajo esta misma conexión (`db_rls` del usuario actual) antes de
