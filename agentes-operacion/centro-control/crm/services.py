@@ -178,8 +178,13 @@ def proposal_view(p):
             'expires': p.expires, 'created_at': p.created_at, 'result': p.result}
 
 
-def propose(session, user, kind, action, data=None, record_id=None, version=None, origin='agente'):
+AUTO = 'agente-autonomo'
+
+
+def propose(session, user, kind, action, data=None, record_id=None, version=None, origin='agente', ttl_minutes=15):
     role_guard(user, action)
+    if not 1 <= ttl_minutes <= 2880:
+        fail(422, 'La vigencia de una propuesta va de 1 minuto a 48 horas.')
     check_kind(kind)
     if action not in ('crear', 'editar', 'archivar', 'restaurar'):
         fail(422, 'Acción no permitida.')
@@ -207,12 +212,15 @@ def propose(session, user, kind, action, data=None, record_id=None, version=None
             if data:
                 fail(422, 'Archivar/restaurar no admite otros cambios.')
             clean = {}
-    pending = session.scalar(select(func.count()).select_from(Proposal).where(Proposal.actor_id == user.id, Proposal.state == 'pendiente', Proposal.expires > now()))
-    if pending >= 20:
+    # Cupos separados: las del agente autónomo (10) no ocupan las 20 del fundador.
+    del_auto = Proposal.origin == AUTO if origin == AUTO else Proposal.origin != AUTO
+    pending = session.scalar(select(func.count()).select_from(Proposal).where(
+        Proposal.actor_id == user.id, Proposal.state == 'pendiente', Proposal.expires > now(), del_auto))
+    if pending >= (10 if origin == AUTO else 20):
         fail(409, 'Revisa las propuestas pendientes antes de crear más.')
     p = Proposal(actor_id=user.id, kind=kind, action=action, record_id=record_id,
                  payload=clean, before=before, version=version, origin=origin,
-                 expires=(datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat())
+                 expires=(datetime.now(timezone.utc) + timedelta(minutes=ttl_minutes)).isoformat())
     session.add(p)
     session.flush()
     return proposal_view(p)

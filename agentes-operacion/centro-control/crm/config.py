@@ -33,6 +33,11 @@ class Settings:
     telegram_token: str = field(default_factory=lambda: os.getenv('TELEGRAM_BOT_TOKEN', ''))
     telegram_chat: str = field(default_factory=lambda: os.getenv('TELEGRAM_CHAT_ID', ''))
     disabled: bool = field(default_factory=lambda: os.getenv('CRM_ONLINE_DISABLED') == '1')  # interruptor de apagado
+    # Agente de operaciones autónomo (resumen 06:30 y cierre 18:00, hora Bogotá).
+    # CRM_AUTO_ENABLED=0 lo apaga sin desplegar código; secreto propio del disparo.
+    auto_enabled: bool = field(default_factory=lambda: os.getenv('CRM_AUTO_ENABLED', '1') == '1')
+    auto_secret: str = field(default_factory=lambda: os.getenv('CRM_AUTO_SECRET', ''))
+    auto_daily_calls: int = field(default_factory=lambda: int(os.getenv('CRM_AUTO_DAILY_CALLS', '6')))
     # Solo pruebas automáticas: permite el modo en línea sobre SQLite temporal.
     testing: bool = False
 

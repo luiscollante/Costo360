@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy import Boolean, ForeignKey, Integer, JSON, String, create_engine, event, inspect, text
+from sqlalchemy import Boolean, ForeignKey, Integer, JSON, String, UniqueConstraint, create_engine, event, inspect, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 from sqlalchemy.pool import NullPool, StaticPool
 
@@ -152,6 +152,31 @@ class Usage(Base):
     calls: Mapped[int] = mapped_column(Integer, default=0)
     input_tokens: Mapped[int] = mapped_column(Integer, default=0)
     output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class AgentRun(Base):
+    """Una corrida del agente autónomo por rutina y día (hora Bogotá). Se
+    reclama ANTES de llamar a Gemini: dos disparos no corren dos veces."""
+    __tablename__ = 'agent_runs'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    rutina: Mapped[str] = mapped_column(String)
+    fecha: Mapped[str] = mapped_column(String)
+    estado: Mapped[str] = mapped_column(String, default='iniciada')  # iniciada | ok | fallida
+    intentos: Mapped[int] = mapped_column(Integer, default=1)
+    iniciada: Mapped[str] = mapped_column(String, default=now)
+    terminada: Mapped[str | None] = mapped_column(String, nullable=True)
+    acciones: Mapped[dict] = mapped_column(JSON, default=dict)
+    telegram_ok: Mapped[bool] = mapped_column(Boolean, default=False)
+    __table_args__ = (UniqueConstraint('rutina', 'fecha'),)
+
+
+class AutoKey(Base):
+    """Idempotencia de lo que crea el agente autónomo: una clave determinista
+    por hecho (p. ej. renovación de X el día Y) → nunca se duplica la tarea."""
+    __tablename__ = 'auto_keys'
+    clave: Mapped[str] = mapped_column(String, primary_key=True)
+    record_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[str] = mapped_column(String, default=now)
 
 
 # Columnas agregadas después del piloto: las bases SQLite locales ya
