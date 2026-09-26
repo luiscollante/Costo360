@@ -2,6 +2,13 @@
 
 ---
 
+## ✅ Hecho (2026-09-26, tarde) — Agente de operaciones publicado + Ciclo 2 (métricas reales del negocio)
+
+- **Agente de operaciones autónomo EN PRODUCCIÓN:** 5 correcciones de auditoría (carreras/duplicados, tareas huérfanas, Gemini solo recibe conteos, 0004 re-aplicable con aviso si falta el secreto, sin falsas alarmas apagado). Claves en Vercel (`CRM_GEMINI_API_KEY` = clave de pago de Cost, `CRM_GEMINI_MODEL`, `CRM_AUTO_SECRET`); secreto `cc_auto_secret` en vault (lo creó el fundador: el modo auto bloquea escribir en vault); 0004 aplicada en costo360-operaciones. Prueba real: brief ok, Telegram recibido por el fundador.
+- **Ciclo 2 — métricas reales:** backend `0018_metricas_negocio.sql` (+0018b default privileges; esquema `metricas` privado con `costos_fijos`, `empresas_excluidas` (Marmoleria Demo), `pagos_excluidos` (8 pagos sandbox); `eventos_empresa` con triggers a prueba de fallos; `cotizaciones.creado_en`), `services/metricas_service.py` (todo cálculo en el servidor, transacción READ ONLY verificada, mes hora Colombia, reparto de fijos proporcional al precio del plan, explicación del porqué armada en el servidor), `routers/metricas_admin.py` (7 GET, token propio `METRICAS_API_TOKEN`). Centro de Control: `crm/metricas_client.py`, `crm/verificador.py`, 8 tools solo-fundador en `crm/agent.py`, reglas 14-18 en `agent_policy.txt`, `evals/eval_metricas.py`. Examen con Gemini real + datos reales: **10/10**, 0 cifras sin rastro. 4 auditorías (2 de plan, 2 de ejecución) con todos los hallazgos cerrados.
+- Excel `docs/Costo360_Costos_Operativos_Mensuales.xlsx`: hoja `00_Costos_Reales_Hoy` (fijos reales del fundador, IA medida, precios reales, tasa 3.048,12 = la del sistema). Fijos reales hoy: $262.199/mes.
+- Decisiones del fundador: taller activo = paga Y usa en el mes; cuentas demo excluidas; fijos repartidos según el plan; renders cuentan por taller; precios sin IVA; los 8 pagos APPROVED fueron sandbox; el costo por cliente SIEMPRE explica el porqué.
+
 ## ✅ Hecho (2026-09-26) — Cerrado el hueco de escritura directa por PostgREST (27 tablas) en producción
 
 - **Hueco:** la anon key de Supabase es pública y `authenticated` tenía INSERT/UPDATE/DELETE en 27 tablas de `public` + policies de escritura en `storage.objects` → cualquier usuario logueado podía saltarse FastAPI (fabricar propuestas de Cost y confirmarlas sin chequeo de rol, falsear la bitácora de "deshacer", borrar su consumo de IA, cambiar tarifas/topes en `app_config`, bajar `costo_usd` de renders, editar cotizaciones/folios/catálogo/pm_* saltándose el rol). Aislamiento entre empresas NO estaba roto. Revisión en producción: sin evidencia de abuso.

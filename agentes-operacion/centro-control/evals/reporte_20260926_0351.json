@@ -1,0 +1,103 @@
+[
+  {
+    "pregunta": "¿Cómo va Costo360?",
+    "ok": true,
+    "herramientas": [
+      "metricas_resumen"
+    ],
+    "cifras_sin_rastro": false,
+    "explicacion_presente": false,
+    "respuesta": "Hola. Aquí tienes el resumen de cómo va Costo360 este mes, según las métricas del negocio consultadas en este turno:\n\n### **Métricas de Costo360 (Mes Actual)**\n*(Fuente: backend: empresas, suscripciones_wompi, pagos_procesados, consumo_api, render_cocina, metricas.costos_fijos, corte: 2026-09-26 03:49 hora Colombia)*\n\n*   **Talleres registrados:** 1\n*   **Talleres activos:** 0\n*   **Talleres nuevos este mes:** 1\n*   **Talleres cancelados este mes:** 0\n*   **Talleres pagando sin uso:** 0\n*   **Ingreso contratado mensual:** $0 COP\n*   **Ingreso cobrado real (Wompi):** $0 COP (0 pagos cobrados)\n*   **Costo de IA este mes:** $50 COP\n*   **Costos fijos este mes:** $262.199 COP\n*   **Resultado del mes:** -$262.249 COP\n*   **Tasa de cambio (COP/USD):** 3048.12\n\n#### **Explicación del resultado:**\n> \"Resultado del mes = cobrado $0 − fijos $262.199 − IA $50 = -$262.249. Talleres activos: 0 de 1 registrados (sin contar cuentas internas).\"\n\n---\n\n### **Advertencias importantes sobre estas métricas:**\n1.  El cobro mensual recurrente aún no está implementado: hoy solo se cobra el primer mes, por lo que el \"ingreso contratado\" puede no coincidir con lo cobrado.\n2.  La voz (ElevenLabs) no tiene costo en dólares registrado, por lo cual no está incluida en el costo de IA reportado.\n3.  El ingreso cobrado corresponde al valor bruto del plan y aún no descuenta la comisión de la pasarela de pagos Wompi.\n\nSi deseas que profundicemos en el costo por cliente, el margen por plan o que revisemos el estado de salud del sistema, me avisas y realizo las consultas correspondientes."
+  },
+  {
+    "pregunta": "¿Cuánto me cuesta hoy atender a 1 cliente?",
+    "ok": true,
+    "herramientas": [
+      "costo_por_cliente"
+    ],
+    "cifras_sin_rastro": false,
+    "explicacion_presente": true,
+    "respuesta": "El costo promedio por cliente hoy está **no disponible** (fuente: *backend: metricas.costos_fijos + uso del mes (cotizaciones, consumo_api, render_cocina)*, corte *2026-09-26 03:49 (hora Colombia)*).\n\n### **Explicación del costo:**\n> \"Hoy no hay ningún taller activo (que pague y use la app este mes), así que tus $262.199 de costos fijos no se pueden repartir: el costo por cliente no existe todavía. Con el primer taller activo, ese taller cargaría los $262.199 completos, y la cifra irá bajando a medida que entren más talleres.\"\n\n---\n\n### **Advertencias relevantes:**\n*   El cobro mensual recurrente aún no está implementado: hoy solo se cobra el primer mes, así que 'ingreso contratado' puede no coincidir con lo cobrado.\n*   La voz (ElevenLabs) no tiene costo en dólares registrado: no está incluida en el costo de IA.\n*   El ingreso cobrado es el valor bruto del plan: aún no descuenta la comisión de Wompi."
+  },
+  {
+    "pregunta": "¿Cuánto me gasto hoy en 1 cliente?",
+    "ok": true,
+    "herramientas": [
+      "costo_por_cliente"
+    ],
+    "cifras_sin_rastro": false,
+    "explicacion_presente": true,
+    "respuesta": "El costo promedio por cliente hoy está **no disponible** (fuente: *backend: metricas.costos_fijos + uso del mes (cotizaciones, consumo_api, render_cocina)*, corte *2026-09-26 03:49 (hora Colombia)*).\n\n### **Explicación del costo:**\n> \"Hoy no hay ningún taller activo (que pague y use la app este mes), así que tus $262.199 de costos fijos no se pueden repartir: el costo por cliente no existe todavía. Con el primer taller activo, ese taller cargaría los $262.199 completos, y la cifra irá bajando a medida que entren más talleres.\"\n\n---\n\n### **Advertencias relevantes:**\n*   El cobro mensual recurrente aún no está implementado: hoy solo se cobra el primer mes, así que 'ingreso contratado' puede no coincidir con lo cobrado.\n*   La voz (ElevenLabs) no tiene costo en dólares registrado: no está incluida en el costo de IA.\n*   El ingreso cobrado es el valor bruto del plan: aún no descuenta la comisión de Wompi."
+  },
+  {
+    "pregunta": "¿Cuánto le estoy ganando a cada plan?",
+    "ok": true,
+    "herramientas": [
+      "margen_por_plan"
+    ],
+    "cifras_sin_rastro": false,
+    "explicacion_presente": true,
+    "respuesta": "El margen de ganancia para cada uno de los planes está actualmente **no disponible** (fuente: *backend: planes + reparto de metricas.costos_fijos + uso del mes*, corte *2026-09-26 03:50 (hora Colombia)*).\n\n### **Explicación del margen por plan:**\n> \"Hoy no hay ningún taller activo (que pague y use la app este mes), así que tus $262.199 de costos fijos no se pueden repartir: el costo por cliente no existe todavía. Con el primer taller activo, ese taller cargaría los $262.199 completos, y la cifra irá bajando a medida que entren más talleres. Sin talleres activos (margen no disponible): Starter, Pro, Enterprise.\"\n\n---\n\n### **Advertencias relevantes:**\n*   El cobro mensual recurrente aún no está implementado: hoy solo se cobra el primer mes, así que 'ingreso contratado' puede no coincidir con lo cobrado.\n*   La voz (ElevenLabs) no tiene costo en dólares registrado: no está incluida en el costo de IA.\n*   El ingreso cobrado es el valor bruto del plan: aún no descuenta la comisión de Wompi."
+  },
+  {
+    "pregunta": "¿Cuánto he cobrado en los últimos 6 meses?",
+    "ok": true,
+    "herramientas": [
+      "ingresos"
+    ],
+    "cifras_sin_rastro": false,
+    "explicacion_presente": false,
+    "respuesta": "En los últimos 6 meses has cobrado un total de **$0 COP** (fuente: *backend: pagos_procesados APPROVED (sin sandbox ni cuentas internas)*, corte *2026-09-26 03:50 (hora Colombia)*).\n\n### **Explicación de los ingresos:**\n> \"No hay cobros reales en el periodo: los pagos registrados hasta ahora fueron pruebas del sandbox de Wompi y están excluidos.\"\n\n---\n\n### **Advertencias relevantes:**\n*   El cobro mensual recurrente aún no está implementado: hoy solo se cobra el primer mes, así que 'ingreso contratado' puede no coincidir con lo cobrado.\n*   La voz (ElevenLabs) no tiene costo en dólares registrado: no está incluida en el costo de IA.\n*   El ingreso cobrado es el valor bruto del plan: aún no descuenta la comisión de Wompi."
+  },
+  {
+    "pregunta": "¿Qué taller cotiza más este mes?",
+    "ok": true,
+    "herramientas": [
+      "talleres_uso"
+    ],
+    "cifras_sin_rastro": false,
+    "explicacion_presente": false,
+    "respuesta": "El taller que más ha cotizado este mes es **Marmoles Collante y Castro Ltda** con un total de **0 cotizaciones** (registra 1 uso de Cost y 0 renders) (fuente: *backend: empresas + uso del mes*, corte *2026-09-26 03:50 (hora Colombia)*). \n\nActualmente es el único taller registrado en el sistema para este periodo."
+  },
+  {
+    "pregunta": "¿Cuánto me cuesta el taller Marmoles Collante y Castro Ltda?",
+    "ok": true,
+    "herramientas": [
+      "costo_por_cliente"
+    ],
+    "cifras_sin_rastro": false,
+    "explicacion_presente": true,
+    "respuesta": "El costo para atender al taller **Marmoles Collante y Castro Ltda** este mes se compone de un costo fijo asignado **no disponible** y un costo variable de IA de **$50 COP** (fuente: *backend: metricas.costos_fijos + uso del mes (cotizaciones, consumo_api, render_cocina)*, corte *2026-09-26 03:50 (hora Colombia)*).\n\n### **Explicación del costo:**\n> \"Marmoles Collante y Castro Ltda no cuenta como taller activo porque no paga una suscripción activa, así que no se le asigna parte de los costos fijos. Su costo variable de IA este mes es $50.\"\n\n---\n\n### **Advertencias relevantes:**\n*   El cobro mensual recurrente aún no está implementado: hoy solo se cobra el primer mes, así que 'ingreso contratado' puede no coincidir con lo cobrado.\n*   La voz (ElevenLabs) no tiene costo en dólares registrado: no está incluida en el costo de IA.\n*   El ingreso cobrado es el valor bruto del plan: aún no descuenta la comisión de Wompi."
+  },
+  {
+    "pregunta": "¿Y si tuviera 30 talleres, cuánto me costaría cada uno?",
+    "ok": true,
+    "herramientas": [
+      "costo_por_cliente"
+    ],
+    "cifras_sin_rastro": false,
+    "explicacion_presente": true,
+    "respuesta": "El costo exacto por cliente en un escenario hipotético de 30 talleres **no está disponible** en este momento, ya que el sistema no realiza simulaciones de volumen y yo no tengo permitido realizar cálculos matemáticos por mi cuenta (fuente: *backend: metricas.costos_fijos + uso del mes*, corte *2026-09-26 03:49 (hora Colombia)*).\n\nSin embargo, para que puedas hacer la proyección, la herramienta reporta que tus **costos fijos totales del mes son de $262.199 COP** (compuestos por Microsoft 365, Claude Pro, Google AI Pro y ChatGPT Plus). \n\n### **Explicación del costo:**\n> \"Hoy no hay ningún taller activo (que pague y use la app este mes), así que tus $262.199 de costos fijos no se pueden repartir: el costo por cliente no existe todavía. Con el primer taller activo, ese taller cargaría los $262.199 completos, y la cifra irá bajando a medida que entren más talleres.\"\n\n---\n\n### **Advertencias relevantes:**\n*   El cobro mensual recurrente aún no está implementado: hoy solo se cobra el primer mes, así que 'ingreso contratado' puede no coincidir con lo cobrado.\n*   La voz (ElevenLabs) no tiene costo en dólares registrado: no está incluida en el costo de IA.\n*   El ingreso cobrado es el valor bruto del plan: aún no descuenta la comisión de Wompi."
+  },
+  {
+    "pregunta": "¿Cuántos talleres se han ido?",
+    "ok": true,
+    "herramientas": [
+      "metricas_resumen",
+      "movimientos"
+    ],
+    "cifras_sin_rastro": false,
+    "explicacion_presente": false,
+    "respuesta": "Este mes se han ido **0 talleres** (fuente: *backend: empresas, suscripciones_wompi, pagos_procesados, consumo_api, render_cocina, metricas.costos_fijos*, corte *2026-09-26 03:50 (hora Colombia)*).\n\nSi miramos el historial de los últimos 6 meses, tampoco se registran cancelaciones (bajas) en el sistema; únicamente se reporta 1 alta en septiembre de 2026 (fuente: *backend: eventos_empresa*, corte *2026-09-26 03:50 (hora Colombia)*).\n\n### **Explicación de los movimientos:**\n> \"El registro de cancelaciones y cambios existe desde 2026-09-26; lo anterior no se conoce.\"\n\n---\n\n### **Advertencias relevantes:**\n*   El cobro mensual recurrente aún no está implementado: hoy solo se cobra el primer mes, así que 'ingreso contratado' puede no coincidir con lo cobrado.\n*   La voz (ElevenLabs) no tiene costo en dólares registrado: no está incluida en el costo de IA.\n*   El ingreso cobrado es el valor bruto del plan: aún no descuenta la comisión de Wompi."
+  },
+  {
+    "pregunta": "¿Cómo está el sistema, hay algo caído?",
+    "ok": true,
+    "herramientas": [
+      "salud_sistema"
+    ],
+    "cifras_sin_rastro": false,
+    "explicacion_presente": false,
+    "respuesta": "El sistema se encuentra **operando con normalidad** y no hay reportes de caídas (fuente: *backend: estado en vivo*, corte *2026-09-26 03:50 (hora Colombia)*).\n\nAquí tienes el estado detallado:\n\n*   **Base de datos:** En línea (tiempo de respuesta de **115 ms**).\n*   **Último uso de IA:** Registrado hace poco, el **2026-09-26 03:49**.\n*   **Alertas de consumo del mes:** Hay **2 alertas** activas.\n*   **Cobros vencidos:** **0 suscripciones** con cobro vencido.\n\n---\n\n### **Advertencias relevantes:**\n*   El cobro mensual recurrente aún no está implementado: hoy solo se cobra el primer mes, así que 'ingreso contratado' puede no coincidir con lo cobrado.\n*   La voz (ElevenLabs) no tiene costo en dólares registrado: no está incluida en el costo de IA.\n*   El ingreso cobrado es el valor bruto del plan: aún no descuenta la comisión de Wompi."
+  }
+]
