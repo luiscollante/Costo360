@@ -99,10 +99,16 @@ def rls_connection(user: dict):
     try:
         with conn.cursor() as cur:
             cur.execute("select set_config('request.jwt.claims', %s, true)", (_claims_json(user),))
-            cur.execute("set local role authenticated")
+            # `cost_servidor` (migración 0017a) es miembro de authenticated —mismas
+            # policies RLS— pero PostgREST no puede asumirlo, así que solo el
+            # backend escribe. Respaldo a authenticated mientras 0017a no esté
+            # aplicada; quitarlo cuando 0017b esté en producción.
+            cur.execute("select exists(select 1 from pg_roles where rolname = 'cost_servidor')")
+            rol_esperado = "cost_servidor" if cur.fetchone()[0] else "authenticated"
+            cur.execute(f"set local role {rol_esperado}")
             cur.execute("select current_user, current_setting('request.jwt.claims', true)")
             rol_actual, claims = cur.fetchone()
-        if rol_actual != "authenticated" or not claims:
+        if rol_actual != rol_esperado or not claims:
             raise HTTPException(
                 status_code=500,
                 detail="El aislamiento por empresa no se activó; petición abortada",

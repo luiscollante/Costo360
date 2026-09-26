@@ -92,10 +92,13 @@ def _self_test_rls() -> None:
                     "el rol de DATABASE_URL."
                 )
 
-            cur.execute("set local role authenticated")
+            # Mismo rol que usa rls_connection (db/client.py).
+            cur.execute("select exists(select 1 from pg_roles where rolname = 'cost_servidor')")
+            rol_esperado = "cost_servidor" if cur.fetchone()[0] else "authenticated"
+            cur.execute(f"set local role {rol_esperado}")
             cur.execute("select current_user")
-            if cur.fetchone()[0] != "authenticated":
-                raise RuntimeError("SET LOCAL ROLE authenticated no tuvo efecto.")
+            if cur.fetchone()[0] != rol_esperado:
+                raise RuntimeError(f"SET LOCAL ROLE {rol_esperado} no tuvo efecto.")
             # Fail-closed sobre varias tablas de tenant, incluidas las del módulo de
             # proyectos (hallazgo S11 de la auditoría de la Fase 2.D).
             for tabla in ("cotizaciones", "pm_projects", "pm_notifications"):
