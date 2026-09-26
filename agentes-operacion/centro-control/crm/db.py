@@ -161,7 +161,7 @@ class AgentRun(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     rutina: Mapped[str] = mapped_column(String)
     fecha: Mapped[str] = mapped_column(String)
-    estado: Mapped[str] = mapped_column(String, default='iniciada')  # iniciada | ok | fallida
+    estado: Mapped[str] = mapped_column(String, default='iniciada')  # iniciada | ok | fallida | apagado
     intentos: Mapped[int] = mapped_column(Integer, default=1)
     iniciada: Mapped[str] = mapped_column(String, default=now)
     terminada: Mapped[str | None] = mapped_column(String, nullable=True)

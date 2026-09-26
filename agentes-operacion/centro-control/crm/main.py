@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 import hmac
 import logging
@@ -212,6 +213,8 @@ def create_app(settings=None):
         if r not in autonomo.RUTINAS:
             raise HTTPException(422, 'Rutina desconocida.')
         if not settings.auto_enabled:
+            # Deja constancia para que la alarma de pg_cron no avise en falso.
+            await asyncio.to_thread(autonomo.registrar_apagado, app.state.db, r)
             return {'rutina': r, 'apagado': True}
         return await autonomo.ejecutar(app.state.db, settings, r)
 
