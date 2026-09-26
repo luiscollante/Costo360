@@ -2,6 +2,37 @@
 
 ---
 
+## Sesión: 2026-09-26 (continuación) — Agente de operaciones publicado + Ciclo 2 de métricas reales
+
+### Qué se hizo
+1. Auditoría rigurosa del agente de operaciones (2 auditores) → 5 correcciones + 2 menores → publicado. El fundador creó `cc_auto_secret` en vault (el modo auto bloquea escribir en vault). Prueba real: resumen ok y Telegram recibido.
+2. Excel de costos: la hoja 00 refleja la realidad (fijos del fundador: M365 US$7, Claude Pro $80.000, Google AI Pro US$20, ChatGPT Plus $99.900; Supabase/Vercel gratis; IA medida). Tasa 3.048,12 = la del sistema → fijos $262.199/mes.
+3. Ciclo 2 completo (plan → 2 auditorías de plan → ejecución → 2 auditorías de ejecución → examen 10/10 con Gemini real): métricas reales del negocio en el chat del Centro de Control, con explicación obligatoria del porqué del costo por cliente.
+4. Hallazgo grave de negocio: **no existe cobro mensual recurrente** (solo se cobra el primer mes). Es el siguiente ciclo.
+5. Cost admitió lo que no puede hacer en Proyectos/Retales/Inventario/Catálogo/Nesting → anotado como ciclo (D). Rediseño de Dashboard y Catálogo anotado como ciclo (E), con imágenes de referencia.
+6. Guardados la migración 0016 y `agentes-operacion/atencion/` (revisados: sin claves).
+
+### Archivos creados
+`backend/migrations/0018_metricas_negocio.sql`, `backend/services/metricas_service.py`, `backend/routers/metricas_admin.py`, `backend/tests/test_metricas_service.py`; Centro de Control: `crm/metricas_client.py`, `crm/verificador.py`, `tests/test_metricas_agente.py`, `evals/eval_metricas.py` (+ reporte).
+
+### Archivos modificados
+`backend/main.py`; Centro de Control `crm/{autonomo,agent,config,db,main}.py`, `crm/agent_policy.txt`, `crm/agent_policy_auto.txt`, `crm/migrations/0004_agente_operaciones.sql`, `tests/test_autonomo.py`; `docs/Costo360_Costos_Operativos_Mensuales.xlsx`; `ARQUITECTURA_MAESTRA.md`, `PROGRESS.md`.
+
+### Decisiones tomadas (fundador)
+- Taller activo = paga Y usa la app en el mes; cuentas demo excluidas; fijos repartidos según el precio del plan; renders cuentan por taller; precios sin IVA (único extra: comisión Wompi); los 8 pagos APPROVED fueron sandbox.
+- Telegram: el agente solo consulta y responde (nunca cambia nada).
+- Orden de la cola: (B) cobro mensual Wompi → (C) Telegram temas + conversación → (D) capacidades nuevas de Cost → (E) rediseño Dashboard/Catálogo.
+
+### Pendientes
+- Respuesta del fundador: ¿"Marmoles Collante y Castro Ltda" es cliente real o prueba? (hoy cuenta como taller registrado).
+- Quitar el respaldo a `authenticated` en `db/client.py`/`main.py` en unos días.
+- Llaves de Wompi aún en modo sandbox.
+
+### Primera tarea de la próxima sesión
+Ciclo /goal (B): cobro mensual recurrente con Wompi (`crear_transaccion(recurrente=True)` existe pero nada lo invoca ni avanza `proxima_fecha_cobro`).
+
+---
+
 ## Sesión: 2026-09-25/26 — Cierre del hueco de escritura directa (PostgREST) en producción
 
 ### Qué se hizo
