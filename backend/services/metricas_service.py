@@ -24,6 +24,7 @@ from zoneinfo import ZoneInfo
 from backend.services.consumo_service import INICIO_MES_SQL, TRM_COP_USD
 
 _BOGOTA = ZoneInfo("America/Bogota")
+_HOY_SQL = "(now() at time zone 'America/Bogota')::date"
 _EXCLUIDA = "NOT EXISTS (SELECT 1 FROM metricas.empresas_excluidas x WHERE x.empresa_id = e.id)"
 _PAGO_VALIDO = "NOT EXISTS (SELECT 1 FROM metricas.pagos_excluidos px WHERE px.transaction_id = p.transaction_id)"
 _RENDER_OK = "estado = 'completado'"
@@ -32,6 +33,7 @@ ADVERTENCIAS_FIJAS = [
     "El cobro mensual recurrente aún no está implementado: hoy solo se cobra el primer mes, "
     "así que 'ingreso contratado' puede no coincidir con lo cobrado.",
     "La voz (ElevenLabs) no tiene costo en dólares registrado: no está incluida en el costo de IA.",
+    "El ingreso cobrado es el valor bruto del plan: aún no descuenta la comisión de Wompi.",
 ]
 
 
@@ -63,7 +65,7 @@ def _sobre(fuente: str, datos: dict, explicacion: str | None = None,
             "advertencias": (advertencias or []) + ADVERTENCIAS_FIJAS}
 
 
-def _q(conn, sql: str, params=()) -> list[tuple]:
+def _q(conn, sql: str, params=None) -> list[tuple]:
     cur = conn.cursor()
     cur.execute(sql, params)
     filas = cur.fetchall()
@@ -76,7 +78,7 @@ def _q(conn, sql: str, params=()) -> list[tuple]:
 def _fijos(conn) -> tuple[float, list[dict]]:
     filas = _q(conn,
         "SELECT concepto, proveedor, moneda, monto FROM metricas.costos_fijos "
-        "WHERE vigente_desde <= current_date AND (vigente_hasta IS NULL OR vigente_hasta >= current_date) "
+        f"WHERE vigente_desde <= {_HOY_SQL} AND (vigente_hasta IS NULL OR vigente_hasta >= {_HOY_SQL}) "
         "ORDER BY id")
     detalle, total = [], 0.0
     for concepto, proveedor, moneda, monto in filas:
@@ -100,7 +102,7 @@ def _talleres(conn) -> list[dict]:
                e.activa, s.estado, coalesce(cot.n, 0), coalesce(ia.usd, 0), coalesce(ia.n, 0),
                coalesce(rend.usd, 0), coalesce(rend.n, 0), e.creado_en >= {INICIO_MES_SQL}
         FROM empresas e
-        JOIN planes pl ON pl.codigo = e.plan_codigo
+        LEFT JOIN planes pl ON pl.codigo = e.plan_codigo
         LEFT JOIN suscripciones_wompi s ON s.empresa_id = e.id
         LEFT JOIN cot ON cot.empresa_id = e.id
         LEFT JOIN ia ON ia.empresa_id = e.id
@@ -112,7 +114,7 @@ def _talleres(conn) -> list[dict]:
         pagando = bool(activa) and sus == "activa"
         con_uso = cots > 0 or ia_n > 0 or r_n > 0
         out.append({
-            "empresa_id": str(eid), "nombre": nombre, "plan": plan, "precio_plan_cop": round(float(precio)),
+            "empresa_id": str(eid), "nombre": nombre, "plan": plan or "sin plan", "precio_plan_cop": round(float(precio or 0)),
             "activa": bool(activa), "suscripcion": sus or "sin suscripción",
             "pagando": pagando, "con_uso_mes": con_uso, "taller_activo": pagando and con_uso,
             "cotizaciones_mes": int(cots), "usos_cost_mes": int(ia_n), "renders_mes": int(r_n),
@@ -125,9 +127,11 @@ def _talleres(conn) -> list[dict]:
 def _reparto(talleres: list[dict], fijos: float) -> dict[str, float]:
     """Fijo asignado a cada taller activo, proporcional al precio de su plan."""
     activos = [t for t in talleres if t["taller_activo"]]
-    peso = sum(t["precio_plan_cop"] for t in activos)
-    if not activos or peso <= 0:
+    if not activos:
         return {}
+    peso = sum(t["precio_plan_cop"] for t in activos)
+    if peso <= 0:  # sin precios válidos: reparto igual, nunca se pierde un taller activo
+        return {t["empresa_id"]: fijos / len(activos) for t in activos}
     return {t["empresa_id"]: fijos * t["precio_plan_cop"] / peso for t in activos}
 
 
@@ -195,7 +199,12 @@ def costo_por_cliente(conn, empresa: str | None = None) -> dict:
     fuente = "backend: metricas.costos_fijos + uso del mes (cotizaciones, consumo_api, render_cocina)"
     if empresa:
         clave = empresa.strip().lower()
-        t = next((t for t in talleres if t["empresa_id"] == clave or t["nombre"].lower() == clave), None)
+        coincidencias = [t for t in talleres if t["empresa_id"] == clave or t["nombre"].lower() == clave]
+        if len(coincidencias) > 1:
+            return _sobre(fuente, {"empresa": empresa, "coincidencias": len(coincidencias)},
+                          "Hay más de un taller con ese nombre; pide el costo por su identificador.",
+                          no_disponible=["costo_total_cop"])
+        t = coincidencias[0] if coincidencias else None
         if t is None:
             return _sobre(fuente, {"empresa": empresa}, "No encontré ese taller entre los registrados.",
                           no_disponible=["costo_total_cop"])
@@ -245,7 +254,8 @@ def margen_por_plan(conn) -> dict:
         margen = float(precio) - fijo - ia
         filas.append({"plan": nombre, "precio_cop": round(float(precio)), "talleres_activos": len(del_plan),
                       "fijo_por_taller_cop": round(fijo), "ia_promedio_cop": round(ia),
-                      "margen_por_taller_cop": round(margen), "margen_pct": round(margen / float(precio) * 100, 1)})
+                      "margen_por_taller_cop": round(margen),
+                      "margen_pct": round(margen / float(precio) * 100, 1) if float(precio) > 0 else None})
     n = sum(1 for t in talleres if t["taller_activo"])
     expl = _explicar_reparto(n, fijos)
     if sin_datos:
@@ -301,7 +311,7 @@ def salud(conn) -> dict:
     latencia = round((datetime.now() - t0).total_seconds() * 1000)
     ultimo = _q(conn, "SELECT max(creado_en) FROM consumo_api")[0][0]
     vencidos = _q(conn, f"""SELECT count(*) FROM suscripciones_wompi s JOIN empresas e ON e.id = s.empresa_id
-                           WHERE s.estado IN ('activa', 'en_mora') AND s.proxima_fecha_cobro < current_date AND {_EXCLUIDA}""")[0][0]
+                           WHERE s.estado IN ('activa', 'en_mora') AND s.proxima_fecha_cobro < {_HOY_SQL} AND {_EXCLUIDA}""")[0][0]
     alertas = _q(conn, f"SELECT count(*) FROM alerta_consumo_enviada WHERE creado_en >= {INICIO_MES_SQL}")[0][0]
     datos = {"base_datos_ms": latencia,
              "ultimo_uso_ia": ultimo.astimezone(_BOGOTA).strftime("%Y-%m-%d %H:%M") if ultimo else None,

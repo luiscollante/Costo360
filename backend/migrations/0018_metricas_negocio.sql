@@ -43,6 +43,7 @@ create table if not exists metricas.pagos_excluidos (
 );
 
 revoke all on all tables in schema metricas from public, anon, authenticated, cost_servidor;
+alter default privileges for role postgres in schema metricas revoke all on tables from public, anon, authenticated;
 
 -- ── Datos iniciales (confirmados por el fundador 2026-09-26) ───────────────
 insert into metricas.costos_fijos (concepto, proveedor, moneda, monto, vigente_desde, fuente)
