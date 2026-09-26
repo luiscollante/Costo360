@@ -83,7 +83,7 @@ def aplicar_resultado(conn, reference: str, transaction_id: str | None, estado_w
     cur.execute(
         "SELECT c.id, c.empresa_id, c.periodo, c.intento, c.monto_cop, c.estado, c.transaction_id, c.ambiente, "
         "       s.dia_ancla, e.nombre, "
-        "       (SELECT u.email FROM usuarios u WHERE u.empresa_id = c.empresa_id AND u.rol_codigo = 'admin' LIMIT 1) "
+        "       (SELECT au.email FROM usuarios u JOIN auth.users au ON au.id = u.id WHERE u.empresa_id = c.empresa_id AND u.rol_codigo = 'admin' LIMIT 1) "
         "FROM cobros_recurrentes c "
         "JOIN suscripciones_wompi s ON s.empresa_id = c.empresa_id "
         "JOIN empresas e ON e.id = c.empresa_id "
@@ -239,7 +239,7 @@ def _reclamar_siguiente(conn):
     cur = conn.cursor()
     cur.execute(
         "SELECT s.empresa_id, s.proxima_fecha_cobro, s.plan_codigo, s.payment_source_id, p.precio_mensual_cop, "
-        "       e.nombre, (SELECT u.email FROM usuarios u WHERE u.empresa_id = s.empresa_id AND u.rol_codigo = 'admin' LIMIT 1) "
+        "       e.nombre, (SELECT au.email FROM usuarios u JOIN auth.users au ON au.id = u.id WHERE u.empresa_id = s.empresa_id AND u.rol_codigo = 'admin' LIMIT 1) "
         "FROM suscripciones_wompi s JOIN planes p ON p.codigo = s.plan_codigo JOIN empresas e ON e.id = s.empresa_id "
         # 'suspendida' solo vuelve a cobrarse si se programó un reintento
         # (actualización de tarjeta o "pagar ahora"): así paga el mes vencido.
@@ -328,7 +328,7 @@ def avisos_previos(conn) -> list[dict]:
         "AND s.estado = 'activa' AND s.proxima_fecha_cobro = %s "
         "AND s.aviso_enviado_para IS DISTINCT FROM s.proxima_fecha_cobro "
         "RETURNING s.empresa_id, e.nombre, p.nombre, p.precio_mensual_cop, s.proxima_fecha_cobro, "
-        "(SELECT u.email FROM usuarios u WHERE u.empresa_id = s.empresa_id AND u.rol_codigo = 'admin' LIMIT 1)",
+        "(SELECT au.email FROM usuarios u JOIN auth.users au ON au.id = u.id WHERE u.empresa_id = s.empresa_id AND u.rol_codigo = 'admin' LIMIT 1)",
         (objetivo,))
     filas = cur.fetchall()
     cur.close()
