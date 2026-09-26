@@ -14,7 +14,7 @@ begin;
 --    escribible por PostgREST. Se invalidan (no se borran: quedan como registro).
 update public.agente_historial_acciones
    set es_deshacible = false
- where es_deshacible;
+ where es_deshacible and deshecha_en is null;
 
 -- 2. Propuestas pendientes previas: mismo motivo — no se confirma nada creado
 --    antes del cierre.
