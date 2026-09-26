@@ -11,7 +11,7 @@ from sqlalchemy import delete, select, text
 from sqlalchemy.exc import IntegrityError, OperationalError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from . import agent, auth, leads, services, sync
+from . import agent, auth, autonomo, leads, services, sync
 from .config import ROOT, Settings
 from .db import Audit, Database, Message, Proposal, Session, Usage, now
 from .schemas import Chat, Change, Login, PARENTS, ProposalIn, SCHEMAS
@@ -199,6 +199,21 @@ def create_app(settings=None):
         if not esperado or not hmac.compare_digest(recibido.encode(), esperado.encode()):
             raise HTTPException(401, 'No autorizado.')
         return leads.importar(app.state.db)
+
+    @app.get('/api/cron/agente')
+    async def cron_agente(r: str = Query('', max_length=20), authorization: str | None = Header(default=None)):
+        """pg_cron (06:30 y 18:00 Bogotá) dispara las rutinas del agente de
+        operaciones. GET con Bearer CRM_AUTO_SECRET: no necesita eximir a
+        ninguna ruta del control de Origin de los POST."""
+        esperado = settings.auto_secret
+        recibido = authorization[7:] if authorization and authorization.startswith('Bearer ') else ''
+        if not esperado or not hmac.compare_digest(recibido.encode(), esperado.encode()):
+            raise HTTPException(401, 'No autorizado.')
+        if r not in autonomo.RUTINAS:
+            raise HTTPException(422, 'Rutina desconocida.')
+        if not settings.auto_enabled:
+            return {'rutina': r, 'apagado': True}
+        return await autonomo.ejecutar(app.state.db, settings, r)
 
     @app.post('/api/sync/clientes')
     def sync_clientes(user=Depends(auth.current_user)):

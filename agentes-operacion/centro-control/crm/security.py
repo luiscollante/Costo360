@@ -123,6 +123,21 @@ def bitacora(session, evento: str, user_id: str | None = None, **detalle) -> Non
 
 # ── Aviso por Telegram ───────────────────────────────────────────────────────
 
+def enviar(settings, texto: str) -> bool:
+    """Mensaje de texto plano (sin parse_mode) al chat fijo del fundador.
+    El destino sale SIEMPRE de la configuración, nunca de los datos."""
+    if not (settings.telegram_token and settings.telegram_chat):
+        return False
+    try:
+        r = httpx.post(f'https://api.telegram.org/bot{settings.telegram_token}/sendMessage',
+                       json={'chat_id': settings.telegram_chat, 'text': texto,
+                             'disable_web_page_preview': True}, timeout=8)
+        return r.status_code == 200
+    except Exception as exc:  # nunca loguear la URL: lleva el token
+        log.warning('Mensaje de Telegram no enviado: %s', type(exc).__name__)
+        return False
+
+
 def avisar(settings, texto: str) -> None:
     if not (settings.telegram_token and settings.telegram_chat):
         return

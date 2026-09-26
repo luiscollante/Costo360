@@ -37,7 +37,8 @@ class Settings:
     # CRM_AUTO_ENABLED=0 lo apaga sin desplegar código; secreto propio del disparo.
     auto_enabled: bool = field(default_factory=lambda: os.getenv('CRM_AUTO_ENABLED', '1') == '1')
     auto_secret: str = field(default_factory=lambda: os.getenv('CRM_AUTO_SECRET', ''))
-    auto_daily_calls: int = field(default_factory=lambda: int(os.getenv('CRM_AUTO_DAILY_CALLS', '6')))
+    auto_daily_calls: int = field(default_factory=lambda: int(os.getenv('CRM_AUTO_DAILY_CALLS', '4')))
+    auto_max_writes: int = field(default_factory=lambda: int(os.getenv('CRM_AUTO_MAX_WRITES', '15')))
     # Solo pruebas automáticas: permite el modo en línea sobre SQLite temporal.
     testing: bool = False
 
@@ -56,6 +57,8 @@ class Settings:
             raise ValueError('CRM_MODE debe ser local u online.')
         if not 1 <= self.daily_calls <= 500:
             raise ValueError('CRM_DAILY_CALLS debe estar entre 1 y 500.')
+        if not 0 <= self.auto_daily_calls <= 12 or not 0 <= self.auto_max_writes <= 30:
+            raise ValueError('CRM_AUTO_DAILY_CALLS (0-12) o CRM_AUTO_MAX_WRITES (0-30) fuera de rango.')
         if self.online:
             # Negarse a arrancar antes que arrancar inseguro.
             if self.demo:
