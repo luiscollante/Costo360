@@ -15,6 +15,13 @@
 - Nada a medio camino en seguridad.
 
 ## 📋 Siguiente
+0. **ORDEN DECIDIDO POR EL FUNDADOR (2026-09-26):** (A) terminar Ciclo 2 del agente de operaciones (métricas reales; plan aprobado) → (B) ciclo /goal de **cobro mensual recurrente con Wompi** (hallazgo: `crear_transaccion(recurrente=True)` nunca se invoca y nada avanza `proxima_fecha_cobro`; hoy solo se cobra el primer mes) → (C) Ciclo 3 Telegram (temas + conversación solo-consulta) → (D) **Cost maximiza la eficiencia del taller**: cerrar lo que Cost admitió no poder hacer —
+   - Proyectos: crear proyectos, archivarlos, cambiar % de avance, asignar tareas a responsables.
+   - Retales: cruzarlos automáticamente con una cotización; transferir retales entre operarios.
+   - Inventario: descontar láminas al aprobar un proyecto (inventario ligado al nesting); múltiples bodegas.
+   - Catálogo: carga masiva de precios desde Excel; fotos/texturas por referencia de piedra.
+   - Nesting: mostrar el plano de corte en el chat; continuidad de veta (vein matching); despiece con varias láminas distintas a la vez.
+   Datos confirmados: los 8 pagos APPROVED ($10.465.000) son sandbox de Wompi (llaves de prueba aún activas); precios SIN IVA (empresa sin constituir), único cobro extra = comisión Wompi.
 1. En unos días, quitar el respaldo a `authenticated` en `db/client.py` y `main.py` (fijar `cost_servidor` y que el arranque falle si no existe).
 2. Publicar el agente de operaciones del Centro de Control (auditoría Fase 5 pendiente → Vercel envs + vault + 0004 + push + prueba Telegram). Sus commits locales van encima de `b768876`.
 3. Retomar ciclo "Cost maneja toda la sección Proyectos" (plan auditado, sin código).
