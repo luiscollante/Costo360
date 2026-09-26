@@ -98,7 +98,10 @@ def confirmar_propuesta(conn, usuario: dict, propuesta_id: str) -> dict:
     cur.close()
     herramienta, payload, filas_afectadas = row
     spec = registry.obtener(herramienta)
-    if spec is None or not spec.es_destructiva or spec.handler_confirmar is None:
+    # Solo `handler_confirmar` decide si una tool admite confirmación: hay
+    # tools no destructivas que también piden confirmar (p. ej.
+    # cotizacion_guardar, catalogo_crear_material).
+    if spec is None or spec.handler_confirmar is None:
         raise HTTPException(status_code=500, detail="Herramienta de confirmación no disponible")
     if not registry.usuario_puede(spec, usuario):
         # Lanzar revierte la transacción: la propuesta queda sin confirmar.

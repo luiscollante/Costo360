@@ -44,8 +44,18 @@ def test_confirmar_rechaza_rol_sin_capacidad(monkeypatch):
     assert e.value.status_code == 403
 
 
-def test_confirmar_rechaza_tool_no_destructiva(monkeypatch):
-    spec = _spec(es_destructiva=False)
+def test_confirmar_acepta_tool_no_destructiva_con_handler(monkeypatch):
+    # Regresión 2026-09-26: cotizacion_guardar es es_destructiva=False pero
+    # pide confirmación; exigir es_destructiva rompió "guardar" desde Cost.
+    spec = _spec(es_destructiva=False, requiere_capacidad=None)
+    monkeypatch.setattr(registry, "obtener", lambda n: spec)
+    monkeypatch.setattr(confirmations.bitacora, "registrar_ejecucion", lambda *a, **k: None)
+    conn = _conn_con_fila(("t_prueba", {}, []))
+    assert confirmations.confirmar_propuesta(conn, {"id": "u1"}, "p1") == {"ok": True}
+
+
+def test_confirmar_rechaza_tool_sin_handler(monkeypatch):
+    spec = _spec(es_destructiva=False, handler_confirmar=None)
     monkeypatch.setattr(registry, "obtener", lambda n: spec)
     conn = _conn_con_fila(("t_prueba", {}, []))
     with pytest.raises(HTTPException):
