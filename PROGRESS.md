@@ -2,6 +2,44 @@
 
 ---
 
+## ✅ Hecho (2026-09-26) — Cerrado el hueco de escritura directa por PostgREST (27 tablas) en producción
+
+- **Hueco:** la anon key de Supabase es pública y `authenticated` tenía INSERT/UPDATE/DELETE en 27 tablas de `public` + policies de escritura en `storage.objects` → cualquier usuario logueado podía saltarse FastAPI (fabricar propuestas de Cost y confirmarlas sin chequeo de rol, falsear la bitácora de "deshacer", borrar su consumo de IA, cambiar tarifas/topes en `app_config`, bajar `costo_usd` de renders, editar cotizaciones/folios/catálogo/pm_* saltándose el rol). Aislamiento entre empresas NO estaba roto. Revisión en producción: sin evidencia de abuso.
+- **Solución (ciclo /goal, 4 auditorías independientes):** rol `cost_servidor` (NOLOGIN, miembro de `authenticated` → hereda SELECT y le aplican las policies `TO authenticated`; `postgres` es miembro, `authenticator` NO). `db/client.py` y el chequeo de arranque de `main.py` hacen `set local role cost_servidor` (con respaldo temporal a authenticated si el rol no existe). Migraciones `0017a` (aditiva, grants a cost_servidor + default privileges) y `0017b` (revoca escritura a authenticated/anon/public en tablas y secuencias, default privileges, borra 3 policies de storage de 0011, invalida `es_deshacible` previos y expira propuestas pendientes). Ambas aplicadas a producción en ese orden con deploy en medio.
+- **Cost revalida el rol** al confirmar (`agente/confirmations.py`) y al deshacer (`agente/bitacora.py`) vía `registry.usuario_puede`.
+- **Bug introducido y corregido el mismo día** (`b768876`): exigí `es_destructiva` al confirmar y `cotizacion_guardar`/`catalogo_crear_material` son `es_destructiva=False` con `handler_confirmar` → "No se pudo confirmar" al guardar desde Cost. Verificado en vivo en el navegador tras la corrección (COT-2026-0025 guardada y luego borrada por id exacto).
+- **Verificado:** 0 tablas escribibles por authenticated/anon; ataque real vía `/rest/v1` con anon key rechazado (42501); `authenticator` no puede `SET ROLE cost_servidor`; guardar desde Historial (fundador) y desde Cost OK. 15 pruebas pasan (`backend/tests/test_cierre_escritura_directa.py`).
+- Commits publicados solo los de seguridad (cherry-pick sobre origin/master: `e68b9a8`, `a36dae6`, `816da5e`, `b768876`); los 2 commits del agente de operaciones siguen locales, sin publicar.
+
+## 🔄 En progreso
+- Nada a medio camino en seguridad.
+
+## 📋 Siguiente
+1. En unos días, quitar el respaldo a `authenticated` en `db/client.py` y `main.py` (fijar `cost_servidor` y que el arranque falle si no existe).
+2. Publicar el agente de operaciones del Centro de Control (auditoría Fase 5 pendiente → Vercel envs + vault + 0004 + push + prueba Telegram). Sus commits locales van encima de `b768876`.
+3. Retomar ciclo "Cost maneja toda la sección Proyectos" (plan auditado, sin código).
+4. Rediseño de 5 páginas; commitear 0016 y `agentes-operacion/atencion/` tras revisar claves; dashboard + Cost BI gerencia.
+
+---
+
+## ✅ Hecho (2026-09-25, tarde) — Recuperación de la sesión de la madrugada + agente de operaciones autónomo (código listo, sin publicar)
+
+- **Recuperación de la madrugada (sesión cerrada sin protocolo):** reconstruida desde su transcripción. Todo lo publicado ya estaba en commits (`a31b4b6`…`b482f01`: recordar dispositivo, sincronización de talleres, vigilante de caídas + página de mantenimiento, versiones fijas de dependencias, tarjetas en celular, chat que vende en la landing + prospectos Ley 1581 + aviso de privacidad en el pie). Precio Enterprise **$875.000** verificado igual en la BD de producción y en costo360.com (migración `backend/migrations/0016_precio_enterprise_875000.sql` aplicada, archivo aún sin commitear).
+- **Agente de operaciones autónomo del Centro de Control** (plan aprobado por el fundador 2026-09-25 03:43; commits `9bd9109`, `f7ae57a`): `crm/autonomo.py` + `crm/agent_policy_auto.txt` + `GET /api/cron/agente?r=brief|cierre` (Bearer `CRM_AUTO_SECRET`, interruptor `CRM_AUTO_ENABLED`). Resumen 06:30 y cierre 18:00 (Bogotá) por Telegram; solo crea TAREAS (renovación ≤7 días, ticket Alta >24 h, taller sin uso desde el día 15) con clave idempotente en `auto_keys`; corrida reclamada 1 vez/día en `agent_runs` (1 reintento); Gemini solo redacta una introducción (tope 4 llamadas/día, contador `auto:`), respaldo sin IA; Telegram sin enlaces/@/correos/teléfonos. Migración `crm/migrations/0004_agente_operaciones.sql` (tablas, `monitor.disparar_agente`, `monitor.revisar_agente`, 6 cron: disparo, reintento +15 min, alarma +30 min). El historial muestra "🤖 Agente de operaciones". 89 pruebas pasan (18 nuevas). Bug real corregido: si Gemini fallaba al crear el cliente, la rutina entera caía.
+
+## 🔄 En progreso
+- Agente de operaciones: **falta publicar**. El modo automático bloqueó la escritura de secretos en Vercel y la migración en Supabase. Se agregaron permisos en `.claude/settings.local.json`; requiere reiniciar la sesión.
+- Auditoría independiente (Fase 5) del agente: falló 2 veces (error de acceso de la organización; luego sin internet). Pendiente relanzar.
+
+## 📋 Siguiente
+1. Relanzar auditoría del agente → corregir → cargar en Vercel `CRM_GEMINI_API_KEY` (misma de Cost), `CRM_GEMINI_MODEL=gemini-3.5-flash`, `CRM_AUTO_SECRET` (generar nuevo) → `vault.create_secret(<mismo>, 'cc_auto_secret')` → aplicar 0004 en `costo360-operaciones` → push → prueba real por Telegram. El chat de IA del Centro de Control queda encendido (aprobado).
+2. **Cerrar hueco de seguridad en producción** (hallado en la madrugada): un usuario autenticado podría fabricar/confirmar propuestas falsas de Cost o vaciar su historial en todos los talleres. Luego retomar el ciclo "Cost maneja toda la sección Proyectos" (plan auditado, sin código).
+3. Rediseño de 5 páginas (Login, FAQ de la landing, Privacidad, Checkout, Mantenimiento) desde las imágenes en `C:\Users\wases\Desktop\Universidad\Opción de grado\Costo360\landing`. Affinity/Blender requieren una sesión con control del computador.
+4. Commitear `backend/migrations/0016_precio_enterprise_875000.sql` y `agentes-operacion/atencion/` (revisar antes que no tengan claves).
+5. Ciclo dashboard + Cost analista BI solo para gerencia (pedido 2026-09-25, sin empezar).
+
+---
+
 ## ✅ Hecho (2026-09-23/24) — Piezas en celular, alertas de consumo de IA sin bloqueo, logo en correos, Centro de Control en línea con 2FA
 
 - **Nueva cotización → Piezas en celular** (`7921ebd`): en pantallas < md cada pieza es una tarjeta (Largo/Ancho/Cant. legibles, sin scroll lateral); la canasta pide confirmación (`Dialog` alertdialog). Verificado en vivo a 390 px y en escritorio; el fundador confirmó "Eliminar".
@@ -333,4 +371,4 @@ casos con "COP" pegado — todos limpios. Commiteado, pusheado y desplegado (sol
 
 *(Entradas anteriores en PROGRESS_ARCHIVO.md)*
 
-*Última actualización: 2026-09-24*
+*Última actualización: 2026-09-26*

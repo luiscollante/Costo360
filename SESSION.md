@@ -2,6 +2,65 @@
 
 ---
 
+## Sesión: 2026-09-25/26 — Cierre del hueco de escritura directa (PostgREST) en producción
+
+### Qué se hizo
+1. Confirmado en código y BD el hueco de seguridad: la anon key pública + grants de escritura a `authenticated` permitían saltarse FastAPI en 27 tablas (propuestas/bitácora de Cost, `app_config`, `consumo_api`, `render_cocina`, cotizaciones, folios, catálogo, pm_*, inventario…) y en storage. Revisión de producción: sin evidencia de abuso (68 propuestas, 23 filas de bitácora; 5 sin propuesta = creaciones directas legítimas del fundador).
+2. Ciclo /goal completo: plan → 3 auditorías de plan (Security Engineer, Database Optimizer, Backend Architect) → ejecución → auditoría de ejecución (Code Reviewer). El fundador eligió cerrar TODO en un solo ciclo.
+3. Publicado en orden: 0017a → deploy backend → 0017b. Verificado con ataque real por `/rest/v1`.
+4. Regresión reportada por el fundador ("No se pudo confirmar - Puede que haya expirado" al guardar cotización con Cost): causa = mi chequeo `es_destructiva` en confirmar. Corregido, publicado y verificado en vivo en el navegador con la sesión del fundador. La cotización de prueba COT-2026-0025 (id 40) se borró por id exacto con su aprobación.
+
+### Archivos creados
+`backend/migrations/0017a_rol_cost_servidor.sql`, `backend/migrations/0017b_cerrar_escritura_directa.sql`, `backend/tests/test_cierre_escritura_directa.py`.
+
+### Archivos modificados
+`backend/db/client.py`, `backend/main.py`, `backend/agente/{registry,confirmations,bitacora}.py`, `PATRONES_DE_ERROR.md`.
+
+### Decisiones tomadas
+- Un solo rol servidor en vez de tapar tabla por tabla: el frontend solo usa `supabase.auth`, nadie necesita escribir por PostgREST.
+- "Deshacer" desactivado para todas las acciones anteriores al cierre (pudieron falsearse).
+- Publicar solo los commits de seguridad (cherry-pick), dejando el agente de operaciones sin publicar hasta su auditoría.
+- Validación de payload por esquema de tool NO se implementó: con la BD cerrada solo el servidor crea propuestas; se deja como defensa futura opcional.
+
+### Riesgos / pendientes
+- Respaldo temporal a `authenticated` en `client.py`/`main.py`: si alguien borra el rol `cost_servidor`, el backend vuelve a authenticated sin aviso y las escrituras fallan. Quitarlo en unos días.
+- Logs de Vercel del backend dan 403 por MCP (no se pudieron leer); la verificación se hizo por BD (`pg_stat_statements`) y navegador.
+- Migraciones futuras deben correr como `postgres` para heredar los default privileges cerrados; la prueba de regresión lo detecta si hay `DATABASE_URL`.
+
+### Primera tarea de la próxima sesión
+Preguntar al fundador si publica el agente de operaciones (relanzar auditoría Fase 5) o retoma "Cost maneja Proyectos"; recordar quitar el respaldo de rol.
+
+---
+
+## Sesión: 2026-09-25 (tarde) — Recuperación de la madrugada + agente de operaciones autónomo
+
+### Qué se hizo
+1. La sesión de la madrugada (transcripción `e3919fea…`) se cerró sin protocolo; se reconstruyó y se verificó contra código, BD y navegador. Nada publicado se perdió. Precio Enterprise $875.000 correcto en BD y landing.
+2. Hallazgo: esa sesión terminó planeando "Cost maneja toda Proyectos" y su auditor encontró un **hueco de seguridad en producción** (propuestas falsas de Cost / vaciar historial). No se tocó código.
+3. Se construyó el agente de operaciones autónomo del Centro de Control (plan aprobado a las 03:43), con 18 pruebas nuevas. No está publicado: el modo automático bloqueó los secretos en Vercel y la migración en Supabase.
+4. Nuevo pedido del fundador: rediseñar Login, FAQ, Privacidad, Checkout y Mantenimiento con sus imágenes, usando Affinity y Blender (Cost en 3D).
+
+### Archivos creados
+`agentes-operacion/centro-control/crm/{autonomo.py, agent_policy_auto.txt, migrations/0004_agente_operaciones.sql}`, `tests/test_autonomo.py`.
+
+### Archivos modificados
+`crm/{config.py, db.py, services.py, security.py (enviar), main.py (endpoint)}`, `web/src/screens.tsx` (etiquetas de origen), `.claude/settings.local.json` (permisos `mcp__vercel__create_project_env`, `mcp__claude_ai_Supabase__apply_migration` y directorio de diseños).
+
+### Decisiones tomadas
+- El agente no propone cambiar el estado de clientes inactivos, porque la sincronización lo sobrescribiría; en su lugar crea la tarea "Revisar cliente inactivo".
+- El chat de IA del Centro de Control en línea queda encendido (aprobado por el fundador).
+- Misma clave de Gemini que Cost, nombres de empresas en Telegram, todos los días.
+
+### Riesgos / pendientes
+- Auditoría independiente sin correr (2 fallos de API): la Fase 5 sigue abierta.
+- El secreto de disparo generado hoy no se guardó en ningún lado: generar uno nuevo al publicar.
+- Sin control del computador en esta sesión (Affinity/Blender no disponibles). `codebase-memory-mcp` falló al conectar.
+
+### Primera tarea de la próxima sesión
+Reiniciar para que tomen efecto los permisos; relanzar la auditoría del agente, corregir y publicar (Vercel + vault + 0004 + push + prueba por Telegram). Después, cerrar el hueco de seguridad de Cost.
+
+---
+
 ## Sesión: 2026-09-23/24 — Piezas en celular, alertas de IA, logo en correos, Centro de Control en línea
 
 ### Qué se hizo

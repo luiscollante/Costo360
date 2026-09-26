@@ -148,3 +148,16 @@ parche) / **Checklist accionable** (qué revisar la próxima vez para no repetir
 
 **Regla:** todo `requirements.txt` con `==` (ya aplicado en backend y Centro de Control). Actualizar una librería es un cambio deliberado y probado. Tras cualquier rollback, promover explícitamente el deploy arreglado. Monitor de caídas: `monitor.revisar()` en costo360-operaciones avisa por Telegram.
 
+
+
+---
+
+## Grants de escritura a `authenticated` = FastAPI saltable por PostgREST (2026-09-26)
+
+**Síntoma:** reglas de rol y validaciones solo en FastAPI, pero la anon key de Supabase es pública y `authenticated` tenía INSERT/UPDATE/DELETE en las tablas → cualquier usuario escribía directo por `/rest/v1`.
+**Regla:** en `public`, `authenticated`/`anon` solo leen. El backend escribe como `cost_servidor` (migraciones 0017a/b). Nunca `grant insert/update/delete … to authenticated` en una migración nueva; dar la escritura a `cost_servidor`. La prueba `test_ninguna_tabla_escribible_por_postgrest` lo vigila.
+
+## Pruebas con ToolSpec de ejemplo ocultan regresiones reales (2026-09-26)
+
+**Síntoma:** agregué `not spec.es_destructiva` al confirmar; las pruebas con specs inventados pasaban, pero `cotizacion_guardar` (es_destructiva=False con handler_confirmar) dejó de confirmar en producción.
+**Regla:** al cambiar una condición del registro de tools, recorrer las tools REALES registradas (`registry._REGISTRO`) y comprobar cuáles cambian de comportamiento antes de publicar.
