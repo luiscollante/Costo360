@@ -41,3 +41,4 @@ web/public/*.mp4
 # Prototipo Base44 del Objetivo 6 (gestión de proyectos) — insumo/especificación,
 # se reimplementa nativo; no va en la historia del repo del producto.
 gestion-proyectos-nuevo-modulo.zip
+backend/scripts/e2e_estado.json
