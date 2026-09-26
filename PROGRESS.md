@@ -28,6 +28,7 @@
    - Inventario: descontar láminas al aprobar un proyecto (inventario ligado al nesting); múltiples bodegas.
    - Catálogo: carga masiva de precios desde Excel; fotos/texturas por referencia de piedra.
    - Nesting: mostrar el plano de corte en el chat; continuidad de veta (vein matching); despiece con varias láminas distintas a la vez.
+   (E) **Rediseño de Dashboard y Catálogo** (pedido 2026-09-26, en cola DESPUÉS de todos los ciclos anteriores): referencias visuales del fundador en `C:\Users\wases\Desktop\Universidad\Opción de grado\Costo360\dashboard_rediseño.png` y `...\catalogo_rediseño.png`.
    Datos confirmados: los 8 pagos APPROVED ($10.465.000) son sandbox de Wompi (llaves de prueba aún activas); precios SIN IVA (empresa sin constituir), único cobro extra = comisión Wompi.
 1. En unos días, quitar el respaldo a `authenticated` en `db/client.py` y `main.py` (fijar `cost_servidor` y que el arranque falle si no existe).
 2. Publicar el agente de operaciones del Centro de Control (auditoría Fase 5 pendiente → Vercel envs + vault + 0004 + push + prueba Telegram). Sus commits locales van encima de `b768876`.
