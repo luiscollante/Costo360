@@ -23,16 +23,12 @@ alter table public.suscripciones_wompi
     add column if not exists ambiente text check (ambiente in ('sandbox', 'produccion'));
 update public.suscripciones_wompi set dia_ancla = extract(day from proxima_fecha_cobro)::smallint
 where dia_ancla is null;
+-- Todas las suscripciones previas a esta migración se crearon con llaves de
+-- prueba de Wompi (confirmado por el fundador 2026-09-26).
+update public.suscripciones_wompi set ambiente = 'sandbox' where ambiente is null;
+alter table public.suscripciones_wompi alter column ambiente set not null;
 
--- ── Siguiente fecha de cobro: mismo día del mes siguiente, recortado a fin de mes ──
-create or replace function public.siguiente_fecha_cobro(periodo date, ancla int)
-returns date language sql immutable set search_path = pg_catalog as $$
-    select make_date(
-        extract(year from (date_trunc('month', periodo) + interval '1 month'))::int,
-        extract(month from (date_trunc('month', periodo) + interval '1 month'))::int,
-        least(ancla, extract(day from (date_trunc('month', periodo) + interval '2 month' - interval '1 day'))::int))
-$$;
-revoke execute on function public.siguiente_fecha_cobro(date, int) from public, anon, authenticated;
+-- La siguiente fecha de cobro se calcula en Python (cobro_recurrente_service.siguiente_fecha).
 
 -- ── Registro de cobros mensuales ────────────────────────────────────────────
 create table if not exists public.cobros_recurrentes (

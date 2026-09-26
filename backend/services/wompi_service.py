@@ -130,7 +130,8 @@ def crear_payment_source(token: str, email: str, acceptance_token: str, accept_p
 
 
 def cobrar_con_payment_source(
-    reference: str, monto_cop, payment_source_id: str, email: str, *, recurrente: bool = False
+    reference: str, monto_cop, payment_source_id: str, email: str, *, recurrente: bool = False,
+    timeout: float = _TIMEOUT,
 ) -> dict:
     """
     Ejecuta un cobro real contra un payment_source ya existente.
@@ -153,7 +154,7 @@ def cobrar_con_payment_source(
     }
     if recurrente:
         body["recurrent"] = True
-    with httpx.Client(timeout=_TIMEOUT) as c:
+    with httpx.Client(timeout=timeout) as c:
         r = c.post(f"{_base()}/transactions", headers=_headers_privados(), json=body)
     r.raise_for_status()
     return r.json().get("data", {})

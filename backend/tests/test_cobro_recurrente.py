@@ -175,3 +175,22 @@ def test_texto_de_aviso_marca_sandbox():
     titulo, _ = c.texto_evento({"tipo": "aprobado", "empresa": "T", "monto": 150000, "periodo": "2026-10-01",
                                 "ambiente": "sandbox"})
     assert "PRUEBA" in titulo
+
+
+def test_aprobado_sin_transaction_id_no_avanza():
+    conn = FakeConn()
+    assert c.aplicar_resultado(conn, "REC-abc", None, "APPROVED", CENTS, "COP") is None
+    assert conn.db["subs_updates"] == [] and conn.db["cobro"]["estado"] == "pendiente"
+
+
+def test_carrera_entre_crons_no_genera_aviso_falso():
+    reclamos = iter([{"omitido": True, "silencioso": True, "empresa_id": "e", "empresa": "T"}, None])
+    with patch.object(c, "_reclamar_siguiente", side_effect=lambda conn: next(reclamos)):
+        eventos = []
+        c.cobrar_vencidas(object(), eventos)
+    assert eventos == []
+
+
+def test_dry_run_no_envia_avisos_previos():
+    with patch.object(c, "dry_run", return_value=True):
+        assert c.avisos_previos(object()) == []

@@ -34,8 +34,10 @@ _BOGOTA = ZoneInfo("America/Bogota")
 REINTENTOS_DIAS = (1, 3, 5)
 DIAS_GRACIA = 7
 MAX_INTENTOS = 1 + len(REINTENTOS_DIAS)
-LOTE_MAX = 5              # Vercel Hobby corta la función a ~60 s
-PRESUPUESTO_SEG = 40      # deja de tomar cobros nuevos pasado este tiempo
+LOTE_MAX = 3              # Vercel Hobby corta la función a ~60 s
+PRESUPUESTO_SEG = 30      # presupuesto GLOBAL de la corrida (conciliar + cobrar)
+CONCILIAR_MAX = 3
+TIMEOUT_COBRO_SEG = 12
 PENDIENTE_MIN_CONCILIAR = 30
 PENDIENTE_HORAS_REVISION = 48
 ESTADOS_FINALES_OK = {"APPROVED"}
@@ -106,6 +108,9 @@ def aplicar_resultado(conn, reference: str, transaction_id: str | None, estado_w
               "intento": intento, "ambiente": amb, "email": email}
 
     if estado_wompi in ESTADOS_FINALES_OK:
+        if not (transaction_id or tx_guardado):
+            cur.close()
+            return None
         esperado = wompi_service.amount_in_cents(monto)
         if amount_in_cents is None or int(amount_in_cents) != esperado or (currency or "") != "COP":
             cur.execute("UPDATE cobros_recurrentes SET estado = 'revision_manual', estado_wompi = %s, "
@@ -156,18 +161,20 @@ def _excluir_sandbox(cur, amb: str, transaction_id: str | None) -> None:
 
 # ── Cron diario ─────────────────────────────────────────────────────────────
 
-def conciliar(conn, eventos: list) -> int:
+def conciliar(conn, eventos: list, limite_tiempo: float | None = None) -> int:
     """Cobros 'pendiente' con más de 30 min: se le pregunta a Wompi. Más de
     48 h sin resolver → revisión manual (nunca se reintenta: podría cobrar doble)."""
     cur = conn.cursor()
     cur.execute(
         "SELECT reference, transaction_id, creado_en < now() - make_interval(hours => %s) "
         "FROM cobros_recurrentes WHERE estado = 'pendiente' AND creado_en < now() - make_interval(mins => %s) "
-        "ORDER BY creado_en LIMIT 20", (PENDIENTE_HORAS_REVISION, PENDIENTE_MIN_CONCILIAR))
+        "ORDER BY creado_en LIMIT %s", (PENDIENTE_HORAS_REVISION, PENDIENTE_MIN_CONCILIAR, CONCILIAR_MAX))
     pendientes = cur.fetchall()
     cur.close()
     n = 0
     for reference, tx_id, vencido in pendientes:
+        if limite_tiempo is not None and time.monotonic() > limite_tiempo:
+            break
         try:
             if tx_id:
                 txs = [wompi_service.consultar_transaccion(tx_id)]
@@ -213,7 +220,8 @@ def suspender_vencidas(conn, eventos: list) -> int:
         "UPDATE suscripciones_wompi s SET estado = 'suspendida', proximo_reintento = NULL "
         "FROM empresas e WHERE e.id = s.empresa_id AND s.estado = 'en_mora' AND s.en_mora_desde IS NOT NULL "
         "AND %s >= s.en_mora_desde + %s "
-        "AND NOT EXISTS (SELECT 1 FROM cobros_recurrentes c WHERE c.empresa_id = s.empresa_id AND c.estado = 'pendiente') "
+        "AND NOT EXISTS (SELECT 1 FROM cobros_recurrentes c WHERE c.empresa_id = s.empresa_id "
+        "                AND c.estado IN ('pendiente', 'revision_manual')) "
         "RETURNING s.empresa_id, e.nombre", (hoy, DIAS_GRACIA))
     filas = cur.fetchall()
     cur.close()
@@ -233,7 +241,10 @@ def _reclamar_siguiente(conn):
         "SELECT s.empresa_id, s.proxima_fecha_cobro, s.plan_codigo, s.payment_source_id, p.precio_mensual_cop, "
         "       e.nombre, (SELECT u.email FROM usuarios u WHERE u.empresa_id = s.empresa_id AND u.rol_codigo = 'admin' LIMIT 1) "
         "FROM suscripciones_wompi s JOIN planes p ON p.codigo = s.plan_codigo JOIN empresas e ON e.id = s.empresa_id "
-        "WHERE s.estado IN ('activa', 'en_mora') AND s.proxima_fecha_cobro <= %s "
+        # 'suspendida' solo vuelve a cobrarse si se programó un reintento
+        # (actualización de tarjeta o "pagar ahora"): así paga el mes vencido.
+        "WHERE (s.estado IN ('activa', 'en_mora') OR (s.estado = 'suspendida' AND s.proximo_reintento IS NOT NULL)) "
+        "  AND s.proxima_fecha_cobro <= %s "
         "  AND (s.proximo_reintento IS NULL OR s.proximo_reintento <= %s) AND s.ambiente = %s "
         "  AND NOT EXISTS (SELECT 1 FROM cobros_recurrentes c WHERE c.empresa_id = s.empresa_id "
         "                  AND c.periodo = s.proxima_fecha_cobro AND c.estado IN ('pendiente', 'aprobado', 'revision_manual')) "
@@ -265,20 +276,23 @@ def _reclamar_siguiente(conn):
     creado = cur.fetchone()
     cur.close()
     conn.commit()
-    if creado is None:
-        return {"omitido": True, "empresa_id": str(empresa_id), "empresa": nombre}
+    if creado is None:  # otro cron lo tomó en paralelo: no es un error, no se avisa
+        return {"omitido": True, "silencioso": True, "empresa_id": str(empresa_id), "empresa": nombre}
     return {"reference": reference, "monto": precio, "ps_id": ps_id, "email": email,
             "empresa_id": str(empresa_id), "empresa": nombre, "periodo": str(periodo)}
 
 
-def cobrar_vencidas(conn, eventos: list) -> int:
-    inicio, n = time.monotonic(), 0
-    while n < LOTE_MAX and time.monotonic() - inicio < PRESUPUESTO_SEG:
+def cobrar_vencidas(conn, eventos: list, limite_tiempo: float | None = None) -> int:
+    limite = limite_tiempo if limite_tiempo is not None else time.monotonic() + PRESUPUESTO_SEG
+    n = 0
+    while n < LOTE_MAX and time.monotonic() < limite:
         cobro = _reclamar_siguiente(conn)
         if cobro is None:
             break
         n += 1
         if cobro.get("omitido"):
+            if cobro.get("silencioso"):
+                continue
             eventos.append({"tipo": "omitido", "empresa_id": cobro["empresa_id"], "empresa": cobro["empresa"]})
             continue
         if dry_run():
@@ -287,7 +301,8 @@ def cobrar_vencidas(conn, eventos: list) -> int:
             continue
         try:
             tx = wompi_service.cobrar_con_payment_source(
-                cobro["reference"], cobro["monto"], cobro["ps_id"], cobro["email"], recurrente=True)
+                cobro["reference"], cobro["monto"], cobro["ps_id"], cobro["email"], recurrente=True,
+                timeout=TIMEOUT_COBRO_SEG)
         except Exception:
             # Nunca se reintenta aquí: Wompi pudo haber cobrado. La conciliación decide.
             _log.warning("cobro recurrente: Wompi no respondió; queda pendiente para conciliar")
@@ -303,6 +318,8 @@ def cobrar_vencidas(conn, eventos: list) -> int:
 def avisos_previos(conn) -> list[dict]:
     """Suscripciones activas que se cobran en 3 días. Se marca ANTES de enviar
     (a lo sumo un aviso por periodo)."""
+    if dry_run():
+        return []
     objetivo = hoy_bogota() + timedelta(days=3)
     cur = conn.cursor()
     cur.execute(
@@ -325,9 +342,10 @@ def ejecutar_cron(conn) -> dict:
     eventos: list = []
     if not activo(conn):
         return {"activo": False, "eventos": []}
-    conciliados = conciliar(conn, eventos)
+    limite = time.monotonic() + PRESUPUESTO_SEG
+    conciliados = conciliar(conn, eventos, limite)
     suspendidas = suspender_vencidas(conn, eventos)
-    cobrados = cobrar_vencidas(conn, eventos)
+    cobrados = cobrar_vencidas(conn, eventos, limite)
     previos = avisos_previos(conn)
     return {"activo": True, "dry_run": dry_run(), "ambiente": wompi_service.ambiente(),
             "conciliados": conciliados, "suspendidas": suspendidas, "cobros_intentados": cobrados,
