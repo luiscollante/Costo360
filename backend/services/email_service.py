@@ -140,3 +140,52 @@ def enviar_invitacion_usuario(email: str, nombre_invitado: str, nombre_empresa: 
     """
     asunto = f"Te invitaron a {nombre_empresa} en Costo360"
     return _enviar(email, asunto, _shell(asunto, cuerpo))
+
+
+# ── Cobro mensual recurrente (ciclo /goal 2026-09-26) ────────────────────────
+
+def _pesos(v) -> str:
+    return "$" + f"{round(float(v or 0)):,}".replace(",", ".")
+
+
+def _parrafo(texto: str) -> str:
+    return f'<p style="margin:0 0 16px;font-size:15px;color:#1A1A1A;line-height:1.5;">{texto}</p>'
+
+
+def enviar_aviso_cobro_proximo(av: dict) -> bool:
+    import html
+    empresa = html.escape(av["empresa"])
+    cuerpo = (_parrafo(f"Hola, equipo de <strong>{empresa}</strong>:")
+              + _parrafo(f"Te recordamos que el <strong>{av['fecha']}</strong> se cobrará automáticamente tu "
+                         f"plan <strong>{html.escape(av['plan'])}</strong> por <strong>{_pesos(av['monto'])}</strong> "
+                         "con la tarjeta que tienes registrada. No tienes que hacer nada."))
+    asunto = "Tu próximo cobro de Costo360"
+    return _enviar(av["email"], asunto, _shell(asunto, cuerpo))
+
+
+def enviar_evento_cobro(ev: dict) -> bool:
+    """Recibo, aviso de rechazo o de suspensión al administrador del taller.
+    En sandbox no se escribe a clientes reales."""
+    import html
+    if not ev.get("email") or ev.get("ambiente") == "sandbox":
+        return False
+    empresa = html.escape(ev.get("empresa") or "")
+    base = _parrafo(f"Hola, equipo de <strong>{empresa}</strong>:")
+    tipo = ev.get("tipo")
+    if tipo == "aprobado":
+        asunto = "Recibo de tu pago mensual de Costo360"
+        cuerpo = base + _parrafo(f"Recibimos tu pago de <strong>{_pesos(ev['monto'])}</strong> correspondiente al "
+                                 f"periodo que inicia el <strong>{ev['periodo']}</strong>. ¡Gracias por seguir con nosotros!")
+    elif tipo == "fallido":
+        asunto = "No pudimos cobrar tu plan de Costo360"
+        sig = (f"Lo intentaremos de nuevo el <strong>{ev['reintento']}</strong>." if ev.get("reintento")
+               else "Si no se resuelve, tu cuenta pasará a modo de solo lectura al cumplirse 7 días.")
+        cuerpo = base + _parrafo("Tu banco rechazó el cobro mensual de Costo360. " + sig
+                                 + " Si tu tarjeta cambió, actualízala desde la aplicación.")
+    elif tipo == "suspendida":
+        asunto = "Tu cuenta de Costo360 está en modo de solo lectura"
+        cuerpo = base + _parrafo("No pudimos cobrar tu plan durante 7 días, así que tu cuenta quedó en modo de solo "
+                                 "lectura: tus datos siguen intactos. Al ponerte al día con el pago, todo vuelve a la normalidad.")
+    else:
+        return False
+    return _enviar(ev["email"], asunto, _shell(asunto, cuerpo))

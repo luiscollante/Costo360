@@ -30,7 +30,7 @@ _RE_EMAIL = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 from backend.db.client import db_service
 from backend.middleware.rate_limiter import limiter
-from backend.services import wompi_service
+from backend.services import cobro_recurrente_service, wompi_service
 from backend.services.aprovisionamiento_service import (
     PLANES_VALIDOS,
     AprovisionamientoError,
@@ -261,7 +261,19 @@ async def webhook_wompi(request: Request, conn=Depends(db_service)):
         # Evento sin la forma esperada -- se responde 200 igual (para que
         # Wompi no reintente algo que nunca vamos a poder procesar), pero se
         # deja registrado para revisión manual.
-        print(f"[pagos] webhook con forma inesperada: {payload}", flush=True)
+        print("[pagos] webhook con forma inesperada (sin id, referencia o estado) -- revisar", flush=True)
+        return {"ok": True}
+
+    if reference.startswith("REC-"):
+        # Cobro MENSUAL recurrente: camino propio, nunca el de alta de empresa
+        # (auditoría: un APPROVED mensual por el camino de alta intentaría
+        # crear otra empresa). Idempotencia y validación de monto/moneda en
+        # `aplicar_resultado`; solo cambia estados desde 'pendiente'.
+        evento = cobro_recurrente_service.aplicar_resultado(
+            conn, reference, transaction_id, estado_wompi, monto_recibido, transaction.get("currency"))
+        conn.commit()
+        if evento:
+            avisar_cobro(evento)
         return {"ok": True}
 
     cur = conn.cursor()
@@ -360,12 +372,28 @@ async def webhook_wompi(request: Request, conn=Depends(db_service)):
             "VALUES (%s, %s, %s, %s) ON CONFLICT (empresa_id) DO NOTHING",
             (resultado["empresa_id"], payment_source_id, extra.get("brand"), extra.get("last_four")),
         )
+        # Ciclo mensual anclado al día del primer pago, en hora Colombia (antes:
+        # date.today()+30 en UTC, que corría el ciclo cada mes).
+        hoy = cobro_recurrente_service.hoy_bogota()
         cur.execute(
-            "INSERT INTO suscripciones_wompi (empresa_id, plan_codigo, payment_source_id, proxima_fecha_cobro) "
-            "VALUES (%s, %s, %s, %s) ON CONFLICT (empresa_id) DO NOTHING",
-            (resultado["empresa_id"], plan_codigo, payment_source_id, date.today() + timedelta(days=30)),
+            "INSERT INTO suscripciones_wompi (empresa_id, plan_codigo, payment_source_id, proxima_fecha_cobro, "
+            "dia_ancla, ambiente) VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT (empresa_id) DO NOTHING",
+            (resultado["empresa_id"], plan_codigo, payment_source_id,
+             cobro_recurrente_service.siguiente_fecha(hoy, hoy.day), hoy.day, wompi_service.ambiente()),
         )
 
     cur.close()
     conn.commit()
     return {"ok": True}
+
+
+def avisar_cobro(evento: dict) -> None:
+    """Aviso al fundador (Telegram + correo) y al taller. Nunca lanza: un aviso
+    caído no puede revertir un cobro ya comiteado."""
+    try:
+        from backend.services import alertas_service, email_service
+        titulo, texto = cobro_recurrente_service.texto_evento(evento)
+        alertas_service._notificar(titulo, texto)
+        email_service.enviar_evento_cobro(evento)
+    except Exception:
+        print("[pagos] no se pudo enviar el aviso de cobro", flush=True)

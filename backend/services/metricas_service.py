@@ -30,8 +30,8 @@ _PAGO_VALIDO = "NOT EXISTS (SELECT 1 FROM metricas.pagos_excluidos px WHERE px.t
 _RENDER_OK = "estado = 'completado'"
 
 ADVERTENCIAS_FIJAS = [
-    "El cobro mensual recurrente aún no está implementado: hoy solo se cobra el primer mes, "
-    "así que 'ingreso contratado' puede no coincidir con lo cobrado.",
+    "El cobro mensual automático puede estar apagado (interruptor cobros_recurrentes_activos): "
+    "'ingreso contratado' puede no coincidir con lo cobrado.",
     "La voz (ElevenLabs) no tiene costo en dólares registrado: no está incluida en el costo de IA.",
     "El ingreso cobrado es el valor bruto del plan: aún no descuenta la comisión de Wompi.",
 ]
@@ -162,6 +162,10 @@ def resumen(conn) -> dict:
         JOIN empresas e ON e.id = sp.empresa_id
         WHERE p.estado_wompi = 'APPROVED' AND sp.estado = 'pagado'
           AND p.procesado_en >= {INICIO_MES_SQL} AND {_PAGO_VALIDO} AND {_EXCLUIDA}""")[0]
+    mensual = _q(conn, f"""
+        SELECT count(*), coalesce(sum(c.monto_cop), 0) FROM cobros_recurrentes c JOIN empresas e ON e.id = c.empresa_id
+        WHERE c.estado = 'aprobado' AND c.ambiente = 'produccion' AND c.resuelto_en >= {INICIO_MES_SQL} AND {_EXCLUIDA}""")[0]
+    cobrado = (int(cobrado[0]) + int(mensual[0]), float(cobrado[1]) + float(mensual[1]))
     bajas = _q(conn, f"""
         SELECT count(*) FROM eventos_empresa ev JOIN empresas e ON e.id = ev.empresa_id
         WHERE ev.creado_en >= {INICIO_MES_SQL} AND {_EXCLUIDA}
@@ -273,12 +277,25 @@ def ingresos(conn, meses: int) -> dict:
         JOIN empresas e ON e.id = sp.empresa_id
         WHERE p.estado_wompi = 'APPROVED' AND sp.estado = 'pagado' AND {_PAGO_VALIDO} AND {_EXCLUIDA}
           AND p.procesado_en >= ({INICIO_MES_SQL} - make_interval(months => %s))
-        GROUP BY 1 ORDER BY 1""", (meses - 1,))
+        GROUP BY 1
+        UNION ALL
+        SELECT to_char(date_trunc('month', c.resuelto_en at time zone 'America/Bogota'), 'YYYY-MM'),
+               count(*), coalesce(sum(c.monto_cop), 0)
+        FROM cobros_recurrentes c JOIN empresas e ON e.id = c.empresa_id
+        WHERE c.estado = 'aprobado' AND c.ambiente = 'produccion' AND {_EXCLUIDA}
+          AND c.resuelto_en >= ({INICIO_MES_SQL} - make_interval(months => %s))
+        GROUP BY 1""", (meses - 1, meses - 1))
+    acumulado: dict = {}
+    for m, n, v in filas:
+        a = acumulado.setdefault(m, [0, 0.0])
+        a[0] += int(n)
+        a[1] += float(v)
+    filas = [(m, n, v) for m, (n, v) in sorted(acumulado.items())]
     datos = {"meses": [{"mes": m, "pagos": int(n), "cobrado_cop": round(float(v))} for m, n, v in filas],
              "total_cobrado_cop": round(sum(float(v) for _, _, v in filas))}
     expl = None if filas else ("No hay cobros reales en el periodo: los pagos registrados hasta ahora fueron "
                                "pruebas del sandbox de Wompi y están excluidos.")
-    return _sobre("backend: pagos_procesados APPROVED (sin sandbox ni cuentas internas)", datos, expl)
+    return _sobre("backend: pagos_procesados APPROVED + cobros_recurrentes aprobados (sin sandbox ni cuentas internas)", datos, expl)
 
 
 def talleres_uso(conn, orden: str) -> dict:

@@ -26,7 +26,7 @@ from backend.middleware.rate_limiter import limiter
 from backend.routers import (
     auth, session, bootstrap, calculos, cotizacion, parametros, config, dashboard,
     retales, admin, nesting, materiales, inventario, proyectos, proyectos_cron,
-    agente_cron, voz, render, consumo, consumo_cron, pagos, metricas_admin,
+    agente_cron, voz, render, consumo, consumo_cron, pagos, metricas_admin, pagos_cron,
 )
 from backend.agente import router as agente_ia  # Objetivo 5 — motor de Cost, /api/agente/*
 # `finanzas` NO se registra en el prototipo nuevo: opera sobre `facturas_compra`, una
@@ -230,6 +230,7 @@ app.include_router(consumo.router)
 app.include_router(consumo_cron.router)
 app.include_router(pagos.router)
 app.include_router(metricas_admin.router)
+app.include_router(pagos_cron.router)
 
 
 @app.get("/")

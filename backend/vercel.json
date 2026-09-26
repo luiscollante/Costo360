@@ -24,6 +24,10 @@
     {
       "path": "/api/consumo/cron/revision",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/pagos/cron/cobros",
+      "schedule": "0 13 * * *"
     }
   ]
 }

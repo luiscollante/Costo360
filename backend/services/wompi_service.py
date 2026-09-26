@@ -157,3 +157,25 @@ def cobrar_con_payment_source(
         r = c.post(f"{_base()}/transactions", headers=_headers_privados(), json=body)
     r.raise_for_status()
     return r.json().get("data", {})
+
+
+def ambiente() -> str:
+    return "sandbox" if _es_sandbox() else "produccion"
+
+
+def consultar_transaccion(transaction_id: str) -> dict:
+    """Estado actual de una transacción (conciliación cuando el webhook no llegó)."""
+    with httpx.Client(timeout=8.0) as c:
+        r = c.get(f"{_base()}/transactions/{transaction_id}", headers=_headers_privados())
+    r.raise_for_status()
+    return r.json().get("data", {})
+
+
+def buscar_por_referencia(reference: str) -> list[dict]:
+    """Transacciones creadas con esa referencia. Clave para NO cobrar dos veces
+    si el proceso murió después de que Wompi aceptó el cobro y antes de
+    guardar su `transaction_id`."""
+    with httpx.Client(timeout=8.0) as c:
+        r = c.get(f"{_base()}/transactions", headers=_headers_privados(), params={"reference": reference})
+    r.raise_for_status()
+    return r.json().get("data", []) or []
